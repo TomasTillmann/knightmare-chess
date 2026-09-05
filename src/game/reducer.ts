@@ -340,14 +340,10 @@ function settleBlockedBeforeMove(state: GameState, color: Color): void {
   }
 }
 
-function isKingInCheck(state: GameState, color: Color): boolean {
-  const position = positionFor(state, color);
-  const royals = state.pieces.filter(
-    piece => piece.owner === color && piece.royal && piece.zone === 'board' && piece.square,
-  );
-  if (!royals.length) return position.isCheck();
-  return royals.some(piece =>
-    position.kingAttackers(parseSquare(piece.square!), opposite(color), position.board.occupied).nonEmpty()
+function isRoyalInCheck(state: GameState, piece: PieceState): boolean {
+  if (piece.zone !== 'board' || !piece.square) return false;
+  const position = positionFor(state, piece.owner);
+  return position.kingAttackers(parseSquare(piece.square), opposite(piece.owner), position.board.occupied).nonEmpty()
     || state.pieces.some(neutral =>
       neutral.neutral
       && neutral.zone === 'board'
@@ -357,8 +353,29 @@ function isKingInCheck(state: GameState, color: Color): boolean {
         parseSquare(neutral.square),
         position.board.occupied,
       ).has(parseSquare(piece.square!)),
-    ),
+    );
+}
+
+function isKingInCheck(state: GameState, color: Color): boolean {
+  const royals = state.pieces.filter(
+    piece => piece.owner === color && piece.royal && piece.zone === 'board' && piece.square,
   );
+  return royals.length
+    ? royals.some(piece => isRoyalInCheck(state, piece))
+    : positionFor(state, color).isCheck();
+}
+
+function cardMoveLeavesRoyalInCheck(
+  state: GameState,
+  color: Color,
+  movedPieces: readonly PieceState[],
+): boolean {
+  if (isKingInCheck(state, color)) return true;
+  return movedPieces.some(moved => {
+    if (!moved.neutral || !moved.royal || moved.owner === color) return false;
+    const royal = state.pieces.find(piece => piece.id === moved.id);
+    return royal ? isRoyalInCheck(state, royal) : false;
+  });
 }
 
 function enPassantCapture(state: GameState, from: SquareName, to: SquareName) {
@@ -545,7 +562,7 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   if (isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'fanatic', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, [pawn])) {
     return fizzleCard(state, 'fanatic', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -619,7 +636,7 @@ function playForcedMarch(state: GameState, target: unknown, cardInstanceId?: unk
   if (isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'forced-march', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, pawns)) {
     return fizzleCard(state, 'forced-march', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -692,7 +709,7 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   if (isOrdinaryCheckmate(completed, defender)) {
     return fizzleCard(state, 'annexation', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, pawns)) {
     return fizzleCard(state, 'annexation', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -751,7 +768,7 @@ function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unkno
   if (isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'onslaught', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, pawns)) {
     return fizzleCard(state, 'onslaught', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -801,7 +818,7 @@ function playLongJump(state: GameState, target: unknown, cardInstanceId?: unknow
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, 'long-jump', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, [knight])) {
     return fizzleCard(state, 'long-jump', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -848,7 +865,7 @@ function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, 'dubbing', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, [piece])) {
     return fizzleCard(state, 'dubbing', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -907,7 +924,7 @@ function playSquaringTheCircle(state: GameState, target: unknown, cardInstanceId
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, 'squaring-the-circle', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, [piece])) {
     return fizzleCard(state, 'squaring-the-circle', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -963,7 +980,7 @@ function playCowardice(state: GameState, target: unknown, cardInstanceId?: unkno
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, 'cowardice', 'DIRECT_MATE', cardInstanceId);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, [pawn])) {
     return fizzleCard(state, 'cowardice', 'SELF_CHECK', cardInstanceId);
   }
 
@@ -1116,7 +1133,7 @@ function playSwapCard(
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, consumesMove);
   }
-  if (isKingInCheck(resolved, color)) {
+  if (cardMoveLeavesRoyalInCheck(resolved, color, [firstPiece, secondPiece])) {
     return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, consumesMove);
   }
 
