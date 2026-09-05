@@ -34,6 +34,7 @@ import type {
 } from './types.js';
 
 const SQUARE = /^[a-h][1-8]$/;
+const CORNERS: readonly SquareName[] = ['a1', 'a8', 'h1', 'h8'];
 const PROMOTIONS = new Set<Role>(['queen', 'rook', 'bishop', 'knight']);
 const FANATIC_FORWARD: Record<BoardOrientation, readonly [number, number]> = {
   0: [0, 1],
@@ -285,6 +286,17 @@ export function dubbingDests(state: GameState, from: SquareName): SquareName[] {
     .map(makeSquare);
 }
 
+export function squaringTheCircleDests(state: GameState, from: SquareName): SquareName[] {
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === from);
+  if (!piece || (piece.owner !== state.turn.color && !piece.neutral)) return [];
+
+  const occupied = new Set(state.pieces.flatMap(candidate =>
+    candidate.zone === 'board' && candidate.square ? [candidate.square] : [],
+  ));
+  const emptyCorners = CORNERS.filter(square => !occupied.has(square));
+  return emptyCorners.length === 1 ? emptyCorners : [];
+}
+
 function syncFen(state: GameState): void {
   state.fen = makeFen(setupFor(state));
 }
@@ -383,9 +395,9 @@ function completeReplacementMove(
   castlingMove?: { from: SquareName; piece: PieceState },
 ): void {
   const setup = setupFor(state);
-  if (castlingMove?.piece.role === 'king') {
+  if (castlingMove?.piece.royal) {
     setup.castlingRights = setup.castlingRights.diff(SquareSet.backrank(castlingMove.piece.owner));
-  } else if (castlingMove?.piece.role === 'rook') {
+  } else if (castlingMove?.piece.role === 'rook' || castlingMove?.piece.originalRole === 'rook') {
     setup.castlingRights = setup.castlingRights.without(parseSquare(castlingMove.from));
   }
   setup.turn = opposite(color);
@@ -838,6 +850,65 @@ function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown
   return { ok: true, state: resolved };
 }
 
+function playSquaringTheCircle(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'squaring-the-circle' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Squaring the Circle is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Squaring the Circle is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target, 1);
+  if (!moves || moves.length !== 1) {
+    return reject(state, 'INVALID_TARGET', 'Choose one piece and the empty corner.');
+  }
+  const [move] = moves;
+  const occupiedCorners = CORNERS.filter(square =>
+    state.pieces.some(piece => piece.zone === 'board' && piece.square === square),
+  );
+  if (occupiedCorners.length !== 3) {
+    return reject(state, 'ILLEGAL_MOVE', 'Exactly three of the four corners must be occupied.');
+  }
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === move.from);
+  if (!piece) return reject(state, 'INVALID_TARGET', `There is no piece on ${move.from}.`);
+  if (piece.owner !== color && !piece.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
+  }
+  if (!squaringTheCircleDests(state, move.from).includes(move.to)) {
+    return reject(state, 'ILLEGAL_MOVE', 'Move the piece to the sole empty corner.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  resolved.pieces.find(candidate => candidate.id === piece.id)!.square = move.to;
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'squaring-the-circle', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'squaring-the-circle', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  completeReplacementMove(
+    resolved,
+    color,
+    piece.originalRole === 'pawn' && !piece.promoted,
+    [],
+    { from: move.from, piece },
+  );
+  spendCard(resolved, 'squaring-the-circle', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'squaring-the-circle', target: moves });
+  return { ok: true, state: resolved };
+}
+
 function playCowardice(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -1094,6 +1165,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
   if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
+  if (cardId === 'squaring-the-circle') return playSquaringTheCircle(state, target, cardInstanceId);
   if (cardId === 'cowardice') return playCowardice(state, target, cardInstanceId);
   if (cardId === 'no-quarter') return playNoQuarter(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
@@ -1131,7 +1203,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
     return targets;
   }
-  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'cowardice') {
+  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
@@ -1147,11 +1219,13 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
                 ? longJumpDests
                 : cardId === 'dubbing'
                   ? dubbingDests
+                  : cardId === 'squaring-the-circle'
+                    ? squaringTheCircleDests
                   : cowardiceDests)(state, piece.square)
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
-  if (cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'cowardice') {
+  if (cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
     return steps.map(step => [step]);
   }
   if (cardId === 'onslaught') {

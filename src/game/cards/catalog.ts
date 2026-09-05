@@ -189,6 +189,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  'squaring-the-circle': {
+    id: 'squaring-the-circle',
+    name: 'Squaring the Circle',
+    points: 3,
+    unique: false,
+    image: '/KC3_card4.png',
+    description:
+      'You may play this Card Only when three of the four corners of the chessboard are occupied. Move any one of your pieces to the empty corner.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   'no-quarter': {
     id: 'no-quarter',
     name: 'No Quarter',
