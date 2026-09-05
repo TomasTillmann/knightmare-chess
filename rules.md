@@ -364,6 +364,14 @@ Move the physical piece without changing its owner, current or original role, pr
 
 Resolve the relocation atomically, then apply the direct-mate and acting-King safety checks in §11.6. A failed effect restores the piece and spends the card; if the acting King began safe, the failed replacement consumes the move, while a player who began in check retains the Regular Move as a possible escape. A successful play consumes the card allowance and Regular Move, clears en-passant availability, and makes no capture. Reset the halfmove clock only for an unpromoted original Pawn; otherwise increment it, and increment the fullmove number after Black's play. Moving a King revokes that King's castling rights, and moving a castling-eligible Rook revokes the right associated with its starting square.
 
+### 13.10 Cowardice
+
+Cowardice is played after the acting player's Regular Move. Select one opponent-owned Pawn, or a neutral Pawn, and represent its relocation as the one-element move list `[{ from, to }]`. "Pawn" refers to original identity: the piece must be an unpromoted original Pawn, but its current role may have been transformed. Move it exactly one or two squares backward relative to its original owner's forward direction, adjusted for the current board orientation. For a two-square move, both the crossed square and destination must be on the board and empty; the card cannot capture, jump, or enter a square vacated during its own effect.
+
+Move the physical piece without changing its owner, current or original role, promoted, royal, or neutral status, Continuing Effects, or other markers. Reaching the last rank does not promote it. Cowardice does not advance either move clock, change the turn or after-move phase, revoke castling rights, or create or expire an en-passant opportunity.
+
+After staging the relocation, apply the Checkmate Rule and acting-King safety rule in §11.6. If Cowardice newly creates direct checkmate or leaves the acting King's royal piece in check, restore the board position while still spending, discarding, and replacing the card exactly once. A successful play likewise spends and replaces the card once and leaves the game in the after-move window until the turn ends.
+
 ## 14. Board-changing effects
 
 ### 14.1 Earthquake

@@ -179,6 +179,30 @@ function pawnForward(state: GameState, owner: Color): readonly [number, number] 
   return [file * direction, rank * direction];
 }
 
+export function cowardiceDests(state: GameState, from: SquareName): SquareName[] {
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (
+    !pawn
+    || (!pawn.neutral && pawn.owner === state.turn.color)
+    || pawn.originalRole !== 'pawn'
+    || pawn.promoted
+  ) return [];
+
+  const source = parseSquare(from);
+  const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
+  const board = setupFor(state).board;
+  const destinations: SquareName[] = [];
+  for (const distance of [1, 2]) {
+    const file = squareFile(source) - forwardFile * distance;
+    const rank = squareRank(source) - forwardRank * distance;
+    if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
+    const destination = rank * 8 + file;
+    if (board.has(destination)) break;
+    destinations.push(makeSquare(destination));
+  }
+  return destinations;
+}
+
 function onStartingSquare(state: GameState, owner: Color, square: SquareName): boolean {
   const [fileStep, rankStep] = pawnForward(state, owner);
   const squareIndex = parseSquare(square);
@@ -814,6 +838,55 @@ function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown
   return { ok: true, state: resolved };
 }
 
+function playCowardice(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'cowardice' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Cowardice is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Cowardice is played after the regular move.');
+  }
+  const moves = parseCardMoves(target, 1);
+  if (!moves || moves.length !== 1) {
+    return reject(state, 'INVALID_TARGET', "Choose one valid opposing Pawn move.");
+  }
+  const [move] = moves;
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
+  if (!pawn) return reject(state, 'INVALID_TARGET', `There is no Pawn on ${move.from}.`);
+  if (!pawn.neutral && pawn.owner === color) {
+    return reject(state, 'WRONG_OWNER', "Choose one of your opponent's Pawns.");
+  }
+  if (pawn.originalRole !== 'pawn' || pawn.promoted) {
+    return reject(state, 'WRONG_ROLE', 'Cowardice can target only an unpromoted original Pawn.');
+  }
+  if (!cowardiceDests(state, move.from).includes(move.to)) {
+    return reject(state, 'ILLEGAL_MOVE', 'Move the Pawn one or two clear squares backward.');
+  }
+
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === pawn.id)!.square = move.to;
+  syncFen(resolved);
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'cowardice', 'DIRECT_MATE', cardInstanceId);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'cowardice', 'SELF_CHECK', cardInstanceId);
+  }
+
+  spendCard(resolved, 'cowardice', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'cowardice', target: moves });
+  return { ok: true, state: resolved };
+}
+
 const SWAP_CARDS = {
   'holy-war': {
     name: 'Holy War', firstField: 'knight', firstRole: 'knight', firstOwner: 'own',
@@ -976,6 +1049,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
   if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
+  if (cardId === 'cowardice') return playCowardice(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
@@ -1011,7 +1085,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
     return targets;
   }
-  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing') {
+  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'cowardice') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
@@ -1025,11 +1099,15 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
               ? onslaughtDests
               : cardId === 'long-jump'
                 ? longJumpDests
-                : dubbingDests)(state, piece.square)
+                : cardId === 'dubbing'
+                  ? dubbingDests
+                  : cowardiceDests)(state, piece.square)
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
-  if (cardId === 'long-jump' || cardId === 'dubbing') return steps.map(step => [step]);
+  if (cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'cowardice') {
+    return steps.map(step => [step]);
+  }
   if (cardId === 'onslaught') {
     return steps.reduce<CardMove[][]>(
       (groups, step) => [...groups, [step], ...groups.map(group => [...group, step])],

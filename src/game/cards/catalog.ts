@@ -55,6 +55,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  cowardice: {
+    id: 'cowardice',
+    name: 'Cowardice',
+    points: 4,
+    unique: false,
+    image: '/KC4_card3.png',
+    description:
+      "Move one of your opponent's Pawns one or two squares backward. It may not enter or cross an occupied square.",
+    timing: ['afterMove'],
+    continuing: false,
+  },
   'holy-war': {
     id: 'holy-war',
     name: 'Holy War',
