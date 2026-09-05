@@ -15,8 +15,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists'],
     },
     decks: { white: [], black: [] },
   });
@@ -81,11 +81,22 @@ export default function App() {
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
-  const swapRoles = selectedDefinition?.id === 'holy-war'
-    ? { first: 'knight', second: 'bishop' } as const
+  const swap = selectedDefinition?.id === 'holy-war'
+    ? {
+        firstRole: 'knight', firstOwner: 'own', firstLabel: 'Knight',
+        secondRole: 'bishop', secondOwner: 'own', secondLabel: 'Bishop',
+      } as const
     : selectedDefinition?.id === 'anathema'
-      ? { first: 'bishop', second: 'rook' } as const
-      : null;
+      ? {
+          firstRole: 'bishop', firstOwner: 'opponent', firstLabel: 'Bishop',
+          secondRole: 'rook', secondOwner: 'opponent', secondLabel: 'Rook',
+        } as const
+      : selectedDefinition?.id === 'evangelists'
+        ? {
+            firstRole: 'bishop', firstOwner: 'own', firstLabel: 'Your Bishop',
+            secondRole: 'bishop', secondOwner: 'opponent', secondLabel: 'Opponent Bishop',
+          } as const
+        : null;
   const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
     ? selectedDefinition.id
     : null;
@@ -105,25 +116,30 @@ export default function App() {
       piece.zone !== 'board'
       || !piece.square
     ) return false;
-    const validOwner = selectedDefinition?.id === 'anathema'
-      ? piece.owner !== game.turn.color || piece.neutral
-      : piece.owner === game.turn.color || piece.neutral;
-    if (!validOwner) return false;
-    if (swapRoles) {
-      return piece.role === swapRoles.first
-        || piece.originalRole === swapRoles.first
-        || piece.role === swapRoles.second
-        || piece.originalRole === swapRoles.second;
+    const matchesOwner = (owner: 'own' | 'opponent') => piece.neutral
+      || (owner === 'own' ? piece.owner === game.turn.color : piece.owner !== game.turn.color);
+    if (swap) {
+      return matchesOwner(swap.firstOwner)
+          && (piece.role === swap.firstRole || piece.originalRole === swap.firstRole)
+        || matchesOwner(swap.secondOwner)
+          && (piece.role === swap.secondRole || piece.originalRole === swap.secondRole);
     }
+    if (!matchesOwner('own')) return false;
     return piece.originalRole === 'pawn'
       && !piece.promoted
       && (!piece.royal || selectedDefinition?.id === 'fanatic' || Boolean(moveCardId));
   });
-  const firstSwapPieces = swapRoles
-    ? cardTargets.filter(piece => piece.role === swapRoles.first || piece.originalRole === swapRoles.first)
+  const firstSwapPieces = swap
+    ? cardTargets.filter(piece =>
+        (piece.neutral || (swap.firstOwner === 'own' ? piece.owner === game.turn.color : piece.owner !== game.turn.color))
+        && (piece.role === swap.firstRole || piece.originalRole === swap.firstRole),
+      )
     : [];
-  const secondSwapPieces = swapRoles
-    ? cardTargets.filter(piece => piece.role === swapRoles.second || piece.originalRole === swapRoles.second)
+  const secondSwapPieces = swap
+    ? cardTargets.filter(piece =>
+        (piece.neutral || (swap.secondOwner === 'own' ? piece.owner === game.turn.color : piece.owner !== game.turn.color))
+        && (piece.role === swap.secondRole || piece.originalRole === swap.secondRole),
+      )
     : [];
   const availableCardTargets = cardTargets.filter(
     piece => !cardMoves.some(move => move.from === piece.square)
@@ -178,6 +194,8 @@ export default function App() {
               ? `Holy War swapped ${event.target.knight} and ${event.target.bishop}.`
             : event.cardId === 'anathema' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'rook' in event.target
               ? `Anathema swapped ${event.target.bishop} and ${event.target.rook}.`
+            : event.cardId === 'evangelists' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
+              ? `Evangelists swapped ${event.target.own} and ${event.target.opponent}.`
           : `Disintegration removed the Pawn on ${event.target}.`,
       );
     } else {
@@ -224,26 +242,31 @@ export default function App() {
   }, [cardMoves, moveCardDests, moveCardId, selectedDefinition?.name]);
 
   const playSwap = useCallback((first: SquareName, second: SquareName) => {
-    if (!selectedInstance || !swapRoles) return;
+    if (!selectedInstance || !swap) return;
     const target = selectedInstance.cardId === 'holy-war'
       ? { knight: first, bishop: second }
-      : { bishop: first, rook: second };
+      : selectedInstance.cardId === 'anathema'
+        ? { bishop: first, rook: second }
+        : { own: first, opponent: second };
     if (reduce({
       type: 'playCard',
       cardId: selectedInstance.cardId,
       cardInstanceId: selectedInstance.id,
       target,
     })) setSelectedCard(null);
-  }, [reduce, selectedInstance, swapRoles]);
+  }, [reduce, selectedInstance, swap]);
 
   const target = useCallback((square: SquareName) => {
     if (!selectedInstance) return;
-    if (swapRoles) {
-      const firstName = titleCase(swapRoles.first);
-      const secondName = titleCase(swapRoles.second);
+    if (swap) {
+      const matchesOwner = (owner: 'own' | 'opponent', piece: (typeof cardTargets)[number]) => piece.neutral
+        || (owner === 'own' ? piece.owner === game.turn.color : piece.owner !== game.turn.color);
+      const choice = (label: string) => label.startsWith('Your ') || label.startsWith('Opponent ')
+        ? label
+        : `a ${label}`;
       if (swapFrom === square) {
         setSwapFrom(null);
-        setMessage(`Piece selection canceled. Choose a ${firstName} or ${secondName}.`);
+        setMessage(`Piece selection canceled. Choose ${choice(swap.firstLabel)} or ${choice(swap.secondLabel)}.`);
         setHasError(false);
         return;
       }
@@ -251,29 +274,40 @@ export default function App() {
       if (!piece) {
         setMessage(
           selectedInstance.cardId === 'anathema'
-            ? `Choose an opposing ${firstName} or ${secondName}.`
-            : `Choose a ${firstName} or ${secondName} you control.`,
+            ? `Choose an opposing ${swap.firstLabel} or ${swap.secondLabel}.`
+            : `Choose ${swap.firstLabel} or ${swap.secondLabel}.`,
         );
         setHasError(true);
         return;
       }
       if (!swapFrom) {
         setSwapFrom(square);
-        const isFirst = piece.role === swapRoles.first || piece.originalRole === swapRoles.first;
-        const isSecond = piece.role === swapRoles.second || piece.originalRole === swapRoles.second;
+        const isFirst = matchesOwner(swap.firstOwner, piece)
+          && (piece.role === swap.firstRole || piece.originalRole === swap.firstRole);
+        const isSecond = matchesOwner(swap.secondOwner, piece)
+          && (piece.role === swap.secondRole || piece.originalRole === swap.secondRole);
+        const nextLabel = isFirst && !isSecond
+          ? choice(swap.secondLabel)
+          : isSecond && !isFirst
+            ? choice(swap.firstLabel)
+            : 'a complementary piece';
         setMessage(
-          `Choose a ${isFirst && !isSecond ? secondName : isSecond && !isFirst ? firstName : 'complementary piece'} to swap with ${square}.`,
+          `Choose ${nextLabel} to swap with ${square}.`,
         );
         setHasError(false);
         return;
       }
       const first = cardTargets.find(candidate => candidate.square === swapFrom)!;
-      const firstMatchesFirst = first.role === swapRoles.first || first.originalRole === swapRoles.first;
-      const firstMatchesSecond = first.role === swapRoles.second || first.originalRole === swapRoles.second;
-      const secondMatchesFirst = piece.role === swapRoles.first || piece.originalRole === swapRoles.first;
-      const secondMatchesSecond = piece.role === swapRoles.second || piece.originalRole === swapRoles.second;
+      const firstMatchesFirst = matchesOwner(swap.firstOwner, first)
+        && (first.role === swap.firstRole || first.originalRole === swap.firstRole);
+      const firstMatchesSecond = matchesOwner(swap.secondOwner, first)
+        && (first.role === swap.secondRole || first.originalRole === swap.secondRole);
+      const secondMatchesFirst = matchesOwner(swap.firstOwner, piece)
+        && (piece.role === swap.firstRole || piece.originalRole === swap.firstRole);
+      const secondMatchesSecond = matchesOwner(swap.secondOwner, piece)
+        && (piece.role === swap.secondRole || piece.originalRole === swap.secondRole);
       if (!((firstMatchesFirst && secondMatchesSecond) || (secondMatchesFirst && firstMatchesSecond))) {
-        setMessage(`${selectedDefinition?.name} needs one ${firstName} and one ${secondName}.`);
+        setMessage(`${selectedDefinition?.name} needs ${swap.firstLabel} and ${swap.secondLabel}.`);
         setHasError(true);
         return;
       }
@@ -321,7 +355,7 @@ export default function App() {
     })) {
       setSelectedCard(null);
     }
-  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, cardTargets, moveCardId, playSwap, reduce, selectedDefinition?.name, selectedInstance, swapFrom, swapRoles]);
+  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, cardTargets, game.turn.color, moveCardId, playSwap, reduce, selectedDefinition?.name, selectedInstance, swap, swapFrom]);
 
   const playMoveCard = () => {
     if (!selectedInstance || !moveCardId || cardMoves.length === 0) return;
@@ -356,6 +390,8 @@ export default function App() {
           ? 'Choose a Knight, then choose a Bishop to swap with it.'
           : card.cardId === 'anathema'
             ? "Choose one of your opponent's Bishops, then choose one of their Rooks."
+          : card.cardId === 'evangelists'
+            ? "Choose one of your Bishops, then choose one of your opponent's Bishops."
           : card.cardId === 'forced-march' || card.cardId === 'annexation'
           ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : 'sideways'} destination.`
           : 'Choose one of your Pawns on the board.'
@@ -464,32 +500,32 @@ export default function App() {
 
               <details className="keyboard-controls">
                 <summary>Keyboard controls</summary>
-                {swapRoles ? (
+                {swap ? (
                   <form onSubmit={event => {
                     event.preventDefault();
                     if (keyboardFrom && keyboardTo) playSwap(keyboardFrom, keyboardTo);
                   }}>
                     <label>
-                      {titleCase(swapRoles.first)}
+                      {swap.firstLabel}
                       <select
-                        aria-label={`${titleCase(swapRoles.first)} target`}
+                        aria-label={`${swap.firstLabel} target`}
                         onChange={event => setKeyboardFrom(event.target.value as SquareName)}
                         required
                         value={keyboardFrom}
                       >
-                        <option value="">Choose {titleCase(swapRoles.first)}</option>
+                        <option value="">Choose {swap.firstLabel}</option>
                         {firstSwapPieces.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
                       </select>
                     </label>
                     <label>
-                      {titleCase(swapRoles.second)}
+                      {swap.secondLabel}
                       <select
-                        aria-label={`${titleCase(swapRoles.second)} target`}
+                        aria-label={`${swap.secondLabel} target`}
                         onChange={event => setKeyboardTo(event.target.value as SquareName)}
                         required
                         value={keyboardTo}
                       >
-                        <option value="">Choose {titleCase(swapRoles.second)}</option>
+                        <option value="">Choose {swap.secondLabel}</option>
                         {secondSwapPieces.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
                       </select>
                     </label>
@@ -602,7 +638,7 @@ export default function App() {
             <span className="timing">
               {preview.id === 'holy-war' || preview.id === 'anathema'
                 ? 'Play after your move'
-                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation'
+                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>

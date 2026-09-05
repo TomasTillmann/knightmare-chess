@@ -75,4 +75,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  evangelists: {
+    id: 'evangelists',
+    name: 'Evangelists',
+    points: 6,
+    unique: false,
+    image: '/KC11_card2.png',
+    description: "Swap the positions of one of your Bishops and one of your opponent's Bishops.",
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };

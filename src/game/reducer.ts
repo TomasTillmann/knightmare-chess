@@ -21,6 +21,7 @@ import type {
   CardMove,
   Color,
   EnPassantOpportunity,
+  EvangelistsTarget,
   GameAction,
   GameErrorCode,
   GameState,
@@ -595,8 +596,18 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
 }
 
 const SWAP_CARDS = {
-  'holy-war': { name: 'Holy War', first: 'knight', second: 'bishop', own: true },
-  anathema: { name: 'Anathema', first: 'bishop', second: 'rook', own: false },
+  'holy-war': {
+    name: 'Holy War', firstField: 'knight', firstRole: 'knight', firstOwner: 'own',
+    secondField: 'bishop', secondRole: 'bishop', secondOwner: 'own', replacesMove: false,
+  },
+  anathema: {
+    name: 'Anathema', firstField: 'bishop', firstRole: 'bishop', firstOwner: 'opponent',
+    secondField: 'rook', secondRole: 'rook', secondOwner: 'opponent', replacesMove: false,
+  },
+  evangelists: {
+    name: 'Evangelists', firstField: 'own', firstRole: 'bishop', firstOwner: 'own',
+    secondField: 'opponent', secondRole: 'bishop', secondOwner: 'opponent', replacesMove: true,
+  },
 } as const;
 
 type SwapCardId = keyof typeof SWAP_CARDS;
@@ -609,8 +620,8 @@ function playSwapCard(
 ): ApplyResult {
   const color = state.turn.color;
   const config = SWAP_CARDS[cardId];
-  const firstName = config.first[0].toUpperCase() + config.first.slice(1);
-  const secondName = config.second[0].toUpperCase() + config.second.slice(1);
+  const firstName = config.firstRole[0].toUpperCase() + config.firstRole.slice(1);
+  const secondName = config.secondRole[0].toUpperCase() + config.secondRole.slice(1);
   if (
     (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card =>
@@ -622,15 +633,25 @@ function playSwapCard(
   if (state.turn.cardPlays[color] >= 1) {
     return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
   }
-  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
-    return reject(state, 'INVALID_TIMING', `${config.name} is played after the regular move.`);
+  if (
+    config.replacesMove
+      ? state.turn.phase !== 'beforeMove' || state.turn.moveMade
+      : state.turn.phase !== 'afterMove' || !state.turn.moveMade
+  ) {
+    return reject(
+      state,
+      'INVALID_TIMING',
+      config.replacesMove
+        ? `${config.name} is played instead of the regular move.`
+        : `${config.name} is played after the regular move.`,
+    );
   }
   if (!target || typeof target !== 'object' || Array.isArray(target)) {
     return reject(state, 'INVALID_TARGET', `Choose one ${firstName} and one ${secondName}.`);
   }
   const fields = target as Record<string, unknown>;
-  const firstSquare = fields[config.first];
-  const secondSquare = fields[config.second];
+  const firstSquare = fields[config.firstField];
+  const secondSquare = fields[config.secondField];
   if (
     typeof firstSquare !== 'string'
     || typeof secondSquare !== 'string'
@@ -640,9 +661,11 @@ function playSwapCard(
   ) {
     return reject(state, 'INVALID_TARGET', `Choose distinct ${firstName} and ${secondName} squares.`);
   }
-  const parsedTarget: HolyWarTarget | AnathemaTarget = cardId === 'holy-war'
+  const parsedTarget: HolyWarTarget | AnathemaTarget | EvangelistsTarget = cardId === 'holy-war'
     ? { knight: firstSquare as SquareName, bishop: secondSquare as SquareName }
-    : { bishop: firstSquare as SquareName, rook: secondSquare as SquareName };
+    : cardId === 'anathema'
+      ? { bishop: firstSquare as SquareName, rook: secondSquare as SquareName }
+      : { own: firstSquare as SquareName, opponent: secondSquare as SquareName };
   const firstPiece = state.pieces.find(
     piece => piece.zone === 'board' && piece.square === firstSquare,
   );
@@ -652,21 +675,25 @@ function playSwapCard(
   if (!firstPiece || !secondPiece) {
     return reject(state, 'INVALID_TARGET', 'Both selected squares must contain pieces.');
   }
-  const validOwner = (piece: PieceState) => piece.neutral
-    || (config.own ? piece.owner === color : piece.owner !== color);
+  const validOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
+    || (owner === 'own' ? piece.owner === color : piece.owner !== color);
   if (
-    !validOwner(firstPiece)
-    || !validOwner(secondPiece)
+    !validOwner(firstPiece, config.firstOwner)
+    || !validOwner(secondPiece, config.secondOwner)
   ) {
     return reject(
       state,
       'WRONG_OWNER',
-      config.own ? 'Choose pieces you control.' : 'Choose pieces belonging to your opponent.',
+      cardId === 'holy-war'
+        ? 'Choose pieces you control.'
+        : cardId === 'anathema'
+          ? 'Choose pieces belonging to your opponent.'
+          : 'Choose one of your Bishops and one of your opponent\'s Bishops.',
     );
   }
   if (
-    (firstPiece.role !== config.first && firstPiece.originalRole !== config.first)
-    || (secondPiece.role !== config.second && secondPiece.originalRole !== config.second)
+    (firstPiece.role !== config.firstRole && firstPiece.originalRole !== config.firstRole)
+    || (secondPiece.role !== config.secondRole && secondPiece.originalRole !== config.secondRole)
   ) {
     return reject(state, 'WRONG_ROLE', `Choose a ${firstName} and a ${secondName}.`);
   }
@@ -676,13 +703,15 @@ function playSwapCard(
   resolved.pieces.find(piece => piece.id === secondPiece.id)!.square = firstSquare as SquareName;
   syncFen(resolved);
   const defender = opposite(color);
+  const consumesMove = config.replacesMove && !isKingInCheck(state, color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId);
+    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, consumesMove);
   }
   if (isKingInCheck(resolved, color)) {
-    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId);
+    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, consumesMove);
   }
 
+  if (config.replacesMove) completeReplacementMove(resolved, color, false);
   spendCard(resolved, cardId, cardInstanceId);
   resolved.history.push({ type: 'cardPlayed', cardId, target: parsedTarget });
   return { ok: true, state: resolved };
@@ -693,13 +722,37 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
-  if (cardId === 'holy-war' || cardId === 'anathema') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists') {
+    const config = SWAP_CARDS[cardId];
+    const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
+      || (owner === 'own' ? piece.owner === state.turn.color : piece.owner !== state.turn.color);
+    const candidates = state.pieces.filter(piece => piece.zone === 'board' && piece.square);
+    const firstPieces = candidates.filter(piece =>
+      matchesOwner(piece, config.firstOwner)
+      && (piece.role === config.firstRole || piece.originalRole === config.firstRole),
+    );
+    const secondPieces = candidates.filter(piece =>
+      matchesOwner(piece, config.secondOwner)
+      && (piece.role === config.secondRole || piece.originalRole === config.secondRole),
+    );
+    const targets: Array<HolyWarTarget | AnathemaTarget | EvangelistsTarget> = [];
+    for (const first of firstPieces) {
+      for (const second of secondPieces) {
+        if (first.id === second.id) continue;
+        if (cardId === 'holy-war') targets.push({ knight: first.square!, bishop: second.square! });
+        else if (cardId === 'anathema') targets.push({ bishop: first.square!, rook: second.square! });
+        else targets.push({ own: first.square!, opponent: second.square! });
+      }
+    }
+    return targets;
+  }
   if (cardId !== 'forced-march' && cardId !== 'annexation') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
