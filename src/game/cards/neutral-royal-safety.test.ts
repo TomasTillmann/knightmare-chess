@@ -60,7 +60,8 @@ describe('card effects keep opponent-owned neutral royals safe', () => {
         type: 'cardFizzled', cardId: fixture.cardId, reason: 'SELF_CHECK',
       });
       assert.deepEqual(result.state.pieces, before.pieces);
-      assert.equal(result.state.fen, before.fen);
+      assert.equal(result.state.fen.split(' ')[0], before.fen.split(' ')[0]);
+      assert.deepEqual(result.state.fen.split(' ').slice(1), ['b', '-', '-', '1', '1']);
       assert.equal(result.state.players.white.discard.at(-1)?.cardId, fixture.cardId);
       assert.equal(result.state.players.white.hand.length, 0);
       assert.equal(result.state.turn.phase, 'afterMove');

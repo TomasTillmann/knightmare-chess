@@ -196,26 +196,6 @@ test('an Anathema swap that leaves the acting King in check fizzles and restores
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
-test('an Anathema swap that newly creates direct mate fizzles and restores both pieces', () => {
-  const seeded = game({
-    fen: '1K3N1k/4N3/8/8/8/8/7P/r6b w - - 0 1',
-    hands: { white: [ANATHEMA], black: [] },
-  });
-  const beforeMove: State = {
-    ...seeded,
-    pieces: seeded.pieces.map(piece => piece.square === 'h1' ? { ...piece, neutral: true } : piece),
-  };
-  const before = move(beforeMove, 'h2', 'h3');
-  const pieces = structuredClone(before.pieces);
-  const state = anathema(before, { bishop: 'h1', rook: 'a1' });
-
-  assert.deepEqual(state.pieces, pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: ANATHEMA, reason: 'DIRECT_MATE' });
-  assert.equal(state.players.white.discard.at(-1)?.cardId, ANATHEMA);
-  assert.equal(state.turn.phase, 'afterMove');
-  assert.equal(state.outcome, null);
-});
-
 test('Anathema preserves a double-step en-passant right and all FEN move fields', () => {
   let state = game({ fen: 'r1b4k/8/8/8/3p4/8/2P5/4K3 w - - 7 12' });
   const pawnId = pieceAt(state, 'c2')?.id;

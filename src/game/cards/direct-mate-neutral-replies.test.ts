@@ -20,7 +20,7 @@ interface Fixture {
 const fixtures: Fixture[] = [
   {
     cardId: 'fanatic',
-    fen: '7k/8/6Q1/8/3P4/8/2N5/B3K3 w - - 0 1',
+    fen: '7k/8/6Q1/8/3P4/8/2N1K3/B7 w - - 0 1',
     target: 'd4',
     neutralSquare: 'c2',
     response: { from: 'c2', to: 'a1' },
@@ -44,7 +44,7 @@ const fixtures: Fixture[] = [
   },
   {
     cardId: 'anathema',
-    fen: '8/8/8/8/8/2N5/1r6/kQKb4 w - - 0 1',
+    fen: '8/8/8/8/8/2N3K1/1r6/kQ1b4 w - - 0 1',
     target: { bishop: 'd1', rook: 'b2' },
     neutralSquare: 'c3',
     response: { from: 'c3', to: 'b1' },
@@ -61,7 +61,7 @@ const fixtures: Fixture[] = [
   },
   {
     cardId: 'squaring-the-circle',
-    fen: 'n4N1k/5K2/8/8/8/8/1R4B1/B7 w - - 0 1',
+    fen: 'n4N1k/5K2/8/8/8/8/1R4B1/N7 w - - 0 1',
     target: [{ from: 'b2', to: 'h1' }],
     neutralSquare: 'g2',
     response: { from: 'g2', to: 'h1' },
