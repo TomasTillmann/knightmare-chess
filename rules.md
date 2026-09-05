@@ -523,6 +523,8 @@ Anathema is played after the acting player's Regular Move. Select one physical B
 
 Evangelists is played instead of the acting player's Regular Move. Select one Bishop belonging to the acting player and one Bishop belonging to the opponent, then exchange their squares simultaneously. Use distinct physical pieces; a neutral Bishop may fill either selection because neutrality makes it valid for friendly- and enemy-piece effects. Current and original identity both count, including transformed original Bishops and promoted Pawns currently acting as Bishops. Preserve every identity field and marker, ignore ordinary movement geometry, and make no capture. A successful swap completes the move for the turn, clears any old en-passant opportunity, and advances the FEN halfmove and fullmove counters as one non-Pawn, non-capture replacement move. Apply the replacement-move direct-mate and King-safety fizzle procedure in §11.6.
 
+Tournament follows the same replacement-move procedure as Evangelists, but selects one Knight belonging to the acting player and one Knight belonging to the opponent. Use the target shape `{ own, opponent }`. Current or original Knight identity qualifies, a neutral Knight may fill either distinct selection, and both physical pieces retain all identity fields and markers when their squares are exchanged.
+
 ## 21. Movement-copying and temporary movement powers
 
 Doppelganger copies the kind of the opponent's just-moved piece for a non-Pawn mover and prohibits capture. Recommended ruling: copy the piece's named/base movement type, not temporary powers granted to it by the card used on the preceding move, unless the copied piece is permanently transformed.

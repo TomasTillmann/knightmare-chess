@@ -15,8 +15,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament'],
     },
     decks: { white: [], black: [] },
   });
@@ -96,7 +96,12 @@ export default function App() {
             firstRole: 'bishop', firstOwner: 'own', firstLabel: 'Your Bishop',
             secondRole: 'bishop', secondOwner: 'opponent', secondLabel: 'Opponent Bishop',
           } as const
-        : null;
+        : selectedDefinition?.id === 'tournament'
+          ? {
+              firstRole: 'knight', firstOwner: 'own', firstLabel: 'Your Knight',
+              secondRole: 'knight', secondOwner: 'opponent', secondLabel: 'Opponent Knight',
+            } as const
+          : null;
   const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
     ? selectedDefinition.id
     : null;
@@ -196,6 +201,8 @@ export default function App() {
               ? `Anathema swapped ${event.target.bishop} and ${event.target.rook}.`
             : event.cardId === 'evangelists' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
               ? `Evangelists swapped ${event.target.own} and ${event.target.opponent}.`
+            : event.cardId === 'tournament' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
+              ? `Tournament swapped ${event.target.own} and ${event.target.opponent}.`
           : `Disintegration removed the Pawn on ${event.target}.`,
       );
     } else {
@@ -392,6 +399,8 @@ export default function App() {
             ? "Choose one of your opponent's Bishops, then choose one of their Rooks."
           : card.cardId === 'evangelists'
             ? "Choose one of your Bishops, then choose one of your opponent's Bishops."
+          : card.cardId === 'tournament'
+            ? "Choose one of your Knights, then choose one of your opponent's Knights."
           : card.cardId === 'forced-march' || card.cardId === 'annexation'
           ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : 'sideways'} destination.`
           : 'Choose one of your Pawns on the board.'
@@ -638,7 +647,7 @@ export default function App() {
             <span className="timing">
               {preview.id === 'holy-war' || preview.id === 'anathema'
                 ? 'Play after your move'
-                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists'
+                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists' || preview.id === 'tournament'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>

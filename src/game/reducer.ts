@@ -608,6 +608,10 @@ const SWAP_CARDS = {
     name: 'Evangelists', firstField: 'own', firstRole: 'bishop', firstOwner: 'own',
     secondField: 'opponent', secondRole: 'bishop', secondOwner: 'opponent', replacesMove: true,
   },
+  tournament: {
+    name: 'Tournament', firstField: 'own', firstRole: 'knight', firstOwner: 'own',
+    secondField: 'opponent', secondRole: 'knight', secondOwner: 'opponent', replacesMove: true,
+  },
 } as const;
 
 type SwapCardId = keyof typeof SWAP_CARDS;
@@ -688,7 +692,7 @@ function playSwapCard(
         ? 'Choose pieces you control.'
         : cardId === 'anathema'
           ? 'Choose pieces belonging to your opponent.'
-          : 'Choose one of your Bishops and one of your opponent\'s Bishops.',
+          : `Choose one of your ${firstName}s and one of your opponent's ${secondName}s.`,
     );
   }
   if (
@@ -722,14 +726,14 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
-  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists' || cardId === 'tournament') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
-  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists' || cardId === 'tournament') {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
       || (owner === 'own' ? piece.owner === state.turn.color : piece.owner !== state.turn.color);

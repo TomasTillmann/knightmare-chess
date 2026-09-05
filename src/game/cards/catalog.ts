@@ -85,4 +85,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  tournament: {
+    id: 'tournament',
+    name: 'Tournament',
+    points: 6,
+    unique: false,
+    image: '/KC12_card3.png',
+    description: "Swap the positions of one of your Knights and one of your opponent's Knights.",
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };
