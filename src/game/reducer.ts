@@ -98,7 +98,12 @@ export function legalDests(state: GameState): Map<SquareName, SquareName[]> {
   const position = positionFor(state);
   const dests = chessgroundDests(position);
   for (const piece of state.pieces) {
-    if (piece.zone !== 'board' || !piece.square || piece.owner !== state.turn.color || piece.role !== 'pawn') continue;
+    if (
+      piece.zone !== 'board'
+      || !piece.square
+      || (piece.owner !== state.turn.color && !piece.neutral)
+      || piece.role !== 'pawn'
+    ) continue;
     for (const opportunity of state.enPassant) {
       const capture = enPassantCapture(state, piece.square, opportunity.target);
       if (!capture) continue;
@@ -347,10 +352,11 @@ function enPassantCapture(state: GameState, from: SquareName, to: SquareName) {
     : undefined;
   if (
     !moving
-    || moving.owner !== state.turn.color
+    || (moving.owner !== state.turn.color && !moving.neutral)
     || moving.role !== 'pawn'
     || !victim
-    || victim.owner === moving.owner
+    || (!moving.neutral && !victim.neutral && victim.owner === moving.owner)
+    || victim.royal
     || state.pieces.some(piece => piece.zone === 'board' && piece.square === to)
   ) return undefined;
 
@@ -1280,9 +1286,12 @@ function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' 
     return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
   }
 
-  if (customEnPassant && position.epSquare !== to) {
+  if (customEnPassant) {
     const next = resolveEnPassant(state, moving.id, customEnPassant.victim.id, toName);
-    if (isKingInCheck(next, state.turn.color)) {
+    if (
+      isKingInCheck(next, state.turn.color)
+      || (moving.neutral && isKingInCheck(next, opposite(state.turn.color)))
+    ) {
       return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
     }
     const setup = setupFor(next);
