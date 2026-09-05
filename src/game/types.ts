@@ -24,6 +24,11 @@ export interface CardInstance {
   cardId: CardId;
 }
 
+export interface CardMove {
+  from: SquareName;
+  to: SquareName;
+}
+
 export interface PlayerState {
   hand: CardInstance[];
   deck: CardInstance[];
@@ -33,7 +38,7 @@ export interface PlayerState {
 export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled';
   cardId?: CardId;
-  target?: SquareName;
+  target?: SquareName | CardMove[];
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;

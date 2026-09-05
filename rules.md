@@ -324,6 +324,14 @@ Fanatic creates no en-passant right. Any pre-existing en-passant opportunity exp
 
 After staging the three-square move, apply the Checkmate Rule before committing it. If Fanatic itself would directly checkmate the opponent, restore the Pawn and spend the card. Then test the acting King's safety as described in §11.6. A successful Fanatic play consumes both the card allowance and the Regular Move; no ordinary chess move follows it that turn.
 
+### 13.5 Forced March
+
+Forced March is played instead of the acting player's Regular Move. Select one or two distinct controlled Pawns and choose a destination for each before moving either one. Each selected Pawn moves exactly one square sideways in either direction relative to the current board orientation. Each destination must be on the board, empty in the initial position, and distinct. Forced March cannot capture, swap the selected Pawns, converge them on one square, or move one into the other's vacated square.
+
+"Pawn" refers to original identity. A non-promoted Pawn transformed into another piece remains eligible and keeps its transformation after moving. A neutral Pawn may be selected by either player. A Pawn carrying King status retains that status, so the complete final position must leave every acting royal piece safe.
+
+Resolve both selected moves simultaneously and test King safety only after the complete result. If Forced March itself would directly checkmate the opponent or its final position leaves the acting King in check, restore every moved Pawn and spend the card under §11.6. A successful play consumes both the card allowance and the Regular Move, creates no en-passant right, and does not promote a Pawn moved to its last rank.
+
 ## 14. Board-changing effects
 
 ### 14.1 Earthquake

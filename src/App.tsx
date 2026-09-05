@@ -6,17 +6,17 @@ import noticesUrl from '../THIRD_PARTY_NOTICES.md?url';
 
 import { ChessBoard } from './ChessBoard.js';
 import { CARD_CATALOG } from './game/cards/catalog.js';
-import { applyAction, legalDests } from './game/reducer.js';
+import { applyAction, forcedMarchDests, legalDests } from './game/reducer.js';
 import { createGameState } from './game/state.js';
-import type { CardInstance, Color, GameState, SquareName, TurnPhase } from './game/types.js';
+import type { CardInstance, CardMove, Color, GameState, SquareName, TurnPhase } from './game/types.js';
 
 const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic'],
-      black: ['disintegration', 'fanatic'],
+      white: ['disintegration', 'fanatic', 'forced-march'],
+      black: ['disintegration', 'fanatic', 'forced-march'],
     },
     decks: { white: [], black: [] },
   });
@@ -75,18 +75,35 @@ export default function App() {
   const [keyboardFrom, setKeyboardFrom] = useState<SquareName | ''>('');
   const [keyboardTo, setKeyboardTo] = useState<SquareName | ''>('');
   const [keyboardTarget, setKeyboardTarget] = useState<SquareName | ''>('');
+  const [forcedMarchFrom, setForcedMarchFrom] = useState<SquareName | null>(null);
+  const [forcedMarchMoves, setForcedMarchMoves] = useState<CardMove[]>([]);
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
   const moves = legalDests(game);
-  const keyboardDestinations = keyboardFrom ? moves.get(keyboardFrom) ?? [] : [];
+  const keyboardDestinations = keyboardFrom
+    ? selectedDefinition?.id === 'forced-march'
+      ? forcedMarchDests(game, keyboardFrom).filter(
+          square => !forcedMarchMoves.some(move => move.to === square),
+        )
+      : moves.get(keyboardFrom) ?? []
+    : [];
   const cardTargets = game.pieces.filter(
     piece => piece.zone === 'board'
       && piece.square
       && (piece.owner === game.turn.color || piece.neutral)
       && piece.originalRole === 'pawn'
       && !piece.promoted
-      && (!piece.royal || selectedDefinition?.id === 'fanatic'),
+      && (!piece.royal || selectedDefinition?.id === 'fanatic' || selectedDefinition?.id === 'forced-march'),
+  );
+  const availableCardTargets = cardTargets.filter(
+    piece => !forcedMarchMoves.some(move => move.from === piece.square)
+      && (
+        selectedDefinition?.id !== 'forced-march'
+        || forcedMarchDests(game, piece.square!).some(
+          square => !forcedMarchMoves.some(move => move.to === square),
+        )
+      ),
   );
 
   const reduce = useCallback((action: Parameters<typeof applyAction>[1]) => {
@@ -101,6 +118,8 @@ export default function App() {
     setKeyboardFrom('');
     setKeyboardTo('');
     setKeyboardTarget('');
+    setForcedMarchFrom(null);
+    setForcedMarchMoves([]);
     if (result.state.outcome) {
       setMessage(
         result.state.outcome.reason === 'stalemate'
@@ -121,6 +140,8 @@ export default function App() {
       setMessage(
         event.cardId === 'fanatic'
           ? `Fanatic moved the Pawn three squares from ${event.target}.`
+          : event.cardId === 'forced-march'
+            ? `Forced March moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} sideways.`
           : `Disintegration removed the Pawn on ${event.target}.`,
       );
     } else {
@@ -138,8 +159,58 @@ export default function App() {
     reduce({ type: 'move', from, to, ...(promotion ? { promotion } : {}) });
   }, [game.pieces, reduce]);
 
+  const addForcedMarchMove = useCallback((from: SquareName, to: SquareName) => {
+    if (!forcedMarchDests(game, from).includes(to)) {
+      setMessage('That Pawn must move one square sideways to an empty square.');
+      setHasError(true);
+      return;
+    }
+    if (forcedMarchMoves.some(move => move.from === from || move.to === to)) {
+      setMessage('Choose a different Pawn and destination.');
+      setHasError(true);
+      return;
+    }
+    const next = [...forcedMarchMoves, { from, to }];
+    setForcedMarchMoves(next);
+    setForcedMarchFrom(null);
+    setKeyboardFrom('');
+    setKeyboardTo('');
+    setMessage(
+      next.length === 2
+        ? 'Two Pawn moves ready. Play Forced March.'
+        : 'One Pawn move ready. Play the card now, or choose one more Pawn.',
+    );
+    setHasError(false);
+  }, [forcedMarchMoves, game]);
+
   const target = useCallback((square: SquareName) => {
     if (!selectedInstance) return;
+    if (selectedInstance.cardId === 'forced-march') {
+      if (forcedMarchFrom) {
+        if (square === forcedMarchFrom) {
+          setForcedMarchFrom(null);
+          setMessage('Pawn selection canceled. Choose a Pawn.');
+          setHasError(false);
+        } else {
+          addForcedMarchMove(forcedMarchFrom, square);
+        }
+        return;
+      }
+      if (forcedMarchMoves.length >= 2) {
+        setMessage('Two Pawn moves are already ready. Play Forced March.');
+        setHasError(true);
+        return;
+      }
+      if (!availableCardTargets.some(piece => piece.square === square)) {
+        setMessage('Choose one of your available Pawns.');
+        setHasError(true);
+        return;
+      }
+      setForcedMarchFrom(square);
+      setMessage(`Pawn ${square} selected. Choose an empty square beside it.`);
+      setHasError(false);
+      return;
+    }
     if (reduce({
       type: 'playCard',
       cardId: selectedInstance.cardId,
@@ -148,7 +219,17 @@ export default function App() {
     })) {
       setSelectedCard(null);
     }
-  }, [reduce, selectedInstance]);
+  }, [addForcedMarchMove, availableCardTargets, forcedMarchFrom, forcedMarchMoves.length, reduce, selectedInstance]);
+
+  const playForcedMarch = () => {
+    if (!selectedInstance || selectedInstance.cardId !== 'forced-march' || forcedMarchMoves.length === 0) return;
+    if (reduce({
+      type: 'playCard',
+      cardId: selectedInstance.cardId,
+      cardInstanceId: selectedInstance.id,
+      target: forcedMarchMoves,
+    })) setSelectedCard(null);
+  };
 
   const reset = () => {
     setGame(demoGame());
@@ -158,15 +239,27 @@ export default function App() {
     setKeyboardFrom('');
     setKeyboardTo('');
     setKeyboardTarget('');
+    setForcedMarchFrom(null);
+    setForcedMarchMoves([]);
   };
 
   const selectCard = (card: CardInstance) => {
     const selecting = selectedCard !== card.id;
     setPreviewId(card.cardId);
     setSelectedCard(selecting ? card.id : null);
-    setMessage(selecting ? 'Choose one of your Pawns on the board.' : 'Card deselected. Make a legal move or select it again.');
+    setMessage(
+      selecting
+        ? card.cardId === 'forced-march'
+          ? 'Choose a Pawn, then choose its sideways destination.'
+          : 'Choose one of your Pawns on the board.'
+        : 'Card deselected. Make a legal move or select it again.',
+    );
     setHasError(false);
     setKeyboardTarget('');
+    setKeyboardFrom('');
+    setKeyboardTo('');
+    setForcedMarchFrom(null);
+    setForcedMarchMoves([]);
   };
 
   const status = game.outcome
@@ -224,6 +317,7 @@ export default function App() {
               <ChessBoard
                 onMove={move}
                 onTarget={target}
+                selectedTarget={forcedMarchFrom}
                 state={game}
                 targeting={Boolean(selectedCard)}
               />
@@ -235,6 +329,17 @@ export default function App() {
                   {message}
                 </p>
                 <div className="controls__buttons">
+                  {selectedDefinition?.id === 'forced-march' ? (
+                    <button
+                      aria-label="Play Forced March"
+                      className="button button--primary"
+                      disabled={forcedMarchMoves.length === 0 || Boolean(forcedMarchFrom)}
+                      onClick={playForcedMarch}
+                      type="button"
+                    >
+                      Play ({forcedMarchMoves.length}/2)
+                    </button>
+                  ) : null}
                   <button className="button button--ghost" onClick={reset} type="button">Reset</button>
                   <button
                     className="button button--primary"
@@ -251,7 +356,43 @@ export default function App() {
 
               <details className="keyboard-controls">
                 <summary>Keyboard controls</summary>
-                {selectedCard ? (
+                {selectedDefinition?.id === 'forced-march' ? (
+                  <form onSubmit={event => {
+                    event.preventDefault();
+                    if (keyboardFrom && keyboardTo) addForcedMarchMove(keyboardFrom, keyboardTo);
+                  }}>
+                    <label>
+                      Pawn
+                      <select
+                        aria-label="Pawn source"
+                        disabled={forcedMarchMoves.length >= 2}
+                        onChange={event => {
+                          setKeyboardFrom(event.target.value as SquareName);
+                          setKeyboardTo('');
+                        }}
+                        required
+                        value={keyboardFrom}
+                      >
+                        <option value="">Choose Pawn</option>
+                        {availableCardTargets.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
+                      </select>
+                    </label>
+                    <label>
+                      Sideways to
+                      <select
+                        aria-label="Pawn destination"
+                        disabled={!keyboardFrom}
+                        onChange={event => setKeyboardTo(event.target.value as SquareName)}
+                        required
+                        value={keyboardTo}
+                      >
+                        <option value="">Choose square</option>
+                        {keyboardDestinations.map(square => <option key={square} value={square}>{square}</option>)}
+                      </select>
+                    </label>
+                    <button className="button button--primary" type="submit">Add move</button>
+                  </form>
+                ) : selectedCard ? (
                   <form onSubmit={event => {
                     event.preventDefault();
                     if (keyboardTarget) target(keyboardTarget);
@@ -320,7 +461,9 @@ export default function App() {
             <h2>{preview.name}</h2>
             <p>{preview.description.replaceAll('*', '')}</p>
             <span className="timing">
-              {preview.id === 'fanatic' ? 'Play instead of your move' : 'Play before or after your move'}
+              {preview.id === 'fanatic' || preview.id === 'forced-march'
+                ? 'Play instead of your move'
+                : 'Play before or after your move'}
             </span>
           </aside>
         </div>

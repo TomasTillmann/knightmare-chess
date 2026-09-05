@@ -9,11 +9,12 @@ import type { GameState, SquareName } from './game/types.js';
 interface Props {
   state: GameState;
   targeting: boolean;
+  selectedTarget?: SquareName | null;
   onMove: (from: SquareName, to: SquareName) => void;
   onTarget: (square: SquareName) => void;
 }
 
-export function ChessBoard({ state, targeting, onMove, onTarget }: Props) {
+export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const api = useRef<Api>(null);
 
@@ -53,8 +54,8 @@ export function ChessBoard({ state, targeting, onMove, onTarget }: Props) {
         },
       },
     });
-    if (targeting) ground.selectSquare(null);
-  }, [onMove, onTarget, state, targeting]);
+    if (targeting) ground.selectSquare(selectedTarget ?? null);
+  }, [onMove, onTarget, selectedTarget, state, targeting]);
 
   return (
     <div

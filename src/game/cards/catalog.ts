@@ -34,4 +34,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  'forced-march': {
+    id: 'forced-march',
+    name: 'Forced March',
+    points: 3,
+    unique: false,
+    image: '/KC2_card2.png',
+    description: 'Move one or two of your Pawns sideways, in either direction, one square each.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };

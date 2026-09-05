@@ -17,6 +17,7 @@ import {
 import type {
   ApplyResult,
   BoardOrientation,
+  CardMove,
   Color,
   GameAction,
   GameErrorCode,
@@ -92,6 +93,31 @@ export function legalDests(state: GameState): Map<SquareName, SquareName[]> {
     for (const [from, targets] of dests) dests.set(from, targets.filter(target => target !== kingSquare));
   }
   return dests;
+}
+
+export function forcedMarchDests(state: GameState, from: SquareName): SquareName[] {
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (
+    !pawn
+    || (pawn.owner !== state.turn.color && !pawn.neutral)
+    || pawn.originalRole !== 'pawn'
+    || pawn.promoted
+  ) return [];
+
+  const square = parseSquare(from);
+  const [forwardFile, forwardRank] = FANATIC_FORWARD[state.orientation];
+  const board = setupFor(state).board;
+  return [
+    [forwardRank, -forwardFile],
+    [-forwardRank, forwardFile],
+  ].flatMap(([fileStep, rankStep]) => {
+    const file = squareFile(square) + fileStep;
+    const rank = squareRank(square) + rankStep;
+    const destination = rank * 8 + file;
+    return file < 0 || file > 7 || rank < 0 || rank > 7 || board.has(destination)
+      ? []
+      : [makeSquare(destination)];
+  });
 }
 
 function syncFen(state: GameState): void {
@@ -285,10 +311,105 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   return { ok: true, state: resolved };
 }
 
+function playForcedMarch(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'forced-march' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Forced March is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Forced March is played instead of the regular move.');
+  }
+  if (!Array.isArray(target) || target.length < 1 || target.length > 2) {
+    return reject(state, 'INVALID_TARGET', 'Choose one or two Pawn moves.');
+  }
+
+  const moves: CardMove[] = [];
+  for (const candidate of target) {
+    if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+      return reject(state, 'INVALID_TARGET', 'Each Pawn move needs a source and destination.');
+    }
+    const { from, to } = candidate as Record<string, unknown>;
+    if (typeof from !== 'string' || typeof to !== 'string' || !SQUARE.test(from) || !SQUARE.test(to)) {
+      return reject(state, 'INVALID_TARGET', 'Each Pawn move needs valid board squares.');
+    }
+    moves.push({ from: from as SquareName, to: to as SquareName });
+  }
+  if (new Set(moves.map(move => move.from)).size !== moves.length) {
+    return reject(state, 'INVALID_TARGET', 'Choose each Pawn only once.');
+  }
+  if (new Set(moves.map(move => move.to)).size !== moves.length) {
+    return reject(state, 'ILLEGAL_MOVE', 'Each Pawn needs a different destination.');
+  }
+
+  const pawnIds: string[] = [];
+  for (const move of moves) {
+    const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
+    if (!pawn) return reject(state, 'INVALID_TARGET', `There is no Pawn on ${move.from}.`);
+    if (pawn.owner !== color && !pawn.neutral) {
+      return reject(state, 'WRONG_OWNER', 'Choose one of your own Pawns.');
+    }
+    if (pawn.originalRole !== 'pawn' || pawn.promoted) {
+      return reject(state, 'WRONG_ROLE', 'Forced March can target only an unpromoted Pawn.');
+    }
+    if (!forcedMarchDests(state, move.from).includes(move.to)) {
+      return reject(state, 'ILLEGAL_MOVE', 'Each Pawn must move sideways to an empty square.');
+    }
+    pawnIds.push(pawn.id);
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  moves.forEach((move, index) => {
+    resolved.pieces.find(piece => piece.id === pawnIds[index])!.square = move.to;
+  });
+
+  if (positionFor(resolved, opposite(color)).isCheckmate()) {
+    return fizzleCard(state, 'forced-march', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'forced-march', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  completeReplacementMove(resolved, color, true);
+  spendCard(resolved, 'forced-march', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'forced-march', target: moves });
+  return { ok: true, state: resolved };
+}
+
 function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
+  if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
+}
+
+function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId !== 'forced-march') {
+    return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
+  }
+
+  const steps = state.pieces.flatMap(piece =>
+    piece.zone === 'board' && piece.square
+      ? forcedMarchDests(state, piece.square).map(to => ({ from: piece.square!, to }))
+      : [],
+  );
+  const targets: CardMove[][] = steps.map(step => [step]);
+  for (let first = 0; first < steps.length; first += 1) {
+    for (let second = first + 1; second < steps.length; second += 1) {
+      if (steps[first].from !== steps[second].from && steps[first].to !== steps[second].to) {
+        targets.push([steps[first], steps[second]]);
+      }
+    }
+  }
+  return targets;
 }
 
 function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' }>): ApplyResult {
@@ -381,9 +502,8 @@ function endTurn(state: GameState): ApplyResult {
   };
   const position = positionFor(next);
   const canEscapeWithCard = next.players[nextColor].hand.some(card =>
-    next.pieces.some(piece => {
-      if (piece.zone !== 'board' || !piece.square) return false;
-      const result = playCard(next, card.cardId, piece.square, card.id);
+    cardPlayTargets(next, card.cardId).some(target => {
+      const result = playCard(next, card.cardId, target, card.id);
       if (!result.ok || result.state.outcome) return false;
       if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
       if (result.state.turn.moveMade) return !isKingInCheck(result.state, nextColor);
