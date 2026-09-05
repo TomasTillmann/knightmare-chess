@@ -44,6 +44,11 @@ export interface AnathemaTarget {
   rook: SquareName;
 }
 
+export interface SiegeTarget {
+  knight: SquareName;
+  rook: SquareName;
+}
+
 export interface EvangelistsTarget {
   own: SquareName;
   opponent: SquareName;
@@ -58,7 +63,7 @@ export interface PlayerState {
 export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled';
   cardId?: CardId;
-  target?: SquareName | CardMove[] | HolyWarTarget | AnathemaTarget | EvangelistsTarget;
+  target?: SquareName | CardMove[] | HolyWarTarget | AnathemaTarget | SiegeTarget | EvangelistsTarget;
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;

@@ -115,4 +115,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  siege: {
+    id: 'siege',
+    name: 'Siege',
+    points: 7,
+    unique: false,
+    image: '/KC15_card1.png',
+    description: 'Swap the positions of one of your Knights and one of your Rooks.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };

@@ -15,8 +15,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege'],
     },
     decks: { white: [], black: [] },
   });
@@ -96,22 +96,27 @@ export default function App() {
               firstRole: 'rook', firstOwner: 'own', firstLabel: 'Rook',
               secondRole: 'bishop', secondOwner: 'own', secondLabel: 'Bishop',
             } as const
-          : selectedDefinition?.id === 'evangelists'
+          : selectedDefinition?.id === 'siege'
             ? {
-                firstRole: 'bishop', firstOwner: 'own', firstLabel: 'Your Bishop',
-                secondRole: 'bishop', secondOwner: 'opponent', secondLabel: 'Opponent Bishop',
+                firstRole: 'knight', firstOwner: 'own', firstLabel: 'Knight',
+                secondRole: 'rook', secondOwner: 'own', secondLabel: 'Rook',
               } as const
-            : selectedDefinition?.id === 'tournament'
+            : selectedDefinition?.id === 'evangelists'
               ? {
-                  firstRole: 'knight', firstOwner: 'own', firstLabel: 'Your Knight',
-                  secondRole: 'knight', secondOwner: 'opponent', secondLabel: 'Opponent Knight',
+                  firstRole: 'bishop', firstOwner: 'own', firstLabel: 'Your Bishop',
+                  secondRole: 'bishop', secondOwner: 'opponent', secondLabel: 'Opponent Bishop',
                 } as const
-              : selectedDefinition?.id === 'lost-castle'
+              : selectedDefinition?.id === 'tournament'
                 ? {
-                    firstRole: 'rook', firstOwner: 'own', firstLabel: 'Your Rook',
-                    secondRole: 'rook', secondOwner: 'opponent', secondLabel: 'Opponent Rook',
+                    firstRole: 'knight', firstOwner: 'own', firstLabel: 'Your Knight',
+                    secondRole: 'knight', secondOwner: 'opponent', secondLabel: 'Opponent Knight',
                   } as const
-                : null;
+                : selectedDefinition?.id === 'lost-castle'
+                  ? {
+                      firstRole: 'rook', firstOwner: 'own', firstLabel: 'Your Rook',
+                      secondRole: 'rook', secondOwner: 'opponent', secondLabel: 'Opponent Rook',
+                    } as const
+                  : null;
   const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
     ? selectedDefinition.id
     : null;
@@ -205,12 +210,14 @@ export default function App() {
             ? `Annexation moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
           : event.cardId === 'forced-march'
             ? `Forced March moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} sideways.`
-            : event.cardId === 'holy-war' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'knight' in event.target
+            : event.cardId === 'holy-war' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'knight' in event.target && 'bishop' in event.target
               ? `Holy War swapped ${event.target.knight} and ${event.target.bishop}.`
-            : event.cardId === 'anathema' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'rook' in event.target
+            : event.cardId === 'anathema' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'bishop' in event.target && 'rook' in event.target
               ? `Anathema swapped ${event.target.bishop} and ${event.target.rook}.`
-            : event.cardId === 'cathedral' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'rook' in event.target
+            : event.cardId === 'cathedral' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'rook' in event.target && 'bishop' in event.target
               ? `Cathedral swapped ${event.target.rook} and ${event.target.bishop}.`
+            : event.cardId === 'siege' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'knight' in event.target && 'rook' in event.target
+              ? `Siege swapped ${event.target.knight} and ${event.target.rook}.`
             : event.cardId === 'evangelists' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
               ? `Evangelists swapped ${event.target.own} and ${event.target.opponent}.`
             : event.cardId === 'tournament' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
@@ -270,7 +277,9 @@ export default function App() {
         ? { bishop: first, rook: second }
         : selectedInstance.cardId === 'cathedral'
           ? { rook: first, bishop: second }
-          : { own: first, opponent: second };
+          : selectedInstance.cardId === 'siege'
+            ? { knight: first, rook: second }
+            : { own: first, opponent: second };
     if (reduce({
       type: 'playCard',
       cardId: selectedInstance.cardId,
@@ -415,6 +424,8 @@ export default function App() {
             ? "Choose one of your opponent's Bishops, then choose one of their Rooks."
           : card.cardId === 'cathedral'
             ? 'Choose one of your Rooks, then choose one of your Bishops.'
+          : card.cardId === 'siege'
+            ? 'Choose one of your Knights, then choose one of your Rooks.'
           : card.cardId === 'evangelists'
             ? "Choose one of your Bishops, then choose one of your opponent's Bishops."
           : card.cardId === 'tournament'
@@ -665,7 +676,7 @@ export default function App() {
             <h2>{preview.name}</h2>
             <p>{preview.description.replaceAll('*', '')}</p>
             <span className="timing">
-              {preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'cathedral'
+              {preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'cathedral' || preview.id === 'siege'
                 ? 'Play after your move'
                 : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
                 ? 'Play instead of your move'
