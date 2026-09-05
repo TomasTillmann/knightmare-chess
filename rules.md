@@ -531,6 +531,8 @@ Lost Castle follows the same replacement-move procedure as Tournament, but selec
 
 Siege follows the same after-move procedure as Holy War, but selects one Knight and one Rook controlled by the acting player. Use the target shape `{ knight, rook }`. Current or original role qualifies, including promoted Pawns currently acting as the named role, and a neutral Knight or Rook may fill either distinct selection. Exchange the pieces simultaneously without capture or movement geometry and preserve all identity fields and markers. Use §11.6 if the swap newly creates direct checkmate or leaves the acting King in check.
 
+Holy Quest follows the same after-move procedure as Anathema, but selects one Bishop and one Knight belonging to the opponent. Use the target shape `{ bishop, knight }`. Current or original role qualifies, including promoted Pawns currently acting as the named role, and a neutral Bishop or Knight may fill either distinct selection. Exchange the pieces simultaneously without capture or movement geometry and preserve ownership, identity, and markers. Use §11.6 if the swap newly creates direct checkmate or leaves the acting King in check.
+
 ## 21. Movement-copying and temporary movement powers
 
 Doppelganger copies the kind of the opponent's just-moved piece for a non-Pawn mover and prohibits capture. Recommended ruling: copy the piece's named/base movement type, not temporary powers granted to it by the card used on the preceding move, unless the copied piece is permanently transformed.

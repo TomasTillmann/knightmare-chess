@@ -125,4 +125,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  'holy-quest': {
+    id: 'holy-quest',
+    name: 'Holy Quest',
+    points: 7,
+    unique: false,
+    image: '/KC14_card1.png',
+    description: 'Swap the positions of a Bishop and a Knight belonging to your opponent.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };
