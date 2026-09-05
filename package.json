@@ -1,0 +1,31 @@
+{
+  "name": "knightmare-chess",
+  "private": true,
+  "version": "0.0.0",
+  "license": "GPL-3.0-or-later",
+  "engines": { "node": ">=22.12.0" },
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "test": "tsx --test src/game/cards/*.test.ts",
+    "test:watch": "tsx --test --watch src/game/cards/*.test.ts",
+    "test:ui": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lichess-org/chessground": "^10.1.1",
+    "chessops": "^0.15.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.4.1",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  }
+}
