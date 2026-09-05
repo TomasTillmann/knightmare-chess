@@ -29,6 +29,11 @@ export interface CardMove {
   to: SquareName;
 }
 
+export interface EnPassantOpportunity {
+  target: SquareName;
+  pawnId: string;
+}
+
 export interface PlayerState {
   hand: CardInstance[];
   deck: CardInstance[];
@@ -58,6 +63,7 @@ export interface GameState {
   effects: unknown[];
   history: GameEvent[];
   orientation: BoardOrientation;
+  enPassant: EnPassantOpportunity[];
   outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' } | null;
 }
 

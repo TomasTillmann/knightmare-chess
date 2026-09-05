@@ -324,7 +324,15 @@ Fanatic creates no en-passant right. Any pre-existing en-passant opportunity exp
 
 After staging the three-square move, apply the Checkmate Rule before committing it. If Fanatic itself would directly checkmate the opponent, restore the Pawn and spend the card. Then test the acting King's safety as described in §11.6. A successful Fanatic play consumes both the card allowance and the Regular Move; no ordinary chess move follows it that turn.
 
-### 13.5 Forced March
+### 13.5 Annexation
+
+Annexation is played instead of the acting player's Regular Move. Select one or two distinct controlled Pawns and choose every destination before moving either one. Each selected Pawn moves exactly two squares forward in its original owner's direction. Both the intervening square and destination must be on the board and empty in the initial position. Annexation cannot capture, and one selected Pawn cannot use a square vacated by the other.
+
+Resolve both moves simultaneously. A non-promoted transformed Pawn remains eligible and keeps its transformation; a neutral Pawn may be selected by either player but follows its original owner's forward direction. Reaching the last rank does not promote because Annexation does not authorize promotion. Test direct mate and the acting King's safety only after the complete result, using the replacement-move fizzle procedure in §11.6.
+
+A Pawn that began this card on its orientation-adjusted starting square remains vulnerable to en passant on the opponent's immediately following move. When two such Pawns move, each qualifying capture remains available independently; passing up those opportunities expires all of them at the end of that reply move. A successful Annexation consumes both the card allowance and the Regular Move.
+
+### 13.6 Forced March
 
 Forced March is played instead of the acting player's Regular Move. Select one or two distinct controlled Pawns and choose a destination for each before moving either one. Each selected Pawn moves exactly one square sideways in either direction relative to the current board orientation. Each destination must be on the board, empty in the initial position, and distinct. Forced March cannot capture, swap the selected Pawns, converge them on one square, or move one into the other's vacated square.
 

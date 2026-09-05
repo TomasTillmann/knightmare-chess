@@ -6,7 +6,7 @@ import noticesUrl from '../THIRD_PARTY_NOTICES.md?url';
 
 import { ChessBoard } from './ChessBoard.js';
 import { CARD_CATALOG } from './game/cards/catalog.js';
-import { applyAction, forcedMarchDests, legalDests } from './game/reducer.js';
+import { annexationDests, applyAction, forcedMarchDests, legalDests } from './game/reducer.js';
 import { createGameState } from './game/state.js';
 import type { CardInstance, CardMove, Color, GameState, SquareName, TurnPhase } from './game/types.js';
 
@@ -15,8 +15,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'forced-march'],
-      black: ['disintegration', 'fanatic', 'forced-march'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march'],
     },
     decks: { white: [], black: [] },
   });
@@ -75,16 +75,22 @@ export default function App() {
   const [keyboardFrom, setKeyboardFrom] = useState<SquareName | ''>('');
   const [keyboardTo, setKeyboardTo] = useState<SquareName | ''>('');
   const [keyboardTarget, setKeyboardTarget] = useState<SquareName | ''>('');
-  const [forcedMarchFrom, setForcedMarchFrom] = useState<SquareName | null>(null);
-  const [forcedMarchMoves, setForcedMarchMoves] = useState<CardMove[]>([]);
+  const [cardMoveFrom, setCardMoveFrom] = useState<SquareName | null>(null);
+  const [cardMoves, setCardMoves] = useState<CardMove[]>([]);
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
+  const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
+    ? selectedDefinition.id
+    : null;
+  const moveCardDests = (from: SquareName) => moveCardId === 'annexation'
+    ? annexationDests(game, from)
+    : forcedMarchDests(game, from);
   const moves = legalDests(game);
   const keyboardDestinations = keyboardFrom
-    ? selectedDefinition?.id === 'forced-march'
-      ? forcedMarchDests(game, keyboardFrom).filter(
-          square => !forcedMarchMoves.some(move => move.to === square),
+    ? moveCardId
+      ? moveCardDests(keyboardFrom).filter(
+          square => !cardMoves.some(move => move.to === square),
         )
       : moves.get(keyboardFrom) ?? []
     : [];
@@ -94,14 +100,14 @@ export default function App() {
       && (piece.owner === game.turn.color || piece.neutral)
       && piece.originalRole === 'pawn'
       && !piece.promoted
-      && (!piece.royal || selectedDefinition?.id === 'fanatic' || selectedDefinition?.id === 'forced-march'),
+      && (!piece.royal || selectedDefinition?.id === 'fanatic' || Boolean(moveCardId)),
   );
   const availableCardTargets = cardTargets.filter(
-    piece => !forcedMarchMoves.some(move => move.from === piece.square)
+    piece => !cardMoves.some(move => move.from === piece.square)
       && (
-        selectedDefinition?.id !== 'forced-march'
-        || forcedMarchDests(game, piece.square!).some(
-          square => !forcedMarchMoves.some(move => move.to === square),
+        !moveCardId
+        || moveCardDests(piece.square!).some(
+          square => !cardMoves.some(move => move.to === square),
         )
       ),
   );
@@ -118,8 +124,8 @@ export default function App() {
     setKeyboardFrom('');
     setKeyboardTo('');
     setKeyboardTarget('');
-    setForcedMarchFrom(null);
-    setForcedMarchMoves([]);
+    setCardMoveFrom(null);
+    setCardMoves([]);
     if (result.state.outcome) {
       setMessage(
         result.state.outcome.reason === 'stalemate'
@@ -140,6 +146,8 @@ export default function App() {
       setMessage(
         event.cardId === 'fanatic'
           ? `Fanatic moved the Pawn three squares from ${event.target}.`
+          : event.cardId === 'annexation'
+            ? `Annexation moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
           : event.cardId === 'forced-march'
             ? `Forced March moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} sideways.`
           : `Disintegration removed the Pawn on ${event.target}.`,
@@ -159,45 +167,49 @@ export default function App() {
     reduce({ type: 'move', from, to, ...(promotion ? { promotion } : {}) });
   }, [game.pieces, reduce]);
 
-  const addForcedMarchMove = useCallback((from: SquareName, to: SquareName) => {
-    if (!forcedMarchDests(game, from).includes(to)) {
-      setMessage('That Pawn must move one square sideways to an empty square.');
+  const addCardMove = useCallback((from: SquareName, to: SquareName) => {
+    if (!moveCardDests(from).includes(to)) {
+      setMessage(
+        moveCardId === 'annexation'
+          ? 'That Pawn needs two clear forward squares.'
+          : 'That Pawn must move one square sideways to an empty square.',
+      );
       setHasError(true);
       return;
     }
-    if (forcedMarchMoves.some(move => move.from === from || move.to === to)) {
+    if (cardMoves.some(move => move.from === from || move.to === to)) {
       setMessage('Choose a different Pawn and destination.');
       setHasError(true);
       return;
     }
-    const next = [...forcedMarchMoves, { from, to }];
-    setForcedMarchMoves(next);
-    setForcedMarchFrom(null);
+    const next = [...cardMoves, { from, to }];
+    setCardMoves(next);
+    setCardMoveFrom(null);
     setKeyboardFrom('');
     setKeyboardTo('');
     setMessage(
       next.length === 2
-        ? 'Two Pawn moves ready. Play Forced March.'
+        ? `Two Pawn moves ready. Play ${selectedDefinition?.name}.`
         : 'One Pawn move ready. Play the card now, or choose one more Pawn.',
     );
     setHasError(false);
-  }, [forcedMarchMoves, game]);
+  }, [cardMoves, moveCardDests, moveCardId, selectedDefinition?.name]);
 
   const target = useCallback((square: SquareName) => {
     if (!selectedInstance) return;
-    if (selectedInstance.cardId === 'forced-march') {
-      if (forcedMarchFrom) {
-        if (square === forcedMarchFrom) {
-          setForcedMarchFrom(null);
+    if (moveCardId) {
+      if (cardMoveFrom) {
+        if (square === cardMoveFrom) {
+          setCardMoveFrom(null);
           setMessage('Pawn selection canceled. Choose a Pawn.');
           setHasError(false);
         } else {
-          addForcedMarchMove(forcedMarchFrom, square);
+          addCardMove(cardMoveFrom, square);
         }
         return;
       }
-      if (forcedMarchMoves.length >= 2) {
-        setMessage('Two Pawn moves are already ready. Play Forced March.');
+      if (cardMoves.length >= 2) {
+        setMessage(`Two Pawn moves are already ready. Play ${selectedDefinition?.name}.`);
         setHasError(true);
         return;
       }
@@ -206,8 +218,12 @@ export default function App() {
         setHasError(true);
         return;
       }
-      setForcedMarchFrom(square);
-      setMessage(`Pawn ${square} selected. Choose an empty square beside it.`);
+      setCardMoveFrom(square);
+      setMessage(
+        moveCardId === 'annexation'
+          ? `Pawn ${square} selected. Choose its two-square forward destination.`
+          : `Pawn ${square} selected. Choose an empty square beside it.`,
+      );
       setHasError(false);
       return;
     }
@@ -219,15 +235,15 @@ export default function App() {
     })) {
       setSelectedCard(null);
     }
-  }, [addForcedMarchMove, availableCardTargets, forcedMarchFrom, forcedMarchMoves.length, reduce, selectedInstance]);
+  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, moveCardId, reduce, selectedDefinition?.name, selectedInstance]);
 
-  const playForcedMarch = () => {
-    if (!selectedInstance || selectedInstance.cardId !== 'forced-march' || forcedMarchMoves.length === 0) return;
+  const playMoveCard = () => {
+    if (!selectedInstance || !moveCardId || cardMoves.length === 0) return;
     if (reduce({
       type: 'playCard',
       cardId: selectedInstance.cardId,
       cardInstanceId: selectedInstance.id,
-      target: forcedMarchMoves,
+      target: cardMoves,
     })) setSelectedCard(null);
   };
 
@@ -239,8 +255,8 @@ export default function App() {
     setKeyboardFrom('');
     setKeyboardTo('');
     setKeyboardTarget('');
-    setForcedMarchFrom(null);
-    setForcedMarchMoves([]);
+    setCardMoveFrom(null);
+    setCardMoves([]);
   };
 
   const selectCard = (card: CardInstance) => {
@@ -249,8 +265,8 @@ export default function App() {
     setSelectedCard(selecting ? card.id : null);
     setMessage(
       selecting
-        ? card.cardId === 'forced-march'
-          ? 'Choose a Pawn, then choose its sideways destination.'
+        ? card.cardId === 'forced-march' || card.cardId === 'annexation'
+          ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : 'sideways'} destination.`
           : 'Choose one of your Pawns on the board.'
         : 'Card deselected. Make a legal move or select it again.',
     );
@@ -258,8 +274,8 @@ export default function App() {
     setKeyboardTarget('');
     setKeyboardFrom('');
     setKeyboardTo('');
-    setForcedMarchFrom(null);
-    setForcedMarchMoves([]);
+    setCardMoveFrom(null);
+    setCardMoves([]);
   };
 
   const status = game.outcome
@@ -317,7 +333,7 @@ export default function App() {
               <ChessBoard
                 onMove={move}
                 onTarget={target}
-                selectedTarget={forcedMarchFrom}
+                selectedTarget={cardMoveFrom}
                 state={game}
                 targeting={Boolean(selectedCard)}
               />
@@ -329,15 +345,15 @@ export default function App() {
                   {message}
                 </p>
                 <div className="controls__buttons">
-                  {selectedDefinition?.id === 'forced-march' ? (
+                  {moveCardId ? (
                     <button
-                      aria-label="Play Forced March"
+                      aria-label={`Play ${selectedDefinition?.name}`}
                       className="button button--primary"
-                      disabled={forcedMarchMoves.length === 0 || Boolean(forcedMarchFrom)}
-                      onClick={playForcedMarch}
+                      disabled={cardMoves.length === 0 || Boolean(cardMoveFrom)}
+                      onClick={playMoveCard}
                       type="button"
                     >
-                      Play ({forcedMarchMoves.length}/2)
+                      Play ({cardMoves.length}/2)
                     </button>
                   ) : null}
                   <button className="button button--ghost" onClick={reset} type="button">Reset</button>
@@ -356,16 +372,16 @@ export default function App() {
 
               <details className="keyboard-controls">
                 <summary>Keyboard controls</summary>
-                {selectedDefinition?.id === 'forced-march' ? (
+                {moveCardId ? (
                   <form onSubmit={event => {
                     event.preventDefault();
-                    if (keyboardFrom && keyboardTo) addForcedMarchMove(keyboardFrom, keyboardTo);
+                    if (keyboardFrom && keyboardTo) addCardMove(keyboardFrom, keyboardTo);
                   }}>
                     <label>
                       Pawn
                       <select
                         aria-label="Pawn source"
-                        disabled={forcedMarchMoves.length >= 2}
+                        disabled={cardMoves.length >= 2}
                         onChange={event => {
                           setKeyboardFrom(event.target.value as SquareName);
                           setKeyboardTo('');
@@ -461,7 +477,7 @@ export default function App() {
             <h2>{preview.name}</h2>
             <p>{preview.description.replaceAll('*', '')}</p>
             <span className="timing">
-              {preview.id === 'fanatic' || preview.id === 'forced-march'
+              {preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>

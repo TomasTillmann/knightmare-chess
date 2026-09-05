@@ -34,6 +34,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  annexation: {
+    id: 'annexation',
+    name: 'Annexation',
+    points: 3,
+    unique: false,
+    image: '/KC2_card1.png',
+    description:
+      'Move one or two of your Pawns forward, two squares each. Neither one may make a capture. A Pawn which was on its starting square may still be captured *en passant* after this move, if an enemy Pawn is in position to do so.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   'forced-march': {
     id: 'forced-march',
     name: 'Forced March',
