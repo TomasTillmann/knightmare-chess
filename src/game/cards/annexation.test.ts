@@ -357,6 +357,36 @@ describe('Annexation en-passant rights and FEN state', () => {
     assert.equal(pieceAt(move(reply, 'd5', 'e6'), 'e5'), undefined);
   });
 
+  it('lets an opponent-owned neutral Pawn claim an Annexation en-passant right', () => {
+    const seeded = game({
+      fen: '7k/4p3/8/3P4/8/8/8/K7 w - - 0 1',
+    });
+    const before: State = {
+      ...seeded,
+      pieces: seeded.pieces.map(piece =>
+        piece.square === 'e7' || piece.square === 'd5' ? { ...piece, neutral: true } : piece,
+      ),
+    };
+    const annexedPawnId = pieceAt(before, 'e7')!.id;
+    const capturerId = pieceAt(before, 'd5')!.id;
+    const reply = endTurn(ok(play(before, shifts(['e7', 'e5']))));
+
+    assert.deepEqual(reply.enPassant, [{ target: 'e6', pawnId: annexedPawnId }]);
+    assert.equal(legalDests(reply).get('d5')?.includes('e6'), true);
+    const snapshot = structuredClone(reply);
+    const captured = move(reply, 'd5', 'e6');
+    assert.deepEqual(reply, snapshot);
+    assert.deepEqual(
+      captured.pieces.find(piece => piece.id === annexedPawnId),
+      { ...pieceAt(reply, 'e5'), square: null, zone: 'captured' },
+    );
+    assert.equal(pieceAt(captured, 'e6')?.id, capturerId);
+    assert.deepEqual(captured.enPassant, []);
+    assert.deepEqual(captured.history.at(-1), {
+      type: 'move', from: 'd5', to: 'e6', capturedId: annexedPawnId,
+    });
+  });
+
   it('does not grant en passant to a Pawn that did not start on its starting square', () => {
     const before = game({ fen: '7k/8/8/3p4/8/4P3/8/K7 w - - 5 8' });
     const after = ok(play(before, shifts(['e3', 'e5'])));
