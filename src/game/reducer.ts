@@ -15,6 +15,7 @@ import {
 } from 'chessops/util';
 
 import type {
+  AnathemaTarget,
   ApplyResult,
   BoardOrientation,
   CardMove,
@@ -593,75 +594,97 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   return { ok: true, state: completed };
 }
 
-function playHolyWar(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+const SWAP_CARDS = {
+  'holy-war': { name: 'Holy War', first: 'knight', second: 'bishop', own: true },
+  anathema: { name: 'Anathema', first: 'bishop', second: 'rook', own: false },
+} as const;
+
+type SwapCardId = keyof typeof SWAP_CARDS;
+
+function playSwapCard(
+  state: GameState,
+  cardId: SwapCardId,
+  target: unknown,
+  cardInstanceId?: unknown,
+): ApplyResult {
   const color = state.turn.color;
+  const config = SWAP_CARDS[cardId];
+  const firstName = config.first[0].toUpperCase() + config.first.slice(1);
+  const secondName = config.second[0].toUpperCase() + config.second.slice(1);
   if (
     (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card =>
-      card.cardId === 'holy-war' && (cardInstanceId === undefined || card.id === cardInstanceId),
+      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
     )
   ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Holy War is not in your hand.');
+    return reject(state, 'CARD_NOT_IN_HAND', `${config.name} is not in your hand.`);
   }
   if (state.turn.cardPlays[color] >= 1) {
     return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
   }
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
-    return reject(state, 'INVALID_TIMING', 'Holy War is played after the regular move.');
+    return reject(state, 'INVALID_TIMING', `${config.name} is played after the regular move.`);
   }
   if (!target || typeof target !== 'object' || Array.isArray(target)) {
-    return reject(state, 'INVALID_TARGET', 'Choose one Knight and one Bishop.');
+    return reject(state, 'INVALID_TARGET', `Choose one ${firstName} and one ${secondName}.`);
   }
-  const { knight, bishop } = target as Record<string, unknown>;
+  const fields = target as Record<string, unknown>;
+  const firstSquare = fields[config.first];
+  const secondSquare = fields[config.second];
   if (
-    typeof knight !== 'string'
-    || typeof bishop !== 'string'
-    || !SQUARE.test(knight)
-    || !SQUARE.test(bishop)
-    || knight === bishop
+    typeof firstSquare !== 'string'
+    || typeof secondSquare !== 'string'
+    || !SQUARE.test(firstSquare)
+    || !SQUARE.test(secondSquare)
+    || firstSquare === secondSquare
   ) {
-    return reject(state, 'INVALID_TARGET', 'Choose distinct Knight and Bishop squares.');
+    return reject(state, 'INVALID_TARGET', `Choose distinct ${firstName} and ${secondName} squares.`);
   }
-  const parsedTarget: HolyWarTarget = {
-    knight: knight as SquareName,
-    bishop: bishop as SquareName,
-  };
-  const knightPiece = state.pieces.find(
-    piece => piece.zone === 'board' && piece.square === parsedTarget.knight,
+  const parsedTarget: HolyWarTarget | AnathemaTarget = cardId === 'holy-war'
+    ? { knight: firstSquare as SquareName, bishop: secondSquare as SquareName }
+    : { bishop: firstSquare as SquareName, rook: secondSquare as SquareName };
+  const firstPiece = state.pieces.find(
+    piece => piece.zone === 'board' && piece.square === firstSquare,
   );
-  const bishopPiece = state.pieces.find(
-    piece => piece.zone === 'board' && piece.square === parsedTarget.bishop,
+  const secondPiece = state.pieces.find(
+    piece => piece.zone === 'board' && piece.square === secondSquare,
   );
-  if (!knightPiece || !bishopPiece) {
+  if (!firstPiece || !secondPiece) {
     return reject(state, 'INVALID_TARGET', 'Both selected squares must contain pieces.');
   }
+  const validOwner = (piece: PieceState) => piece.neutral
+    || (config.own ? piece.owner === color : piece.owner !== color);
   if (
-    (knightPiece.owner !== color && !knightPiece.neutral)
-    || (bishopPiece.owner !== color && !bishopPiece.neutral)
+    !validOwner(firstPiece)
+    || !validOwner(secondPiece)
   ) {
-    return reject(state, 'WRONG_OWNER', 'Choose pieces you control.');
+    return reject(
+      state,
+      'WRONG_OWNER',
+      config.own ? 'Choose pieces you control.' : 'Choose pieces belonging to your opponent.',
+    );
   }
   if (
-    (knightPiece.role !== 'knight' && knightPiece.originalRole !== 'knight')
-    || (bishopPiece.role !== 'bishop' && bishopPiece.originalRole !== 'bishop')
+    (firstPiece.role !== config.first && firstPiece.originalRole !== config.first)
+    || (secondPiece.role !== config.second && secondPiece.originalRole !== config.second)
   ) {
-    return reject(state, 'WRONG_ROLE', 'Choose a Knight and a Bishop.');
+    return reject(state, 'WRONG_ROLE', `Choose a ${firstName} and a ${secondName}.`);
   }
 
   const resolved = structuredClone(state);
-  resolved.pieces.find(piece => piece.id === knightPiece.id)!.square = parsedTarget.bishop;
-  resolved.pieces.find(piece => piece.id === bishopPiece.id)!.square = parsedTarget.knight;
+  resolved.pieces.find(piece => piece.id === firstPiece.id)!.square = secondSquare as SquareName;
+  resolved.pieces.find(piece => piece.id === secondPiece.id)!.square = firstSquare as SquareName;
   syncFen(resolved);
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'holy-war', 'DIRECT_MATE', cardInstanceId);
+    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId);
   }
   if (isKingInCheck(resolved, color)) {
-    return fizzleCard(state, 'holy-war', 'SELF_CHECK', cardInstanceId);
+    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId);
   }
 
-  spendCard(resolved, 'holy-war', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'holy-war', target: parsedTarget });
+  spendCard(resolved, cardId, cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId, target: parsedTarget });
   return { ok: true, state: resolved };
 }
 
@@ -670,7 +693,9 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
-  if (cardId === 'holy-war') return playHolyWar(state, target, cardInstanceId);
+  if (cardId === 'holy-war' || cardId === 'anathema') {
+    return playSwapCard(state, cardId, target, cardInstanceId);
+  }
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 

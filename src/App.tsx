@@ -15,8 +15,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema'],
     },
     decks: { white: [], black: [] },
   });
@@ -81,6 +81,11 @@ export default function App() {
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
+  const swapRoles = selectedDefinition?.id === 'holy-war'
+    ? { first: 'knight', second: 'bishop' } as const
+    : selectedDefinition?.id === 'anathema'
+      ? { first: 'bishop', second: 'rook' } as const
+      : null;
   const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
     ? selectedDefinition.id
     : null;
@@ -99,20 +104,27 @@ export default function App() {
     if (
       piece.zone !== 'board'
       || !piece.square
-      || (piece.owner !== game.turn.color && !piece.neutral)
     ) return false;
-    if (selectedDefinition?.id === 'holy-war') {
-      return piece.role === 'knight'
-        || piece.originalRole === 'knight'
-        || piece.role === 'bishop'
-        || piece.originalRole === 'bishop';
+    const validOwner = selectedDefinition?.id === 'anathema'
+      ? piece.owner !== game.turn.color || piece.neutral
+      : piece.owner === game.turn.color || piece.neutral;
+    if (!validOwner) return false;
+    if (swapRoles) {
+      return piece.role === swapRoles.first
+        || piece.originalRole === swapRoles.first
+        || piece.role === swapRoles.second
+        || piece.originalRole === swapRoles.second;
     }
     return piece.originalRole === 'pawn'
       && !piece.promoted
       && (!piece.royal || selectedDefinition?.id === 'fanatic' || Boolean(moveCardId));
   });
-  const holyWarKnights = cardTargets.filter(piece => piece.role === 'knight' || piece.originalRole === 'knight');
-  const holyWarBishops = cardTargets.filter(piece => piece.role === 'bishop' || piece.originalRole === 'bishop');
+  const firstSwapPieces = swapRoles
+    ? cardTargets.filter(piece => piece.role === swapRoles.first || piece.originalRole === swapRoles.first)
+    : [];
+  const secondSwapPieces = swapRoles
+    ? cardTargets.filter(piece => piece.role === swapRoles.second || piece.originalRole === swapRoles.second)
+    : [];
   const availableCardTargets = cardTargets.filter(
     piece => !cardMoves.some(move => move.from === piece.square)
       && (
@@ -162,8 +174,10 @@ export default function App() {
             ? `Annexation moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
           : event.cardId === 'forced-march'
             ? `Forced March moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} sideways.`
-            : event.cardId === 'holy-war' && event.target && !Array.isArray(event.target) && typeof event.target === 'object'
+            : event.cardId === 'holy-war' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'knight' in event.target
               ? `Holy War swapped ${event.target.knight} and ${event.target.bishop}.`
+            : event.cardId === 'anathema' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'rook' in event.target
+              ? `Anathema swapped ${event.target.bishop} and ${event.target.rook}.`
           : `Disintegration removed the Pawn on ${event.target}.`,
       );
     } else {
@@ -209,54 +223,63 @@ export default function App() {
     setHasError(false);
   }, [cardMoves, moveCardDests, moveCardId, selectedDefinition?.name]);
 
-  const playHolyWar = useCallback((knight: SquareName, bishop: SquareName) => {
-    if (!selectedInstance || selectedInstance.cardId !== 'holy-war') return;
+  const playSwap = useCallback((first: SquareName, second: SquareName) => {
+    if (!selectedInstance || !swapRoles) return;
+    const target = selectedInstance.cardId === 'holy-war'
+      ? { knight: first, bishop: second }
+      : { bishop: first, rook: second };
     if (reduce({
       type: 'playCard',
       cardId: selectedInstance.cardId,
       cardInstanceId: selectedInstance.id,
-      target: { knight, bishop },
+      target,
     })) setSelectedCard(null);
-  }, [reduce, selectedInstance]);
+  }, [reduce, selectedInstance, swapRoles]);
 
   const target = useCallback((square: SquareName) => {
     if (!selectedInstance) return;
-    if (selectedInstance.cardId === 'holy-war') {
+    if (swapRoles) {
+      const firstName = titleCase(swapRoles.first);
+      const secondName = titleCase(swapRoles.second);
       if (swapFrom === square) {
         setSwapFrom(null);
-        setMessage('Piece selection canceled. Choose a Knight or Bishop.');
+        setMessage(`Piece selection canceled. Choose a ${firstName} or ${secondName}.`);
         setHasError(false);
         return;
       }
       const piece = cardTargets.find(candidate => candidate.square === square);
       if (!piece) {
-        setMessage('Choose a Knight or Bishop you control.');
+        setMessage(
+          selectedInstance.cardId === 'anathema'
+            ? `Choose an opposing ${firstName} or ${secondName}.`
+            : `Choose a ${firstName} or ${secondName} you control.`,
+        );
         setHasError(true);
         return;
       }
       if (!swapFrom) {
         setSwapFrom(square);
-        const isKnight = piece.role === 'knight' || piece.originalRole === 'knight';
-        const isBishop = piece.role === 'bishop' || piece.originalRole === 'bishop';
+        const isFirst = piece.role === swapRoles.first || piece.originalRole === swapRoles.first;
+        const isSecond = piece.role === swapRoles.second || piece.originalRole === swapRoles.second;
         setMessage(
-          `Choose a ${isKnight && !isBishop ? 'Bishop' : isBishop && !isKnight ? 'Knight' : 'complementary piece'} to swap with ${square}.`,
+          `Choose a ${isFirst && !isSecond ? secondName : isSecond && !isFirst ? firstName : 'complementary piece'} to swap with ${square}.`,
         );
         setHasError(false);
         return;
       }
       const first = cardTargets.find(candidate => candidate.square === swapFrom)!;
-      const firstIsKnight = first.role === 'knight' || first.originalRole === 'knight';
-      const firstIsBishop = first.role === 'bishop' || first.originalRole === 'bishop';
-      const secondIsKnight = piece.role === 'knight' || piece.originalRole === 'knight';
-      const secondIsBishop = piece.role === 'bishop' || piece.originalRole === 'bishop';
-      if (!((firstIsKnight && secondIsBishop) || (secondIsKnight && firstIsBishop))) {
-        setMessage('Holy War needs one Knight and one Bishop.');
+      const firstMatchesFirst = first.role === swapRoles.first || first.originalRole === swapRoles.first;
+      const firstMatchesSecond = first.role === swapRoles.second || first.originalRole === swapRoles.second;
+      const secondMatchesFirst = piece.role === swapRoles.first || piece.originalRole === swapRoles.first;
+      const secondMatchesSecond = piece.role === swapRoles.second || piece.originalRole === swapRoles.second;
+      if (!((firstMatchesFirst && secondMatchesSecond) || (secondMatchesFirst && firstMatchesSecond))) {
+        setMessage(`${selectedDefinition?.name} needs one ${firstName} and one ${secondName}.`);
         setHasError(true);
         return;
       }
-      playHolyWar(
-        firstIsKnight && secondIsBishop ? swapFrom : square,
-        firstIsKnight && secondIsBishop ? square : swapFrom,
+      playSwap(
+        firstMatchesFirst && secondMatchesSecond ? swapFrom : square,
+        firstMatchesFirst && secondMatchesSecond ? square : swapFrom,
       );
       return;
     }
@@ -298,7 +321,7 @@ export default function App() {
     })) {
       setSelectedCard(null);
     }
-  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, cardTargets, moveCardId, playHolyWar, reduce, selectedDefinition?.name, selectedInstance, swapFrom]);
+  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, cardTargets, moveCardId, playSwap, reduce, selectedDefinition?.name, selectedInstance, swapFrom, swapRoles]);
 
   const playMoveCard = () => {
     if (!selectedInstance || !moveCardId || cardMoves.length === 0) return;
@@ -331,6 +354,8 @@ export default function App() {
       selecting
         ? card.cardId === 'holy-war'
           ? 'Choose a Knight, then choose a Bishop to swap with it.'
+          : card.cardId === 'anathema'
+            ? "Choose one of your opponent's Bishops, then choose one of their Rooks."
           : card.cardId === 'forced-march' || card.cardId === 'annexation'
           ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : 'sideways'} destination.`
           : 'Choose one of your Pawns on the board.'
@@ -439,33 +464,33 @@ export default function App() {
 
               <details className="keyboard-controls">
                 <summary>Keyboard controls</summary>
-                {selectedDefinition?.id === 'holy-war' ? (
+                {swapRoles ? (
                   <form onSubmit={event => {
                     event.preventDefault();
-                    if (keyboardFrom && keyboardTo) playHolyWar(keyboardFrom, keyboardTo);
+                    if (keyboardFrom && keyboardTo) playSwap(keyboardFrom, keyboardTo);
                   }}>
                     <label>
-                      Knight
+                      {titleCase(swapRoles.first)}
                       <select
-                        aria-label="Knight target"
+                        aria-label={`${titleCase(swapRoles.first)} target`}
                         onChange={event => setKeyboardFrom(event.target.value as SquareName)}
                         required
                         value={keyboardFrom}
                       >
-                        <option value="">Choose Knight</option>
-                        {holyWarKnights.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
+                        <option value="">Choose {titleCase(swapRoles.first)}</option>
+                        {firstSwapPieces.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
                       </select>
                     </label>
                     <label>
-                      Bishop
+                      {titleCase(swapRoles.second)}
                       <select
-                        aria-label="Bishop target"
+                        aria-label={`${titleCase(swapRoles.second)} target`}
                         onChange={event => setKeyboardTo(event.target.value as SquareName)}
                         required
                         value={keyboardTo}
                       >
-                        <option value="">Choose Bishop</option>
-                        {holyWarBishops.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
+                        <option value="">Choose {titleCase(swapRoles.second)}</option>
+                        {secondSwapPieces.map(piece => <option key={piece.id} value={piece.square!}>{piece.square}</option>)}
                       </select>
                     </label>
                     <button className="button button--primary" type="submit">Swap pieces</button>
@@ -575,7 +600,7 @@ export default function App() {
             <h2>{preview.name}</h2>
             <p>{preview.description.replaceAll('*', '')}</p>
             <span className="timing">
-              {preview.id === 'holy-war'
+              {preview.id === 'holy-war' || preview.id === 'anathema'
                 ? 'Play after your move'
                 : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation'
                 ? 'Play instead of your move'

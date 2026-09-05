@@ -65,4 +65,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  anathema: {
+    id: 'anathema',
+    name: 'Anathema',
+    points: 5,
+    unique: false,
+    image: '/KC6_card4.png',
+    description: 'Swap the positions of a Bishop and a Rook belonging to your opponent.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };

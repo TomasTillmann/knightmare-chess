@@ -39,6 +39,11 @@ export interface HolyWarTarget {
   bishop: SquareName;
 }
 
+export interface AnathemaTarget {
+  bishop: SquareName;
+  rook: SquareName;
+}
+
 export interface PlayerState {
   hand: CardInstance[];
   deck: CardInstance[];
@@ -48,7 +53,7 @@ export interface PlayerState {
 export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled';
   cardId?: CardId;
-  target?: SquareName | CardMove[] | HolyWarTarget;
+  target?: SquareName | CardMove[] | HolyWarTarget | AnathemaTarget;
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;
