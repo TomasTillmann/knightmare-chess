@@ -1110,7 +1110,7 @@ function playSwapCard(
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === firstPiece.id)!.square = secondSquare as SquareName;
   resolved.pieces.find(piece => piece.id === secondPiece.id)!.square = firstSquare as SquareName;
-  syncFen(resolved, [firstPiece, secondPiece]);
+  syncFen(resolved, config.replacesMove ? [firstPiece, secondPiece] : []);
   const defender = opposite(color);
   const consumesMove = config.replacesMove && !isKingInCheck(state, color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
