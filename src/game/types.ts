@@ -63,6 +63,7 @@ export interface PlayerState {
 export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled';
   cardId?: CardId;
+  capturedId?: string;
   target?: SquareName | CardMove[] | HolyWarTarget | AnathemaTarget | SiegeTarget | EvangelistsTarget;
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;

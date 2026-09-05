@@ -24,8 +24,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'no-quarter'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'no-quarter'],
     },
     decks: { white: [], black: [] },
   });
@@ -35,13 +35,14 @@ interface HandProps {
   color: Color;
   cards: CardInstance[];
   active: boolean;
+  canPlayNoQuarter: boolean;
   phase: TurnPhase;
   selected: string | null;
   onSelect: (card: CardInstance) => void;
   onPreview: (cardId: string) => void;
 }
 
-function Hand({ color, cards, active, phase, selected, onSelect, onPreview }: HandProps) {
+function Hand({ color, cards, active, canPlayNoQuarter, phase, selected, onSelect, onPreview }: HandProps) {
   return (
     <section className={`hand hand--${color}`} aria-label={`${titleCase(color)} hand`}>
       <div className="hand__label">
@@ -53,14 +54,17 @@ function Hand({ color, cards, active, phase, selected, onSelect, onPreview }: Ha
         {cards.map(card => {
           const definition = CARD_CATALOG[card.cardId];
           if (!definition) return null;
+          const playable = active
+            && definition.timing.includes(phase)
+            && (card.cardId !== 'no-quarter' || canPlayNoQuarter);
           return (
             <button
+              aria-disabled={!playable}
               aria-label={definition.name}
               aria-pressed={selected === card.id}
               className={`card ${selected === card.id ? 'card--selected' : ''}`}
-              disabled={!active || !definition.timing.includes(phase)}
               key={card.id}
-              onClick={() => onSelect(card)}
+              onClick={() => { if (playable) onSelect(card); }}
               onFocus={() => onPreview(card.cardId)}
               onMouseEnter={() => onPreview(card.cardId)}
               type="button"
@@ -90,6 +94,20 @@ export default function App() {
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
+  const lastMove = game.history.at(-1)?.type === 'move' ? game.history.at(-1) : undefined;
+  const noQuarterCapture = lastMove?.capturedId
+    ? game.pieces.find(piece => piece.id === lastMove.capturedId)
+    : undefined;
+  const noQuarterMover = lastMove?.to
+    ? game.pieces.find(piece => piece.zone === 'board' && piece.square === lastMove.to)
+    : undefined;
+  const canPlayNoQuarter = game.turn.phase === 'afterMove'
+    && game.turn.moveMade
+    && game.turn.cardPlays[game.turn.color] < 1
+    && noQuarterCapture?.zone === 'captured'
+    && noQuarterCapture.square === null
+    && noQuarterCapture.owner !== game.turn.color
+    && noQuarterMover?.owner === game.turn.color;
   const swap = selectedDefinition?.id === 'holy-war'
     ? {
         firstRole: 'knight', firstOwner: 'own', firstLabel: 'Knight',
@@ -250,8 +268,14 @@ export default function App() {
           : `${name} was spent, but direct checkmate made its effect fizzle.`,
       );
     } else if (event?.type === 'cardPlayed') {
+      const capturedMove = result.state.history.at(-2);
+      const capturedPiece = capturedMove?.capturedId
+        ? result.state.pieces.find(piece => piece.id === capturedMove.capturedId)
+        : undefined;
       setMessage(
-        event.cardId === 'fanatic'
+        event.cardId === 'no-quarter' && capturedMove?.type === 'move' && capturedPiece
+          ? `No Quarter made the captured piece (${titleCase(capturedPiece.role)}) dead after ${capturedMove.from}–${capturedMove.to}.`
+        : event.cardId === 'fanatic'
           ? `Fanatic moved the Pawn three squares from ${event.target}.`
           : event.cardId === 'annexation'
             ? `Annexation moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
@@ -530,7 +554,11 @@ export default function App() {
     setSelectedCard(selecting ? card.id : null);
     setMessage(
       selecting
-        ? card.cardId === 'holy-war'
+        ? card.cardId === 'no-quarter'
+          ? canPlayNoQuarter
+            ? 'The captured piece is eligible. Play No Quarter now; no target is required.'
+            : 'No Quarter can only be played immediately after your ordinary move captures an enemy piece.'
+        : card.cardId === 'holy-war'
           ? 'Choose a Knight, then choose a Bishop to swap with it.'
           : card.cardId === 'anathema'
             ? "Choose one of your opponent's Bishops, then choose one of their Rooks."
@@ -592,6 +620,7 @@ export default function App() {
           <div className="hands-rail">
             <Hand
               active={!game.outcome && game.turn.color === 'black' && game.turn.cardPlays.black < 1}
+              canPlayNoQuarter={canPlayNoQuarter}
               cards={game.players.black.hand}
               color="black"
               onPreview={setPreviewId}
@@ -601,6 +630,7 @@ export default function App() {
             />
             <Hand
               active={!game.outcome && game.turn.color === 'white' && game.turn.cardPlays.white < 1}
+              canPlayNoQuarter={canPlayNoQuarter}
               cards={game.players.white.hand}
               color="white"
               onPreview={setPreviewId}
@@ -619,13 +649,13 @@ export default function App() {
               <span className="phase">{game.turn.phase === 'beforeMove' ? 'before move' : 'after move'}</span>
             </div>
 
-            <div className={selectedCard ? 'board-frame board-frame--targeting' : 'board-frame'}>
+            <div className={selectedCard && selectedDefinition?.id !== 'no-quarter' ? 'board-frame board-frame--targeting' : 'board-frame'}>
               <ChessBoard
                 onMove={move}
                 onTarget={target}
                 selectedTarget={swapFrom ?? cardMoveFrom}
                 state={game}
-                targeting={Boolean(selectedCard)}
+                targeting={Boolean(selectedCard) && selectedDefinition?.id !== 'no-quarter'}
               />
             </div>
 
@@ -635,6 +665,22 @@ export default function App() {
                   {message}
                 </p>
                 <div className="controls__buttons">
+                  {selectedDefinition?.id === 'no-quarter' ? (
+                    <button
+                      className="button button--primary"
+                      disabled={!canPlayNoQuarter}
+                      onClick={() => {
+                        if (selectedInstance && reduce({
+                          type: 'playCard',
+                          cardId: 'no-quarter',
+                          cardInstanceId: selectedInstance.id,
+                        })) setSelectedCard(null);
+                      }}
+                      type="button"
+                    >
+                      Play No Quarter
+                    </button>
+                  ) : null}
                   {moveCardId ? (
                     <button
                       aria-label={`Play ${selectedDefinition?.name}`}
@@ -733,6 +779,8 @@ export default function App() {
                     </label>
                     <button className="button button--primary" type="submit">Add move</button>
                   </form>
+                ) : selectedDefinition?.id === 'no-quarter' ? (
+                  <p>No target required. Use the Play No Quarter button above.</p>
                 ) : selectedCard ? (
                   <form onSubmit={event => {
                     event.preventDefault();
@@ -802,7 +850,9 @@ export default function App() {
             <h2>{preview.name}</h2>
             <p>{preview.description.replaceAll('*', '')}</p>
             <span className="timing">
-              {preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'holy-quest' || preview.id === 'treason' || preview.id === 'cathedral' || preview.id === 'siege' || preview.id === 'cowardice'
+              {preview.id === 'no-quarter'
+                ? 'Play after an ordinary capture'
+                : preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'holy-quest' || preview.id === 'treason' || preview.id === 'cathedral' || preview.id === 'siege' || preview.id === 'cowardice'
                 ? 'Play after your move'
                 : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'onslaught' || preview.id === 'long-jump' || preview.id === 'dubbing' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
                 ? 'Play instead of your move'

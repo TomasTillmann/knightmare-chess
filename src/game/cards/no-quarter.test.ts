@@ -1,0 +1,340 @@
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
+
+import { CARD_CATALOG } from './catalog.js';
+import { applyAction } from '../reducer.js';
+import { createGameState } from '../state.js';
+
+type State = ReturnType<typeof createGameState>;
+type Result = ReturnType<typeof applyAction>;
+type Action = Parameters<typeof applyAction>[1];
+type Options = NonNullable<Parameters<typeof createGameState>[0]>;
+type Event = State['history'][number] & { capturedId?: string };
+
+const CARD = 'no-quarter';
+const DIRECT = '4k3/r7/8/8/8/8/8/R3K3 w - - 17 42';
+
+function game(options: Options = {}): State {
+  return createGameState({
+    fen: DIRECT,
+    hands: { white: [CARD], black: [] },
+    decks: { white: [], black: [] },
+    ...options,
+  });
+}
+
+function applied(state: State, action: Action): State {
+  const result = applyAction(state, action);
+  if (!result.ok) assert.fail(`${result.error.code}: ${result.error.message}`);
+  return result.state;
+}
+
+function move(state: State, from: string, to: string, promotion?: string): State {
+  return applied(state, {
+    type: 'move',
+    from,
+    to,
+    ...(promotion === undefined ? {} : { promotion }),
+  });
+}
+
+function capture(state = game()): State {
+  return move(state, 'a1', 'a7');
+}
+
+function play(
+  state: State,
+  overrides: { cardInstanceId?: unknown; target?: unknown } = {},
+): Result {
+  const cardInstanceId = state.players[state.turn.color].hand.find(card => card.cardId === CARD)?.id;
+  return applyAction(state, {
+    type: 'playCard',
+    cardId: CARD,
+    cardInstanceId,
+    ...overrides,
+  } as Action);
+}
+
+function ok(result: Result): State {
+  if (!result.ok) assert.fail(`${result.error.code}: ${result.error.message}`);
+  return result.state;
+}
+
+function rejected(
+  before: State,
+  code: string,
+  overrides: { cardInstanceId?: unknown; target?: unknown } = {},
+): void {
+  const snapshot = structuredClone(before);
+  const result = play(before, overrides);
+  if (result.ok) assert.fail(`Expected ${code}, received success`);
+  assert.equal(result.error.code, code);
+  assert.strictEqual(result.state, before, 'rejection must return the input state');
+  assert.deepEqual(before, snapshot, 'rejection must be atomic');
+}
+
+function pieceAt(state: State, square: string) {
+  return state.pieces.find(piece => piece.zone === 'board' && piece.square === square);
+}
+
+function pieceById(state: State, id: string) {
+  return state.pieces.find(piece => piece.id === id);
+}
+
+function capturedPiece(state: State) {
+  return state.pieces.find(piece => piece.zone === 'captured');
+}
+
+describe('No Quarter contract', () => {
+  it('has the complete printed metadata', () => {
+    assert.deepEqual(CARD_CATALOG[CARD], {
+      id: CARD,
+      name: 'No Quarter',
+      points: 4,
+      unique: false,
+      image: '/KC5_card4.png',
+      description:
+        'Play this card after you capture any enemy piece without using a card. The captured piece is now dead and cannot be brought back into play with another card.',
+      timing: ['afterMove'],
+      continuing: false,
+    });
+  });
+
+  it('records the exact physical victim on an ordinary capture', () => {
+    const before = game();
+    const victim = pieceAt(before, 'a7');
+    assert.ok(victim);
+    assert.deepEqual(capture(before).history.at(-1), {
+      type: 'move',
+      from: 'a1',
+      to: 'a7',
+      capturedId: victim.id,
+    });
+  });
+
+  it('moves the just-captured enemy piece from captured to dead', () => {
+    const before = capture();
+    const victim = capturedPiece(before);
+    assert.ok(victim);
+    const after = ok(play(before));
+
+    assert.deepEqual(pieceById(after, victim.id), { ...victim, zone: 'dead' });
+    assert.deepEqual(after.history, [...before.history, { type: 'cardPlayed', cardId: CARD }]);
+  });
+
+  it('works after Black makes an ordinary capture', () => {
+    const initial = game({
+      fen: 'r3k3/8/8/8/8/8/R7/4K3 b - - 23 42',
+      turn: 'black',
+      hands: { white: [], black: [CARD] },
+    });
+    const victim = pieceAt(initial, 'a2');
+    assert.ok(victim);
+    const after = ok(play(move(initial, 'a8', 'a2')));
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+  });
+
+  it('accepts an ordinary en-passant capture', () => {
+    const initial = game({ fen: '4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 10' });
+    const victim = pieceAt(initial, 'd5');
+    assert.ok(victim);
+    const after = ok(play(move(initial, 'e5', 'd6')));
+    assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'dead' });
+  });
+
+  it('accepts an ordinary promotion capture', () => {
+    const initial = game({ fen: '4k2r/6P1/8/8/8/8/8/4K3 w - - 0 20' });
+    const victim = pieceAt(initial, 'h8');
+    assert.ok(victim);
+    const moved = move(initial, 'g7', 'h8', 'queen');
+    const after = ok(play(moved));
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    assert.equal(pieceAt(after, 'h8')?.role, 'queen');
+  });
+
+  it('preserves every identity and effect field on a neutral transformed victim', () => {
+    const seeded = game();
+    const victim = pieceAt(seeded, 'a7');
+    assert.ok(victim);
+    const initial: State = {
+      ...seeded,
+      pieces: seeded.pieces.map(piece => piece.id === victim.id
+        ? { ...piece, role: 'bishop', originalRole: 'knight', promoted: true, neutral: true }
+        : piece),
+    };
+    const before = capture(initial);
+    const transformed = pieceById(before, victim.id);
+    assert.ok(transformed);
+    const after = ok(play(before));
+    assert.deepEqual(pieceById(after, victim.id), { ...transformed, zone: 'dead' });
+  });
+
+  it('spends the exact selected duplicate, discards and replaces it exactly once', () => {
+    const initial = game({
+      hands: { white: [CARD, 'fanatic', CARD], black: [] },
+      decks: { white: ['disintegration'], black: [] },
+    });
+    const before = capture(initial);
+    const kept = before.players.white.hand[0]!;
+    const selected = before.players.white.hand[2]!;
+    const drawn = before.players.white.deck[0]!;
+    const after = ok(play(before, { cardInstanceId: selected.id }));
+
+    assert.equal(after.players.white.hand.some(card => card.id === kept.id), true);
+    assert.equal(after.players.white.hand.some(card => card.id === selected.id), false);
+    assert.equal(after.players.white.hand.at(-1)?.id, drawn.id);
+    assert.deepEqual(after.players.white.deck, []);
+    assert.deepEqual(after.players.white.discard.map(card => card.id), [selected.id]);
+    assert.equal(after.turn.cardPlays.white, 1);
+  });
+
+  it('changes no board or turn-progress state except the victim zone and card lifecycle', () => {
+    const moved = capture(game({
+      fen: 'r3k2r/r7/8/8/8/8/8/R3K2R w KQkq - 17 42',
+      hands: { white: [CARD], black: [] },
+    }));
+    const victim = capturedPiece(moved);
+    assert.ok(victim);
+    const before: State = {
+      ...moved,
+      effects: [{ retained: true }],
+      enPassant: [{ target: 'd6', pawnId: 'retained-opportunity' }],
+    };
+    const after = ok(play(before));
+
+    assert.equal(after.fen, before.fen);
+    assert.equal(after.orientation, before.orientation);
+    assert.deepEqual(after.enPassant, before.enPassant);
+    assert.deepEqual(after.effects, before.effects);
+    assert.equal(after.outcome, before.outcome);
+    assert.deepEqual(after.turn, { ...before.turn, cardPlays: { white: 1, black: 0 } });
+    assert.deepEqual(
+      after.pieces.filter(piece => piece.id !== victim.id),
+      before.pieces.filter(piece => piece.id !== victim.id),
+    );
+  });
+
+  it('does not fizzle when the ordinary capture delivered check or checkmate', () => {
+    const fixtures = [
+      { fen: '4k2r/6P1/8/8/8/8/8/4K3 w - - 0 20', from: 'g7', to: 'h8', promotion: 'queen' },
+      { fen: '7k/7p/6K1/3B4/8/8/8/7R w - - 0 1', from: 'h1', to: 'h7' },
+    ];
+    for (const fixture of fixtures) {
+      const before = move(game({ fen: fixture.fen }), fixture.from, fixture.to, fixture.promotion);
+      const victim = capturedPiece(before);
+      assert.ok(victim);
+      const after = ok(play(before));
+      assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+      assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD });
+    }
+  });
+});
+
+describe('No Quarter eligibility and validation', () => {
+  it('rejects play before the regular move', () => {
+    rejected(game(), 'INVALID_TIMING');
+  });
+
+  it('rejects an immediately preceding non-capturing move', () => {
+    const before = move(
+      game({ fen: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1' }),
+      'a1',
+      'a2',
+    );
+    rejected(before, 'INVALID_TIMING');
+  });
+
+  it('rejects a stale capture from the previous turn', () => {
+    const captured = capture(game({ hands: { white: [CARD], black: [CARD] } }));
+    const nextTurn = applied(captured, { type: 'endTurn' });
+    const stale: State = {
+      ...nextTurn,
+      turn: { ...nextTurn.turn, phase: 'afterMove', moveMade: true },
+    };
+    rejected(stale, 'INVALID_TIMING');
+  });
+
+  it('rejects a capture attributed to a card rather than a regular move', () => {
+    const captured = capture();
+    const before: State = {
+      ...captured,
+      history: [{ type: 'cardPlayed', cardId: 'capture-card' }],
+    };
+    rejected(before, 'INVALID_TIMING');
+  });
+
+  it('allows an omitted instance ID and rejects malformed or nonmatching supplied IDs', () => {
+    const initial = game({
+      hands: { white: [CARD, 'fanatic'], black: [CARD] },
+    });
+    const before = capture(initial);
+    const selected = before.players.white.hand[0]!;
+    const victim = capturedPiece(before);
+    assert.ok(victim);
+    for (const result of [
+      play(before, { cardInstanceId: undefined }),
+      applyAction(before, { type: 'playCard', cardId: CARD }),
+    ]) {
+      const after = ok(result);
+      assert.equal(after.players.white.discard.at(-1)?.id, selected.id);
+      assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    }
+
+    const foreign = before.players.black.hand[0]!.id;
+    const wrongCard = before.players.white.hand[1]!.id;
+    for (const cardInstanceId of ['missing', foreign, wrongCard, null, 42, {}, []]) {
+      rejected(before, 'CARD_NOT_IN_HAND', { cardInstanceId });
+    }
+  });
+
+  it('rejects a second card play in the turn', () => {
+    const captured = capture();
+    const before: State = {
+      ...captured,
+      turn: { ...captured.turn, cardPlays: { white: 1, black: 0 } },
+    };
+    rejected(before, 'CARD_ALREADY_PLAYED');
+  });
+
+  it('is targetless and rejects every supplied target value', () => {
+    const before = capture();
+    for (const target of [null, 'a7', {}, []]) rejected(before, 'INVALID_TARGET', { target });
+  });
+
+  it('rejects missing, unknown, board, or already-dead captured identities', () => {
+    const captured = capture();
+    const victim = capturedPiece(captured);
+    const boardPiece = pieceAt(captured, 'a7');
+    assert.ok(victim && boardPiece);
+    const histories: Event[][] = [
+      [{ type: 'move', from: 'a1', to: 'a7' }],
+      [{ type: 'move', from: 'a1', to: 'a7', capturedId: 'missing' }],
+      [{ type: 'move', from: 'a1', to: 'a7', capturedId: boardPiece.id }],
+    ];
+    for (const history of histories) rejected({ ...captured, history }, 'INVALID_TIMING');
+
+    const dead: State = {
+      ...captured,
+      pieces: captured.pieces.map(piece => piece.id === victim.id ? { ...piece, zone: 'dead' } : piece),
+    };
+    rejected(dead, 'INVALID_TIMING');
+  });
+
+  it('rejects play after game-over', () => {
+    const captured = capture();
+    const finished: State = {
+      ...captured,
+      outcome: { winner: 'white', reason: 'checkmate' },
+    };
+    rejected(finished, 'GAME_OVER');
+  });
+
+  it('cannot gain eligibility by attempting to capture a King', () => {
+    const before = game({ fen: 'k7/8/8/8/8/8/8/R3K3 w - - 0 1' });
+    const result = applyAction(before, { type: 'move', from: 'a1', to: 'a8' });
+    if (result.ok) assert.fail('Kings must never be captured');
+    assert.equal(result.error.code, 'ILLEGAL_MOVE');
+    assert.strictEqual(result.state, before);
+    rejected(before, 'INVALID_TIMING');
+  });
+});

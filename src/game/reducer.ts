@@ -1041,6 +1041,51 @@ function playSwapCard(
   return { ok: true, state: resolved };
 }
 
+function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'no-quarter' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'No Quarter is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'No Quarter must immediately follow your capturing move.');
+  }
+  if (target !== undefined) {
+    return reject(state, 'INVALID_TARGET', 'No Quarter does not take a target.');
+  }
+
+  const move = state.history.at(-1);
+  const captured = move?.type === 'move' && move.capturedId
+    ? state.pieces.find(piece => piece.id === move.capturedId)
+    : undefined;
+  const mover = move?.type === 'move' && move.to
+    ? state.pieces.find(piece => piece.zone === 'board' && piece.square === move.to)
+    : undefined;
+  if (
+    !captured
+    || captured.zone !== 'captured'
+    || captured.square !== null
+    || captured.owner === color
+    || !mover
+    || mover.owner !== color
+  ) {
+    return reject(state, 'INVALID_TIMING', 'No Quarter must immediately follow your ordinary move capturing an enemy piece.');
+  }
+
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === captured.id)!.zone = 'dead';
+  spendCard(resolved, 'no-quarter', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'no-quarter' });
+  return { ok: true, state: resolved };
+}
+
 function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
@@ -1050,6 +1095,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
   if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
   if (cardId === 'cowardice') return playCowardice(state, target, cardInstanceId);
+  if (cardId === 'no-quarter') return playNoQuarter(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
@@ -1177,7 +1223,12 @@ function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' 
     next.fen = makeFen(setup);
     next.turn.phase = 'afterMove';
     next.turn.moveMade = true;
-    next.history.push({ type: 'move', from: fromName, to: toName });
+    next.history.push({
+      type: 'move',
+      from: fromName,
+      to: toName,
+      capturedId: customEnPassant.victim.id,
+    });
     return { ok: true, state: next };
   }
 
@@ -1221,7 +1272,13 @@ function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' 
     : [{ target: makeSquare(position.epSquare), pawnId: moving.id }];
   next.turn.phase = 'afterMove';
   next.turn.moveMade = true;
-  next.history.push({ type: 'move', from: fromName, to: toName, ...(promotion ? { promotion } : {}) });
+  next.history.push({
+    type: 'move',
+    from: fromName,
+    to: toName,
+    ...(promotion ? { promotion } : {}),
+    ...(captured ? { capturedId: captured.id } : {}),
+  });
   return { ok: true, state: next };
 }
 

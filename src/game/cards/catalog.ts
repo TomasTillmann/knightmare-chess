@@ -189,4 +189,15 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  'no-quarter': {
+    id: 'no-quarter',
+    name: 'No Quarter',
+    points: 4,
+    unique: false,
+    image: '/KC5_card4.png',
+    description:
+      'Play this card after you capture any enemy piece without using a card. The captured piece is now dead and cannot be brought back into play with another card.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };

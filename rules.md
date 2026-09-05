@@ -625,6 +625,10 @@ Vulture takes the opponent's last played card into hand. With separate decks, it
 
 Recommended ruling: a Continuing Effect still in play is not in a discard pile and should not be removable by Vulture unless the physical card or official FAQ explicitly permits it. The safe interpretation of "take" is the most recent eligible card in the opponent's discard pile.
 
+### 22.9 No Quarter
+
+No Quarter binds to the exact physical enemy piece captured by the immediately preceding Regular Move, including an en-passant victim or a piece captured during promotion. A capture or removal made by a card, an older turn's capture, or a stale or missing piece identity is ineligible. The piece keeps its owner, current and original roles, promotion, royal, neutral, and attached-effect identity; only its state changes from captured to dead, so it stays off-board and can no longer be returned by another card.
+
 ## 23. Stalemate, repetition, and clocks
 
 Stalemate exists when the player to act is not in check and no legal continuation exists, considering cards legally playable at that time. Under Elf Hill with no legal return square is an official example.
