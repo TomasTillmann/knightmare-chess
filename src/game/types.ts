@@ -34,6 +34,11 @@ export interface EnPassantOpportunity {
   pawnId: string;
 }
 
+export interface HolyWarTarget {
+  knight: SquareName;
+  bishop: SquareName;
+}
+
 export interface PlayerState {
   hand: CardInstance[];
   deck: CardInstance[];
@@ -43,7 +48,7 @@ export interface PlayerState {
 export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled';
   cardId?: CardId;
-  target?: SquareName | CardMove[];
+  target?: SquareName | CardMove[] | HolyWarTarget;
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;

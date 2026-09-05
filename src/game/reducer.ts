@@ -23,6 +23,7 @@ import type {
   GameAction,
   GameErrorCode,
   GameState,
+  HolyWarTarget,
   PieceState,
   Role,
   SquareName,
@@ -108,7 +109,39 @@ export function legalDests(state: GameState): Map<SquareName, SquareName[]> {
     const kingSquare = makeSquare(king);
     for (const [from, targets] of dests) dests.set(from, targets.filter(target => target !== kingSquare));
   }
+  for (const [from, targets] of dests) {
+    const moving = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+    const legal = targets.filter(to => {
+      const promotes = moving?.role === 'pawn' && (to.endsWith('1') || to.endsWith('8'));
+      return movePiece(state, { type: 'move', from, to, ...(promotes ? { promotion: 'queen' } : {}) }).ok;
+    });
+    if (legal.length) dests.set(from, legal);
+    else dests.delete(from);
+  }
   return dests;
+}
+
+function turnView(state: GameState, color: Color): GameState {
+  const view = structuredClone(state);
+  view.turn = {
+    color,
+    phase: 'beforeMove',
+    moveMade: false,
+    cardPlays: { white: 0, black: 0 },
+  };
+  return view;
+}
+
+function hasLegalMove(state: GameState, color: Color): boolean {
+  return [...legalDests(turnView(state, color)).values()].some(dests => dests.length > 0);
+}
+
+function isOrdinaryCheckmate(state: GameState, color: Color): boolean {
+  return isKingInCheck(state, color) && !hasLegalMove(state, color);
+}
+
+function isOrdinaryStalemate(state: GameState, color: Color): boolean {
+  return !isKingInCheck(state, color) && !hasLegalMove(state, color);
 }
 
 export function forcedMarchDests(state: GameState, from: SquareName): SquareName[] {
@@ -195,10 +228,9 @@ function spendCard(state: GameState, cardId: string, cardInstanceId?: unknown): 
 
 function settleBlockedBeforeMove(state: GameState, color: Color): void {
   if (state.turn.phase !== 'beforeMove') return;
-  const continuation = positionFor(state, color);
-  if (continuation.isCheckmate()) {
+  if (isOrdinaryCheckmate(state, color)) {
     state.outcome = { winner: opposite(color), reason: 'checkmate' };
-  } else if (continuation.isStalemate()) {
+  } else if (isOrdinaryStalemate(state, color)) {
     state.outcome = { reason: 'stalemate' };
   }
 }
@@ -341,10 +373,7 @@ function playDisintegration(state: GameState, target: unknown, cardInstanceId?: 
   resolvedPawn.zone = 'dead';
   syncFen(resolved);
 
-  if (
-    !positionFor(state, opposite(color)).isCheckmate()
-    && positionFor(resolved, opposite(color)).isCheckmate()
-  ) {
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'disintegration', 'DIRECT_MATE', cardInstanceId);
   }
 
@@ -405,7 +434,7 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   const resolvedPawn = resolved.pieces.find(piece => piece.id === pawn.id)!;
   resolvedPawn.square = makeSquare(path[2]);
 
-  if (positionFor(resolved, opposite(color)).isCheckmate()) {
+  if (isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'fanatic', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (isKingInCheck(resolved, color)) {
@@ -479,7 +508,7 @@ function playForcedMarch(state: GameState, target: unknown, cardInstanceId?: unk
     resolved.pieces.find(piece => piece.id === pawnIds[index])!.square = move.to;
   });
 
-  if (positionFor(resolved, opposite(color)).isCheckmate()) {
+  if (isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'forced-march', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (isKingInCheck(resolved, color)) {
@@ -552,14 +581,7 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   const completed = structuredClone(resolved);
   completeReplacementMove(completed, color, true, enPassant);
   const defender = opposite(color);
-  const defense = structuredClone(completed);
-  defense.turn = {
-    color: defender,
-    phase: 'beforeMove',
-    moveMade: false,
-    cardPlays: { white: 0, black: 0 },
-  };
-  if (isKingInCheck(defense, defender) && ![...legalDests(defense).values()].some(dests => dests.length)) {
+  if (isOrdinaryCheckmate(completed, defender)) {
     return fizzleCard(state, 'annexation', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (isKingInCheck(resolved, color)) {
@@ -571,11 +593,84 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   return { ok: true, state: completed };
 }
 
+function playHolyWar(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'holy-war' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Holy War is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Holy War is played after the regular move.');
+  }
+  if (!target || typeof target !== 'object' || Array.isArray(target)) {
+    return reject(state, 'INVALID_TARGET', 'Choose one Knight and one Bishop.');
+  }
+  const { knight, bishop } = target as Record<string, unknown>;
+  if (
+    typeof knight !== 'string'
+    || typeof bishop !== 'string'
+    || !SQUARE.test(knight)
+    || !SQUARE.test(bishop)
+    || knight === bishop
+  ) {
+    return reject(state, 'INVALID_TARGET', 'Choose distinct Knight and Bishop squares.');
+  }
+  const parsedTarget: HolyWarTarget = {
+    knight: knight as SquareName,
+    bishop: bishop as SquareName,
+  };
+  const knightPiece = state.pieces.find(
+    piece => piece.zone === 'board' && piece.square === parsedTarget.knight,
+  );
+  const bishopPiece = state.pieces.find(
+    piece => piece.zone === 'board' && piece.square === parsedTarget.bishop,
+  );
+  if (!knightPiece || !bishopPiece) {
+    return reject(state, 'INVALID_TARGET', 'Both selected squares must contain pieces.');
+  }
+  if (
+    (knightPiece.owner !== color && !knightPiece.neutral)
+    || (bishopPiece.owner !== color && !bishopPiece.neutral)
+  ) {
+    return reject(state, 'WRONG_OWNER', 'Choose pieces you control.');
+  }
+  if (
+    (knightPiece.role !== 'knight' && knightPiece.originalRole !== 'knight')
+    || (bishopPiece.role !== 'bishop' && bishopPiece.originalRole !== 'bishop')
+  ) {
+    return reject(state, 'WRONG_ROLE', 'Choose a Knight and a Bishop.');
+  }
+
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === knightPiece.id)!.square = parsedTarget.bishop;
+  resolved.pieces.find(piece => piece.id === bishopPiece.id)!.square = parsedTarget.knight;
+  syncFen(resolved);
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'holy-war', 'DIRECT_MATE', cardInstanceId);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'holy-war', 'SELF_CHECK', cardInstanceId);
+  }
+
+  spendCard(resolved, 'holy-war', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'holy-war', target: parsedTarget });
+  return { ok: true, state: resolved };
+}
+
 function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
+  if (cardId === 'holy-war') return playHolyWar(state, target, cardInstanceId);
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
@@ -688,6 +783,9 @@ function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' 
     );
     if (rook) rook.square = makeSquare(rookCastlesTo(state.turn.color, castle));
   }
+  if (isKingInCheck(next, state.turn.color)) {
+    return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
+  }
   next.fen = makeFen(position.toSetup());
   next.enPassant = position.epSquare === undefined
     ? []
@@ -712,7 +810,6 @@ function endTurn(state: GameState): ApplyResult {
     moveMade: false,
     cardPlays: { white: 0, black: 0 },
   };
-  const position = positionFor(next);
   const canEscapeWithCard = next.players[nextColor].hand.some(card =>
     cardPlayTargets(next, card.cardId).some(target => {
       const result = playCard(next, card.cardId, target, card.id);
@@ -722,9 +819,9 @@ function endTurn(state: GameState): ApplyResult {
       return [...legalDests(result.state).values()].some(targets => targets.length > 0);
     }),
   );
-  if (position.isCheckmate() && !canEscapeWithCard) {
+  if (isOrdinaryCheckmate(next, nextColor) && !canEscapeWithCard) {
     next.outcome = { winner: state.turn.color, reason: 'checkmate' };
-  } else if (position.isStalemate() && !canEscapeWithCard) {
+  } else if (isOrdinaryStalemate(next, nextColor) && !canEscapeWithCard) {
     next.outcome = { reason: 'stalemate' };
   }
   return { ok: true, state: next };

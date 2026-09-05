@@ -517,6 +517,8 @@ Use these principles:
 
 Heresy explicitly makes the opponent move eligible Bishops first. This is sequential, and the acting player's Bishop options are evaluated after the opponent's Bishops have moved.
 
+Holy War is played after the acting player's Regular Move. Select one controlled physical Knight and one controlled physical Bishop, then exchange their squares simultaneously. Current and original identity both count: a transformed original Knight or Bishop remains eligible, and a Pawn promoted into the named role is eligible by its current identity. Each piece carries its current powers and markers to the other square. Neutral pieces may be selected. The swap is not a capture and does not require either piece to be able to move to the other's square. If the completed swap newly creates direct checkmate or leaves the acting King in check, restore both pieces and spend the card under §11.6.
+
 ## 21. Movement-copying and temporary movement powers
 
 Doppelganger copies the kind of the opponent's just-moved piece for a non-Pawn mover and prohibits capture. Recommended ruling: copy the piece's named/base movement type, not temporary powers granted to it by the card used on the preceding move, unless the copied piece is permanently transformed.

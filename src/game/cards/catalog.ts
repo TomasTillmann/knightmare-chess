@@ -55,4 +55,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  'holy-war': {
+    id: 'holy-war',
+    name: 'Holy War',
+    points: 3,
+    unique: false,
+    image: '/KC3_card1.png',
+    description: 'Swap the positions of one of your Knights and one of your Bishops.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };
