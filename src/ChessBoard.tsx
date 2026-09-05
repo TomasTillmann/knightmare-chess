@@ -3,14 +3,14 @@ import type { Api } from '@lichess-org/chessground/api';
 import type { Key } from '@lichess-org/chessground/types';
 import { useLayoutEffect, useRef } from 'react';
 
-import { boardFen, legalDests, positionFor } from './game/reducer.js';
+import { boardFen, isKingInCheck, legalDests } from './game/reducer.js';
 import type { GameState, SquareName } from './game/types.js';
 
 interface Props {
   state: GameState;
   targeting: boolean;
   selectedTarget?: SquareName | null;
-  onMove: (from: SquareName, to: SquareName) => void;
+  onMove: (from: SquareName, to: SquareName) => boolean;
   onTarget: (square: SquareName) => void;
 }
 
@@ -27,30 +27,45 @@ export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget 
   useLayoutEffect(() => {
     const ground = api.current;
     if (!ground) return;
-    const opponent = state.turn.color === 'white' ? 'black' : 'white';
-    const checked = positionFor(state, state.turn.color).isCheck()
-      ? state.turn.color
-      : positionFor(state, opponent).isCheck()
-        ? opponent
-        : false;
+    const checkedRoyals = new Map<Key, string>(state.pieces
+      .filter(piece => piece.royal && piece.zone === 'board' && piece.square)
+      .filter(royal => isKingInCheck({
+        ...state,
+        pieces: state.pieces.map(piece =>
+          piece.owner === royal.owner && piece.royal && piece.id !== royal.id
+            ? { ...piece, royal: false }
+            : piece,
+        ),
+      }, royal.owner))
+      .map(piece => [piece.square as Key, 'check'] as const));
 
     ground.set({
       fen: boardFen(state),
       orientation: 'white',
       turnColor: state.turn.color,
-      check: checked,
+      check: false,
       coordinates: true,
+      highlight: { custom: checkedRoyals },
       animation: { enabled: true, duration: 180 },
       draggable: { enabled: !targeting },
       selectable: { enabled: true },
       movable: {
-        color: targeting ? undefined : state.turn.color,
+        color: targeting ? undefined : 'both',
         dests: targeting ? new Map() : legalDests(state),
         free: false,
         showDests: true,
         rookCastle: true,
         events: {
-          after: (from, to) => onMove(from as SquareName, to as SquareName),
+          after: (from, to) => {
+            if (!onMove(from as SquareName, to as SquareName)) {
+              ground.set({
+                fen: boardFen(state),
+                turnColor: state.turn.color,
+                lastMove: undefined,
+                movable: { color: 'both', dests: legalDests(state) },
+              });
+            }
+          },
         },
       },
     });

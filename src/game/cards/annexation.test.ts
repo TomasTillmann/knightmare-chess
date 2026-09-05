@@ -218,6 +218,21 @@ describe('Annexation target validation', () => {
     assert.deepEqual(pieceAt(after, 'a5'), { ...pawn, square: 'a5' });
   });
 
+  it('discovers a neutral Pawn capture against a piece with the same owner', () => {
+    const seeded = game({ fen: '7k/8/8/3p4/4r3/8/8/K7 w - - 0 1' });
+    const before: State = {
+      ...seeded,
+      pieces: seeded.pieces.map(piece => piece.square === 'd5' ? { ...piece, neutral: true } : piece),
+    };
+    const pawn = pieceAt(before, 'd5');
+    const victim = pieceAt(before, 'e4');
+
+    assert.equal(legalDests(before).get('d5')?.includes('e4'), true);
+    const after = move(before, 'd5', 'e4');
+    assert.equal(pieceAt(after, 'e4')?.id, pawn?.id);
+    assert.equal(after.pieces.find(piece => piece.id === victim?.id)?.zone, 'captured');
+  });
+
   it('uses original Pawn identity but rejects promoted Pawns', () => {
     const seeded = game();
     const transformed: State = {
@@ -332,6 +347,8 @@ describe('Annexation en-passant rights and FEN state', () => {
     const after = ok(play(before, shifts(['e2', 'e4'])));
     assert.deepEqual(after.enPassant, [{ target: 'e3', pawnId }]);
     assert.equal(after.fen, '7k/8/8/8/3pP3/8/8/K7 b - e3 0 20');
+    const position = positionFor(after);
+    assert.equal(position.isCheck(), !position.ctx().checkers.isEmpty());
 
     const reply = endTurn(after);
     assert.equal(legalDests(reply).get('d4')?.includes('e3'), true);
@@ -369,9 +386,14 @@ describe('Annexation en-passant rights and FEN state', () => {
     };
     const annexedPawnId = pieceAt(before, 'e7')!.id;
     const capturerId = pieceAt(before, 'd5')!.id;
-    const reply = endTurn(ok(play(before, shifts(['e7', 'e5']))));
+    const after = ok(play(before, shifts(['e7', 'e5'])));
+    const reply = endTurn(after);
 
-    assert.deepEqual(reply.enPassant, [{ target: 'e6', pawnId: annexedPawnId }]);
+    assert.deepEqual(after.enPassant, [{ target: 'e6', pawnId: annexedPawnId }]);
+    assert.equal(after.fen.split(' ')[3], '-');
+    const position = positionFor(after);
+    assert.equal(position.isCheck(), !position.ctx().checkers.isEmpty());
+    assert.deepEqual(reply.enPassant, after.enPassant);
     assert.equal(legalDests(reply).get('d5')?.includes('e6'), true);
     const snapshot = structuredClone(reply);
     const captured = move(reply, 'd5', 'e6');

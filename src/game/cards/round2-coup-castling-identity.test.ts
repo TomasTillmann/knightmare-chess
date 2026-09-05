@@ -26,13 +26,20 @@ describe('round-two Coup castling follows physical royal identity', () => {
     assert.equal(prince.royal, false);
 
     const result = applyAction(before, { type: 'move', from: 'e1', to: 'g1' });
+    const rookAlias = applyAction(before, { type: 'move', from: 'e1', to: 'h1' });
 
     assert.deepEqual(before, snapshot, 'legality checks must not mutate the position');
     assert.equal(legalDests(before).get('e1')?.includes('g1') ?? false, false);
+    assert.equal(legalDests(before).get('e1')?.includes('h1') ?? false, false);
     assert.equal(result.ok, false);
     if (!result.ok) {
       assert.equal(result.error.code, 'ILLEGAL_MOVE');
       assert.strictEqual(result.state, before);
+    }
+    assert.equal(rookAlias.ok, false);
+    if (!rookAlias.ok) {
+      assert.equal(rookAlias.error.code, 'ILLEGAL_MOVE');
+      assert.strictEqual(rookAlias.state, before);
     }
   });
 

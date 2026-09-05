@@ -32,18 +32,25 @@ async function hasAt(board: Locator, square: string, selector: string) {
   return boxes.some(box => point.x >= box.left && point.x <= box.right && point.y >= box.top && point.y <= box.bottom);
 }
 
-async function seedNeutralHolyWar(page: Page) {
+type SeedOptions = {
+  fen: string;
+  hands?: { white: string[]; black: string[] };
+  patches?: Record<string, { neutral?: boolean; royal?: boolean }>;
+};
+
+async function seedGame(page: Page, options: SeedOptions) {
   await page.goto('/');
-  await page.evaluate(async stateModule => {
-    type SeedState = { pieces: Array<{ square: string | null; neutral: boolean }> };
+  await page.evaluate(async ({ stateModule, options }) => {
+    type SeedState = {
+      pieces: Array<{ square: string | null; neutral: boolean; royal: boolean }>;
+    };
     const { createGameState } = await import(stateModule) as {
       createGameState(options: unknown): SeedState;
     };
-    const state = createGameState({
-      fen: 'r6k/6N1/8/8/8/8/7P/b3K3 w - - 0 1',
-      hands: { white: ['holy-war'], black: [] },
-    });
-    state.pieces.find(piece => piece.square === 'a1')!.neutral = true;
+    const state = createGameState(options);
+    for (const [square, patch] of Object.entries(options.patches ?? {})) {
+      Object.assign(state.pieces.find(piece => piece.square === square)!, patch);
+    }
 
     const root = document.querySelector('#root') as HTMLElement;
     const key = Object.keys(root).find(name => name.startsWith('__reactContainer'))!;
@@ -59,11 +66,15 @@ async function seedNeutralHolyWar(page: Page) {
     visit(container.alternate);
     if (!app) throw new Error('Mounted game state was not found');
     app.memoizedState.queue.dispatch(state);
-  }, '/src/game/state.ts');
+  }, { stateModule: '/src/game/state.ts', options });
 }
 
 test('Holy War visibly marks the royal checked by a neutral Bishop', async ({ page }) => {
-  await seedNeutralHolyWar(page);
+  await seedGame(page, {
+    fen: 'r6k/6N1/8/8/8/8/7P/b3K3 w - - 0 1',
+    hands: { white: ['holy-war'], black: [] },
+    patches: { a1: { neutral: true } },
+  });
   const board = page.getByTestId('chessboard');
   await expect.poll(() => hasAt(board, 'a1', 'piece.black.bishop')).toBe(true);
 
@@ -77,4 +88,38 @@ test('Holy War visibly marks the royal checked by a neutral Bishop', async ({ pa
   await page.getByRole('button', { name: 'End turn' }).click();
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
   await expect.poll(() => hasAt(board, 'h8', 'square.check')).toBe(true);
+});
+
+for (const interaction of ['click', 'drag'] as const) {
+  test(`an opponent-colored neutral piece moves by ${interaction} while a non-neutral opponent piece stays blocked`, async ({ page }) => {
+    await seedGame(page, {
+      fen: '7k/8/8/8/8/8/4n2n/K7 w - - 0 1',
+      patches: { e2: { neutral: true } },
+    });
+    const board = page.getByTestId('chessboard');
+
+    await dragPiece(page, 'h2', 'f3');
+    await expect.poll(() => hasAt(board, 'h2', 'piece.black.knight')).toBe(true);
+    await expect.poll(() => hasAt(board, 'f3', 'piece.black.knight')).toBe(false);
+
+    if (interaction === 'click') {
+      await clickSquare(page, 'e2');
+      await clickSquare(page, 'c3');
+    } else {
+      await dragPiece(page, 'e2', 'c3');
+    }
+    await expect.poll(() => hasAt(board, 'c3', 'piece.black.knight')).toBe(true);
+    await expect.poll(() => hasAt(board, 'e2', 'piece.black.knight')).toBe(false);
+  });
+}
+
+test('Coup check highlighting marks the actual royal instead of the Prince', async ({ page }) => {
+  await seedGame(page, {
+    fen: '1r5k/8/8/8/8/8/1P6/4K3 w - - 0 1',
+    patches: { e1: { royal: false }, b2: { royal: true } },
+  });
+  const board = page.getByTestId('chessboard');
+
+  await expect.poll(() => hasAt(board, 'b2', 'square.check')).toBe(true);
+  await expect.poll(() => hasAt(board, 'e1', 'square.check')).toBe(false);
 });

@@ -14,6 +14,48 @@ function neutralize(state: State, square: string): State {
 }
 
 describe('follow-up adversarial audit regressions', () => {
+  it('rejects nullish public actions atomically', () => {
+    for (const action of [null, undefined]) {
+      const state = createGameState();
+      const snapshot = structuredClone(state);
+      const result = applyAction(state, action as never);
+
+      assert.equal(result.ok, false);
+      assert.deepEqual(result.state, snapshot);
+      assert.deepEqual(state, snapshot);
+    }
+  });
+
+  it('rejects playCard-shaped actions without the playCard discriminator', () => {
+    const options = {
+      fen: '4k3/8/8/8/8/8/P7/4K3 w - - 0 1',
+      hands: { white: ['disintegration'], black: [] },
+      decks: { white: [], black: [] },
+    };
+
+    for (const action of [
+      { type: 'unknown', cardId: 'disintegration', target: 'a2' },
+      { cardId: 'disintegration', target: 'a2' },
+    ]) {
+      const state = createGameState(options);
+      const snapshot = structuredClone(state);
+      const result = applyAction(state, action as never);
+
+      assert.equal(result.ok, false);
+      assert.strictEqual(result.state, state);
+      assert.deepEqual(result.state, snapshot);
+      assert.deepEqual(state, snapshot);
+    }
+
+    const result = applyAction(createGameState(options), {
+      type: 'playCard', cardId: 'disintegration', target: 'a2',
+    });
+    if (!result.ok) assert.fail(result.error.code);
+    assert.equal(result.ok, true);
+    assert.equal(result.state.players.white.hand.length, 0);
+    assert.equal(result.state.pieces.find(piece => piece.square === 'a2'), undefined);
+  });
+
   it('uses the Coup replacement as royal and treats the original King as an ordinary Prince', () => {
     const seeded = createGameState({ fen: '4r2k/8/8/8/8/8/1P6/R3K3 w - - 0 1' });
     const state: State = {

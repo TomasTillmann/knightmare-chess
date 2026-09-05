@@ -394,6 +394,22 @@ test('a self-pinning Fanatic fizzles and consumes the replacement move', () => {
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
+test('a self-check-fizzled Fanatic turn prevents premature stalemate', () => {
+  let state = game({
+    fen: '8/7p/8/8/2b5/8/2k5/K3P2r b - - 0 1',
+    hands: { white: [FANATIC], black: [] },
+  });
+  state = finishMove(state, 'h7', 'h6');
+
+  assert.equal(legalDests(state).size, 0, 'White has no ordinary chess move');
+  assert.equal(state.outcome, null, 'the legal replacement-card turn prevents stalemate');
+
+  state = fanatic(state, 'e1');
+  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK' });
+  assert.equal(state.turn.moveMade, true);
+  assert.equal(state.outcome, null);
+});
+
 test('a self-check fizzle adjudicates mate when the original check has no regular escape', () => {
   const before = game({
     fen: 'rnb1kbnr/pppp1ppp/8/8/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3',

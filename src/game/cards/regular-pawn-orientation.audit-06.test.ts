@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyAction, legalDests } from '../reducer.js';
+import { applyAction, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
@@ -64,6 +64,34 @@ test('rotated Pawns capture one square diagonally forward', () => {
   const after = move(state, 'b4', 'c3');
   assert.equal(after.pieces.find(piece => piece.square === 'c3')?.owner, 'white');
   assert.equal(after.pieces.some(piece => piece.zone === 'captured' && piece.owner === 'black'), true);
+});
+
+test('rotated ordinary Pawn attacks govern check and king legality', () => {
+  const cases = [
+    {
+      name: 'rotated diagonal is attacked',
+      checkedFen: '7K/8/8/8/1P6/2k5/8/8 b - - 0 1',
+      moveFen: '7K/8/8/8/1P6/3k4/8/8 b - - 0 1',
+      from: 'd3',
+      to: 'c3',
+      attacked: true,
+    },
+    {
+      name: 'unrotated diagonal is not attacked',
+      checkedFen: '7K/8/8/k7/1P6/8/8/8 b - - 0 1',
+      moveFen: '7K/8/k7/8/1P6/8/8/8 b - - 0 1',
+      from: 'a6',
+      to: 'a5',
+      attacked: false,
+    },
+  ] as const;
+
+  for (const fixture of cases) {
+    assert.equal(isKingInCheck(oriented(fixture.checkedFen, 90), 'black'), fixture.attacked, fixture.name);
+    const state = oriented(fixture.moveFen, 90);
+    assert.equal(legalDests(state).get(fixture.from)?.includes(fixture.to) ?? false, !fixture.attacked, fixture.name);
+    assert.equal(applyAction(state, { type: 'move', from: fixture.from, to: fixture.to }).ok, !fixture.attacked, fixture.name);
+  }
 });
 
 test('rotated last lines allow ordinary promotion', () => {

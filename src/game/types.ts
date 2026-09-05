@@ -34,6 +34,14 @@ export interface EnPassantOpportunity {
   pawnId: string;
 }
 
+export interface PendingRescueState {
+  fen: string;
+  pieces: PieceState[];
+  enPassant: EnPassantOpportunity[];
+  historyLength: number;
+  movedPieceIds: string[];
+}
+
 export interface HolyWarTarget {
   knight: SquareName;
   bishop: SquareName;
@@ -85,6 +93,7 @@ export interface GameState {
   history: GameEvent[];
   orientation: BoardOrientation;
   enPassant: EnPassantOpportunity[];
+  pendingRescue?: PendingRescueState | null;
   outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' } | null;
 }
 

@@ -12,6 +12,7 @@ import {
   cowardiceDests,
   dubbingDests,
   forcedMarchDests,
+  isPromotionSquare,
   legalDests,
   longJumpDests,
   onslaughtDests,
@@ -109,8 +110,8 @@ export default function App() {
     && game.turn.cardPlays[game.turn.color] < 1
     && noQuarterCapture?.zone === 'captured'
     && noQuarterCapture.square === null
-    && noQuarterCapture.owner !== game.turn.color
-    && noQuarterMover?.owner === game.turn.color;
+    && (noQuarterCapture.owner !== game.turn.color || noQuarterCapture.neutral)
+    && (noQuarterMover?.owner === game.turn.color || noQuarterMover?.neutral === true);
   const canPlaySquaringTheCircle = game.pieces.some(piece =>
     piece.zone === 'board'
     && piece.square
@@ -323,18 +324,23 @@ export default function App() {
           : `Disintegration removed the Pawn on ${event.target}.`,
       );
     } else {
-      setMessage('Move complete. You may play a card or end the turn.');
+      setMessage(
+        result.state.pendingRescue
+          ? 'Your King is still in check. Play a rescue card before ending the turn.'
+          : 'Move complete. You may play a card or end the turn.',
+      );
     }
     return true;
   }, [game]);
 
   const move = useCallback((from: SquareName, to: SquareName) => {
     const moving = game.pieces.find(piece => piece.zone === 'board' && piece.square === from);
-    const promotes = moving?.role === 'pawn' && (to.endsWith('1') || to.endsWith('8'));
+    const promotes = moving?.role === 'pawn' && isPromotionSquare(game, moving.owner, to);
     const promotion = promotes
-      ? window.prompt('Promote to queen, rook, bishop, or knight:', 'queen') ?? 'queen'
+      ? window.prompt('Promote to queen, rook, bishop, or knight:', 'queen')
       : undefined;
-    reduce({ type: 'move', from, to, ...(promotion ? { promotion } : {}) });
+    if (promotion === null) return false;
+    return reduce({ type: 'move', from, to, ...(promotion ? { promotion } : {}) });
   }, [game.pieces, reduce]);
 
   const addCardMove = useCallback((from: SquareName, to: SquareName) => {
@@ -724,7 +730,7 @@ export default function App() {
                   <button className="button button--ghost" onClick={reset} type="button">Reset</button>
                   <button
                     className="button button--primary"
-                    disabled={!game.turn.moveMade || Boolean(game.outcome)}
+                    disabled={!game.turn.moveMade || Boolean(game.pendingRescue) || Boolean(game.outcome)}
                     onClick={() => {
                       if (reduce({ type: 'endTurn' })) setSelectedCard(null);
                     }}

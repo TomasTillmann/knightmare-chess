@@ -113,7 +113,7 @@ describe('Cathedral contract and swap', () => {
     const before = updatePiece(
       updatePiece(game(), 'a1', { role: 'knight', royal: true, neutral: true }),
       'b1',
-      { role: 'queen' },
+      { role: 'pawn' },
     );
     const rook = pieceAt(before, 'a1');
     const bishop = pieceAt(before, 'b1');

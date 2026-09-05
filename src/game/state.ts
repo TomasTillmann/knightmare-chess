@@ -15,6 +15,7 @@ export interface CreateGameOptions {
 
 export function createGameState(options: CreateGameOptions = {}): GameState {
   const setup = parseFen(options.fen ?? INITIAL_FEN).unwrap();
+  if (options.turn && options.turn !== setup.turn) setup.epSquare = undefined;
   if (options.turn) setup.turn = options.turn;
 
   const pieces: PieceState[] = [...setup.board].map(([square, piece]) => ({
@@ -68,6 +69,7 @@ export function createGameState(options: CreateGameOptions = {}): GameState {
     enPassant: setup.epSquare !== undefined && epPawn
       ? [{ target: makeSquare(setup.epSquare), pawnId: epPawn.id }]
       : [],
+    pendingRescue: null,
     outcome: null,
   };
 }
