@@ -3,6 +3,7 @@ import { attacks } from 'chessops/attacks';
 import { Castles, Chess, castlingSide } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
 import { makeBoardFen, makeFen, parseFen } from 'chessops/fen';
+import { SquareSet } from 'chessops/squareSet';
 import type { Move } from 'chessops/types';
 import {
   kingCastlesTo,
@@ -251,6 +252,15 @@ export function longJumpDests(state: GameState, from: SquareName): SquareName[] 
   return destinations;
 }
 
+export function dubbingDests(state: GameState, from: SquareName): SquareName[] {
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === from);
+  if (!piece || (piece.owner !== state.turn.color && !piece.neutral)) return [];
+
+  const board = setupFor(state).board;
+  return [...attacks({ color: piece.owner, role: 'knight' }, parseSquare(from), board.occupied).diff(board.occupied)]
+    .map(makeSquare);
+}
+
 function syncFen(state: GameState): void {
   state.fen = makeFen(setupFor(state));
 }
@@ -346,8 +356,14 @@ function completeReplacementMove(
   color: Color,
   pawnMoved: boolean,
   enPassant: EnPassantOpportunity[] = [],
+  castlingMove?: { from: SquareName; piece: PieceState },
 ): void {
   const setup = setupFor(state);
+  if (castlingMove?.piece.role === 'king') {
+    setup.castlingRights = setup.castlingRights.diff(SquareSet.backrank(castlingMove.piece.owner));
+  } else if (castlingMove?.piece.role === 'rook') {
+    setup.castlingRights = setup.castlingRights.without(parseSquare(castlingMove.from));
+  }
   setup.turn = opposite(color);
   setup.epSquare = enPassant.length === 1 && state.orientation === 0
     ? parseSquare(enPassant[0].target)
@@ -745,6 +761,59 @@ function playLongJump(state: GameState, target: unknown, cardInstanceId?: unknow
   return { ok: true, state: resolved };
 }
 
+function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'dubbing' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Dubbing is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Dubbing is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target, 1);
+  if (!moves || moves.length !== 1) {
+    return reject(state, 'INVALID_TARGET', 'Choose one valid piece move.');
+  }
+  const [move] = moves;
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === move.from);
+  if (!piece) return reject(state, 'INVALID_TARGET', `There is no piece on ${move.from}.`);
+  if (piece.owner !== color && !piece.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
+  }
+  if (!dubbingDests(state, move.from).includes(move.to)) {
+    return reject(state, 'ILLEGAL_MOVE', 'Move the piece like a Knight to an empty square.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  resolved.pieces.find(candidate => candidate.id === piece.id)!.square = move.to;
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'dubbing', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'dubbing', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  completeReplacementMove(
+    resolved,
+    color,
+    piece.originalRole === 'pawn' && !piece.promoted,
+    [],
+    { from: move.from, piece },
+  );
+  spendCard(resolved, 'dubbing', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'dubbing', target: moves });
+  return { ok: true, state: resolved };
+}
+
 const SWAP_CARDS = {
   'holy-war': {
     name: 'Holy War', firstField: 'knight', firstRole: 'knight', firstOwner: 'own',
@@ -906,6 +975,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
+  if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
@@ -941,7 +1011,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
     return targets;
   }
-  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump') {
+  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
@@ -953,11 +1023,13 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
             ? annexationDests
             : cardId === 'onslaught'
               ? onslaughtDests
-              : longJumpDests)(state, piece.square)
+              : cardId === 'long-jump'
+                ? longJumpDests
+                : dubbingDests)(state, piece.square)
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
-  if (cardId === 'long-jump') return steps.map(step => [step]);
+  if (cardId === 'long-jump' || cardId === 'dubbing') return steps.map(step => [step]);
   if (cardId === 'onslaught') {
     return steps.reduce<CardMove[][]>(
       (groups, step) => [...groups, [step], ...groups.map(group => [...group, step])],

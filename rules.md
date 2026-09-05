@@ -356,6 +356,14 @@ Current or original Knight identity qualifies. A transformed original Knight and
 
 Resolve the relocation atomically, then apply the direct-mate and acting-King safety checks in §11.6. A successful Long Jump consumes the card allowance and Regular Move, clears en-passant availability, and advances the FEN clock as a non-Pawn, non-capture move.
 
+### 13.9 Dubbing
+
+Dubbing is played instead of the acting player's Regular Move. Select any one controlled piece—one owned by the acting player or a neutral piece—and move it in standard Knight L-geometry to an empty square. Represent the choice as the one-element move list `[{ from, to }]`. Board orientation and intervening pieces do not affect Knight geometry, but Dubbing cannot capture an occupant of either color.
+
+Move the physical piece without changing its owner, current or original role, promoted, royal, or neutral status, Continuing Effects, or other markers. Dubbing grants only the movement geometry for this move; it does not make the piece a Knight. In particular, an unpromoted original Pawn reaching its last rank does not promote because the card does not authorize promotion.
+
+Resolve the relocation atomically, then apply the direct-mate and acting-King safety checks in §11.6. A failed effect restores the piece and spends the card; if the acting King began safe, the failed replacement consumes the move, while a player who began in check retains the Regular Move as a possible escape. A successful play consumes the card allowance and Regular Move, clears en-passant availability, and makes no capture. Reset the halfmove clock only for an unpromoted original Pawn; otherwise increment it, and increment the fullmove number after Black's play. Moving a King revokes that King's castling rights, and moving a castling-eligible Rook revokes the right associated with its starting square.
+
 ## 14. Board-changing effects
 
 ### 14.1 Earthquake

@@ -167,4 +167,15 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  dubbing: {
+    id: 'dubbing',
+    name: 'Dubbing',
+    points: 4,
+    unique: false,
+    image: '/KC5_card1.png',
+    description:
+      'For this turn, one of your pieces may move as if it were a Knight. You cannot capture a piece with this move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };
