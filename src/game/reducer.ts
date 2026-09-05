@@ -212,6 +212,24 @@ export function annexationDests(state: GameState, from: SquareName): SquareName[
   return board.has(middle) || board.has(target) ? [] : [makeSquare(target)];
 }
 
+export function onslaughtDests(state: GameState, from: SquareName): SquareName[] {
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (
+    !pawn
+    || (pawn.owner !== state.turn.color && !pawn.neutral)
+    || pawn.originalRole !== 'pawn'
+    || pawn.promoted
+  ) return [];
+
+  const square = parseSquare(from);
+  const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+  const file = squareFile(square) + fileStep;
+  const rank = squareRank(square) + rankStep;
+  if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
+  const target = rank * 8 + file;
+  return setupFor(state).board.has(target) ? [] : [makeSquare(target)];
+}
+
 function syncFen(state: GameState): void {
   state.fen = makeFen(setupFor(state));
 }
@@ -450,8 +468,8 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   return { ok: true, state: resolved };
 }
 
-function parseCardMoves(target: unknown): CardMove[] | undefined {
-  if (!Array.isArray(target) || target.length < 1 || target.length > 2) return undefined;
+function parseCardMoves(target: unknown, maximum = 2): CardMove[] | undefined {
+  if (!Array.isArray(target) || target.length < 1 || target.length > maximum) return undefined;
   const moves: CardMove[] = [];
   for (const candidate of target) {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return undefined;
@@ -594,6 +612,66 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   spendCard(completed, 'annexation', cardInstanceId);
   completed.history.push({ type: 'cardPlayed', cardId: 'annexation', target: moves });
   return { ok: true, state: completed };
+}
+
+function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'onslaught' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Onslaught is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Onslaught is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target, state.pieces.length);
+  if (!moves) return reject(state, 'INVALID_TARGET', 'Choose one or more valid Pawn moves.');
+  if (new Set(moves.map(move => move.from)).size !== moves.length) {
+    return reject(state, 'INVALID_TARGET', 'Choose each Pawn only once.');
+  }
+  if (new Set(moves.map(move => move.to)).size !== moves.length) {
+    return reject(state, 'ILLEGAL_MOVE', 'Each Pawn needs a different destination.');
+  }
+
+  const pawnIds: string[] = [];
+  for (const move of moves) {
+    const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
+    if (!pawn) return reject(state, 'INVALID_TARGET', `There is no Pawn on ${move.from}.`);
+    if (pawn.owner !== color && !pawn.neutral) {
+      return reject(state, 'WRONG_OWNER', 'Choose one of your own Pawns.');
+    }
+    if (pawn.originalRole !== 'pawn' || pawn.promoted) {
+      return reject(state, 'WRONG_ROLE', 'Onslaught can target only an unpromoted Pawn.');
+    }
+    if (!onslaughtDests(state, move.from).includes(move.to)) {
+      return reject(state, 'ILLEGAL_MOVE', 'Each Pawn must move one square forward to an empty square.');
+    }
+    pawnIds.push(pawn.id);
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  moves.forEach((move, index) => {
+    resolved.pieces.find(piece => piece.id === pawnIds[index])!.square = move.to;
+  });
+
+  if (isOrdinaryCheckmate(resolved, opposite(color))) {
+    return fizzleCard(state, 'onslaught', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'onslaught', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  completeReplacementMove(resolved, color, true);
+  spendCard(resolved, 'onslaught', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'onslaught', target: moves });
+  return { ok: true, state: resolved };
 }
 
 const SWAP_CARDS = {
@@ -755,6 +833,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
+  if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
@@ -790,16 +869,26 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
     return targets;
   }
-  if (cardId !== 'forced-march' && cardId !== 'annexation') {
+  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
   const steps = state.pieces.flatMap(piece =>
     piece.zone === 'board' && piece.square
-      ? (cardId === 'forced-march' ? forcedMarchDests : annexationDests)(state, piece.square)
+      ? (cardId === 'forced-march'
+          ? forcedMarchDests
+          : cardId === 'annexation'
+            ? annexationDests
+            : onslaughtDests)(state, piece.square)
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
+  if (cardId === 'onslaught') {
+    return steps.reduce<CardMove[][]>(
+      (groups, step) => [...groups, [step], ...groups.map(group => [...group, step])],
+      [],
+    );
+  }
   const targets: CardMove[][] = steps.map(step => [step]);
   for (let first = 0; first < steps.length; first += 1) {
     for (let second = first + 1; second < steps.length; second += 1) {

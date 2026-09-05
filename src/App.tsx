@@ -6,7 +6,13 @@ import noticesUrl from '../THIRD_PARTY_NOTICES.md?url';
 
 import { ChessBoard } from './ChessBoard.js';
 import { CARD_CATALOG } from './game/cards/catalog.js';
-import { annexationDests, applyAction, forcedMarchDests, legalDests } from './game/reducer.js';
+import {
+  annexationDests,
+  applyAction,
+  forcedMarchDests,
+  legalDests,
+  onslaughtDests,
+} from './game/reducer.js';
 import { createGameState } from './game/state.js';
 import type { CardInstance, CardMove, Color, GameState, SquareName, TurnPhase } from './game/types.js';
 
@@ -15,8 +21,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught'],
     },
     decks: { white: [], black: [] },
   });
@@ -127,12 +133,17 @@ export default function App() {
                           secondRole: 'rook', secondOwner: 'opponent', secondLabel: 'Opponent Rook',
                         } as const
                       : null;
-  const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
+  const moveCardId = selectedDefinition?.id === 'forced-march'
+    || selectedDefinition?.id === 'annexation'
+    || selectedDefinition?.id === 'onslaught'
     ? selectedDefinition.id
     : null;
   const moveCardDests = (from: SquareName) => moveCardId === 'annexation'
     ? annexationDests(game, from)
-    : forcedMarchDests(game, from);
+    : moveCardId === 'onslaught'
+      ? onslaughtDests(game, from)
+      : forcedMarchDests(game, from);
+  const moveCardLimit = moveCardId === 'onslaught' ? Number.POSITIVE_INFINITY : 2;
   const moves = legalDests(game);
   const keyboardDestinations = keyboardFrom
     ? moveCardId
@@ -220,6 +231,8 @@ export default function App() {
             ? `Annexation moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
           : event.cardId === 'forced-march'
             ? `Forced March moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} sideways.`
+          : event.cardId === 'onslaught'
+            ? `Onslaught moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
             : event.cardId === 'holy-war' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'knight' in event.target && 'bishop' in event.target
               ? `Holy War swapped ${event.target.knight} and ${event.target.bishop}.`
             : event.cardId === 'anathema' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'bishop' in event.target && 'rook' in event.target
@@ -260,7 +273,9 @@ export default function App() {
       setMessage(
         moveCardId === 'annexation'
           ? 'That Pawn needs two clear forward squares.'
-          : 'That Pawn must move one square sideways to an empty square.',
+          : moveCardId === 'onslaught'
+            ? 'That Pawn must move one square forward to an empty square.'
+            : 'That Pawn must move one square sideways to an empty square.',
       );
       setHasError(true);
       return;
@@ -276,7 +291,9 @@ export default function App() {
     setKeyboardFrom('');
     setKeyboardTo('');
     setMessage(
-      next.length === 2
+      moveCardId === 'onslaught'
+        ? `${next.length} Pawn move${next.length === 1 ? '' : 's'} ready. Play Onslaught now, or choose another Pawn.`
+        : next.length === 2
         ? `Two Pawn moves ready. Play ${selectedDefinition?.name}.`
         : 'One Pawn move ready. Play the card now, or choose one more Pawn.',
     );
@@ -378,7 +395,7 @@ export default function App() {
         }
         return;
       }
-      if (cardMoves.length >= 2) {
+      if (cardMoves.length >= moveCardLimit) {
         setMessage(`Two Pawn moves are already ready. Play ${selectedDefinition?.name}.`);
         setHasError(true);
         return;
@@ -392,7 +409,9 @@ export default function App() {
       setMessage(
         moveCardId === 'annexation'
           ? `Pawn ${square} selected. Choose its two-square forward destination.`
-          : `Pawn ${square} selected. Choose an empty square beside it.`,
+          : moveCardId === 'onslaught'
+            ? `Pawn ${square} selected. Choose its one-square forward destination.`
+            : `Pawn ${square} selected. Choose an empty square beside it.`,
       );
       setHasError(false);
       return;
@@ -405,7 +424,7 @@ export default function App() {
     })) {
       setSelectedCard(null);
     }
-  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, cardTargets, game.turn.color, moveCardId, playSwap, reduce, selectedDefinition?.name, selectedInstance, swap, swapFrom]);
+  }, [addCardMove, availableCardTargets, cardMoveFrom, cardMoves.length, cardTargets, game.turn.color, moveCardId, moveCardLimit, playSwap, reduce, selectedDefinition?.name, selectedInstance, swap, swapFrom]);
 
   const playMoveCard = () => {
     if (!selectedInstance || !moveCardId || cardMoves.length === 0) return;
@@ -454,8 +473,8 @@ export default function App() {
             ? "Choose one of your Knights, then choose one of your opponent's Knights."
           : card.cardId === 'lost-castle'
             ? "Choose one of your Rooks, then choose one of your opponent's Rooks."
-          : card.cardId === 'forced-march' || card.cardId === 'annexation'
-          ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : 'sideways'} destination.`
+          : card.cardId === 'forced-march' || card.cardId === 'annexation' || card.cardId === 'onslaught'
+          ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : card.cardId === 'onslaught' ? 'one-square forward' : 'sideways'} destination.`
           : 'Choose one of your Pawns on the board.'
         : 'Card deselected. Make a legal move or select it again.',
     );
@@ -543,7 +562,7 @@ export default function App() {
                       onClick={playMoveCard}
                       type="button"
                     >
-                      Play ({cardMoves.length}/2)
+                      Play ({cardMoves.length}{moveCardId === 'onslaught' ? ' selected' : '/2'})
                     </button>
                   ) : null}
                   <button className="button button--ghost" onClick={reset} type="button">Reset</button>
@@ -602,7 +621,7 @@ export default function App() {
                       Pawn
                       <select
                         aria-label="Pawn source"
-                        disabled={cardMoves.length >= 2}
+                        disabled={cardMoves.length >= moveCardLimit}
                         onChange={event => {
                           setKeyboardFrom(event.target.value as SquareName);
                           setKeyboardTo('');
@@ -615,7 +634,7 @@ export default function App() {
                       </select>
                     </label>
                     <label>
-                      Sideways to
+                      {moveCardId === 'forced-march' ? 'Sideways to' : 'Forward to'}
                       <select
                         aria-label="Pawn destination"
                         disabled={!keyboardFrom}
@@ -700,7 +719,7 @@ export default function App() {
             <span className="timing">
               {preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'holy-quest' || preview.id === 'treason' || preview.id === 'cathedral' || preview.id === 'siege'
                 ? 'Play after your move'
-                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
+                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'onslaught' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>

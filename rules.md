@@ -340,6 +340,14 @@ Forced March is played instead of the acting player's Regular Move. Select one o
 
 Resolve both selected moves simultaneously and test King safety only after the complete result. If Forced March itself would directly checkmate the opponent or its final position leaves the acting King in check, restore every moved Pawn and spend the card under §11.6. A successful play consumes both the card allowance and the Regular Move, creates no en-passant right, and does not promote a Pawn moved to its last rank.
 
+### 13.7 Onslaught
+
+Onslaught is played instead of the acting player's Regular Move. Select one or more distinct controlled Pawns that each have an empty square immediately forward, choose every destination, and then move all selected Pawns one square forward simultaneously. Forward follows each Pawn's original owner and the current board orientation. Onslaught cannot capture, and every destination must be empty in the initial position; a Pawn therefore cannot enter a square vacated by another selected Pawn.
+
+"Pawn" refers to original identity. A non-promoted transformed Pawn remains eligible and keeps its transformation, while a neutral Pawn may be selected by either player and still follows its original owner's forward direction. A Pawn moved to its last rank does not promote because the card does not authorize promotion.
+
+Test the complete resulting position for direct mate and acting-King safety under §11.6. A failed play restores every moved Pawn but still spends the card. A successful Onslaught consumes the card allowance and the Regular Move, clears any old en-passant opportunity, and creates no new en-passant right.
+
 ## 14. Board-changing effects
 
 ### 14.1 Earthquake

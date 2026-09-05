@@ -145,4 +145,15 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  onslaught: {
+    id: 'onslaught',
+    name: 'Onslaught',
+    points: 6,
+    unique: false,
+    image: '/KC12_card1.png',
+    description:
+      'Any number of your Pawns which can legally move may all move one square forward. None of them may make a capture.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };
