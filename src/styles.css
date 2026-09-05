@@ -323,7 +323,7 @@ h1 {
 .footer a { color: #727783; text-underline-offset: 3px; }
 
 @media (max-width: 1050px) {
-  .game__center { grid-template-columns: 1fr; }
+  .game__center { grid-template-columns: min(620px, 100%); }
   .hands-rail { order: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-height: none; padding: 8px 0 0; }
   .hand { width: 100%; }
   .hand--white { grid-column: 1; grid-row: 1; }

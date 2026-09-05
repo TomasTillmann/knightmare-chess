@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyAction, legalDests } from '../reducer.js';
+import { applyAction, legalDests, positionFor } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
@@ -15,9 +15,11 @@ const PROMOTION_FEN = '8/P6k/8/8/8/8/1P6/7K w - - 0 1';
 const CHECK_FEN = 'k7/8/8/8/P7/8/8/R6K w - - 0 1';
 const CHECK_REPLY_FEN = 'k7/7p/8/8/P7/8/8/R6K w - - 0 1';
 const MATE_FEN = 'kr6/2K5/8/8/P7/8/8/R7 w - - 0 1';
+const ALREADY_MATED_AFTER_MOVE_FEN = 'k7/2K5/8/8/8/8/7P/1R6 w - - 0 1';
 const PIN_FEN = '4r2k/8/8/8/8/8/P3P3/4K3 w - - 0 1';
 const PIN_CAPTURE_FEN = '4r2k/8/8/8/8/3p4/P3P3/4K3 w - - 0 1';
 const IN_CHECK_FEN = '4r2k/8/8/8/8/8/P7/4K3 w - - 0 1';
+const SELF_CHECK_AND_MATE_FEN = '3k4/2b1N3/3P1N2/B7/5K2/8/8/3RR3 w - - 0 1';
 
 function game(options: Options = {}): State {
   return createGameState({
@@ -367,6 +369,14 @@ test('an after-move direct mate fizzle preserves the completed move', () => {
   assert.equal(pieceAt(state, 'a4')?.role, 'pawn');
 });
 
+test('after-move play resolves when the normal move had already delivered mate', () => {
+  const moved = move(game({ fen: ALREADY_MATED_AFTER_MOVE_FEN }), 'b1', 'a1');
+  assert.equal(positionFor(moved, 'black').isCheckmate(), true);
+  const state = play(moved, 'h2');
+  assert.equal(pieceAt(state, 'h2'), undefined);
+  assert.deepEqual(state.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: 'h2' });
+});
+
 test('a mate-fizzled card is discarded and replaced', () => {
   const before = game({ fen: MATE_FEN, decks: { white: [CARD], black: [] } });
   const playedId = before.players.white.hand[0]?.id;
@@ -406,19 +416,66 @@ test('moving the king away makes after-move removal of its shield legal', () => 
   assert.equal(pieceAt(state, 'e2'), undefined);
 });
 
-test('rejected after-move removal preserves the earlier move', () => {
+test('after-move self-check fizzle preserves the completed move and board atomically', () => {
   const moved = move(game({ fen: PIN_FEN }), 'a2', 'a3');
-  rejected(moved, { type: 'playCard', cardId: CARD, target: 'e2' } as Action, 'KING_IN_CHECK');
-  assert.equal(pieceAt(moved, 'a3')?.role, 'pawn');
-  assert.equal(moved.turn.phase, 'afterMove');
+  const snapshot = structuredClone(moved);
+  const state = play(moved, 'e2');
+  assert.deepEqual(moved, snapshot);
+  assert.deepEqual(state.pieces, moved.pieces);
+  assert.equal(state.fen, moved.fen);
+  assert.equal(pieceAt(state, 'a3')?.role, 'pawn');
+  assert.equal(pieceAt(state, 'e2')?.role, 'pawn');
+  assert.equal(state.turn.color, 'white');
+  assert.equal(state.turn.phase, 'afterMove');
+  assert.equal(state.turn.moveMade, true);
+  assert.deepEqual(state.history, [
+    ...moved.history,
+    { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' },
+  ]);
 });
 
-test('king-safety rejection leaves the card allowance available', () => {
-  const state = move(game({ fen: PIN_FEN }), 'a2', 'a3');
-  rejected(state, { type: 'playCard', cardId: CARD, target: 'e2' } as Action, 'KING_IN_CHECK');
-  const next = play(state, 'a3');
-  assert.equal(next.turn.cardPlays.white, 1);
-  assert.equal(pieceAt(next, 'e2')?.role, 'pawn');
+test('after-move self-check fizzle spends the card and blocks a second card that turn', () => {
+  const moved = move(game({ fen: PIN_FEN, hands: { white: [CARD, CARD], black: [] } }), 'a2', 'a3');
+  const spent = moved.players.white.hand[0];
+  const remaining = moved.players.white.hand[1];
+  const state = play(moved, 'e2');
+  assert.equal(state.players.white.discard.at(-1)?.id, spent.id);
+  assert.deepEqual(state.players.white.hand.map(card => card.id), [remaining.id]);
+  assert.equal(state.turn.cardPlays.white, 1);
+  rejected(state, { type: 'playCard', cardId: CARD, target: 'a3' } as Action, 'CARD_ALREADY_PLAYED');
+  assert.equal(pieceAt(state, 'e2')?.role, 'pawn');
+  assert.equal(pieceAt(state, 'a3')?.role, 'pawn');
+});
+
+test('direct mate takes precedence when the same after-move effect would also cause self-check', () => {
+  const before = game({
+    fen: SELF_CHECK_AND_MATE_FEN,
+    phase: 'afterMove',
+    moveMade: true,
+    decks: { white: [CARD], black: [] },
+  });
+  const hypothetical = structuredClone(before);
+  const pawn = pieceAt(hypothetical, 'd6');
+  assert.ok(pawn);
+  pawn.square = null;
+  pawn.zone = 'dead';
+  assert.equal(positionFor(hypothetical, 'white').isCheck(), true);
+  assert.equal(positionFor(hypothetical, 'black').isCheckmate(), true);
+
+  const playedId = before.players.white.hand[0]?.id;
+  const drawnId = before.players.white.deck[0]?.id;
+  const state = play(before, 'd6');
+  assert.deepEqual(state.pieces, before.pieces);
+  assert.equal(state.fen, before.fen);
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled',
+    cardId: CARD,
+    reason: 'DIRECT_MATE',
+  });
+  assert.equal(state.players.white.discard.at(-1)?.id, playedId);
+  assert.equal(state.players.white.hand.at(-1)?.id, drawnId);
+  assert.equal(state.turn.cardPlays.white, 1);
+  assert.equal(state.outcome, null);
 });
 
 test('a rejected pinned-pawn capture does not prevent card play', () => {

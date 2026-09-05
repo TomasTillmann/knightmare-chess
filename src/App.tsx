@@ -8,13 +8,16 @@ import { ChessBoard } from './ChessBoard.js';
 import { CARD_CATALOG } from './game/cards/catalog.js';
 import { applyAction, legalDests } from './game/reducer.js';
 import { createGameState } from './game/state.js';
-import type { CardInstance, Color, GameState, SquareName } from './game/types.js';
+import type { CardInstance, Color, GameState, SquareName, TurnPhase } from './game/types.js';
 
 const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 
 function demoGame(): GameState {
   return createGameState({
-    hands: { white: ['disintegration'], black: ['disintegration'] },
+    hands: {
+      white: ['disintegration', 'fanatic'],
+      black: ['disintegration', 'fanatic'],
+    },
     decks: { white: [], black: [] },
   });
 }
@@ -23,12 +26,13 @@ interface HandProps {
   color: Color;
   cards: CardInstance[];
   active: boolean;
+  phase: TurnPhase;
   selected: string | null;
   onSelect: (card: CardInstance) => void;
   onPreview: (cardId: string) => void;
 }
 
-function Hand({ color, cards, active, selected, onSelect, onPreview }: HandProps) {
+function Hand({ color, cards, active, phase, selected, onSelect, onPreview }: HandProps) {
   return (
     <section className={`hand hand--${color}`} aria-label={`${titleCase(color)} hand`}>
       <div className="hand__label">
@@ -45,7 +49,7 @@ function Hand({ color, cards, active, selected, onSelect, onPreview }: HandProps
               aria-label={definition.name}
               aria-pressed={selected === card.id}
               className={`card ${selected === card.id ? 'card--selected' : ''}`}
-              disabled={!active}
+              disabled={!active || !definition.timing.includes(phase)}
               key={card.id}
               onClick={() => onSelect(card)}
               onFocus={() => onPreview(card.cardId)}
@@ -72,6 +76,8 @@ export default function App() {
   const [keyboardTo, setKeyboardTo] = useState<SquareName | ''>('');
   const [keyboardTarget, setKeyboardTarget] = useState<SquareName | ''>('');
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
+  const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
+  const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
   const moves = legalDests(game);
   const keyboardDestinations = keyboardFrom ? moves.get(keyboardFrom) ?? [] : [];
   const cardTargets = game.pieces.filter(
@@ -80,7 +86,7 @@ export default function App() {
       && (piece.owner === game.turn.color || piece.neutral)
       && piece.originalRole === 'pawn'
       && !piece.promoted
-      && !piece.royal,
+      && (!piece.royal || selectedDefinition?.id === 'fanatic'),
   );
 
   const reduce = useCallback((action: Parameters<typeof applyAction>[1]) => {
@@ -105,9 +111,18 @@ export default function App() {
     }
     const event = result.state.history.at(-1);
     if (event?.type === 'cardFizzled') {
-      setMessage('Disintegration was spent, but direct checkmate made its effect fizzle.');
+      const name = CARD_CATALOG[event.cardId!]?.name ?? 'Card';
+      setMessage(
+        event.reason === 'SELF_CHECK'
+          ? `${name} was spent, but leaving the King in check made its effect fizzle.`
+          : `${name} was spent, but direct checkmate made its effect fizzle.`,
+      );
     } else if (event?.type === 'cardPlayed') {
-      setMessage(`Disintegration removed the Pawn on ${event.target}.`);
+      setMessage(
+        event.cardId === 'fanatic'
+          ? `Fanatic moved the Pawn three squares from ${event.target}.`
+          : `Disintegration removed the Pawn on ${event.target}.`,
+      );
     } else {
       setMessage('Move complete. You may play a card or end the turn.');
     }
@@ -124,11 +139,16 @@ export default function App() {
   }, [game.pieces, reduce]);
 
   const target = useCallback((square: SquareName) => {
-    if (!selectedCard) return;
-    if (reduce({ type: 'playCard', cardId: 'disintegration', target: square })) {
+    if (!selectedInstance) return;
+    if (reduce({
+      type: 'playCard',
+      cardId: selectedInstance.cardId,
+      cardInstanceId: selectedInstance.id,
+      target: square,
+    })) {
       setSelectedCard(null);
     }
-  }, [reduce, selectedCard]);
+  }, [reduce, selectedInstance]);
 
   const reset = () => {
     setGame(demoGame());
@@ -172,19 +192,21 @@ export default function App() {
         <div className="game__center">
           <div className="hands-rail">
             <Hand
-              active={!game.outcome && game.turn.color === 'black'}
+              active={!game.outcome && game.turn.color === 'black' && game.turn.cardPlays.black < 1}
               cards={game.players.black.hand}
               color="black"
               onPreview={setPreviewId}
               onSelect={selectCard}
+              phase={game.turn.phase}
               selected={selectedCard}
             />
             <Hand
-              active={!game.outcome && game.turn.color === 'white'}
+              active={!game.outcome && game.turn.color === 'white' && game.turn.cardPlays.white < 1}
               cards={game.players.white.hand}
               color="white"
               onPreview={setPreviewId}
               onSelect={selectCard}
+              phase={game.turn.phase}
               selected={selectedCard}
             />
           </div>
@@ -297,7 +319,9 @@ export default function App() {
             <img alt={`${preview.name} card`} src={preview.image} />
             <h2>{preview.name}</h2>
             <p>{preview.description.replaceAll('*', '')}</p>
-            <span className="timing">Play before or after your move</span>
+            <span className="timing">
+              {preview.id === 'fanatic' ? 'Play instead of your move' : 'Play before or after your move'}
+            </span>
           </aside>
         </div>
       </main>

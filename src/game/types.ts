@@ -5,6 +5,7 @@ export type { Color, Role, SquareName };
 export type CardId = string;
 export type TurnPhase = 'beforeMove' | 'afterMove';
 export type PieceZone = 'board' | 'captured' | 'dead' | 'away';
+export type BoardOrientation = 0 | 90 | 180 | 270;
 
 export interface PieceState {
   id: string;
@@ -33,7 +34,7 @@ export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled';
   cardId?: CardId;
   target?: SquareName;
-  reason?: 'DIRECT_MATE';
+  reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;
   promotion?: Role;
@@ -51,13 +52,13 @@ export interface GameState {
   };
   effects: unknown[];
   history: GameEvent[];
-  orientation: number;
+  orientation: BoardOrientation;
   outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' } | null;
 }
 
 export type GameAction =
   | { type: 'move'; from: unknown; to: unknown; promotion?: unknown }
-  | { type: 'playCard'; cardId: CardId; target?: unknown }
+  | { type: 'playCard'; cardId: CardId; cardInstanceId?: unknown; target?: unknown }
   | { type: 'endTurn' };
 
 export type GameErrorCode =

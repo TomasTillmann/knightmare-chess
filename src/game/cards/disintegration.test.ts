@@ -63,6 +63,18 @@ function expectTargetDead(before: State, after: State, square: string): void {
   );
 }
 
+function expectSelfCheckFizzle(before: State, target: string): State {
+  const after = expectOk(play(before, target));
+  assert.deepEqual(after.pieces, before.pieces);
+  assert.equal(after.fen, before.fen);
+  assert.deepEqual(after.history, [
+    ...before.history,
+    { type: 'cardFizzled', cardId: 'disintegration', reason: 'SELF_CHECK' },
+  ]);
+  assert.equal(after.outcome, null);
+  return after;
+}
+
 function expectInvalid(before: State, target: unknown, code: string): void {
   const snapshot = structuredClone(before);
   expectError(play(before, target), before, code);
@@ -402,13 +414,57 @@ describe('Disintegration King safety and the Checkmate Rule', () => {
     expectTargetDead(before, expectOk(play(before, 'e7')), 'e7');
   });
 
-  it('rolls back a White after-move play that leaves White in check', () => {
-    expectInvalid(game({ fen: WHITE_EXPOSED, phase: 'afterMove', moveMade: true }), 'e2', 'KING_IN_CHECK');
+  it('fizzles a White after-move play that would leave White in check', () => {
+    const before = game({ fen: WHITE_EXPOSED, phase: 'afterMove', moveMade: true });
+    const after = expectSelfCheckFizzle(before, 'e2');
+    assert.equal(pieceAt(after, 'e2')?.role, 'pawn');
+    assert.equal(after.turn.phase, 'afterMove');
+    assert.equal(after.turn.moveMade, true);
   });
 
-  it('rolls back a Black after-move play that leaves Black in check', () => {
+  it('fizzles a Black after-move play that would leave Black in check', () => {
     const before = game({ fen: BLACK_EXPOSED, turn: 'black', phase: 'afterMove', moveMade: true, hands: { white: [], black: ['disintegration'] } });
-    expectInvalid(before, 'e7', 'KING_IN_CHECK');
+    const after = expectSelfCheckFizzle(before, 'e7');
+    assert.equal(pieceAt(after, 'e7')?.role, 'pawn');
+    assert.equal(after.turn.color, 'black');
+    assert.equal(after.turn.phase, 'afterMove');
+    assert.equal(after.turn.moveMade, true);
+  });
+
+  it('spends the exact card instance, draws its replacement, and consumes the allowance on self-check', () => {
+    const before = game({
+      fen: WHITE_EXPOSED,
+      phase: 'afterMove',
+      moveMade: true,
+      hands: { white: ['assassin', 'disintegration', 'disintegration'], black: [] },
+      decks: { white: ['fanatic'], black: [] },
+    });
+    const [neighbour, spent, remainingCopy] = before.players.white.hand;
+    const replacement = before.players.white.deck[0];
+    const after = expectSelfCheckFizzle(before, 'e2');
+    assert.deepEqual(after.players.white.hand.map(card => card.id), [
+      neighbour.id,
+      remainingCopy.id,
+      replacement.id,
+    ]);
+    assert.deepEqual(after.players.white.discard.map(card => card.id), [spent.id]);
+    assert.deepEqual(after.players.white.deck, []);
+    assert.equal(after.turn.cardPlays.white, 1);
+  });
+
+  it('commits only the card lifecycle while leaving a frozen self-check input untouched', () => {
+    const mutable = game({
+      fen: WHITE_EXPOSED,
+      phase: 'afterMove',
+      moveMade: true,
+      decks: { white: ['fanatic'], black: [] },
+    });
+    const snapshot = structuredClone(mutable);
+    const before = deepFreeze(mutable);
+    const after = expectSelfCheckFizzle(before, 'e2');
+    assert.deepEqual(before, snapshot);
+    assert.notStrictEqual(after, before);
+    assert.notStrictEqual(after.players.white, before.players.white);
   });
 
   it('allows White to give a non-mating discovered check', () => {

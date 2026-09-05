@@ -1,4 +1,5 @@
 import { Board } from 'chessops/board';
+import { attacks } from 'chessops/attacks';
 import { Castles, Chess, castlingSide } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
 import { makeBoardFen, makeFen, parseFen } from 'chessops/fen';
@@ -9,11 +10,13 @@ import {
   opposite,
   parseSquare,
   rookCastlesTo,
+  squareFile,
   squareRank,
 } from 'chessops/util';
 
 import type {
   ApplyResult,
+  BoardOrientation,
   Color,
   GameAction,
   GameErrorCode,
@@ -25,6 +28,12 @@ import type {
 
 const SQUARE = /^[a-h][1-8]$/;
 const PROMOTIONS = new Set<Role>(['queen', 'rook', 'bishop', 'knight']);
+const FANATIC_FORWARD: Record<BoardOrientation, readonly [number, number]> = {
+  0: [0, 1],
+  90: [1, 0],
+  180: [0, -1],
+  270: [-1, 0],
+};
 
 function reject(state: GameState, code: GameErrorCode, message: string): ApplyResult {
   return { ok: false, state, error: { code, message } };
@@ -89,10 +98,12 @@ function syncFen(state: GameState): void {
   state.fen = makeFen(setupFor(state));
 }
 
-function spendCard(state: GameState, cardId: string): void {
+function spendCard(state: GameState, cardId: string, cardInstanceId?: unknown): void {
   const color = state.turn.color;
   const player = state.players[color];
-  const index = player.hand.findIndex(card => card.cardId === cardId);
+  const index = player.hand.findIndex(
+    card => card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
+  );
   const [spent] = player.hand.splice(index, 1);
   player.discard.push(spent);
   const drawn = player.deck.shift();
@@ -110,9 +121,61 @@ function settleBlockedBeforeMove(state: GameState, color: Color): void {
   }
 }
 
-function playDisintegration(state: GameState, target: unknown): ApplyResult {
+function isKingInCheck(state: GameState, color: Color): boolean {
+  const position = positionFor(state, color);
+  const royals = state.pieces.filter(
+    piece => piece.owner === color && piece.royal && piece.zone === 'board' && piece.square,
+  );
+  if (!royals.length) return position.isCheck();
+  return royals.some(piece =>
+    position.kingAttackers(parseSquare(piece.square!), opposite(color), position.board.occupied).nonEmpty()
+    || state.pieces.some(neutral =>
+      neutral.neutral
+      && neutral.zone === 'board'
+      && neutral.square
+      && attacks(
+        { color: neutral.owner, role: neutral.role },
+        parseSquare(neutral.square),
+        position.board.occupied,
+      ).has(parseSquare(piece.square!)),
+    ),
+  );
+}
+
+function completeReplacementMove(state: GameState, color: Color, pawnMoved: boolean): void {
+  const setup = setupFor(state);
+  setup.turn = opposite(color);
+  setup.epSquare = undefined;
+  setup.halfmoves = pawnMoved ? 0 : setup.halfmoves + 1;
+  if (color === 'black') setup.fullmoves += 1;
+  state.fen = makeFen(setup);
+  state.turn.phase = 'afterMove';
+  state.turn.moveMade = true;
+}
+
+function fizzleCard(
+  state: GameState,
+  cardId: string,
+  reason: 'DIRECT_MATE' | 'SELF_CHECK',
+  cardInstanceId?: unknown,
+  consumesMove = false,
+): ApplyResult {
+  const fizzled = structuredClone(state);
+  spendCard(fizzled, cardId, cardInstanceId);
+  if (consumesMove) completeReplacementMove(fizzled, state.turn.color, false);
+  fizzled.history.push({ type: 'cardFizzled', cardId, reason });
+  settleBlockedBeforeMove(fizzled, state.turn.color);
+  return { ok: true, state: fizzled };
+}
+
+function playDisintegration(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (!state.players[color].hand.some(card => card.cardId === 'disintegration')) {
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'disintegration' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
     return reject(state, 'CARD_NOT_IN_HAND', 'Disintegration is not in your hand.');
   }
   if (state.turn.cardPlays[color] >= 1) {
@@ -145,22 +208,87 @@ function playDisintegration(state: GameState, target: unknown): ApplyResult {
   resolvedPawn.zone = 'dead';
   syncFen(resolved);
 
-  if (state.turn.phase === 'afterMove' && positionFor(resolved, color).isCheck()) {
-    return reject(state, 'KING_IN_CHECK', 'Your King would be left in check.');
+  if (
+    !positionFor(state, opposite(color)).isCheckmate()
+    && positionFor(resolved, opposite(color)).isCheckmate()
+  ) {
+    return fizzleCard(state, 'disintegration', 'DIRECT_MATE', cardInstanceId);
   }
 
-  if (positionFor(resolved, opposite(color)).isCheckmate()) {
-    const fizzled = structuredClone(state);
-    spendCard(fizzled, 'disintegration');
-    fizzled.history.push({ type: 'cardFizzled', cardId: 'disintegration', reason: 'DIRECT_MATE' });
-    settleBlockedBeforeMove(fizzled, color);
-    return { ok: true, state: fizzled };
+  if (state.turn.phase === 'afterMove' && isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'disintegration', 'SELF_CHECK', cardInstanceId);
   }
 
-  spendCard(resolved, 'disintegration');
+  spendCard(resolved, 'disintegration', cardInstanceId);
   resolved.history.push({ type: 'cardPlayed', cardId: 'disintegration', target: targetSquare });
   settleBlockedBeforeMove(resolved, color);
   return { ok: true, state: resolved };
+}
+
+function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'fanatic' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Fanatic is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Fanatic is played instead of the regular move.');
+  }
+  if (typeof target !== 'string' || !SQUARE.test(target)) {
+    return reject(state, 'INVALID_TARGET', 'Choose a square occupied by one of your Pawns.');
+  }
+  const targetSquare = target as SquareName;
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === targetSquare);
+  if (!pawn) return reject(state, 'INVALID_TARGET', 'The target square is empty.');
+  if (pawn.owner !== color && !pawn.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose one of your own Pawns.');
+  }
+  if (pawn.originalRole !== 'pawn' || pawn.promoted) {
+    return reject(state, 'WRONG_ROLE', 'Fanatic can target only an unpromoted Pawn.');
+  }
+
+  const from = parseSquare(targetSquare);
+  const [forwardFile, forwardRank] = FANATIC_FORWARD[state.orientation];
+  const ownerDirection = pawn.owner === 'white' ? 1 : -1;
+  const path = [1, 2, 3].map(distance => {
+    const file = squareFile(from) + forwardFile * ownerDirection * distance;
+    const rank = squareRank(from) + forwardRank * ownerDirection * distance;
+    return file < 0 || file > 7 || rank < 0 || rank > 7 ? -1 : rank * 8 + file;
+  });
+  const board = setupFor(state).board;
+  if (path.some(square => square < 0 || square > 63 || board.has(square))) {
+    return reject(state, 'ILLEGAL_MOVE', 'The Pawn needs three clear forward squares.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  const resolvedPawn = resolved.pieces.find(piece => piece.id === pawn.id)!;
+  resolvedPawn.square = makeSquare(path[2]);
+
+  if (positionFor(resolved, opposite(color)).isCheckmate()) {
+    return fizzleCard(state, 'fanatic', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'fanatic', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  completeReplacementMove(resolved, color, true);
+  spendCard(resolved, 'fanatic', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'fanatic', target: targetSquare });
+  return { ok: true, state: resolved };
+}
+
+function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
+  if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
+  return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
 function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' }>): ApplyResult {
@@ -239,7 +367,7 @@ function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' 
 
 function endTurn(state: GameState): ApplyResult {
   if (!state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Make the regular move before ending the turn.');
-  if (positionFor(state, state.turn.color).isCheck()) {
+  if (isKingInCheck(state, state.turn.color)) {
     return reject(state, 'KING_IN_CHECK', 'Your King is still in check.');
   }
 
@@ -252,13 +380,16 @@ function endTurn(state: GameState): ApplyResult {
     cardPlays: { white: 0, black: 0 },
   };
   const position = positionFor(next);
-  // ponytail: one escape-capable card exists; switch to per-card enumerators when the second lands.
-  const canEscapeWithCard = next.players[nextColor].hand.some(card => card.cardId === 'disintegration')
-    && next.pieces.some(piece => {
+  const canEscapeWithCard = next.players[nextColor].hand.some(card =>
+    next.pieces.some(piece => {
       if (piece.zone !== 'board' || !piece.square) return false;
-      const result = playDisintegration(next, piece.square);
-      return result.ok && [...legalDests(result.state).values()].some(targets => targets.length > 0);
-    });
+      const result = playCard(next, card.cardId, piece.square, card.id);
+      if (!result.ok || result.state.outcome) return false;
+      if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
+      if (result.state.turn.moveMade) return !isKingInCheck(result.state, nextColor);
+      return [...legalDests(result.state).values()].some(targets => targets.length > 0);
+    }),
+  );
   if (position.isCheckmate() && !canEscapeWithCard) {
     next.outcome = { winner: state.turn.color, reason: 'checkmate' };
   } else if (position.isStalemate() && !canEscapeWithCard) {
@@ -271,6 +402,5 @@ export function applyAction(state: GameState, action: GameAction): ApplyResult {
   if (state.outcome) return reject(state, 'GAME_OVER', 'The game is already over.');
   if (action.type === 'move') return movePiece(state, action);
   if (action.type === 'endTurn') return endTurn(state);
-  if (action.cardId === 'disintegration') return playDisintegration(state, action.target);
-  return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
+  return playCard(state, action.cardId, action.target, action.cardInstanceId);
 }

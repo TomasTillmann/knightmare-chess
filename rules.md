@@ -268,6 +268,10 @@ This creates two distinct tests:
 
 A player may make a move that places or leaves their King in check only if a card played on that same turn removes the check before the turn ends.
 
+Conversely, a before-move card may temporarily expose the acting King's line if the following Regular Move cures it. Once the Regular Move has been made, a regular card whose effect would leave the acting King in check has no board effect: spend, discard, and replace the card normally, then restore the position from immediately before that card.
+
+For a card played **instead of the move**, test the proposed replacement move as one atomic result. If it leaves the acting King in check, its board effect fails and the card is still spent. Recommended deterministic ruling: if the King was safe before that failed attempt, the replacement move is consumed; if the turn began in check, leave the Regular Move available so the player can still answer the check. If no legal answer exists, adjudicate checkmate immediately.
+
 If that saving card is canceled by Fog of War, the underlying move becomes illegal and must be taken back. Both cards remain spent and neither player may play another card in that turn. If no legal replacement move exists, the player is checkmated.
 
 ### 11.7 Effects that prevent capture also suppress check
@@ -309,6 +313,16 @@ If a card moves a Pawn to the last rank during the opponent's turn and authorize
 ### 13.3 Orientation
 
 "Forward," owner ranks, last rank, and frontier are properties of the current board orientation. Earthquake rotates those concepts with the board. Pawns move away from their owner after the rotation.
+
+### 13.4 Fanatic
+
+Fanatic is played instead of the acting player's Regular Move. Select one controlled Pawn and move that physical piece exactly three squares forward. All three traversed squares—the first intermediate square, the second intermediate square, and the destination—must be on the board and empty. Fanatic never captures.
+
+"Pawn" refers to original identity. A non-promoted Pawn transformed into another piece remains eligible and keeps its transformation after moving. A neutral Pawn may be selected by either player but moves in its original owner's forward direction. A Pawn currently carrying King status also retains that status, so its destination must be safe.
+
+Fanatic creates no en-passant right. Any pre-existing en-passant opportunity expires because Fanatic constitutes the move for the turn. Reaching the last rank does not promote the Pawn because Fanatic does not expressly authorize promotion.
+
+After staging the three-square move, apply the Checkmate Rule before committing it. If Fanatic itself would directly checkmate the opponent, restore the Pawn and spend the card. Then test the acting King's safety as described in §11.6. A successful Fanatic play consumes both the card allowance and the Regular Move; no ordinary chess move follows it that turn.
 
 ## 14. Board-changing effects
 

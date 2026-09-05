@@ -23,4 +23,15 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove', 'afterMove'],
     continuing: false,
   },
+  fanatic: {
+    id: 'fanatic',
+    name: 'Fanatic',
+    points: 2,
+    unique: false,
+    image: '/KC1_card4.png',
+    description:
+      'Move one of your Pawns forward three squares, provided the path is clear. It may not capture on this move, or be captured *en passant*.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };
