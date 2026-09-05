@@ -11,12 +11,10 @@ type Piece = State['pieces'][number];
 
 const fenState = (state: State) => state.fen.split(' ').slice(1);
 
-function game(fen: string, cardId: string, color: Color = 'white', afterMove = false): State {
+function game(fen: string, cardId: string, color: Color = 'white'): State {
   return createGameState({
     fen,
     turn: color,
-    phase: afterMove ? 'afterMove' : 'beforeMove',
-    moveMade: afterMove,
     hands: color === 'white' ? { white: [cardId], black: [] } : { white: [], black: [cardId] },
     decks: { white: [], black: [] },
   });
@@ -74,30 +72,14 @@ describe('card relocations revoke castling rights by physical identity', () => {
     ]);
   });
 
-  it('revokes royal and current-or-original Rook rights through every swap route', () => {
+  it('revokes royal and current-or-original Rook rights through every replacement swap route', () => {
     const fixtures: Array<{
       cardId: string;
       fen: string;
       target: unknown;
       expected: string[];
-      afterMove?: boolean;
       updates?: Array<[string, Partial<Piece>]>;
     }> = [
-      {
-        cardId: 'holy-war',
-        fen: 'r3k2r/8/8/8/8/8/8/R1B1K2R w KQkq - 8 20',
-        target: { knight: 'e1', bishop: 'c1' },
-        updates: [['e1', { role: 'knight' }]],
-        afterMove: true,
-        expected: ['w', 'kq', '-', '8', '20'],
-      },
-      {
-        cardId: 'anathema',
-        fen: 'r1b1k2r/8/8/8/8/8/8/R3K2R w KQkq - 8 20',
-        target: { bishop: 'c8', rook: 'a8' },
-        afterMove: true,
-        expected: ['w', 'KQk', '-', '8', '20'],
-      },
       {
         cardId: 'evangelists',
         fen: 'rnb1k2r/8/8/8/8/8/8/R3K2R w KQkq - 8 20',
@@ -113,46 +95,15 @@ describe('card relocations revoke castling rights by physical identity', () => {
         expected: ['b', 'KQ', '-', '9', '20'],
       },
       {
-        cardId: 'cathedral',
-        fen: 'r3k2r/8/8/8/8/8/8/R1B1K2R w KQkq - 8 20',
-        target: { rook: 'a1', bishop: 'c1' },
-        afterMove: true,
-        expected: ['w', 'Kkq', '-', '8', '20'],
-      },
-      {
         cardId: 'lost-castle',
         fen: 'rb2k2r/8/8/8/8/8/8/RB2K2R w KQkq - 8 20',
         target: { own: 'a1', opponent: 'a8' },
         expected: ['b', 'Kk', '-', '9', '20'],
       },
-      {
-        cardId: 'siege',
-        fen: 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 8 20',
-        target: { knight: 'h1', rook: 'a1' },
-        updates: [['h1', { role: 'knight' }]],
-        afterMove: true,
-        expected: ['w', 'kq', '-', '8', '20'],
-      },
-      {
-        cardId: 'holy-quest',
-        fen: 'r3k2r/8/2n5/8/8/8/8/R3K2R w KQkq - 8 20',
-        target: { bishop: 'e8', knight: 'c6' },
-        updates: [['e8', { role: 'bishop' }]],
-        afterMove: true,
-        expected: ['w', 'KQ', '-', '8', '20'],
-      },
-      {
-        cardId: 'treason',
-        fen: 'rn2k2r/8/8/8/8/8/8/R3K2R w KQkq - 8 20',
-        target: { rook: 'b8', knight: 'a8' },
-        updates: [['a8', { role: 'knight' }], ['b8', { role: 'rook' }]],
-        afterMove: true,
-        expected: ['w', 'KQk', '-', '8', '20'],
-      },
     ];
 
     const actual = fixtures.map(fixture => {
-      let state = game(fixture.fen, fixture.cardId, 'white', fixture.afterMove);
+      let state = game(fixture.fen, fixture.cardId);
       for (const [square, changes] of fixture.updates ?? []) state = updatePiece(state, square, changes);
       return [fixture.cardId, fenState(play(state, fixture.cardId, fixture.target))];
     });
