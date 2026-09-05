@@ -95,4 +95,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  cathedral: {
+    id: 'cathedral',
+    name: 'Cathedral',
+    points: 7,
+    unique: false,
+    image: '/KC13_card2.png',
+    description: 'Swap the positions of one of your Rooks and one of your Bishops.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };

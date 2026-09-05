@@ -604,6 +604,10 @@ const SWAP_CARDS = {
     name: 'Anathema', firstField: 'bishop', firstRole: 'bishop', firstOwner: 'opponent',
     secondField: 'rook', secondRole: 'rook', secondOwner: 'opponent', replacesMove: false,
   },
+  cathedral: {
+    name: 'Cathedral', firstField: 'rook', firstRole: 'rook', firstOwner: 'own',
+    secondField: 'bishop', secondRole: 'bishop', secondOwner: 'own', replacesMove: false,
+  },
   evangelists: {
     name: 'Evangelists', firstField: 'own', firstRole: 'bishop', firstOwner: 'own',
     secondField: 'opponent', secondRole: 'bishop', secondOwner: 'opponent', replacesMove: true,
@@ -669,7 +673,9 @@ function playSwapCard(
     ? { knight: firstSquare as SquareName, bishop: secondSquare as SquareName }
     : cardId === 'anathema'
       ? { bishop: firstSquare as SquareName, rook: secondSquare as SquareName }
-      : { own: firstSquare as SquareName, opponent: secondSquare as SquareName };
+      : cardId === 'cathedral'
+        ? { rook: firstSquare as SquareName, bishop: secondSquare as SquareName }
+        : { own: firstSquare as SquareName, opponent: secondSquare as SquareName };
   const firstPiece = state.pieces.find(
     piece => piece.zone === 'board' && piece.square === firstSquare,
   );
@@ -688,7 +694,7 @@ function playSwapCard(
     return reject(
       state,
       'WRONG_OWNER',
-      cardId === 'holy-war'
+      cardId === 'holy-war' || cardId === 'cathedral'
         ? 'Choose pieces you control.'
         : cardId === 'anathema'
           ? 'Choose pieces belonging to your opponent.'
@@ -726,14 +732,14 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
-  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists' || cardId === 'tournament') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'cathedral' || cardId === 'evangelists' || cardId === 'tournament') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
-  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'evangelists' || cardId === 'tournament') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'cathedral' || cardId === 'evangelists' || cardId === 'tournament') {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
       || (owner === 'own' ? piece.owner === state.turn.color : piece.owner !== state.turn.color);
@@ -752,6 +758,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
         if (first.id === second.id) continue;
         if (cardId === 'holy-war') targets.push({ knight: first.square!, bishop: second.square! });
         else if (cardId === 'anathema') targets.push({ bishop: first.square!, rook: second.square! });
+        else if (cardId === 'cathedral') targets.push({ rook: first.square!, bishop: second.square! });
         else targets.push({ own: first.square!, opponent: second.square! });
       }
     }
