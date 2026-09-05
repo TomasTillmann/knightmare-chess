@@ -122,6 +122,35 @@ describe('No Quarter contract', () => {
     assert.deepEqual(after.history, [...before.history, { type: 'cardPlayed', cardId: CARD }]);
   });
 
+  it('makes the exact Coup Prince captured by a regular move dead', () => {
+    const before = game({ fen: '4k3/p7/8/8/8/8/4R3/4K3 w - - 0 1' });
+    const prince = pieceAt(before, 'e8');
+    const replacement = pieceAt(before, 'a7');
+    assert.ok(prince && replacement);
+    prince.royal = false;
+    replacement.royal = true;
+    const initialSnapshot = structuredClone(before);
+
+    const captured = move(before, 'e2', 'e8');
+    assert.deepEqual(before, initialSnapshot, 'capture must not mutate its input');
+    assert.deepEqual(pieceById(captured, prince.id), { ...prince, square: null, zone: 'captured' });
+    assert.deepEqual(captured.history, [{
+      type: 'move',
+      from: 'e2',
+      to: 'e8',
+      capturedId: prince.id,
+    }]);
+    const capturedSnapshot = structuredClone(captured);
+
+    const after = ok(play(captured));
+    assert.deepEqual(captured, capturedSnapshot, 'No Quarter must not mutate its input');
+    assert.deepEqual(pieceById(after, prince.id), { ...prince, square: null, zone: 'dead' });
+    assert.deepEqual(after.history, [
+      ...captured.history,
+      { type: 'cardPlayed', cardId: CARD },
+    ]);
+  });
+
   it('works after Black makes an ordinary capture', () => {
     const initial = game({
       fen: 'r3k3/8/8/8/8/8/R7/4K3 b - - 23 42',

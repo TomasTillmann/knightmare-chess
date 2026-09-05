@@ -96,7 +96,6 @@ export function boardFen(state: GameState): string {
 export function legalDests(state: GameState): Map<SquareName, SquareName[]> {
   if (state.turn.moveMade || state.outcome) return new Map();
   const position = positionFor(state);
-  const king = position.board.kingOf(opposite(position.turn));
   const dests = chessgroundDests(position);
   for (const piece of state.pieces) {
     if (piece.zone !== 'board' || !piece.square || piece.owner !== state.turn.color || piece.role !== 'pawn') continue;
@@ -109,10 +108,6 @@ export function legalDests(state: GameState): Map<SquareName, SquareName[]> {
       targets.add(opportunity.target);
       dests.set(piece.square, [...targets]);
     }
-  }
-  if (king !== undefined) {
-    const kingSquare = makeSquare(king);
-    for (const [from, targets] of dests) dests.set(from, targets.filter(target => target !== kingSquare));
   }
   for (const [from, targets] of dests) {
     const moving = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
@@ -1275,8 +1270,9 @@ function movePiece(state: GameState, action: Extract<GameAction, { type: 'move' 
   const moving = state.pieces.find(piece => piece.zone === 'board' && piece.square === fromName);
   if (!moving) return reject(state, 'ILLEGAL_MOVE', 'There is no movable piece on that square.');
   const customEnPassant = enPassantCapture(state, fromName, toName);
-  const targetPiece = position.board.get(to);
-  if (targetPiece?.role === 'king' && targetPiece.color !== state.turn.color) {
+  if (state.pieces.some(piece =>
+    piece.zone === 'board' && piece.square === toName && piece.owner !== state.turn.color && piece.royal,
+  )) {
     return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
   }
   // ponytail: orthodox move safety for now; stage moves only when the first same-turn rescue card lands.
