@@ -533,6 +533,8 @@ Siege follows the same after-move procedure as Holy War, but selects one Knight 
 
 Holy Quest follows the same after-move procedure as Anathema, but selects one Bishop and one Knight belonging to the opponent. Use the target shape `{ bishop, knight }`. Current or original role qualifies, including promoted Pawns currently acting as the named role, and a neutral Bishop or Knight may fill either distinct selection. Exchange the pieces simultaneously without capture or movement geometry and preserve ownership, identity, and markers. Use §11.6 if the swap newly creates direct checkmate or leaves the acting King in check.
 
+Treason follows the same after-move procedure as Anathema, but selects one Rook and one Knight belonging to the opponent. Use the target shape `{ rook, knight }`. Current or original role qualifies, including promoted Pawns currently acting as the named role, and a neutral Rook or Knight may fill either distinct selection. Exchange the pieces simultaneously without capture or movement geometry and preserve ownership, identity, and markers. Use §11.6 if the swap newly creates direct checkmate or leaves the acting King in check.
+
 ## 21. Movement-copying and temporary movement powers
 
 Doppelganger copies the kind of the opponent's just-moved piece for a non-Pawn mover and prohibits capture. Recommended ruling: copy the piece's named/base movement type, not temporary powers granted to it by the card used on the preceding move, unless the copied piece is permanently transformed.

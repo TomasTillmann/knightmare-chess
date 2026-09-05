@@ -135,4 +135,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  treason: {
+    id: 'treason',
+    name: 'Treason',
+    points: 8,
+    unique: false,
+    image: '/KC17_card1.png',
+    description: 'Swap the positions of a Rook and a Knight belonging to your opponent.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
 };

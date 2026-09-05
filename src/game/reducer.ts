@@ -609,6 +609,10 @@ const SWAP_CARDS = {
     name: 'Holy Quest', firstField: 'bishop', firstRole: 'bishop', firstOwner: 'opponent',
     secondField: 'knight', secondRole: 'knight', secondOwner: 'opponent', replacesMove: false,
   },
+  treason: {
+    name: 'Treason', firstField: 'rook', firstRole: 'rook', firstOwner: 'opponent',
+    secondField: 'knight', secondRole: 'knight', secondOwner: 'opponent', replacesMove: false,
+  },
   cathedral: {
     name: 'Cathedral', firstField: 'rook', firstRole: 'rook', firstOwner: 'own',
     secondField: 'bishop', secondRole: 'bishop', secondOwner: 'own', replacesMove: false,
@@ -688,11 +692,13 @@ function playSwapCard(
       ? { bishop: firstSquare as SquareName, rook: secondSquare as SquareName }
       : cardId === 'holy-quest'
         ? { bishop: firstSquare as SquareName, knight: secondSquare as SquareName }
-        : cardId === 'cathedral'
-          ? { rook: firstSquare as SquareName, bishop: secondSquare as SquareName }
-          : cardId === 'siege'
-            ? { knight: firstSquare as SquareName, rook: secondSquare as SquareName }
-            : { own: firstSquare as SquareName, opponent: secondSquare as SquareName };
+        : cardId === 'treason'
+          ? { rook: firstSquare as SquareName, knight: secondSquare as SquareName }
+          : cardId === 'cathedral'
+            ? { rook: firstSquare as SquareName, bishop: secondSquare as SquareName }
+            : cardId === 'siege'
+              ? { knight: firstSquare as SquareName, rook: secondSquare as SquareName }
+              : { own: firstSquare as SquareName, opponent: secondSquare as SquareName };
   const firstPiece = state.pieces.find(
     piece => piece.zone === 'board' && piece.square === firstSquare,
   );
@@ -713,7 +719,7 @@ function playSwapCard(
       'WRONG_OWNER',
       cardId === 'holy-war' || cardId === 'cathedral' || cardId === 'siege'
         ? 'Choose pieces you control.'
-        : cardId === 'anathema' || cardId === 'holy-quest'
+        : cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason'
           ? 'Choose pieces belonging to your opponent.'
           : `Choose one of your ${firstName}s and one of your opponent's ${secondName}s.`,
     );
@@ -749,14 +755,14 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
-  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
-  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
+  if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
       || (owner === 'own' ? piece.owner === state.turn.color : piece.owner !== state.turn.color);
@@ -776,6 +782,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
         if (cardId === 'holy-war') targets.push({ knight: first.square!, bishop: second.square! });
         else if (cardId === 'anathema') targets.push({ bishop: first.square!, rook: second.square! });
         else if (cardId === 'holy-quest') targets.push({ bishop: first.square!, knight: second.square! });
+        else if (cardId === 'treason') targets.push({ rook: first.square!, knight: second.square! });
         else if (cardId === 'cathedral') targets.push({ rook: first.square!, bishop: second.square! });
         else if (cardId === 'siege') targets.push({ knight: first.square!, rook: second.square! });
         else targets.push({ own: first.square!, opponent: second.square! });
