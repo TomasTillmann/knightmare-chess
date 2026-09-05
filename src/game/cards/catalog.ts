@@ -105,4 +105,14 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  'lost-castle': {
+    id: 'lost-castle',
+    name: 'Lost Castle',
+    points: 7,
+    unique: false,
+    image: '/KC14_card3.png',
+    description: "Swap the positions of one of your Rooks and one of your opponent's Rooks.",
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };

@@ -527,6 +527,8 @@ Tournament follows the same replacement-move procedure as Evangelists, but selec
 
 Cathedral follows the same after-move procedure as Holy War, but selects one Rook and one Bishop controlled by the acting player. Use the target shape `{ rook, bishop }`. Current or original role qualifies, including promoted Pawns currently acting as the named role, and a neutral Rook or Bishop may be selected. Exchange the two distinct physical pieces simultaneously without capture or movement geometry, preserving identity and markers. If the swap newly creates direct checkmate or leaves the acting King in check, restore the pieces and spend the card under §11.6.
 
+Lost Castle follows the same replacement-move procedure as Tournament, but selects one Rook belonging to the acting player and one Rook belonging to the opponent. Use the target shape `{ own, opponent }`. Current or original Rook identity qualifies, a neutral Rook may fill either distinct selection, and both physical pieces retain all identity fields and markers when their squares are exchanged. A successful swap consumes the Regular Move, clears en-passant availability, and advances the FEN clocks as one non-Pawn, non-capture replacement move; use §11.6 for direct-mate and King-safety fizzles.
+
 ## 21. Movement-copying and temporary movement powers
 
 Doppelganger copies the kind of the opponent's just-moved piece for a non-Pawn mover and prohibits capture. Recommended ruling: copy the piece's named/base movement type, not temporary powers granted to it by the card used on the preceding move, unless the copied piece is permanently transformed.

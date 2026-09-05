@@ -15,8 +15,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral'],
+      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle'],
+      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle'],
     },
     decks: { white: [], black: [] },
   });
@@ -106,7 +106,12 @@ export default function App() {
                   firstRole: 'knight', firstOwner: 'own', firstLabel: 'Your Knight',
                   secondRole: 'knight', secondOwner: 'opponent', secondLabel: 'Opponent Knight',
                 } as const
-              : null;
+              : selectedDefinition?.id === 'lost-castle'
+                ? {
+                    firstRole: 'rook', firstOwner: 'own', firstLabel: 'Your Rook',
+                    secondRole: 'rook', secondOwner: 'opponent', secondLabel: 'Opponent Rook',
+                  } as const
+                : null;
   const moveCardId = selectedDefinition?.id === 'forced-march' || selectedDefinition?.id === 'annexation'
     ? selectedDefinition.id
     : null;
@@ -210,6 +215,8 @@ export default function App() {
               ? `Evangelists swapped ${event.target.own} and ${event.target.opponent}.`
             : event.cardId === 'tournament' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
               ? `Tournament swapped ${event.target.own} and ${event.target.opponent}.`
+            : event.cardId === 'lost-castle' && event.target && !Array.isArray(event.target) && typeof event.target === 'object' && 'own' in event.target
+              ? `Lost Castle swapped ${event.target.own} and ${event.target.opponent}.`
           : `Disintegration removed the Pawn on ${event.target}.`,
       );
     } else {
@@ -412,6 +419,8 @@ export default function App() {
             ? "Choose one of your Bishops, then choose one of your opponent's Bishops."
           : card.cardId === 'tournament'
             ? "Choose one of your Knights, then choose one of your opponent's Knights."
+          : card.cardId === 'lost-castle'
+            ? "Choose one of your Rooks, then choose one of your opponent's Rooks."
           : card.cardId === 'forced-march' || card.cardId === 'annexation'
           ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : 'sideways'} destination.`
           : 'Choose one of your Pawns on the board.'
@@ -658,7 +667,7 @@ export default function App() {
             <span className="timing">
               {preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'cathedral'
                 ? 'Play after your move'
-                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists' || preview.id === 'tournament'
+                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>
