@@ -156,4 +156,15 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  'long-jump': {
+    id: 'long-jump',
+    name: 'Long Jump',
+    points: 7,
+    unique: false,
+    image: '/KC14_card2.png',
+    description:
+      'Move one of your Knights to any square whose color is different from the one it currently occupies. You cannot capture a piece with this move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
 };

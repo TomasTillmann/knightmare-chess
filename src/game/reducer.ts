@@ -230,6 +230,27 @@ export function onslaughtDests(state: GameState, from: SquareName): SquareName[]
   return setupFor(state).board.has(target) ? [] : [makeSquare(target)];
 }
 
+export function longJumpDests(state: GameState, from: SquareName): SquareName[] {
+  const knight = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (
+    !knight
+    || (knight.owner !== state.turn.color && !knight.neutral)
+    || (knight.role !== 'knight' && knight.originalRole !== 'knight')
+  ) return [];
+
+  const source = parseSquare(from);
+  const sourceColor = (squareFile(source) + squareRank(source)) % 2;
+  const board = setupFor(state).board;
+  const destinations: SquareName[] = [];
+  for (let square = 0; square < 64; square += 1) {
+    if (
+      !board.has(square)
+      && (squareFile(square) + squareRank(square)) % 2 !== sourceColor
+    ) destinations.push(makeSquare(square));
+  }
+  return destinations;
+}
+
 function syncFen(state: GameState): void {
   state.fen = makeFen(setupFor(state));
 }
@@ -674,6 +695,56 @@ function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unkno
   return { ok: true, state: resolved };
 }
 
+function playLongJump(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'long-jump' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Long Jump is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Long Jump is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target, 1);
+  if (!moves || moves.length !== 1) {
+    return reject(state, 'INVALID_TARGET', 'Choose one valid Knight move.');
+  }
+  const [move] = moves;
+  const knight = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
+  if (!knight) return reject(state, 'INVALID_TARGET', `There is no Knight on ${move.from}.`);
+  if (knight.owner !== color && !knight.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose one of your own Knights.');
+  }
+  if (knight.role !== 'knight' && knight.originalRole !== 'knight') {
+    return reject(state, 'WRONG_ROLE', 'Long Jump can target only a Knight.');
+  }
+  if (!longJumpDests(state, move.from).includes(move.to)) {
+    return reject(state, 'ILLEGAL_MOVE', 'Choose an empty square of the opposite color.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === knight.id)!.square = move.to;
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'long-jump', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (isKingInCheck(resolved, color)) {
+    return fizzleCard(state, 'long-jump', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  completeReplacementMove(resolved, color, false);
+  spendCard(resolved, 'long-jump', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'long-jump', target: moves });
+  return { ok: true, state: resolved };
+}
+
 const SWAP_CARDS = {
   'holy-war': {
     name: 'Holy War', firstField: 'knight', firstRole: 'knight', firstOwner: 'own',
@@ -834,6 +905,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
+  if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
   }
@@ -869,7 +941,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
     return targets;
   }
-  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught') {
+  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
@@ -879,10 +951,13 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
           ? forcedMarchDests
           : cardId === 'annexation'
             ? annexationDests
-            : onslaughtDests)(state, piece.square)
+            : cardId === 'onslaught'
+              ? onslaughtDests
+              : longJumpDests)(state, piece.square)
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
+  if (cardId === 'long-jump') return steps.map(step => [step]);
   if (cardId === 'onslaught') {
     return steps.reduce<CardMove[][]>(
       (groups, step) => [...groups, [step], ...groups.map(group => [...group, step])],

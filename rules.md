@@ -348,6 +348,14 @@ Onslaught is played instead of the acting player's Regular Move. Select one or m
 
 Test the complete resulting position for direct mate and acting-King safety under §11.6. A failed play restores every moved Pawn but still spends the card. A successful Onslaught consumes the card allowance and the Regular Move, clears any old en-passant opportunity, and creates no new en-passant right.
 
+### 13.8 Long Jump
+
+Long Jump is played instead of the acting player's Regular Move. Select one controlled Knight and move it to any empty square of the opposite board color. The move ignores ordinary Knight geometry, distance, intervening pieces, and board orientation; rotation changes the meaning of forward but does not recolor the physical squares. Long Jump cannot capture, so an occupied destination is illegal regardless of the occupant's owner.
+
+Current or original Knight identity qualifies. A transformed original Knight and a promoted Pawn currently acting as a Knight are eligible and retain all identity fields, powers, and markers after moving. A neutral Knight may be selected by either player. If the selected piece is royal, its destination must be safe like every other final royal position.
+
+Resolve the relocation atomically, then apply the direct-mate and acting-King safety checks in §11.6. A successful Long Jump consumes the card allowance and Regular Move, clears en-passant availability, and advances the FEN clock as a non-Pawn, non-capture move.
+
 ## 14. Board-changing effects
 
 ### 14.1 Earthquake
