@@ -37,7 +37,7 @@ function ok(result: Result): State {
 
 function rejected(before: State, target: unknown, code: string): void {
   const snapshot = structuredClone(before);
-  const result = play(before, target);
+  const result = applyAction(before, { type: 'playCard', cardId: CARD, target } as unknown as Action);
   if (result.ok) assert.fail(`Expected ${code}, received success`);
   assert.equal(result.error.code, code);
   assert.strictEqual(result.state, before);
@@ -219,11 +219,11 @@ describe('Guardian optional follower and simultaneous semantics', () => {
   });
 
   it('moves no unselected piece and records exactly the two physical relocations', () => {
-    const before = game({ fen: 'r6k/8/8/8/8/8/4P2P/K3R2R w - - 0 1' });
+    const before = game({ fen: '1r5k/8/8/8/8/8/4P2P/K3R2R w - - 0 1' });
     const untouched = before.pieces.filter(piece => !['e2', 'e1'].includes(piece.square ?? ''));
     const after = ok(play(before));
     assert.deepEqual(after.pieces.filter(piece => !['e4', 'e3'].includes(piece.square ?? '')), untouched);
-    assert.deepEqual(after.history.at(-1)?.movement, convoy(['e2', 'e4'], ['e1', 'e3']));
+    assert.deepEqual(after.history.at(-1)?.movement, convoy(['e1', 'e3'], ['e2', 'e4']));
   });
 });
 
@@ -548,7 +548,10 @@ describe('Guardian malformed actions and atomic rejection', () => {
 
   it('records one canonical event and changes no unrelated game fields', () => {
     const marker = { cardId: 'pacifism', target: 'h8' };
-    const seeded = game({ decks: { white: ['fanatic'], black: ['annexation'] } });
+    const seeded = game({
+      fen: '7k/8/8/8/8/8/4P3/K7 w - - 0 1',
+      decks: { white: ['fanatic'], black: ['annexation'] },
+    });
     const before: State = { ...seeded, effects: [marker], orientation: 180 };
     const target = convoy(['e2', 'e1']);
     const after = ok(play(before, target));
