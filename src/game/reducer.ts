@@ -2327,7 +2327,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   return result;
 }
 
-function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
   if (cardId === 'madman') return madmanTargets(state);
   if (cardId === 'pacifism') return state.pieces.flatMap(piece =>
     piece.zone === 'board'
