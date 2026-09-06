@@ -838,7 +838,10 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     resolved.fen = makeFen(setup);
   }
   completeReplacementMove(resolved, mover, resetsHalfmoveClock(piece), [], [piece]);
-  if (!isOrdinaryCheckmate(state, mover) && isOrdinaryCheckmate(resolved, mover)) {
+  if (
+    (!isOrdinaryCheckmate(state, mover) && isOrdinaryCheckmate(resolved, mover))
+    || (!isOrdinaryCheckmate(state, reactor) && isOrdinaryCheckmate(resolved, reactor))
+  ) {
     return fizzleCard(state, 'bog', 'DIRECT_MATE', cardInstanceId, false, reactor);
   }
   if (isKingInCheck(resolved, mover) || isKingInCheck(resolved, reactor)) {
