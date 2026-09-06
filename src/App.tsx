@@ -73,12 +73,6 @@ function Hand({ color, cards, active, canPlayNoQuarter, canPlaySquaringTheCircle
               className={`card ${selected === card.id ? 'card--selected' : ''}`}
               key={card.id}
               onClick={() => { if (playable) onSelect(card); }}
-              onKeyDown={event => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  onSelect(card);
-                }
-              }}
               onFocus={() => onPreview(card.cardId)}
               onMouseEnter={() => onPreview(card.cardId)}
               type="button"
@@ -805,7 +799,7 @@ export default function App() {
                   <button className="button button--ghost" onClick={reset} type="button">Reset</button>
                   <button
                     className="button button--primary"
-                    disabled={!game.turn.moveMade || Boolean(game.pendingRescue) || Boolean(game.outcome)}
+                    disabled={!game.turn.moveMade || Boolean(game.pendingRescue) || Boolean(game.pendingDoomsayer) || Boolean(game.outcome)}
                     onClick={() => {
                       if (reduce({ type: 'endTurn' })) setSelectedCard(null);
                     }}

@@ -39,6 +39,7 @@ export interface PendingRescueState {
   pieces: PieceState[];
   enPassant: EnPassantOpportunity[];
   historyLength: number;
+  history?: GameEvent[];
   movedPieceIds: string[];
 }
 

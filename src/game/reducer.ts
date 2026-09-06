@@ -1821,6 +1821,37 @@ function namePiece(
     resolvedEffectIds: consumed.map(effect => effect.card.id),
   });
 
+  if (resolved.pendingRescue) {
+    const pending = resolved.pendingRescue;
+    const speech = structuredClone(resolved.history.at(-1)!);
+    pending.history = [...(pending.history ?? resolved.history.slice(0, pending.historyLength)), speech];
+    const movedPieces = pending.movedPieceIds.flatMap(id => {
+      const piece = resolved.pieces.find(candidate => candidate.id === id);
+      return piece ? [piece] : [];
+    });
+    if (!moveLeavesRoyalInCheck(resolved, resolved.turn.color, movedPieces)) {
+      resolved.pendingRescue = null;
+    } else if (selected.length) {
+      const checkpoint = structuredClone(resolved);
+      checkpoint.fen = pending.fen;
+      checkpoint.pieces = structuredClone(pending.pieces);
+      checkpoint.enPassant = structuredClone(pending.enPassant);
+      const checkpointLosses = selected.flatMap(piece => {
+        const loss = checkpoint.pieces.find(candidate => candidate.id === piece.id);
+        if (!loss) return [];
+        loss.square = null;
+        loss.zone = 'captured';
+        return [loss];
+      });
+      syncFen(checkpoint, checkpointLosses);
+      const setup = setupFor(checkpoint);
+      setup.halfmoves = 0;
+      pending.fen = makeFen(setup);
+      pending.pieces = checkpoint.pieces;
+      pending.enPassant = checkpoint.enPassant;
+    }
+  }
+
   const checked = isKingInCheck(resolved, resolved.turn.color);
   const escape = hasTurnEscape(resolved);
   if (checked && !escape) {
@@ -2198,7 +2229,9 @@ function settlePendingRescue(
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
   result.state.enPassant = structuredClone(pending.enPassant);
-  result.state.history = result.state.history.slice(0, pending.historyLength);
+  result.state.history = pending.history
+    ? structuredClone(pending.history)
+    : result.state.history.slice(0, pending.historyLength);
   result.state.history.push(cardEvent);
   result.state.turn.phase = 'beforeMove';
   result.state.turn.moveMade = false;
@@ -2230,7 +2263,7 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
   return result;
 }
 
-function hasTurnEscape(state: GameState): boolean {
+function hasBoardOrCardEscape(state: GameState): boolean {
   const color = state.turn.color;
   return [...legalDests(state).values()].some(dests => dests.length > 0)
     || state.players[color].hand.some(card =>
@@ -2244,8 +2277,62 @@ function hasTurnEscape(state: GameState): boolean {
     );
 }
 
+function combinations<T>(values: readonly T[], count: number, start = 0): T[][] {
+  if (!count) return [[]];
+  const result: T[][] = [];
+  for (let index = start; index <= values.length - count; index += 1) {
+    for (const rest of combinations(values, count - 1, index + 1)) {
+      result.push([values[index], ...rest]);
+    }
+  }
+  return result;
+}
+
+function hasDoomsayerEscape(state: GameState, seen = new Set<string>()): boolean {
+  const active = activeDoomsayers(state);
+  if (!active.length) return false;
+  const signature = `${active.map(effect => effect.card.id).join(',')}|${state.pieces
+    .filter(piece => piece.zone === 'board' && piece.square)
+    .map(piece => `${piece.id}:${piece.square}`)
+    .join(',')}`;
+  if (seen.has(signature)) return false;
+  seen.add(signature);
+
+  for (const role of DOOMSAYER_ROLES) {
+    const candidates = doomsayerTargets(state, state.turn.color, role);
+    const required = Math.min(active.length, candidates.length);
+    if (!required) continue;
+    for (const losses of combinations(candidates, required)) {
+      const resolved = structuredClone(state);
+      for (const piece of losses) {
+        const captured = resolved.pieces.find(candidate => candidate.id === piece.id)!;
+        captured.square = null;
+        captured.zone = 'captured';
+      }
+      syncFen(resolved, losses);
+      const setup = setupFor(resolved);
+      setup.halfmoves = 0;
+      resolved.fen = makeFen(setup);
+      const consumedIds = new Set(active.slice(0, required).map(effect => effect.card.id));
+      resolved.effects = resolved.effects.filter(effect =>
+        !isDoomsayerEffect(effect) || !consumedIds.has(effect.card.id),
+      );
+      resolved.pendingDoomsayer = null;
+      if (hasBoardOrCardEscape(resolved) || hasDoomsayerEscape(resolved, seen)) return true;
+    }
+  }
+  return false;
+}
+
+function hasTurnEscape(state: GameState): boolean {
+  return hasBoardOrCardEscape(state) || hasDoomsayerEscape(state);
+}
+
 function endTurn(state: GameState): ApplyResult {
   if (!state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Make the regular move before ending the turn.');
+  if (state.pendingDoomsayer) {
+    return reject(state, 'INVALID_TIMING', 'The opponent must name a piece or decline Doomsayer before the turn can end.');
+  }
   if (isKingInCheck(state, state.turn.color)) {
     return reject(state, 'KING_IN_CHECK', 'Your King is still in check.');
   }
