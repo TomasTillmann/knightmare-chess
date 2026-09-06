@@ -85,7 +85,7 @@ describe('Doppelganger', () => {
     assert.deepEqual(after.players.white.deck, []);
     assert.deepEqual(after.history.slice(-2), [
       { type: 'move', movement: [{ from: 'b8', to: 'c7' }] },
-      { type: 'cardPlayed', cardId: CARD, target: target('a1', 'b2'), movement: target('a1', 'b2'), preservePreviousMove: true },
+      { type: 'cardPlayed', cardId: CARD, target: target('a1', 'b2'), movement: target('a1', 'b2'), preservePreviousMove: false },
     ]);
   });
 
@@ -108,7 +108,7 @@ describe('Doppelganger', () => {
       cardPlays: { white: 1, black: 0 },
     });
     assert.deepEqual(after.history.at(-1), {
-      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
     });
   });
 
@@ -128,7 +128,7 @@ describe('Doppelganger', () => {
     assert.deepEqual(after.players.white.deck, []);
     assert.equal(after.turn.moveMade, true);
     assert.deepEqual(after.history.at(-1), {
-      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
     });
   });
 
