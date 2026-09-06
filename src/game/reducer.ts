@@ -31,6 +31,7 @@ import type {
   GameErrorCode,
   GameState,
   HolyWarTarget,
+  PacifismEffect,
   PieceState,
   Role,
   SiegeTarget,
@@ -82,17 +83,31 @@ function targetMatchesPiece(target: unknown, piece: PieceState): boolean {
   return target === piece.id || target === piece.square;
 }
 
+function captureForbidden(state: GameState, piece: PieceState): boolean {
+  const flags = piece as unknown as Record<string, unknown>;
+  if (flags.pacifist === true) return true;
+  return state.effects.some(effect => {
+    const record = effectRecord(effect);
+    if (!record || record.active === false || record.suspended === true) return false;
+    const kind = effectKind(effect);
+    if (kind === 'truce') return true;
+    if (kind !== 'pacifism') return false;
+    const targets = record.pieceIds;
+    return targetMatchesPiece(record.pieceId ?? record.targetId ?? record.target, piece)
+      || (Array.isArray(targets) && targets.some(target => targetMatchesPiece(target, piece)));
+  });
+}
+
 function captureImmune(state: GameState, piece: PieceState): boolean {
   const flags = piece as unknown as Record<string, unknown>;
-  if (flags.captureImmune === true || flags.pacifist === true || flags.mysticShield === true) {
+  if (captureForbidden(state, piece) || flags.captureImmune === true || flags.mysticShield === true) {
     return true;
   }
   return state.effects.some(effect => {
     const record = effectRecord(effect);
     if (!record || record.active === false || record.suspended === true) return false;
     const kind = effectKind(effect);
-    if (kind === 'truce') return true;
-    if (kind !== 'pacifism' && kind !== 'mysticshield') return false;
+    if (kind !== 'mysticshield') return false;
     const targets = record.pieceIds;
     return targetMatchesPiece(record.pieceId ?? record.targetId ?? record.target, piece)
       || (Array.isArray(targets) && targets.some(target => targetMatchesPiece(target, piece)));
@@ -682,6 +697,10 @@ function pieceAttacksSquare(
   target: SquareName,
   occupied: SquareSet,
 ): boolean {
+  const victim = state.pieces.find(candidate =>
+    candidate.zone === 'board' && candidate.square === target && candidate.id !== piece.id,
+  );
+  if (victim && (captureForbidden(state, piece) || captureImmune(state, victim))) return false;
   const source = parseSquare(piece.square!);
   const destination = parseSquare(target);
   if (piece.role === 'pawn') {
@@ -799,6 +818,8 @@ function enPassantCapture(
     return candidate?.square === victimSquare ? [candidate] : [];
   })[0];
   return victim
+    && !captureForbidden(state, moving)
+    && !captureImmune(state, victim)
     && (moving.neutral || victim.neutral || victim.owner !== moving.owner)
     ? { moving, victim }
     : undefined;
@@ -1069,13 +1090,14 @@ function playMadman(state: GameState, target: unknown, cardInstanceId?: unknown)
 
   const wasInCheck = isKingInCheck(state, color);
   const resolved = structuredClone(state);
-  resolved.pieces.find(piece => piece.id === pawn.id)!.square = current;
-  completeReplacementMove(resolved, color, true, [], [pawn]);
+  const resolvedPawn = resolved.pieces.find(piece => piece.id === pawn.id)!;
+  resolvedPawn.square = current;
+  completeReplacementMove(resolved, color, true, [], [resolvedPawn]);
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, 'madman', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (moveLeavesRoyalInCheck(resolved, color, [pawn])) {
+  if (moveLeavesRoyalInCheck(resolved, color, [resolvedPawn])) {
     return fizzleCard(state, 'madman', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -1996,6 +2018,39 @@ function playDoomsayer(state: GameState, target: unknown, cardInstanceId?: unkno
   return { ok: true, state: resolved };
 }
 
+function playPacifism(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'pacifism' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) return reject(state, 'CARD_NOT_IN_HAND', 'Pacifism is not in your hand.');
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Pacifism must be played before the regular move.');
+  }
+  if (typeof target !== 'string' || !SQUARE.test(target)) {
+    return reject(state, 'INVALID_TARGET', 'Choose one of your non-King pieces.');
+  }
+  const targetSquare = target as SquareName;
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === targetSquare);
+  if (!piece) return reject(state, 'INVALID_TARGET', 'The target square is empty.');
+  if (piece.owner !== color && !piece.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
+  }
+  if (piece.royal) {
+    return reject(state, 'INVALID_TARGET', 'A King cannot become a Pacifist.');
+  }
+  const resolved = structuredClone(state);
+  const card = spendCard(resolved, 'pacifism', cardInstanceId, false);
+  resolved.effects.push({ type: 'pacifism', owner: color, card, pieceId: piece.id } satisfies PacifismEffect);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'pacifism', target: targetSquare });
+  return { ok: true, state: resolved };
+}
+
 function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -2045,6 +2100,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'assassin') return playAssassin(state, target, cardInstanceId);
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
+  if (cardId === 'pacifism') return playPacifism(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'madman') return playMadman(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
@@ -2065,6 +2121,14 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
   if (cardId === 'madman') return madmanTargets(state);
+  if (cardId === 'pacifism') return state.pieces.flatMap(piece =>
+    piece.zone === 'board'
+      && piece.square
+      && (piece.owner === state.turn.color || piece.neutral)
+      && !piece.royal
+      ? [piece.square]
+      : [],
+  );
   if (cardId === 'doomsayer' || cardId === 'no-quarter') return [undefined];
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     const config = SWAP_CARDS[cardId];
@@ -2496,6 +2560,9 @@ function movePiece(
   if (target && target.owner === moving.owner && !moving.neutral && !target.neutral && !castle) {
     return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
   }
+  if (!castle && target && (captureForbidden(state, moving) || captureImmune(state, target))) {
+    return reject(state, 'ILLEGAL_MOVE', 'That piece cannot capture or be captured.');
+  }
   const playedMove: Move = castle ? { from, to: rookFrom! } : move;
   let orthodox = target?.neutral && target.owner === moving.owner
     ? false
@@ -2630,6 +2697,9 @@ function movePiece(
         piece => piece.zone === 'board' && piece.square === makeSquare(capturedSquare) && piece.owner !== state.turn.color,
       );
   if (captured?.royal) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
+  if (captured && (captureForbidden(state, moving) || captureImmune(state, captured))) {
+    return reject(state, 'ILLEGAL_MOVE', 'That piece cannot capture or be captured.');
+  }
 
   const castlingRights = setupFor(state).castlingRights;
   const halfmoves = position.halfmoves;
@@ -2745,6 +2815,33 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
   return result;
 }
 
+function expirePacifism(result: ApplyResult): ApplyResult {
+  if (!result.ok) return result;
+  const expired = result.state.effects.filter((effect): effect is PacifismEffect => {
+    const record = effectRecord(effect);
+    const card = effectRecord(record?.card);
+    return effectKind(effect) === 'pacifism'
+      && typeof record?.pieceId === 'string'
+      && (record.owner === 'white' || record.owner === 'black')
+      && card?.cardId === 'pacifism'
+      && typeof card.id === 'string'
+      && !result.state.pieces.some(piece => piece.id === record.pieceId && piece.zone === 'board');
+  });
+  if (!expired.length) return result;
+  const cardIds = new Set(expired.map(effect => effect.card.id));
+  result.state.effects = result.state.effects.filter(effect => {
+    const record = effectRecord(effect);
+    const card = effectRecord(record?.card);
+    return effectKind(effect) !== 'pacifism' || typeof card?.id !== 'string' || !cardIds.has(card.id);
+  });
+  for (const effect of expired) {
+    if (!result.state.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
+      result.state.players[effect.owner].discard.push(effect.card);
+    }
+  }
+  return result;
+}
+
 function hasBoardOrCardEscape(state: GameState): boolean {
   const color = state.turn.color;
   return [...legalDests(state, isKingInCheck(state, color)).values()].some(dests => dests.length > 0)
@@ -2841,17 +2938,17 @@ function endTurn(state: GameState): ApplyResult {
 export function applyAction(state: GameState, action: GameAction | null | undefined): ApplyResult {
   if (state.outcome) return reject(state, 'GAME_OVER', 'The game is already over.');
   if (!action) return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
-  if (action.type === 'move') return movePiece(state, action);
-  if (action.type === 'namePiece') return namePiece(state, action);
+  if (action.type === 'move') return expirePacifism(movePiece(state, action));
+  if (action.type === 'namePiece') return expirePacifism(namePiece(state, action));
   if ((['pronouncePiece', 'pieceName', 'pronouncePieceName', 'pieceNamed'] as unknown[]).includes(action.type)) {
     return reject(state, 'INVALID_TARGET', 'Use the canonical namePiece action.');
   }
-  if (action.type === 'declineDoomsayer') return declineDoomsayer(state, action);
-  if (action.type === 'endTurn') return endTurn(state);
+  if (action.type === 'declineDoomsayer') return expirePacifism(declineDoomsayer(state, action));
+  if (action.type === 'endTurn') return expirePacifism(endTurn(state));
   if (action.type !== 'playCard') return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
-  return recordCardTransition(state, settlePendingRescue(
+  return expirePacifism(recordCardTransition(state, settlePendingRescue(
     state,
     playCard(state, action.cardId, action.target, action.cardInstanceId),
     action.cardId,
-  ));
+  )));
 }

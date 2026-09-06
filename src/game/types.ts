@@ -71,6 +71,13 @@ export interface DoomsayerEffect {
   card: CardInstance;
 }
 
+export interface PacifismEffect {
+  type: 'pacifism';
+  owner: Color;
+  card: CardInstance;
+  pieceId: string;
+}
+
 export interface PendingDoomsayerState {
   player: Color;
   cardInstanceId: string;

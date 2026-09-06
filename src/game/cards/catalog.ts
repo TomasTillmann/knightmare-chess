@@ -130,6 +130,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  pacifism: {
+    id: 'pacifism',
+    name: 'Pacifism',
+    points: 3,
+    unique: false,
+    image: '/KC3_card3.png',
+    description:
+      'One of your pieces, except your King, becomes non-violent for the rest of the game. Place a marker on it. It can no longer capture another piece, nor may it be captured.',
+    timing: ['beforeMove'],
+    continuing: true,
+  },
   anathema: {
     id: 'anathema',
     name: 'Anathema',
