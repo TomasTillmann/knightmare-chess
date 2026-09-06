@@ -30,6 +30,8 @@ These rules apply to every card implementation in this repository.
 - Test agents use `*** Update File`; never delete and re-add an existing path. They run only their targeted engine test and typecheck.
 - Implementation agents get the rule text, production entry points, exact black-box command, and baseline pass/fail counts. They never receive test source or test-derived implementation hints.
 - Audit agents get a fixed probe budget and a hard completion sentinel. They must report executed probe counts, findings, and measured wall time, then delete temporary harnesses.
+- Never ask an audit agent to create a harness from scratch. Before spawning it, the parent must create and successfully run a bounded engine-only scaffold with validated fixtures and zero findings. The fresh audit agent's only job is to rerun that scaffold, add exactly one independent adversarial group, rerun once, and report the sentinel within 45 seconds.
+- A placeholder or empty harness is not an audit checkpoint. If an audit agent has not executed the parent-validated scaffold within 15 seconds, interrupt it immediately; do not grant a second window.
 - Parent verification—not agent narration—decides whether a phase is complete.
 
 ## Speed gates
