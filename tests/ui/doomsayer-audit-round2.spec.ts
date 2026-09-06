@@ -125,6 +125,7 @@ test('immediate speech gates End turn, then keyboard resolution preserves the ki
   await endTurn.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
+  await page.getByTestId('chessboard').scrollIntoViewIfNeeded();
   await dragPiece(page, 'a8', 'b8');
   await expect.poll(async () => (await gameState(page)).turn.phase).toBe('afterMove');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
