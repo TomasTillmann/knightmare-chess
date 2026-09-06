@@ -497,6 +497,62 @@ export function guardianDests(state: GameState, from: SquareName): SquareName[] 
   return destinations;
 }
 
+function madmanJumpOptions(
+  occupied: ReadonlyMap<SquareName, PieceState>,
+  from: SquareName,
+  used: ReadonlySet<string>,
+): Array<{ move: CardMove; jumpedId: string }> {
+  const source = parseSquare(from);
+  return [[-1, -1], [-1, 1], [1, -1], [1, 1]].flatMap(([fileStep, rankStep]) => {
+    const middleFile = squareFile(source) + fileStep;
+    const middleRank = squareRank(source) + rankStep;
+    const targetFile = squareFile(source) + fileStep * 2;
+    const targetRank = squareRank(source) + rankStep * 2;
+    if (
+      targetFile < 0 || targetFile > 7 || targetRank < 0 || targetRank > 7
+      || middleFile < 0 || middleFile > 7 || middleRank < 0 || middleRank > 7
+    ) return [];
+    const middle = makeSquare(middleRank * 8 + middleFile);
+    const to = makeSquare(targetRank * 8 + targetFile);
+    const jumped = occupied.get(middle);
+    return jumped && !used.has(jumped.id) && !occupied.has(to)
+      ? [{ move: { from, to }, jumpedId: jumped.id }]
+      : [];
+  });
+}
+
+function madmanTargets(state: GameState): CardMove[][] {
+  const pawns = state.pieces.filter(piece =>
+    piece.zone === 'board'
+    && piece.square
+    && (piece.owner === state.turn.color || piece.neutral)
+    && piece.originalRole === 'pawn'
+    && !piece.promoted,
+  );
+  return pawns.flatMap(pawn => {
+    const occupied = new Map(state.pieces.flatMap(piece =>
+      piece.zone === 'board' && piece.square ? [[piece.square, piece] as const] : [],
+    ));
+    const routes: CardMove[][] = [];
+    const visit = (from: SquareName, used: ReadonlySet<string>, path: CardMove[]): void => {
+      const options = madmanJumpOptions(occupied, from, used);
+      if (!options.length) {
+        if (path.length) routes.push(path);
+        return;
+      }
+      for (const { move, jumpedId } of options) {
+        occupied.delete(from);
+        occupied.set(move.to, pawn);
+        visit(move.to, new Set([...used, jumpedId]), [...path, move]);
+        occupied.delete(move.to);
+        occupied.set(from, pawn);
+      }
+    };
+    visit(pawn.square!, new Set(), []);
+    return routes;
+  });
+}
+
 export function longJumpDests(state: GameState, from: SquareName): SquareName[] {
   const knight = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
   if (
@@ -946,6 +1002,85 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
 
   spendCard(resolved, 'fanatic', cardInstanceId);
   resolved.history.push({ type: 'cardPlayed', cardId: 'fanatic', target: targetSquare });
+  return { ok: true, state: resolved };
+}
+
+function playMadman(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'madman' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) return reject(state, 'CARD_NOT_IN_HAND', 'Madman is not in your hand.');
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Madman is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target, state.pieces.length);
+  if (
+    !moves
+    || Object.getPrototypeOf(target) !== Array.prototype
+    || Reflect.ownKeys(target as unknown[]).some(key =>
+      key !== 'length'
+      && (typeof key !== 'string' || !/^\d+$/.test(key) || Number(key) >= moves.length)
+    )
+    || moves.some((move, index) => {
+      const candidate = (target as Array<Record<string, unknown>>)[index];
+      return Object.getPrototypeOf(candidate) !== Object.prototype
+        || Reflect.ownKeys(candidate).length !== 2
+        || !Object.hasOwn(candidate, 'from')
+        || !Object.hasOwn(candidate, 'to');
+    })
+  ) return reject(state, 'INVALID_TARGET', 'Choose one complete sequence of Pawn jumps.');
+  if (moves.some((move, index) => index > 0 && move.from !== moves[index - 1].to)) {
+    return reject(state, 'INVALID_TARGET', 'Every jump must continue from the preceding landing square.');
+  }
+
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === moves[0].from);
+  if (!pawn) return reject(state, 'INVALID_TARGET', `There is no Pawn on ${moves[0].from}.`);
+  if (pawn.owner !== color && !pawn.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose one of your own Pawns.');
+  }
+  if (pawn.originalRole !== 'pawn' || pawn.promoted) {
+    return reject(state, 'WRONG_ROLE', 'Madman can target only an unpromoted original Pawn.');
+  }
+
+  const occupied = new Map(state.pieces.flatMap(piece =>
+    piece.zone === 'board' && piece.square ? [[piece.square, piece] as const] : [],
+  ));
+  const used = new Set<string>();
+  let current = pawn.square!;
+  for (const move of moves) {
+    const option = madmanJumpOptions(occupied, current, used).find(candidate =>
+      candidate.move.from === move.from && candidate.move.to === move.to,
+    );
+    if (!option) return reject(state, 'ILLEGAL_MOVE', 'Each jump must cross a different piece and land on an empty square.');
+    occupied.delete(current);
+    occupied.set(move.to, pawn);
+    used.add(option.jumpedId);
+    current = move.to;
+  }
+  if (madmanJumpOptions(occupied, current, used).length) {
+    return reject(state, 'ILLEGAL_MOVE', 'The Pawn must continue while another jump is available.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === pawn.id)!.square = current;
+  completeReplacementMove(resolved, color, true, [], [pawn]);
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'madman', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (moveLeavesRoyalInCheck(resolved, color, [pawn])) {
+    return fizzleCard(state, 'madman', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  spendCard(resolved, 'madman', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'madman', target: moves });
   return { ok: true, state: resolved };
 }
 
@@ -1911,6 +2046,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
+  if (cardId === 'madman') return playMadman(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'guardian') return playGuardian(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
@@ -1928,6 +2064,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'madman') return madmanTargets(state);
   if (cardId === 'doomsayer' || cardId === 'no-quarter') return [undefined];
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     const config = SWAP_CARDS[cardId];

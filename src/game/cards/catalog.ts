@@ -119,6 +119,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  madman: {
+    id: 'madman',
+    name: 'Madman',
+    points: 3,
+    unique: false,
+    image: '/KC3_card2.png',
+    description:
+      'For this move, one of your pawns can move like a King in a game of checkers, by jumping diagonally over pieces from either side. It may make as many jumps as it can, in any direction. However, the pieces it jumps are not captured.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   anathema: {
     id: 'anathema',
     name: 'Anathema',
