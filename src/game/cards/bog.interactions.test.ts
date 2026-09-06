@@ -110,6 +110,27 @@ test('Bog fizzles when truncation would leave only the mover in check', () => {
   assert.equal(event.reason, 'SELF_CHECK');
 });
 
+test('Bog fizzles when truncation would checkmate the reactor', () => {
+  const before = withBog(game({ fen: '8/8/8/5B2/5K2/4BB2/7k/R7 w - - 0 1' }));
+  const moved = move(before, 'a1', 'a4');
+  assert.equal(isKingInCheck(moved, 'black'), false);
+  const reactor = other(moved.turn.color);
+  const input = structuredClone(moved);
+  const instance = moved.players[reactor].hand[0]!;
+  const result = applyAction(moved, { type: 'playCard', cardId: BOG, cardInstanceId: instance.id } as Action);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.state.fen, moved.fen);
+  assert.equal(at(result.state, 'a4')?.id, at(moved, 'a4')?.id);
+  assert.deepEqual(moved, input);
+  assert.equal(result.state.players[reactor].hand.some(item => item.id === instance.id), false);
+  assert.equal(result.state.players[reactor].discard.some(item => item.id === instance.id), true);
+  const event = result.state.history.at(-1)!;
+  assert.equal(event.type, 'cardFizzled');
+  assert.equal(event.cardId, BOG);
+  assert.equal(event.reason, 'DIRECT_MATE');
+});
+
 test('Bog is discarded by the reacting opponent without consuming or changing the mover turn', () => {
   const moved = move(withBog(game({ fen: '7k/8/8/8/8/8/8/R6K w - - 0 1' })), 'a1', 'a4');
   const reactor = other(moved.turn.color);
