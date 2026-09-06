@@ -113,7 +113,7 @@ const implementedCardIds = [
   'assassin', 'disintegration', 'doomsayer', 'fanatic', 'annexation', 'forced-march',
   'guardian', 'heresy', 'cowardice', 'holy-war', 'pacifism', 'anathema', 'evangelists', 'tournament',
   'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump',
-  'dubbing', 'squaring-the-circle', 'no-quarter',
+  'dubbing', 'squaring-the-circle', 'no-quarter', 'vendetta',
 ] as const;
 
 test('Madman composes deterministically after every implemented card/effect', async t => {
@@ -121,9 +121,11 @@ test('Madman composes deterministically after every implemented card/effect', as
     [...implementedCardIds].sort(),
     Object.keys(CARD_CATALOG).filter(id => id !== MADMAN).sort(),
   );
-  assert.equal(implementedCardIds.length, 24);
+  assert.equal(implementedCardIds.length, 25);
   for (const id of implementedCardIds) await t.test(id, () => {
-    const initial = game({ fen: '7k/8/8/8/3r4/2P5/8/K7 w - - 11 20' });
+    const initial = game({
+      fen: id === 'vendetta' ? '7k/8/8/8/3P4/2P5/8/K7 w - - 11 20' : '7k/8/8/8/3r4/2P5/8/K7 w - - 11 20',
+    });
     initial.history.push({ type: 'cardPlayed', cardId: id });
     if (CARD_CATALOG[id].continuing) {
       initial.effects.push(id === 'pacifism'
@@ -132,6 +134,8 @@ test('Madman composes deterministically after every implemented card/effect', as
           card: { id: `white-active-${id}`, cardId: id },
           pieceId: pieceAt(initial, 'c3')!.id,
         }
+        : id === 'vendetta'
+          ? { type: id, owner: 'white', card: { id: `white-active-${id}`, cardId: id } }
         : { type: id, active: true, marker: `${id}-marker` });
     }
     const snapshot = structuredClone(initial);
@@ -143,9 +147,14 @@ test('Madman composes deterministically after every implemented card/effect', as
     assert.deepEqual(first, second);
     assert.deepEqual(initial, snapshot);
     if (!first.ok) assert.fail(`${first.error.code}: ${first.error.message}`);
-    assert.deepEqual(first.state.effects, snapshot.effects);
+    if (id === 'vendetta') {
+      assert.equal(first.state.effects.some(effect => (effect as { type?: string }).type === id), false);
+      assert.ok(first.state.players.white.discard.some(card => card.id === 'white-active-vendetta'));
+    } else {
+      assert.deepEqual(first.state.effects, snapshot.effects);
+    }
     assert.equal(first.state.history.at(-2)?.cardId, id);
-    assert.equal(pieceAt(first.state, 'd4')?.id, 'black-rook-d4');
+    assert.equal(pieceAt(first.state, 'd4')?.id, id === 'vendetta' ? 'white-pawn-d4' : 'black-rook-d4');
   });
 });
 
