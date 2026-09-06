@@ -424,12 +424,20 @@ describe('Guardian King safety and Checkmate Rule', () => {
     assert.equal(after.outcome, null);
   });
 
-  it('fizzles a direct card-created checkmate and rolls back the complete convoy', () => {
-    const before = game({
+  it('evaluates direct mate only from the complete convoy', () => {
+    const temporaryMate = game({
       fen: '5N1k/5K2/8/8/8/8/1P6/BR6 w - - 0 1',
+    });
+    const legal = ok(play(temporaryMate, convoy(['b2', 'b3'], ['b1', 'b2'])));
+    assert.equal(pieceAt(legal, 'b3')?.role, 'pawn');
+    assert.equal(pieceAt(legal, 'b2')?.role, 'rook');
+    assert.equal(legal.history.at(-1)?.type, 'cardPlayed');
+
+    const before = game({
+      fen: '8/8/8/6Q1/8/7k/4PK2/4R1B1 w - - 0 1',
       decks: { white: ['fanatic'], black: [] },
     });
-    const after = ok(play(before, convoy(['b2', 'b3'], ['b1', 'b2'])));
+    const after = ok(play(before, convoy(['e2', 'e4'], ['e1', 'e3'])));
     assert.deepEqual(after.pieces, before.pieces);
     assert.deepEqual(after.history.at(-1), {
       type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
