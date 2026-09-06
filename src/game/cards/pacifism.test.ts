@@ -124,6 +124,17 @@ describe('Pacifism targets one controlled non-royal physical piece', () => {
     assert.equal((ok(play(before)).effects[0] as PacifismEffect).pieceId, pieceAt(before, 'e2')!.id);
   });
 
+  it('accepts a Coup Prince by physical identity but rejects the royal replacement', () => {
+    const coup = patchPiece(game({ fen: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1' }), 'e1', {
+      role: 'king', royal: false,
+    });
+    const before = patchPiece(coup, 'a1', { royal: true });
+    const prince = pieceAt(before, 'e1')!;
+
+    rejected(before, 'a1', 'INVALID_TARGET');
+    assert.equal((ok(play(before, 'e1')).effects[0] as PacifismEffect).pieceId, prince.id);
+  });
+
   it('accepts an opponent-owned neutral piece because either player controls it', () => {
     const before = patchPiece(game({ fen: '4k3/8/8/8/8/8/4p3/4K3 w - - 0 1' }), 'e2', { neutral: true });
     const effect = ok(play(before)).effects[0] as PacifismEffect;
