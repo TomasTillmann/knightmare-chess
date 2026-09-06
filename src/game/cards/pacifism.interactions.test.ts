@@ -190,7 +190,7 @@ test('Madman, Heresy, and a swap relocate the marked identity without capture', 
       fen: '7k/8/8/8/3r4/2P5/8/4K3 w - - 0 1', hands: { white: [PACIFISM, 'madman'], black: [] },
     });
     const id = pieceAt(state, 'c3')!.id;
-    state = nextWhiteTurn(pacify(state, 'c3'), ['e1', 'd1'], ['h8', 'g8']);
+    state = nextWhiteTurn(pacify(state, 'c3'), ['e1', 'f1'], ['h8', 'g8']);
     state = play(state, 'madman', [{ from: 'c3', to: 'e5' }]);
     assert.equal(pieceAt(state, 'e5')?.id, id);
     assert.equal(pieceAt(state, 'd4')?.id, 'black-rook-d4');

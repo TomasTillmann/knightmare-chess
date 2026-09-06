@@ -30,7 +30,8 @@ function game(options: Options = {}): State {
   });
 }
 
-function play(state: State, target: unknown = 'e2', cardInstanceId?: unknown): Result {
+function play(state: State, target?: unknown, cardInstanceId?: unknown): Result {
+  target = arguments.length >= 2 ? target : 'e2';
   return applyAction(state, {
     type: 'playCard', cardId: CARD, target, ...(cardInstanceId === undefined ? {} : { cardInstanceId }),
   } as Action);
