@@ -335,7 +335,7 @@ test('an ordinarily promoted Pawn answers only to its current promoted role', ()
   const captured = namePiece(playDoomsayer(move(queenState, 'e2', 'e4')), 'queen', 'a7');
   assert.equal(captured.pieces.find(piece => piece.id === queenPawn.id)?.zone, 'captured');
 
-  const pawnState = game();
+  const pawnState = game({ fen: '7k/p7/8/8/8/8/4P3/4K3 w - - 0 1' });
   const promoted = pieceAt(pawnState, 'a7')!;
   promoted.role = 'queen';
   promoted.originalRole = 'pawn';
