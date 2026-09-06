@@ -36,6 +36,7 @@ import type {
   Role,
   SiegeTarget,
   SquareName,
+  VendettaEffect,
 } from './types.js';
 
 const SQUARE = /^[a-h][1-8]$/;
@@ -77,6 +78,19 @@ export function isDoomsayerEffect(effect: unknown): effect is DoomsayerEffect {
 
 export function activeDoomsayers(state: GameState): DoomsayerEffect[] {
   return state.effects.filter(isDoomsayerEffect);
+}
+
+function isVendettaEffect(effect: unknown): effect is VendettaEffect {
+  const record = effectRecord(effect);
+  const card = effectRecord(record?.card);
+  return effectKind(effect) === 'vendetta'
+    && card?.cardId === 'vendetta'
+    && typeof card.id === 'string'
+    && (record?.owner === 'white' || record?.owner === 'black');
+}
+
+function activeVendettas(state: GameState): VendettaEffect[] {
+  return state.effects.filter(isVendettaEffect);
 }
 
 function targetMatchesPiece(target: unknown, piece: PieceState): boolean {
@@ -193,6 +207,7 @@ export function boardFen(state: GameState): string {
 export function legalDests(
   state: GameState,
   allowAfterMoveRescue = true,
+  enforceVendetta = true,
 ): Map<SquareName, SquareName[]> {
   if (state.turn.moveMade || state.outcome) return new Map();
   const position = positionFor(state);
@@ -206,6 +221,7 @@ export function legalDests(
       state,
       { type: 'move', from: piece.square!, to, ...(promotion ? { promotion } : {}) },
       allowAfterMoveRescue,
+      enforceVendetta,
     ).ok);
   };
   for (const piece of state.pieces) {
@@ -280,7 +296,56 @@ export function legalDests(
     if (legal.length) dests.set(from, legal);
     else dests.delete(from);
   }
+  if (enforceVendetta && activeVendettas(state).length) {
+    const captures = vendettaCaptureDests(state);
+    if (captures.size) return captures;
+  }
   return dests;
+}
+
+function vendettaVictim(
+  state: GameState,
+  from: SquareName,
+  to: SquareName,
+): PieceState | undefined {
+  return state.pieces.find(piece =>
+    piece.zone === 'board'
+    && piece.square === to
+    && piece.owner === opposite(state.turn.color),
+  ) ?? (() => {
+    const capture = enPassantCapture(state, from, to);
+    return capture?.victim.owner === opposite(state.turn.color) ? capture.victim : undefined;
+  })();
+}
+
+function vendettaCaptureDests(state: GameState): Map<SquareName, SquareName[]> {
+  const captures = new Map<SquareName, SquareName[]>();
+  for (const [from, dests] of legalDests(state, false, false)) {
+    const targets = dests.filter(to => vendettaVictim(state, from, to));
+    if (targets.length) captures.set(from, targets);
+  }
+  return captures;
+}
+
+function expireVendettaIfBlocked(state: GameState): GameState {
+  const active = activeVendettas(state);
+  if (
+    state.turn.phase !== 'beforeMove'
+    || !active.length
+    || vendettaCaptureDests(state).size
+  ) return state;
+
+  const next = structuredClone(state);
+  const ids = new Set(active.map(effect => effect.card.id));
+  next.effects = next.effects.filter(effect =>
+    !isVendettaEffect(effect) || !ids.has(effect.card.id),
+  );
+  for (const effect of active) {
+    if (!next.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
+      next.players[effect.owner].discard.push(effect.card);
+    }
+  }
+  return next;
 }
 
 function turnView(state: GameState, color: Color): GameState {
@@ -2051,6 +2116,29 @@ function playPacifism(state: GameState, target: unknown, cardInstanceId?: unknow
   return { ok: true, state: resolved };
 }
 
+function playVendetta(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'vendetta' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) return reject(state, 'CARD_NOT_IN_HAND', 'Vendetta is not in your hand.');
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Vendetta is played after the regular move.');
+  }
+  if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Vendetta does not take a target.');
+
+  const resolved = structuredClone(state);
+  const card = spendCard(resolved, 'vendetta', cardInstanceId, false);
+  resolved.effects.push({ type: 'vendetta', owner: color, card } satisfies VendettaEffect);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'vendetta' });
+  return { ok: true, state: resolved };
+}
+
 function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -2096,11 +2184,12 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
   return { ok: true, state: resolved };
 }
 
-function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+function playCardUnchecked(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
   if (cardId === 'assassin') return playAssassin(state, target, cardInstanceId);
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
   if (cardId === 'pacifism') return playPacifism(state, target, cardInstanceId);
+  if (cardId === 'vendetta') return playVendetta(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'madman') return playMadman(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
@@ -2119,6 +2208,17 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
 }
 
+function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const captureRequired = state.turn.phase === 'beforeMove'
+    && activeVendettas(state).length > 0
+    && vendettaCaptureDests(state).size > 0;
+  const result = playCardUnchecked(state, cardId, target, cardInstanceId);
+  if (captureRequired && result.ok && result.state.turn.moveMade) {
+    return reject(state, 'ILLEGAL_MOVE', 'Vendetta requires an available regular capture.');
+  }
+  return result;
+}
+
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
   if (cardId === 'madman') return madmanTargets(state);
   if (cardId === 'pacifism') return state.pieces.flatMap(piece =>
@@ -2129,7 +2229,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
       ? [piece.square]
       : [],
   );
-  if (cardId === 'doomsayer' || cardId === 'no-quarter') return [undefined];
+  if (cardId === 'doomsayer' || cardId === 'no-quarter' || cardId === 'vendetta') return [undefined];
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
@@ -2469,6 +2569,7 @@ function movePiece(
   state: GameState,
   action: Extract<GameAction, { type: 'move' }>,
   allowAfterMoveRescue = true,
+  enforceVendetta = true,
 ): ApplyResult {
   if (state.turn.moveMade || state.turn.phase !== 'beforeMove') {
     return reject(state, 'ILLEGAL_MOVE', 'The regular move has already been made.');
@@ -2484,6 +2585,12 @@ function movePiece(
 
   const fromName = action.from as SquareName;
   const toName = action.to as SquareName;
+  if (
+    enforceVendetta
+    && activeVendettas(state).length
+    && vendettaCaptureDests(state).size
+    && !vendettaVictim(state, fromName, toName)
+  ) return reject(state, 'ILLEGAL_MOVE', 'Vendetta requires an available capture.');
   const from = parseSquare(fromName);
   const to = parseSquare(toName);
   let promotion: Role | undefined;
@@ -2916,7 +3023,7 @@ function endTurn(state: GameState): ApplyResult {
     return reject(state, 'KING_IN_CHECK', 'Your King is still in check.');
   }
 
-  const next = structuredClone(state);
+  let next = structuredClone(state);
   const nextColor = opposite(state.turn.color);
   next.turn = {
     color: nextColor,
@@ -2926,6 +3033,7 @@ function endTurn(state: GameState): ApplyResult {
   };
   next.pendingRescue = null;
   next.pendingDoomsayer = null;
+  next = expireVendettaIfBlocked(next);
   const canEscape = hasTurnEscape(next);
   if (isOrdinaryCheckmate(next, nextColor) && !canEscape) {
     next.outcome = { winner: state.turn.color, reason: 'checkmate' };
@@ -2938,6 +3046,7 @@ function endTurn(state: GameState): ApplyResult {
 export function applyAction(state: GameState, action: GameAction | null | undefined): ApplyResult {
   if (state.outcome) return reject(state, 'GAME_OVER', 'The game is already over.');
   if (!action) return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
+  state = expireVendettaIfBlocked(state);
   if (action.type === 'move') return expirePacifism(movePiece(state, action));
   if (action.type === 'namePiece') return expirePacifism(namePiece(state, action));
   if ((['pronouncePiece', 'pieceName', 'pronouncePieceName', 'pieceNamed'] as unknown[]).includes(action.type)) {

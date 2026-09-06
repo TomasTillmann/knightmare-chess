@@ -78,6 +78,12 @@ export interface PacifismEffect {
   pieceId: string;
 }
 
+export interface VendettaEffect {
+  type: 'vendetta';
+  owner: Color;
+  card: CardInstance;
+}
+
 export interface PendingDoomsayerState {
   player: Color;
   cardInstanceId: string;

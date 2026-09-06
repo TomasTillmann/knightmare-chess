@@ -141,6 +141,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: true,
   },
+  vendetta: {
+    id: 'vendetta',
+    name: 'Vendetta',
+    points: 3,
+    unique: true,
+    image: '/KC4_card1.png',
+    description:
+      "Each player must now use his move to capture one of his opponent's pieces, if he can do so. This effect lasts until one of the players cannot make a capture. You are not required to play a card to make a capture, even if you have a card that would let you capture.",
+    timing: ['afterMove'],
+    continuing: true,
+  },
   anathema: {
     id: 'anathema',
     name: 'Anathema',
