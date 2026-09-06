@@ -68,7 +68,38 @@ const invariant = (value: GameState): void => {
   }
 };
 
-const steps: Array<{ index: number; before: GameState; action: GameAction; after: GameState }> = [];
+const delta = (before: GameState, after: GameState) => {
+  const player = (value: GameState, color: Color) => ({
+    hand: value.players[color].hand,
+    deck: { count: value.players[color].deck.length, top: value.players[color].deck[0] },
+    discard: value.players[color].discard,
+  });
+  const changedPieces = new Set([...before.pieces, ...after.pieces].map(piece => piece.id));
+  const pieces = [...changedPieces].flatMap(id => {
+    const oldPiece = before.pieces.find(piece => piece.id === id);
+    const newPiece = after.pieces.find(piece => piece.id === id);
+    return JSON.stringify(oldPiece) === JSON.stringify(newPiece) ? [] : [{ id, before: oldPiece, after: newPiece }];
+  });
+  const players = (['white', 'black'] as const).flatMap(color =>
+    JSON.stringify(before.players[color]) === JSON.stringify(after.players[color])
+      ? []
+      : [{ color, before: player(before, color), after: player(after, color) }],
+  );
+  return {
+    fen: [before.fen, after.fen],
+    turn: [before.turn, after.turn],
+    history: after.history.slice(before.history.length),
+    pieces,
+    players,
+    ...(JSON.stringify(before.effects) === JSON.stringify(after.effects) ? {} : { effects: [before.effects, after.effects] }),
+    ...(JSON.stringify(before.enPassant) === JSON.stringify(after.enPassant) ? {} : { enPassant: [before.enPassant, after.enPassant] }),
+    ...(JSON.stringify(before.pendingRescue) === JSON.stringify(after.pendingRescue) ? {} : { pendingRescue: [before.pendingRescue, after.pendingRescue] }),
+    ...(JSON.stringify(before.pendingDoomsayer) === JSON.stringify(after.pendingDoomsayer) ? {} : { pendingDoomsayer: [before.pendingDoomsayer, after.pendingDoomsayer] }),
+    ...(JSON.stringify(before.outcome) === JSON.stringify(after.outcome) ? {} : { outcome: [before.outcome, after.outcome] }),
+  };
+};
+
+const steps: Array<{ index: number; before: GameState; action: GameAction; after: GameState; delta: ReturnType<typeof delta> }> = [];
 let stalled: string | undefined;
 for (let index = 0; index < requestedTransitions && !state.outcome; index += 1) {
   invariant(state);
@@ -96,7 +127,7 @@ for (let index = 0; index < requestedTransitions && !state.outcome; index += 1) 
   assert.equal(result.ok, true);
   state = result.state;
   invariant(state);
-  steps.push({ index: index + 1, before, action, after: structuredClone(state) });
+  steps.push({ index: index + 1, before, action, after: structuredClone(state), delta: delta(before, state) });
 }
 
 const trace = {
