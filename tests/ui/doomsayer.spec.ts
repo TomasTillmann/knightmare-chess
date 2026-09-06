@@ -140,6 +140,7 @@ test('keeps a declined effect through End turn and unrelated named-card play', a
 test('supports the entire play and announcement flow from the keyboard', async ({ page }) => {
   await dragPiece(page, 'e2', 'e4');
   const card = hand(page, 'White').getByRole('button', { name: 'Doomsayer' });
+  await expect(card).toHaveAttribute('aria-disabled', 'false');
   await card.focus();
   await page.keyboard.press('Enter');
   await expect(card).toHaveAttribute('aria-pressed', 'true');
