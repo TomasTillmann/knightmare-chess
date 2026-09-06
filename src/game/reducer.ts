@@ -663,31 +663,6 @@ export function dubbingDests(state: GameState, from: SquareName): SquareName[] {
     .map(makeSquare);
 }
 
-function latestMovedPiece(state: GameState): PieceState | undefined {
-  for (let index = state.history.length - 1; index >= 0; index -= 1) {
-    const event = state.history[index];
-    const movement = event.type === 'move'
-      ? event.from && event.to ? [{ from: event.from, to: event.to }] : []
-      : event.movement;
-    if (!movement?.length) continue;
-    if (movement.length !== 1) return undefined;
-    return state.pieces.find(piece => piece.zone === 'board' && piece.square === movement[0].to);
-  }
-  return undefined;
-}
-
-export function doppelgangerDests(state: GameState, from: SquareName): SquareName[] {
-  const source = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
-  if (!source || (source.owner !== state.turn.color && !source.neutral)
-    || (source.role === 'pawn' || (source.originalRole === 'pawn' && !source.promoted))) return [];
-
-  const copied = latestMovedPiece(state);
-  if (!copied || copied.role === 'pawn') return [];
-  const board = setupFor(state).board;
-  return [...attacks({ color: source.owner, role: copied.role }, parseSquare(from), board.occupied).diff(board.occupied)]
-    .map(makeSquare);
-}
-
 export function heresyDests(state: GameState, from: SquareName): SquareName[] {
   const bishop = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
   if (!bishop || (bishop.role !== 'bishop' && bishop.originalRole !== 'bishop')) return [];
@@ -1741,63 +1716,6 @@ function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown
   return { ok: true, state: resolved };
 }
 
-function playDoppelganger(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
-  const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'doppelganger' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Doppelganger is not in your hand.');
-  }
-  if (state.turn.cardPlays[color] >= 1) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
-  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
-    return reject(state, 'INVALID_TIMING', 'Doppelganger is played instead of the regular move.');
-  }
-  const moves = parseCardMoves(target, 1);
-  if (!moves || moves.length !== 1) {
-    return reject(state, 'INVALID_TARGET', 'Choose one valid piece move.');
-  }
-  const [move] = moves;
-  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === move.from);
-  if (!piece) return reject(state, 'INVALID_TARGET', `There is no piece on ${move.from}.`);
-  if (piece.owner !== color && !piece.neutral) {
-    return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
-  }
-  if (piece.originalRole === 'pawn' && !piece.promoted) {
-    return reject(state, 'WRONG_ROLE', 'Doppelganger cannot target an unpromoted original Pawn.');
-  }
-  if (!doppelgangerDests(state, move.from).includes(move.to)) {
-    const copied = latestMovedPiece(state);
-    return reject(state, 'ILLEGAL_MOVE', `Move the piece like a ${copied?.role ?? 'copied piece'} to an empty square.`);
-  }
-
-  const wasInCheck = isKingInCheck(state, color);
-  const resolved = structuredClone(state);
-  resolved.pieces.find(candidate => candidate.id === piece.id)!.square = move.to;
-  completeReplacementMove(
-    resolved,
-    color,
-    piece.originalRole === 'pawn' && !piece.promoted,
-    [],
-    [piece],
-  );
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'doppelganger', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [piece])) {
-    return fizzleCard(state, 'doppelganger', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'doppelganger', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'doppelganger', target: moves });
-  return { ok: true, state: resolved };
-}
-
 function playSquaringTheCircle(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -2388,7 +2306,6 @@ function playCardUnchecked(state: GameState, cardId: string, target: unknown, ca
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
   if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
-  if (cardId === 'doppelganger') return playDoppelganger(state, target, cardInstanceId);
   if (cardId === 'squaring-the-circle') return playSquaringTheCircle(state, target, cardInstanceId);
   if (cardId === 'cowardice') return playCowardice(state, target, cardInstanceId);
   if (cardId === 'heresy') return playHeresy(state, target, cardInstanceId);
@@ -2502,7 +2419,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
       return phasePlans(afterOpponent, state.turn.color).map(ownMoves => [...opponentMoves, ...ownMoves]);
     });
   }
-  if (cardId !== 'assassin' && cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'doppelganger' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
+  if (cardId !== 'assassin' && cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
@@ -2520,15 +2437,13 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
                 ? longJumpDests
                 : cardId === 'dubbing'
                   ? dubbingDests
-                  : cardId === 'doppelganger'
-                    ? doppelgangerDests
                   : cardId === 'squaring-the-circle'
                     ? squaringTheCircleDests
                   : cowardiceDests)(state, piece.square)
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
-  if (cardId === 'assassin' || cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'doppelganger' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
+  if (cardId === 'assassin' || cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
     return steps.map(step => [step]);
   }
   if (cardId === 'onslaught') {
