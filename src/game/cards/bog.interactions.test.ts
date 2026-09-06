@@ -84,19 +84,29 @@ test('Bog recomputes check from the truncated board', () => {
   assert.equal(isKingInCheck(state, 'white'), false);
 });
 
-test('Bog rejects atomically when truncation would undo an escape from check', () => {
-  const before = withBog(game({ fen: 'r6R/6k1/8/8/8/8/8/K7 w - - 0 1' }));
+test('Bog fizzles when truncation would leave only the mover in check', () => {
+  const before = withBog(game({ fen: 'r6R/8/7k/8/8/8/8/K7 w - - 0 1' }));
   assert.equal(isKingInCheck(before, 'white'), true);
   const moved = move(before, 'h8', 'a8');
   assert.equal(isKingInCheck(moved, 'white'), false);
+  assert.equal(isKingInCheck(moved, 'black'), false);
   const reactor = other(moved.turn.color);
+  const input = structuredClone(moved);
   const result = applyAction(moved, {
     type: 'playCard', cardId: BOG, cardInstanceId: moved.players[reactor].hand[0]?.id,
   } as Action);
-  assert.equal(result.ok, false);
-  if (result.ok) return;
-  assert.equal(result.error.code, 'KING_IN_CHECK');
-  assert.deepEqual(result.state, moved);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.state.fen, moved.fen);
+  assert.equal(at(result.state, 'a8')?.id, at(moved, 'a8')?.id);
+  assert.equal(result.state.pieces.find(piece => piece.id === 'black-rook-a8')?.zone, 'captured');
+  assert.deepEqual(moved, input);
+  const instance = moved.players[reactor].hand[0]!;
+  assert.equal(result.state.players[reactor].hand.some(item => item.id === instance.id), false);
+  assert.equal(result.state.players[reactor].discard.some(item => item.id === instance.id), true);
+  assert.deepEqual(result.state.history.at(-1), {
+    type: 'cardFizzled', cardId: BOG, reason: 'SELF_CHECK',
+  });
 });
 
 test('Bog is discarded by the reacting opponent without consuming or changing the mover turn', () => {
