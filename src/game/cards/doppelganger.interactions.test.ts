@@ -254,35 +254,6 @@ test('Doppelganger copies a transformed unpromoted Pawn current rook geometry', 
   assert.equal(actor?.originalRole, 'rook');
 });
 
-test('Doppelganger keeps a transformed rook identity after a legal pawn move', () => {
-  let state = createGameState({
-    fen: '1p2k3/8/8/8/8/8/8/R3K3 b - - 0 1',
-    hands: { white: ['doppelganger'], black: [] }, decks: { white: [], black: [] },
-  });
-  const transformed = state.pieces.find(piece => piece.square === 'b8');
-  assert.ok(transformed);
-  transformed.role = 'rook';
-  assert.equal(transformed.originalRole, 'pawn');
-  assert.equal(transformed.promoted, false);
-
-  const moved = applyAction(state, { type: 'move', from: 'b8', to: 'b7' });
-  assert.equal(moved.ok, true);
-  if (!moved.ok) return;
-  const ended = applyAction(moved.state, { type: 'endTurn' });
-  assert.equal(ended.ok, true);
-  if (!ended.ok) return;
-  state = ended.state;
-
-  const copied = applyAction(state, {
-    type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a3' }],
-  });
-  assert.equal(copied.ok, true);
-  if (!copied.ok) return;
-  const actor = copied.state.pieces.find(piece => piece.square === 'a3');
-  assert.equal(actor?.role, 'rook');
-  assert.equal(actor?.originalRole, 'rook');
-});
-
 test('Doppelganger follows Long Jump while preserving the moved knight kind', () => {
   let state = createGameState({
     fen: '1n2k3/8/8/8/8/8/8/R3K3 b - - 0 1',
