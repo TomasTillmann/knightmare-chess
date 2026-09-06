@@ -165,6 +165,29 @@ describe('Pacifism targets one controlled non-royal physical piece', () => {
   });
 });
 
+describe('Pacifism with an active Truce Continuing Effect', () => {
+  it('can be played without replacing Truce, while preserving the regular move and surviving Truce ending', () => {
+    const truce = { type: 'truce', owner: 'black', card: { id: 'black-truce-0', cardId: 'truce' } };
+    const before = { ...game({
+      fen: '4k3/8/8/8/8/3p4/4P3/4K3 w - - 0 1',
+      hands: { white: [CARD], black: [] },
+    }), effects: [truce] };
+    const target = pieceAt(before, 'e2')!;
+    const selected = before.players.white.hand[0]!;
+    const after = ok(play(before, 'e2', selected.id));
+
+    assert.deepEqual(after.effects[0], truce);
+    assert.deepEqual(after.effects[1], { type: CARD, owner: 'white', card: selected, pieceId: target.id });
+    assert.equal(after.turn.moveMade, false);
+    assert.equal(applyAction(after, { type: 'move', from: 'e2', to: 'e3' }).ok, true);
+
+    const afterTruce = { ...after, effects: after.effects.slice(1) };
+    const moved = ok(applyAction(afterTruce, { type: 'move', from: 'e2', to: 'e3' }));
+    assert.equal(pieceAt(moved, 'e3')?.id, target.id);
+    assert.deepEqual(moved.effects, [after.effects[1]]);
+  });
+});
+
 describe('Pacifism timing, allowance, card identity, and persistence', () => {
   it('is legal only before the regular move', () => {
     ok(play(game({ phase: 'beforeMove', moveMade: false })));
