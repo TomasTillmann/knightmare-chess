@@ -82,9 +82,14 @@ describe('Bog', () => {
 
   it("rejects a move by the card owner's opponent and leaves the card unavailable", () => {
     assertBogControl();
-    const black = createGameState({ fen: '4k3/8/8/8/8/8/R6n/4K3 w - - 0 1', hands: { white: [], black: [CARD] }, decks: { white: [], black: [] } });
-    const wrong = applyAction(black, { type: 'move', from: 'a2', to: 'a6' });
+    const before = createGameState({ fen: '4k3/8/8/8/8/8/R6n/4K3 w - - 0 1', hands: { white: [CARD], black: [] }, decks: { white: [], black: [] } });
+    const moved = applyAction(before, { type: 'move', from: 'a2', to: 'a6' });
+    assert.equal(moved.ok, true);
+    if (!moved.ok) return;
+    const snapshot = JSON.stringify(moved.state);
+    const wrong = applyAction(moved.state, { type: 'playCard', cardId: CARD });
     assert.equal(wrong.ok, false);
+    assert.equal(JSON.stringify(moved.state), snapshot);
   });
 
   it('accepts a clean frozen-input success', () => {
