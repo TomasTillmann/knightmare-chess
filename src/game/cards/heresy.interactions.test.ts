@@ -176,7 +176,7 @@ test('mate escape search stages an ordinary move for Heresy, but Heresy cannot e
   assert.equal(isKingInCheck(state, 'black'), false);
 
   const stalemate = game({
-    fen: 'k7/8/1QK5/8/8/8/8/2B5 b - - 0 1',
+    fen: 'k7/8/1QK5/8/8/8/8/2B5 w - - 0 1',
     hands: { white: [], black: [HERESY] },
   });
   const settled = endTurn({ ...stalemate, turn: { ...stalemate.turn, moveMade: true, phase: 'afterMove' } });
