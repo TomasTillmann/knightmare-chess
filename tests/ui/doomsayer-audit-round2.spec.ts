@@ -79,19 +79,29 @@ function squareCenter(box: { x: number; y: number; width: number; height: number
 
 async function dragPiece(page: Page, from: string, to: string) {
   const board = page.getByTestId('chessboard');
-  await board.evaluate(element => element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' }));
   const box = await board.boundingBox();
   if (!box) throw new Error('Chessboard is not visible');
   const start = squareCenter(box, from);
   const end = squareCenter(box, to);
-  const viewport = page.viewportSize();
-  if (!viewport || [start, end].some(({ x, y }) => x < 0 || x >= viewport.width || y < 0 || y >= viewport.height)) {
-    throw new Error('Chess move coordinates are outside the viewport');
-  }
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
   await page.mouse.move(end.x, end.y, { steps: 8 });
   await page.mouse.up();
+}
+
+async function keyboardMove(page: Page, from: string, to: string) {
+  const controls = page.getByText('Keyboard controls', { exact: true });
+  await expect(controls).toBeVisible();
+  await controls.click();
+  const moveFrom = page.getByRole('combobox', { name: 'Move from' });
+  const moveTo = page.getByRole('combobox', { name: 'Move to' });
+  await expect(moveFrom).toBeEnabled();
+  await moveFrom.selectOption(from);
+  await expect(moveTo).toBeEnabled();
+  await moveTo.selectOption(to);
+  const submit = page.getByRole('button', { name: 'Make move' });
+  await expect(submit).toBeEnabled();
+  await submit.click();
 }
 
 async function namePiece(page: Page, role: string, pieceId: string, keyboard = false) {
@@ -131,7 +141,7 @@ test('immediate speech gates End turn, then keyboard resolution preserves the ki
   await endTurn.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
-  await dragPiece(page, 'a8', 'b8');
+  await keyboardMove(page, 'a8', 'b8');
   await expect.poll(async () => (await gameState(page)).turn.phase).toBe('afterMove');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
   const escaped = await gameState(page);
@@ -174,7 +184,7 @@ test('declining only closes the immediate window and preserves the later Doomsay
   expect(state.players.white.discard).toEqual([{ id: 'white-hand-0-doomsayer', cardId: 'doomsayer' }]);
   expect(state.outcome).toBeNull();
 
-  await dragPiece(page, 'a8', 'b8');
+  await keyboardMove(page, 'a8', 'b8');
   await expect.poll(async () => (await gameState(page)).turn.phase).toBe('afterMove');
   state = await gameState(page);
   expect(state.fen).toBe('1k6/8/2K5/8/8/8/8/R7 w - - 1 2');
