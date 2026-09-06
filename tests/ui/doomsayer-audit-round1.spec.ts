@@ -90,14 +90,13 @@ async function dragPiece(page: Page, from: string, to: string) {
 async function seedLaterSpeech(
   page: Page,
   turn: Color,
-  expiration: 'declined' | 'expired' = 'declined',
 ) {
   const caster: Color = turn === 'white' ? 'black' : 'white';
   const move = caster === 'white'
     ? { type: 'move', from: 'e2', to: 'e4' }
     : { type: 'move', from: 'e7', to: 'e5' };
   const actions: unknown[] = [move, { type: 'playCard', cardId: 'doomsayer' }];
-  if (expiration === 'declined') actions.push({ type: 'declineDoomsayer', player: turn });
+  actions.push({ type: 'declineDoomsayer', player: turn });
   actions.push({ type: 'endTurn' });
   await seedGame(page, {
     fen: caster === 'white' ? START_WHITE : START_BLACK,
@@ -129,13 +128,13 @@ async function recordKnightSpeech(page: Page, speaker: Color, square: 'b1' | 'b8
 }
 
 for (const fixture of [
-  { turn: 'white', speaker: 'white', square: 'b1', expiration: 'declined' },
-  { turn: 'white', speaker: 'black', square: 'b8', expiration: 'expired' },
-  { turn: 'black', speaker: 'white', square: 'b1', expiration: 'expired' },
-  { turn: 'black', speaker: 'black', square: 'b8', expiration: 'declined' },
+  { turn: 'white', speaker: 'white', square: 'b1' },
+  { turn: 'white', speaker: 'black', square: 'b8' },
+  { turn: 'black', speaker: 'white', square: 'b1' },
+  { turn: 'black', speaker: 'black', square: 'b8' },
 ] as const) {
   test(`records later ${fixture.speaker} speech during ${fixture.turn}'s turn`, async ({ page }) => {
-    await seedLaterSpeech(page, fixture.turn, fixture.expiration);
+    await seedLaterSpeech(page, fixture.turn);
     await recordKnightSpeech(page, fixture.speaker, fixture.square);
   });
 }
@@ -194,7 +193,7 @@ test('keyboard flow clears a stale victim when the intentional speaker changes',
 
 test('later-speaker controls remain usable without clipping at 320px', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
-  await seedLaterSpeech(page, 'white', 'expired');
+  await seedLaterSpeech(page, 'white');
   const panel = announcement(page);
   const speaker = panel.getByRole('combobox', { name: /speaker/i });
   await expect(speaker).toBeVisible({ timeout: 1_000 });

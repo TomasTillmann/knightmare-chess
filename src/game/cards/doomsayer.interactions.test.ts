@@ -42,6 +42,9 @@ const move = (state: State, from: string, to: string, promotion?: string) => app
   type: 'move', from, to, ...(promotion ? { promotion } : {}),
 } as Action);
 const endTurn = (state: State) => applied(state, { type: 'endTurn' } as Action);
+const declineDoomsayer = (state: State) => applied(state, {
+  type: 'declineDoomsayer', player: state.turn.color === 'white' ? 'black' : 'white',
+} as Action);
 const finishMove = (state: State, from: string, to: string) => endTurn(move(state, from, to));
 const play = (state: State, cardId: string, target?: unknown, cardInstanceId?: string) => applied(state, {
   type: 'playCard',
@@ -193,7 +196,7 @@ test('naming a type the player does not own records the attempt and leaves the e
 
 test('declining the immediate option leaves the effect across the turn boundary', () => {
   const played = playDoomsayer(move(game(), 'e2', 'e4'));
-  const state = endTurn(played);
+  const state = endTurn(declineDoomsayer(played));
 
   assert.equal(state.turn.color, 'black');
   assert.equal(activeDoomsayers(state).length, 1);
@@ -203,7 +206,7 @@ test('declining the immediate option leaves the effect across the turn boundary'
 test('the current player can name later after declining the immediate option', () => {
   const before = game();
   const knightId = pieceAt(before, 'b8')!.id;
-  const state = namePiece(endTurn(playDoomsayer(move(before, 'e2', 'e4'))), 'knight', 'b8');
+  const state = namePiece(endTurn(declineDoomsayer(playDoomsayer(move(before, 'e2', 'e4')))), 'knight', 'b8');
 
   assert.equal(state.turn.color, 'black');
   assert.equal(state.pieces.find(piece => piece.id === knightId)?.zone, 'captured');
@@ -211,9 +214,9 @@ test('the current player can name later after declining the immediate option', (
 });
 
 test('naming does not consume a move or either card allowance', () => {
-  let state = endTurn(playDoomsayer(move(game({
+  let state = endTurn(declineDoomsayer(playDoomsayer(move(game({
     hands: { white: [DOOMSAYER], black: ['disintegration'] },
-  }), 'e2', 'e4')));
+  }), 'e2', 'e4'))));
   state = namePiece(state, 'pawn', 'a7');
 
   assert.equal(state.turn.phase, 'beforeMove');
@@ -303,6 +306,7 @@ test('a prior Disintegration death stays distinct from the Doomsayer capture', (
   const lostId = pieceAt(state, 'b7')!.id;
   state = endTurn(move(play(state, 'disintegration', 'a7'), 'h8', 'g8'));
   state = playDoomsayer(move(state, 'a2', 'a3'));
+  state = declineDoomsayer(state);
   state = endTurn(state);
   state = namePiece(state, 'pawn', 'b7');
 
@@ -315,7 +319,7 @@ test('a Doomsayer loss never authorizes No Quarter', () => {
     hands: { white: [DOOMSAYER], black: ['no-quarter'] },
   });
   const victimId = pieceAt(before, 'a7')!.id;
-  let state = endTurn(playDoomsayer(move(before, 'e2', 'e4')));
+  let state = endTurn(declineDoomsayer(playDoomsayer(move(before, 'e2', 'e4'))));
   state = namePiece(state, 'pawn', 'a7');
 
   rejected(state, {
@@ -423,7 +427,7 @@ test('Doomsayer-created mate becomes final only on the affected player turn', ()
 
 test('duplicate copies coexist across turns without being discarded', () => {
   let state = game({ hands: { white: [DOOMSAYER, DOOMSAYER], black: [] } });
-  state = endTurn(playDoomsayer(move(state, 'e2', 'e4')));
+  state = endTurn(declineDoomsayer(playDoomsayer(move(state, 'e2', 'e4'))));
   state = finishMove(state, 'g8', 'f6');
   state = playDoomsayer(move(state, 'd2', 'd3'));
 
@@ -437,7 +441,7 @@ test('one pronunciation resolves one of two effects when only one matching piece
     fen: '3q3k/8/8/8/8/8/PP6/K7 w - - 0 1',
     hands: { white: [DOOMSAYER, DOOMSAYER], black: [] },
   });
-  state = endTurn(playDoomsayer(move(state, 'a2', 'a3')));
+  state = endTurn(declineDoomsayer(playDoomsayer(move(state, 'a2', 'a3'))));
   state = finishMove(state, 'h8', 'h7');
   state = playDoomsayer(move(state, 'b2', 'b3'));
   state = namePiece(state, 'queen', 'd8');
@@ -452,7 +456,7 @@ test('a no-match pronunciation leaves every duplicate effect active', () => {
     fen: '7k/8/8/8/8/8/PP6/K7 w - - 0 1',
     hands: { white: [DOOMSAYER, DOOMSAYER], black: [] },
   });
-  state = endTurn(playDoomsayer(move(state, 'a2', 'a3')));
+  state = endTurn(declineDoomsayer(playDoomsayer(move(state, 'a2', 'a3'))));
   state = finishMove(state, 'h8', 'h7');
   state = playDoomsayer(move(state, 'b2', 'b3'));
   state = namePiece(state, 'queen');
@@ -463,7 +467,7 @@ test('a no-match pronunciation leaves every duplicate effect active', () => {
 
 test('Doomsayers owned by opposite players coexist independently', () => {
   let state = game();
-  state = endTurn(playDoomsayer(move(state, 'e2', 'e4')));
+  state = endTurn(declineDoomsayer(playDoomsayer(move(state, 'e2', 'e4'))));
   state = playDoomsayer(move(state, 'e7', 'e5'));
 
   assert.deepEqual(activeDoomsayers(state).map(effect => effect.owner).sort(), ['black', 'white']);
@@ -699,7 +703,7 @@ test('every implemented card composes after an unresolved Doomsayer', async t =>
         hands: { white: [DOOMSAYER], black: [fixture.id] },
       });
       const [from, to] = fixture.whiteDoomMove ?? ['e2', 'e4'];
-      state = endTurn(playDoomsayer(move(state, from, to)));
+      state = endTurn(declineDoomsayer(playDoomsayer(move(state, from, to))));
       state = fixture.black(state);
       fixture.verifyBlack(state);
 

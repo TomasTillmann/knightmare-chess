@@ -79,7 +79,7 @@ test('plays targetlessly and exposes an immediate announcement without ending th
   await expect(whiteHand.getByRole('button')).toHaveCount(handCount - 1);
   await expect(page.getByRole('region', { name: 'Active effects' }).getByText('Doomsayer', { exact: true })).toBeVisible();
   await expect(announcement(page)).toContainText(/Black.*name.*immediately/i);
-  await expect(page.getByRole('button', { name: 'End turn' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'End turn' })).toBeDisabled();
   await expect(page.getByRole('status')).toContainText(/Doomsayer.*active/i);
 });
 
@@ -121,8 +121,9 @@ test('clears a stale victim when the named type changes and then recovers', asyn
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-test('keeps an unclaimed effect through End turn and unrelated named-card play', async ({ page }) => {
+test('keeps a declined effect through End turn and unrelated named-card play', async ({ page }) => {
   await activateDoomsayer(page);
+  await announcement(page).getByRole('button', { name: 'Decline immediate option' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
   await expect(announcement(page)).toContainText(/Black.*name/i);

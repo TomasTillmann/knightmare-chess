@@ -318,9 +318,10 @@ describe('Doomsayer activation and lifecycle', () => {
     assert.deepEqual(after.players.black.discard, []);
   });
 
-  it('survives end-turn and ordinary play until a qualifying name event occurs', () => {
+  it('survives an explicit immediate decline and ordinary play until a qualifying name event occurs', () => {
     const before = active({ fen: '4k3/7p/8/8/8/8/P7/4K3 w - - 17 42' });
-    const blackTurn = ok(applyAction(before, { type: 'endTurn' }));
+    const declined = ok(applyAction(before, { type: 'declineDoomsayer', player: 'black' }));
+    const blackTurn = ok(applyAction(declined, { type: 'endTurn' }));
     const moved = ok(applyAction(blackTurn, { type: 'move', from: 'h7', to: 'h6' }));
     assert.deepEqual(doomsayers(blackTurn), doomsayers(before));
     assert.deepEqual(doomsayers(moved), doomsayers(before));

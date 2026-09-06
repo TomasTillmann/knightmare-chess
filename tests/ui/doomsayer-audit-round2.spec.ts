@@ -126,10 +126,14 @@ test('immediate speech gates End turn, then keyboard resolution preserves the ki
   await page.keyboard.press('Enter');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
   await dragPiece(page, 'a8', 'b8');
-  await expect(page.getByText('White to move', { exact: true })).toBeVisible();
+  await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
   const escaped = await gameState(page);
   expect(escaped.outcome).toBeNull();
+  expect(escaped.turn).toMatchObject({ color: 'black', phase: 'afterMove', moveMade: true });
   expect(escaped.fen).toBe('1k6/8/2K5/8/8/8/8/R7 w - - 1 2');
+  await expect(endTurn).toBeEnabled();
+  await endTurn.click();
+  await expect(page.getByText('White to move', { exact: true })).toBeVisible();
 });
 
 test('explicitly declining the immediate option enables normal mate adjudication', async ({ page }) => {
