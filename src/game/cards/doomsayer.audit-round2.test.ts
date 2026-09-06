@@ -9,6 +9,7 @@ type Action = Parameters<typeof applyAction>[1];
 
 const DOOMSAYER = 'doomsayer';
 const FALSE_MATE_FEN = 'kr6/8/2K5/8/8/8/8/7R w - - 0 1';
+const TRUE_MATE_FEN = 'kr6/2K5/8/8/8/8/8/7R w - - 0 1';
 const RESCUE_FEN = '4k3/8/8/8/8/8/P2p4/4K3 w - - 0 1';
 const RESCUE_WITH_ROOK_FEN = 'r3k3/8/8/8/8/8/P2p4/4K3 w - - 0 1';
 
@@ -134,7 +135,7 @@ for (const fixture of [
   });
 }
 
-test('declining the immediate escape permits ordinary end-turn checkmate adjudication', () => {
+test('declining only closes the immediate window and preserves the later Doomsayer escape', () => {
   let state = createGameState({
     fen: FALSE_MATE_FEN,
     hands: { white: [DOOMSAYER], black: [] },
@@ -147,9 +148,42 @@ test('declining the immediate escape permits ordinary end-turn checkmate adjudic
   assert.deepEqual(activeDoomsayers(state).map(effect => effect.card.id), [effectId]);
 
   state = applied(state, { type: 'endTurn' });
-  assert.deepEqual(state.outcome, { winner: 'white', reason: 'checkmate' });
+  assert.equal(state.outcome, null);
   assert.equal(state.fen, 'kr6/8/2K5/8/8/8/8/R7 b - - 1 1');
   assert.equal(state.players.white.discard.length, 0);
+  assert.deepEqual(activeDoomsayers(state).map(effect => effect.card.id), [effectId]);
+  assertDoomsayerConservation(state, [effectId]);
+
+  const victimId = piece(state, 'b8').id;
+  state = name(state, 'black', 'rook', 'b8');
+  assert.equal(state.pendingDoomsayer, null);
+  assert.equal(state.pieces.find(candidate => candidate.id === victimId)?.zone, 'captured');
+  assert.equal(activeDoomsayers(state).length, 0);
+  assert.equal(state.players.white.discard.filter(card => card.id === effectId).length, 1);
+  assert.equal(state.outcome, null);
+  assertDoomsayerConservation(state, [effectId]);
+
+  state = move(state, 'a8', 'b8');
+  assert.equal(state.fen, '1k6/8/2K5/8/8/8/8/R7 w - - 1 2');
+  assert.equal(state.outcome, null);
+});
+
+test('declining still permits mate when the continuing effect cannot create a legal move', () => {
+  let state = createGameState({
+    fen: TRUE_MATE_FEN,
+    hands: { white: [DOOMSAYER], black: [] },
+    decks: { white: [], black: [] },
+  });
+  state = playDoomsayer(move(state, 'h1', 'a1'));
+  const effectId = activeDoomsayers(state)[0]!.card.id;
+  state = applied(state, { type: 'declineDoomsayer', player: 'black' });
+  assert.equal(state.pendingDoomsayer, null);
+  assert.deepEqual(activeDoomsayers(state).map(effect => effect.card.id), [effectId]);
+
+  state = applied(state, { type: 'endTurn' });
+  assert.deepEqual(state.outcome, { winner: 'white', reason: 'checkmate' });
+  assert.equal(state.fen, 'kr6/2K5/8/8/8/8/8/R7 b - - 1 1');
+  assert.deepEqual(activeDoomsayers(state).map(effect => effect.card.id), [effectId]);
   assertDoomsayerConservation(state, [effectId]);
 });
 

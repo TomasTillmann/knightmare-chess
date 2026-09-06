@@ -9,6 +9,7 @@ type Seed = {
 };
 
 const FALSE_MATE_FEN = 'kr6/8/2K5/8/8/8/8/7R w - - 0 1';
+const TRUE_MATE_FEN = 'kr6/2K5/8/8/8/8/8/7R w - - 0 1';
 const hand = (page: Page, color: 'White' | 'Black') =>
   page.getByRole('region', { name: `${color} hand` });
 const announcement = (page: Page) => page.getByRole('region', { name: 'Doomsayer announcement' });
@@ -138,7 +139,7 @@ test('immediate speech gates End turn, then keyboard resolution preserves the ki
   await expect(page.getByText('White to move', { exact: true })).toBeVisible();
 });
 
-test('explicitly declining the immediate option enables normal mate adjudication', async ({ page }) => {
+test('declining only closes the immediate window and preserves the later Doomsayer escape', async ({ page }) => {
   await seedGame(page, {
     fen: FALSE_MATE_FEN,
     hands: { white: ['doomsayer'], black: [] },
@@ -151,8 +152,52 @@ test('explicitly declining the immediate option enables normal mate adjudication
   await expect(endTurn).toBeDisabled();
   await announcement(page).getByRole('button', { name: 'Decline immediate option' }).click();
   await expect(endTurn).toBeEnabled();
+  let state = await gameState(page);
+  expect(state.pendingDoomsayer).toBeNull();
+  expect(state.effects).toHaveLength(1);
+  await endTurn.click();
+  await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
+  state = await gameState(page);
+  expect(state.outcome).toBeNull();
+  expect(state.effects).toHaveLength(1);
+
+  await namePiece(page, 'rook', 'black-rook-b8');
+  state = await gameState(page);
+  expect(state.pieces.find((candidate: any) => candidate.id === 'black-rook-b8')).toMatchObject({
+    square: null, zone: 'captured',
+  });
+  expect(state.effects).toEqual([]);
+  expect(state.players.white.discard).toEqual([{ id: 'white-hand-0-doomsayer', cardId: 'doomsayer' }]);
+  expect(state.outcome).toBeNull();
+
+  await page.getByTestId('chessboard').scrollIntoViewIfNeeded();
+  await dragPiece(page, 'a8', 'b8');
+  await expect.poll(async () => (await gameState(page)).turn.phase).toBe('afterMove');
+  state = await gameState(page);
+  expect(state.fen).toBe('1k6/8/2K5/8/8/8/8/R7 w - - 1 2');
+  expect(state.outcome).toBeNull();
+});
+
+test('declining still permits mate when the continuing effect cannot create a legal move', async ({ page }) => {
+  await seedGame(page, {
+    fen: TRUE_MATE_FEN,
+    hands: { white: ['doomsayer'], black: [] },
+    actions: [
+      { type: 'move', from: 'h1', to: 'a1' },
+      { type: 'playCard', cardId: 'doomsayer' },
+      { type: 'declineDoomsayer', player: 'black' },
+    ],
+  });
+  const endTurn = page.getByRole('button', { name: 'End turn' });
+  await expect(endTurn).toBeEnabled();
+  const declined = await gameState(page);
+  expect(declined.pendingDoomsayer).toBeNull();
+  expect(declined.effects).toHaveLength(1);
   await endTurn.click();
   await expect(page.getByText('White wins by checkmate', { exact: true })).toBeVisible();
+  const state = await gameState(page);
+  expect(state.effects).toHaveLength(1);
+  expect(state.players.white.discard).toEqual([]);
 });
 
 test('speech that cures staged check clears the rescue UI and unlocks End turn', async ({ page }) => {
