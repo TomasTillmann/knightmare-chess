@@ -7,10 +7,12 @@ import noticesUrl from '../THIRD_PARTY_NOTICES.md?url';
 import { ChessBoard } from './ChessBoard.js';
 import { CARD_CATALOG } from './game/cards/catalog.js';
 import {
+  activeDoomsayers,
   annexationDests,
   applyAction,
   assassinDests,
   cowardiceDests,
+  doomsayerTargets,
   dubbingDests,
   forcedMarchDests,
   isPromotionSquare,
@@ -20,15 +22,15 @@ import {
   squaringTheCircleDests,
 } from './game/reducer.js';
 import { createGameState } from './game/state.js';
-import type { CardInstance, CardMove, Color, GameState, SquareName, TurnPhase } from './game/types.js';
+import type { CardInstance, CardMove, Color, DoomsayerRole, GameState, SquareName, TurnPhase } from './game/types.js';
 
 const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['assassin', 'disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
-      black: ['assassin', 'disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
+      white: ['assassin', 'disintegration', 'doomsayer', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
+      black: ['assassin', 'disintegration', 'doomsayer', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
     },
     decks: { white: [], black: [] },
   });
@@ -96,9 +98,15 @@ export default function App() {
   const [cardMoveFrom, setCardMoveFrom] = useState<SquareName | null>(null);
   const [cardMoves, setCardMoves] = useState<CardMove[]>([]);
   const [swapFrom, setSwapFrom] = useState<SquareName | null>(null);
+  const [namedRole, setNamedRole] = useState<DoomsayerRole | ''>('');
+  const [namedPieceIds, setNamedPieceIds] = useState<string[]>([]);
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
+  const doomsayers = activeDoomsayers(game);
+  const doomsayerPlayer = game.pendingDoomsayer?.player ?? game.turn.color;
+  const namedCandidates = namedRole ? doomsayerTargets(game, doomsayerPlayer, namedRole) : [];
+  const namedLossCount = Math.min(doomsayers.length, namedCandidates.length);
   const lastMove = game.history.at(-1)?.type === 'move' ? game.history.at(-1) : undefined;
   const noQuarterCapture = lastMove?.capturedId
     ? game.pieces.find(piece => piece.id === lastMove.capturedId)
@@ -267,6 +275,8 @@ export default function App() {
     setCardMoveFrom(null);
     setCardMoves([]);
     setSwapFrom(null);
+    setNamedRole('');
+    setNamedPieceIds([]);
     if (result.state.outcome) {
       setMessage(
         result.state.outcome.reason === 'stalemate'
@@ -276,7 +286,19 @@ export default function App() {
       return true;
     }
     const event = result.state.history.at(-1);
-    if (event?.type === 'cardFizzled') {
+    if (event?.type === 'pieceNamed') {
+      const losses = (event.capturedIds ?? []).flatMap(id => {
+        const piece = game.pieces.find(candidate => candidate.id === id);
+        return piece?.square ? [`${titleCase(piece.role)} on ${piece.square}`] : [];
+      });
+      setMessage(
+        losses.length
+          ? `${titleCase(event.speaker!)} intentionally named ${titleCase(event.name!)}; ${losses.join(' and ')} ${losses.length === 1 ? 'was' : 'were'} captured by Doomsayer.`
+          : `${titleCase(event.speaker!)} intentionally named ${titleCase(event.name!)} but owned no capturable piece of that type. Doomsayer remains active.`,
+      );
+    } else if (event?.type === 'doomsayerDeclined') {
+      setMessage(`${titleCase(event.player!)} declined the immediate option. Doomsayer remains active.`);
+    } else if (event?.type === 'cardFizzled') {
       const name = CARD_CATALOG[event.cardId!]?.name ?? 'Card';
       setMessage(
         event.reason === 'SELF_CHECK'
@@ -289,7 +311,11 @@ export default function App() {
         ? result.state.pieces.find(piece => piece.id === capturedMove.capturedId)
         : undefined;
       setMessage(
-        event.cardId === 'no-quarter' && capturedMove?.type === 'move' && capturedPiece
+        event.cardId === 'doomsayer'
+          ? result.state.pendingDoomsayer
+            ? `Doomsayer is active. ${titleCase(result.state.pendingDoomsayer.player)} may intentionally name a piece immediately or decline.`
+            : 'Doomsayer remains active until a piece is lost to its effect.'
+        : event.cardId === 'no-quarter' && capturedMove?.type === 'move' && capturedPiece
           ? `No Quarter made the captured piece (${titleCase(capturedPiece.role)}) dead after ${capturedMove.from}–${capturedMove.to}.`
         : event.cardId === 'fanatic'
           ? `Fanatic moved the Pawn three squares from ${event.target}.`
@@ -595,6 +621,8 @@ export default function App() {
     setCardMoveFrom(null);
     setCardMoves([]);
     setSwapFrom(null);
+    setNamedRole('');
+    setNamedPieceIds([]);
   };
 
   const selectCard = (card: CardInstance) => {
@@ -607,6 +635,8 @@ export default function App() {
           ? canPlayNoQuarter
             ? 'The captured piece is eligible. Play No Quarter now; no target is required.'
             : 'No Quarter can only be played immediately after your ordinary move captures an enemy piece.'
+        : card.cardId === 'doomsayer'
+          ? 'No board target is required. Play Doomsayer, then the opponent may intentionally name a piece immediately.'
         : card.cardId === 'holy-war'
           ? 'Choose a Knight, then choose a Bishop to swap with it.'
           : card.cardId === 'anathema'
@@ -647,6 +677,8 @@ export default function App() {
     setCardMoveFrom(null);
     setCardMoves([]);
     setSwapFrom(null);
+    setNamedRole('');
+    setNamedPieceIds([]);
   };
 
   const status = game.outcome
@@ -672,7 +704,7 @@ export default function App() {
         <div className="game__center">
           <div className="hands-rail">
             <Hand
-              active={!game.outcome && game.turn.color === 'black' && game.turn.cardPlays.black < 1}
+              active={!game.outcome && game.turn.color === 'black' && game.turn.cardPlays.black < 1 && !game.pendingDoomsayer}
               canPlayNoQuarter={canPlayNoQuarter}
               canPlaySquaringTheCircle={canPlaySquaringTheCircle}
               cards={game.players.black.hand}
@@ -683,7 +715,7 @@ export default function App() {
               selected={selectedCard}
             />
             <Hand
-              active={!game.outcome && game.turn.color === 'white' && game.turn.cardPlays.white < 1}
+              active={!game.outcome && game.turn.color === 'white' && game.turn.cardPlays.white < 1 && !game.pendingDoomsayer}
               canPlayNoQuarter={canPlayNoQuarter}
               canPlaySquaringTheCircle={canPlaySquaringTheCircle}
               cards={game.players.white.hand}
@@ -704,13 +736,13 @@ export default function App() {
               <span className="phase">{game.turn.phase === 'beforeMove' ? 'before move' : 'after move'}</span>
             </div>
 
-            <div className={selectedCard && selectedDefinition?.id !== 'no-quarter' ? 'board-frame board-frame--targeting' : 'board-frame'}>
+            <div className={selectedCard && selectedDefinition?.id !== 'no-quarter' && selectedDefinition?.id !== 'doomsayer' ? 'board-frame board-frame--targeting' : 'board-frame'}>
               <ChessBoard
                 onMove={move}
                 onTarget={target}
                 selectedTarget={swapFrom ?? cardMoveFrom}
                 state={game}
-                targeting={Boolean(selectedCard) && selectedDefinition?.id !== 'no-quarter'}
+                targeting={Boolean(selectedCard) && selectedDefinition?.id !== 'no-quarter' && selectedDefinition?.id !== 'doomsayer'}
               />
             </div>
 
@@ -734,6 +766,21 @@ export default function App() {
                       type="button"
                     >
                       Play No Quarter
+                    </button>
+                  ) : null}
+                  {selectedDefinition?.id === 'doomsayer' ? (
+                    <button
+                      className="button button--primary"
+                      onClick={() => {
+                        if (selectedInstance && reduce({
+                          type: 'playCard',
+                          cardId: 'doomsayer',
+                          cardInstanceId: selectedInstance.id,
+                        })) setSelectedCard(null);
+                      }}
+                      type="button"
+                    >
+                      Play Doomsayer
                     </button>
                   ) : null}
                   {moveCardId ? (
@@ -760,6 +807,95 @@ export default function App() {
                   </button>
                 </div>
               </div>
+
+              {doomsayers.length ? (
+                <>
+                <section className="active-effects" aria-label="Active effects">
+                  <span>Doomsayer</span>
+                </section>
+                <section className="doomsayer-controls" aria-label="Doomsayer announcement">
+                  <div>
+                    <strong>{doomsayers.length} Doomsayer effect{doomsayers.length === 1 ? '' : 's'} active</strong>
+                    <span>
+                      {game.pendingDoomsayer
+                        ? `${titleCase(doomsayerPlayer)} may name a piece immediately.`
+                        : `${titleCase(doomsayerPlayer)} may record intentional game speech.`}
+                      {' '}Quoted rules, accidental words, and non-game speech do not count.
+                    </span>
+                  </div>
+                  <form onSubmit={event => {
+                    event.preventDefault();
+                    if (!namedRole || namedPieceIds.length !== namedLossCount) return;
+                    reduce({
+                      type: 'namePiece',
+                      player: doomsayerPlayer,
+                      role: namedRole,
+                      losses: namedPieceIds,
+                    });
+                  }}>
+                    <label>
+                      Piece name
+                      <select
+                        aria-label="Piece name"
+                        onChange={event => {
+                          setNamedRole(event.target.value as DoomsayerRole | '');
+                          setNamedPieceIds([]);
+                        }}
+                        required
+                        value={namedRole}
+                      >
+                        <option value="">Choose piece name</option>
+                        <option value="pawn">Pawn</option>
+                        <option value="knight">Knight</option>
+                        <option value="bishop">Bishop</option>
+                        <option value="rook">Rook</option>
+                        <option value="queen">Queen</option>
+                      </select>
+                    </label>
+                    {Array.from({ length: namedLossCount }, (_, index) => (
+                      <label key={index}>
+                        Piece to lose {namedLossCount > 1 ? index + 1 : ''}
+                        <select
+                          aria-label={`Piece to lose ${index + 1}`}
+                          onChange={event => {
+                            const next = namedPieceIds.slice(0, namedLossCount);
+                            next[index] = event.target.value;
+                            setNamedPieceIds(next);
+                          }}
+                          required
+                          value={namedPieceIds[index] ?? ''}
+                        >
+                          <option value="">Choose physical piece</option>
+                          {namedCandidates
+                            .filter(piece => !namedPieceIds.some((square, chosen) => chosen !== index && square === piece.square))
+                            .map(piece => (
+                              <option key={piece.id} value={piece.square!}>
+                                {piece.square} ({titleCase(piece.role)})
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                    ))}
+                    <button
+                      className="button button--primary"
+                      disabled={!namedRole || namedPieceIds.length !== namedLossCount || namedPieceIds.some(id => !id)}
+                      type="submit"
+                    >
+                      Name piece intentionally
+                    </button>
+                    {game.pendingDoomsayer ? (
+                      <button
+                        className="button button--ghost"
+                        onClick={() => reduce({ type: 'declineDoomsayer', player: doomsayerPlayer })}
+                        type="button"
+                      >
+                        Decline immediate option
+                      </button>
+                    ) : null}
+                  </form>
+                </section>
+                </>
+              ) : null}
 
               <details className="keyboard-controls">
                 <summary>Keyboard controls</summary>
@@ -834,8 +970,8 @@ export default function App() {
                     </label>
                     <button className="button button--primary" type="submit">Add move</button>
                   </form>
-                ) : selectedDefinition?.id === 'no-quarter' ? (
-                  <p>No target required. Use the Play No Quarter button above.</p>
+                ) : selectedDefinition?.id === 'no-quarter' || selectedDefinition?.id === 'doomsayer' ? (
+                  <p>No target required. Use the Play {selectedDefinition.name} button above.</p>
                 ) : selectedCard ? (
                   <form onSubmit={event => {
                     event.preventDefault();
@@ -907,12 +1043,13 @@ export default function App() {
             <span className="timing">
               {preview.id === 'no-quarter'
                 ? 'Play after an ordinary capture'
-                : preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'holy-quest' || preview.id === 'treason' || preview.id === 'cathedral' || preview.id === 'siege' || preview.id === 'cowardice'
+                : preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'holy-quest' || preview.id === 'treason' || preview.id === 'cathedral' || preview.id === 'siege' || preview.id === 'cowardice' || preview.id === 'doomsayer'
                 ? 'Play after your move'
                 : preview.id === 'assassin' || preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'onslaught' || preview.id === 'long-jump' || preview.id === 'dubbing' || preview.id === 'squaring-the-circle' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>
+            {preview.continuing ? <span className="timing">Continuing Effect</span> : null}
           </aside>
         </div>
       </main>

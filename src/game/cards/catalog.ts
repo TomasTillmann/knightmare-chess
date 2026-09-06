@@ -33,6 +33,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove', 'afterMove'],
     continuing: false,
   },
+  doomsayer: {
+    id: 'doomsayer',
+    name: 'Doomsayer',
+    points: 2,
+    unique: false,
+    image: '/KC1_card3.png',
+    description:
+      'The next player who pronounces the name of a piece, except "King," loses one piece of that type. If he doesn\'t own a piece of that type, this card remains in effect. When you play this card, your opponent has the option to name a piece immediately.',
+    timing: ['afterMove'],
+    continuing: true,
+  },
   fanatic: {
     id: 'fanatic',
     name: 'Fanatic',

@@ -20,8 +20,11 @@ import type {
   AnathemaTarget,
   ApplyResult,
   BoardOrientation,
+  CardInstance,
   CardMove,
   Color,
+  DoomsayerEffect,
+  DoomsayerRole,
   EnPassantOpportunity,
   EvangelistsTarget,
   GameAction,
@@ -37,6 +40,7 @@ import type {
 const SQUARE = /^[a-h][1-8]$/;
 const CORNERS: readonly SquareName[] = ['a1', 'a8', 'h1', 'h8'];
 const PROMOTIONS = new Set<Role>(['queen', 'rook', 'bishop', 'knight']);
+const DOOMSAYER_ROLES = new Set<DoomsayerRole>(['pawn', 'knight', 'bishop', 'rook', 'queen']);
 const FANATIC_FORWARD: Record<BoardOrientation, readonly [number, number]> = {
   0: [0, 1],
   90: [1, 0],
@@ -46,6 +50,68 @@ const FANATIC_FORWARD: Record<BoardOrientation, readonly [number, number]> = {
 
 function reject(state: GameState, code: GameErrorCode, message: string): ApplyResult {
   return { ok: false, state, error: { code, message } };
+}
+
+function effectRecord(effect: unknown): Record<string, unknown> | undefined {
+  return effect !== null && typeof effect === 'object' && !Array.isArray(effect)
+    ? effect as Record<string, unknown>
+    : undefined;
+}
+
+function effectKind(effect: unknown): string | undefined {
+  const record = effectRecord(effect);
+  const card = effectRecord(record?.card);
+  const kind = record?.type ?? record?.cardId ?? card?.cardId;
+  return typeof kind === 'string' ? kind.toLowerCase().replace(/[^a-z]/g, '') : undefined;
+}
+
+export function isDoomsayerEffect(effect: unknown): effect is DoomsayerEffect {
+  const record = effectRecord(effect);
+  const card = effectRecord(record?.card);
+  return effectKind(effect) === 'doomsayer'
+    && card?.cardId === 'doomsayer'
+    && typeof card.id === 'string'
+    && (record?.owner === 'white' || record?.owner === 'black');
+}
+
+export function activeDoomsayers(state: GameState): DoomsayerEffect[] {
+  return state.effects.filter(isDoomsayerEffect);
+}
+
+function targetMatchesPiece(target: unknown, piece: PieceState): boolean {
+  return target === piece.id || target === piece.square;
+}
+
+function captureImmune(state: GameState, piece: PieceState): boolean {
+  const flags = piece as unknown as Record<string, unknown>;
+  if (flags.captureImmune === true || flags.pacifist === true || flags.mysticShield === true) {
+    return true;
+  }
+  return state.effects.some(effect => {
+    const record = effectRecord(effect);
+    if (!record || record.active === false || record.suspended === true) return false;
+    const kind = effectKind(effect);
+    if (kind === 'truce') return true;
+    if (kind !== 'pacifism' && kind !== 'mysticshield') return false;
+    const targets = record.pieceIds;
+    return targetMatchesPiece(record.pieceId ?? record.targetId ?? record.target, piece)
+      || (Array.isArray(targets) && targets.some(target => targetMatchesPiece(target, piece)));
+  });
+}
+
+export function doomsayerTargets(
+  state: GameState,
+  player: Color,
+  role: DoomsayerRole,
+): PieceState[] {
+  return state.pieces.filter(piece =>
+    piece.owner === player
+    && piece.zone === 'board'
+    && piece.square
+    && !piece.royal
+    && (piece.role === role || (!piece.promoted && piece.originalRole === role))
+    && !captureImmune(state, piece),
+  );
 }
 
 function setupFor(state: GameState, turn?: Color) {
@@ -485,17 +551,23 @@ function syncFen(state: GameState, movedPieces: readonly PieceState[] = []): voi
   state.fen = makeFen(setup);
 }
 
-function spendCard(state: GameState, cardId: string, cardInstanceId?: unknown): void {
+function spendCard(
+  state: GameState,
+  cardId: string,
+  cardInstanceId?: unknown,
+  discard = true,
+): CardInstance {
   const color = state.turn.color;
   const player = state.players[color];
   const index = player.hand.findIndex(
     card => card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
   );
   const [spent] = player.hand.splice(index, 1);
-  player.discard.push(spent);
+  if (discard) player.discard.push(spent);
   const drawn = player.deck.shift();
   if (drawn) player.hand.push(drawn);
   state.turn.cardPlays[color] += 1;
+  return spent;
 }
 
 function settleBlockedBeforeMove(state: GameState, color: Color): void {
@@ -1468,6 +1540,38 @@ function playSwapCard(
   return { ok: true, state: resolved };
 }
 
+function playDoomsayer(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'doomsayer' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Doomsayer is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Doomsayer is played after the regular move.');
+  }
+  if (target !== undefined) {
+    return reject(state, 'INVALID_TARGET', 'Play Doomsayer first; the opponent names a piece separately.');
+  }
+
+  const resolved = structuredClone(state);
+  const card = spendCard(resolved, 'doomsayer', cardInstanceId, false);
+  resolved.effects.push({
+    type: 'doomsayer',
+    owner: color,
+    card,
+  } satisfies DoomsayerEffect);
+  resolved.pendingDoomsayer = { player: opposite(color), cardInstanceId: card.id };
+  resolved.history.push({ type: 'cardPlayed', cardId: 'doomsayer' });
+  return { ok: true, state: resolved };
+}
+
 function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -1516,6 +1620,7 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
 function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
   if (cardId === 'assassin') return playAssassin(state, target, cardInstanceId);
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
+  if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
@@ -1532,6 +1637,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'doomsayer' || cardId === 'no-quarter') return [undefined];
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
@@ -1602,6 +1708,145 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
   }
   return targets;
+}
+
+function namePiece(
+  state: GameState,
+  action: Extract<GameAction, { type: 'namePiece' | 'pronouncePiece' | 'pieceName' | 'pronouncePieceName' | 'pieceNamed' }>,
+): ApplyResult {
+  const rawPlayer = action.speaker ?? action.player ?? action.color;
+  if (rawPlayer !== 'white' && rawPlayer !== 'black') {
+    return reject(state, 'INVALID_TARGET', 'Choose which player intentionally named the piece.');
+  }
+  if (state.pendingDoomsayer && rawPlayer !== state.pendingDoomsayer.player) {
+    return reject(state, 'WRONG_OWNER', 'Only the opponent may use Doomsayer\'s immediate option.');
+  }
+  const active = activeDoomsayers(state);
+  if (!active.length) {
+    return reject(state, 'INVALID_TIMING', 'No Doomsayer effect is active.');
+  }
+
+  const rawRole = action.role ?? action.pieceName ?? action.name ?? action.piece;
+  const role = typeof rawRole === 'string' ? rawRole : '';
+  if (!DOOMSAYER_ROLES.has(role as DoomsayerRole)) {
+    return reject(state, 'INVALID_TARGET', 'Name pawn, knight, bishop, rook, or queen — never king.');
+  }
+
+  const rawChoices = action.losses ?? action.pieceIds ?? action.pieceId ?? action.target;
+  const choices = rawChoices === undefined ? [] : action.losses === undefined && typeof rawChoices === 'string'
+    ? [rawChoices]
+    : Array.isArray(rawChoices)
+      ? rawChoices.map(choice => {
+          if (typeof choice === 'string') return choice;
+          const record = effectRecord(choice);
+          const value = record?.square ?? record?.victimId ?? record?.pieceId
+            ?? record?.victim ?? record?.target ?? record?.piece;
+          if (typeof value === 'string') return value;
+          const nested = effectRecord(value);
+          const token = nested?.square ?? nested?.id;
+          return typeof token === 'string' ? token : undefined;
+        })
+      : undefined;
+  if (!choices || choices.some(choice => typeof choice !== 'string') || new Set(choices).size !== choices.length) {
+    return reject(state, 'INVALID_TARGET', 'Choose each physical piece at most once.');
+  }
+  const lossSquares = choices as string[];
+
+  const candidates = doomsayerTargets(state, rawPlayer, role as DoomsayerRole);
+  const required = Math.min(active.length, candidates.length);
+  const selected: PieceState[] = [];
+  for (const choice of lossSquares) {
+    const piece = state.pieces.find(candidate =>
+      candidate.zone === 'board' && (candidate.square === choice || candidate.id === choice),
+    );
+    if (!piece) return reject(state, 'INVALID_TARGET', 'Every loss must be an occupied board square.');
+    if (piece.owner !== rawPlayer) {
+      return reject(state, 'WRONG_OWNER', 'The named player can lose only an owned piece.');
+    }
+    if (piece.royal || captureImmune(state, piece)) {
+      return reject(state, 'INVALID_TARGET', 'That piece cannot be captured by Doomsayer.');
+    }
+    if (piece.role !== role && (piece.promoted || piece.originalRole !== role)) {
+      return reject(state, 'WRONG_ROLE', 'Every loss must match the spoken piece type.');
+    }
+    selected.push(piece);
+  }
+  if (new Set(selected.map(piece => piece.id)).size !== selected.length) {
+    return reject(state, 'INVALID_TARGET', 'Choose each physical piece at most once.');
+  }
+  if (lossSquares.length !== required) {
+    return reject(
+      state,
+      'INVALID_TARGET',
+      required
+        ? `Choose ${required} owned ${titleForRole(role)}${required === 1 ? '' : 's'} to lose.`
+        : `No owned ${titleForRole(role)} can be lost; do not choose a piece.`,
+    );
+  }
+
+  const consumed = active.slice(0, required);
+  const consumedIds = new Set(consumed.map(effect => effect.card.id));
+  const resolved = structuredClone(state);
+  for (const piece of selected) {
+    const captured = resolved.pieces.find(candidate => candidate.id === piece.id)!;
+    captured.square = null;
+    captured.zone = 'captured';
+  }
+  if (selected.length) {
+    syncFen(resolved, selected);
+    const setup = setupFor(resolved);
+    setup.halfmoves = 0;
+    resolved.fen = makeFen(setup);
+  }
+  resolved.effects = resolved.effects.filter(effect =>
+    !isDoomsayerEffect(effect) || !consumedIds.has(effect.card.id),
+  );
+  for (const effect of consumed) {
+    resolved.players[effect.owner].discard.push(effect.card);
+  }
+  resolved.pendingDoomsayer = null;
+  resolved.history.push({
+    type: 'pieceNamed',
+    speaker: rawPlayer,
+    name: role as DoomsayerRole,
+    capturedIds: selected.map(piece => piece.id),
+    resolvedEffectIds: consumed.map(effect => effect.card.id),
+  });
+
+  if (rawPlayer === resolved.turn.color) {
+    const checked = isKingInCheck(resolved, rawPlayer);
+    const escape = hasTurnEscape(resolved);
+    if (checked && !escape) {
+      resolved.outcome = { winner: opposite(rawPlayer), reason: 'checkmate' };
+    } else if (resolved.turn.phase === 'beforeMove' && !checked && !escape) {
+      resolved.outcome = { reason: 'stalemate' };
+    }
+  }
+  return { ok: true, state: resolved };
+}
+
+function titleForRole(role: string): string {
+  return role[0].toUpperCase() + role.slice(1);
+}
+
+function declineDoomsayer(
+  state: GameState,
+  action: Extract<GameAction, { type: 'declineDoomsayer' }>,
+): ApplyResult {
+  if (!state.pendingDoomsayer) {
+    return reject(state, 'INVALID_TIMING', 'There is no immediate Doomsayer option to decline.');
+  }
+  const player = action.player ?? action.color ?? state.pendingDoomsayer.player;
+  if (player !== 'white' && player !== 'black') {
+    return reject(state, 'WRONG_OWNER', 'Choose the responding player.');
+  }
+  if (player !== state.pendingDoomsayer.player) {
+    return reject(state, 'WRONG_OWNER', 'Only the offered opponent may decline this option.');
+  }
+  const resolved = structuredClone(state);
+  resolved.pendingDoomsayer = null;
+  resolved.history.push({ type: 'doomsayerDeclined', player });
+  return { ok: true, state: resolved };
 }
 
 function hasAfterMoveRescue(state: GameState, movedPieces: readonly PieceState[]): boolean {
@@ -1963,6 +2208,20 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
   return result;
 }
 
+function hasTurnEscape(state: GameState): boolean {
+  const color = state.turn.color;
+  return [...legalDests(state).values()].some(dests => dests.length > 0)
+    || state.players[color].hand.some(card =>
+      cardPlayTargets(state, card.cardId).some(target => {
+        const result = playCard(state, card.cardId, target, card.id);
+        if (!result.ok || result.state.outcome) return false;
+        if (result.state.turn.moveMade) return !isKingInCheck(result.state, color);
+        if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
+        return [...legalDests(result.state).values()].some(targets => targets.length > 0);
+      }),
+    );
+}
+
 function endTurn(state: GameState): ApplyResult {
   if (!state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Make the regular move before ending the turn.');
   if (isKingInCheck(state, state.turn.color)) {
@@ -1978,19 +2237,11 @@ function endTurn(state: GameState): ApplyResult {
     cardPlays: { white: 0, black: 0 },
   };
   next.pendingRescue = null;
-  const canEscapeWithCard = [...legalDests(next).values()].some(dests => dests.length > 0)
-    || next.players[nextColor].hand.some(card =>
-      cardPlayTargets(next, card.cardId).some(target => {
-        const result = playCard(next, card.cardId, target, card.id);
-        if (!result.ok || result.state.outcome) return false;
-        if (result.state.turn.moveMade) return !isKingInCheck(result.state, nextColor);
-        if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
-        return [...legalDests(result.state).values()].some(targets => targets.length > 0);
-      }),
-    );
-  if (isOrdinaryCheckmate(next, nextColor) && !canEscapeWithCard) {
+  next.pendingDoomsayer = null;
+  const canEscape = hasTurnEscape(next);
+  if (isOrdinaryCheckmate(next, nextColor) && !canEscape) {
     next.outcome = { winner: state.turn.color, reason: 'checkmate' };
-  } else if (isOrdinaryStalemate(next, nextColor) && !canEscapeWithCard) {
+  } else if (isOrdinaryStalemate(next, nextColor) && !canEscape) {
     next.outcome = { reason: 'stalemate' };
   }
   return { ok: true, state: next };
@@ -2000,6 +2251,8 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
   if (state.outcome) return reject(state, 'GAME_OVER', 'The game is already over.');
   if (!action) return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
   if (action.type === 'move') return movePiece(state, action);
+  if (action.type === 'namePiece' || action.type === 'pronouncePiece' || action.type === 'pieceName' || action.type === 'pronouncePieceName' || action.type === 'pieceNamed') return namePiece(state, action);
+  if (action.type === 'declineDoomsayer') return declineDoomsayer(state, action);
   if (action.type === 'endTurn') return endTurn(state);
   if (action.type !== 'playCard') return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
   return recordCardTransition(state, settlePendingRescue(

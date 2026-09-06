@@ -62,6 +62,19 @@ export interface EvangelistsTarget {
   opponent: SquareName;
 }
 
+export type DoomsayerRole = Exclude<Role, 'king'>;
+
+export interface DoomsayerEffect {
+  type: 'doomsayer';
+  owner: Color;
+  card: CardInstance;
+}
+
+export interface PendingDoomsayerState {
+  player: Color;
+  cardInstanceId: string;
+}
+
 export interface PlayerState {
   hand: CardInstance[];
   deck: CardInstance[];
@@ -69,9 +82,18 @@ export interface PlayerState {
 }
 
 export interface GameEvent {
-  type: 'move' | 'cardPlayed' | 'cardFizzled';
+  type: 'move' | 'cardPlayed' | 'cardFizzled' | 'pieceNamed' | 'doomsayerDeclined';
   cardId?: CardId;
   capturedId?: string;
+  capturedIds?: string[];
+  effectIds?: string[];
+  resolvedEffectIds?: string[];
+  player?: Color;
+  color?: Color;
+  speaker?: Color;
+  role?: DoomsayerRole;
+  name?: DoomsayerRole;
+  immediate?: boolean;
   movement?: CardMove[];
   preservePreviousMove?: boolean;
   target?: SquareName | CardMove[] | HolyWarTarget | AnathemaTarget | SiegeTarget | EvangelistsTarget;
@@ -96,12 +118,28 @@ export interface GameState {
   orientation: BoardOrientation;
   enPassant: EnPassantOpportunity[];
   pendingRescue?: PendingRescueState | null;
+  pendingDoomsayer?: PendingDoomsayerState | null;
   outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' } | null;
 }
 
 export type GameAction =
   | { type: 'move'; from: unknown; to: unknown; promotion?: unknown }
   | { type: 'playCard'; cardId: CardId; cardInstanceId?: unknown; target?: unknown }
+  | {
+      type: 'namePiece' | 'pronouncePiece' | 'pieceName' | 'pronouncePieceName' | 'pieceNamed';
+      player?: unknown;
+      color?: unknown;
+      speaker?: unknown;
+      role?: unknown;
+      pieceName?: unknown;
+      name?: unknown;
+      piece?: unknown;
+      pieceId?: unknown;
+      pieceIds?: unknown;
+      losses?: unknown;
+      target?: unknown;
+    }
+  | { type: 'declineDoomsayer'; player?: unknown; color?: unknown }
   | { type: 'endTurn' };
 
 export type GameErrorCode =

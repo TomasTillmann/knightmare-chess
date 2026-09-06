@@ -81,6 +81,7 @@ export function createGameState(options: CreateGameOptions = {}): GameState {
       ? [{ target: makeSquare(setup.epSquare), pawnId: epPawn.id }]
       : [],
     pendingRescue: null,
+    pendingDoomsayer: null,
     outcome: null,
   };
 }
