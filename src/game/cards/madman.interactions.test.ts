@@ -165,19 +165,19 @@ test('Madman preserves transformed and neutral Pawn identity but rejects promote
 });
 
 test('Madman can jump into a line to escape an existing check', () => {
-  const before = game({ fen: '4r2k/8/8/8/8/3n4/2P5/4K3 w - - 0 1' });
+  const before = game({ fen: '4r2k/8/8/8/8/3b4/2P5/4K3 w - - 0 1' });
   assert.equal(isKingInCheck(before, 'white'), true);
 
   const state = madman(before, { from: 'c2', to: 'e4' });
 
   assert.equal(isKingInCheck(state, 'white'), false);
-  assert.equal(pieceAt(state, 'd3')?.id, 'black-knight-d3');
+  assert.equal(pieceAt(state, 'd3')?.id, 'black-bishop-d3');
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
 test('Madman fizzle restores the mover and every jumped piece atomically', async t => {
   await t.test('self-check', () => {
-    const before = game({ fen: '4r2k/8/8/8/8/3n4/4P3/4K3 w - - 0 1' });
+    const before = game({ fen: '4r2k/8/8/8/8/3b4/4P3/4K3 w - - 0 1' });
     const pieces = structuredClone(before.pieces);
     const state = madman(before, { from: 'e2', to: 'c4' });
     assert.deepEqual(state.pieces, pieces);

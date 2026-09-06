@@ -255,7 +255,13 @@ describe('Madman Pawn identity and control', () => {
 describe('Madman payload validation and atomic rejection', () => {
   it('requires a non-empty array of jump records', () => {
     const before = game();
-    for (const target of [undefined, null, {}, 'b2-d4', [], [null], [{}]]) {
+    const result = applyAction(before, {
+      type: 'playCard', cardId: CARD, target: undefined,
+    } as unknown as Action);
+    if (result.ok) assert.fail('Expected INVALID_TARGET, received success');
+    assert.equal(result.error.code, 'INVALID_TARGET');
+    assert.strictEqual(result.state, before);
+    for (const target of [null, {}, 'b2-d4', [], [null], [{}]]) {
       rejected(before, target, 'INVALID_TARGET');
     }
   });
@@ -365,7 +371,7 @@ describe('Madman timing, cards, event, and FEN lifecycle', () => {
       turn: 'black', hands: { white: [], black: [CARD] },
     });
     const after = ok(play(before, jumps(['b7', 'd5'], ['d5', 'f3'])));
-    assert.equal(after.fen, 'r3k2r/8/8/8/4P3/5p2/8/R3K2R w KQkq - 0 58');
+    assert.equal(after.fen, 'r3k2r/8/2N5/8/4P3/5p2/8/R3K2R w KQkq - 0 58');
   });
 
   it('does not capture or alter an en-passant-vulnerable piece merely jumped over', () => {
@@ -414,7 +420,7 @@ describe('Madman royal safety, check, and mate escape', () => {
   });
 
   it('allows the moved Pawn to give ordinary check when the defender can escape', () => {
-    const seeded = game({ fen: '7k/8/6n1/8/5R2/8/8/K7 w - - 0 1' });
+    const seeded = game({ fen: '7k/8/8/6n1/5R2/8/8/K7 w - - 0 1' });
     const before = updatePiece(seeded, 'f4', { originalRole: 'pawn' });
     const after = ok(play(before, jumps(['f4', 'h6'])));
     assert.equal(isKingInCheck(after, 'black'), true);
@@ -424,7 +430,7 @@ describe('Madman royal safety, check, and mate escape', () => {
 
   it('DIRECT_MATE-fizzles a newly created checkmate and restores the Pawn', () => {
     const seeded = game({
-      fen: '7k/5K2/8/6n1/5R2/8/8/8 w - - 0 1',
+      fen: '7k/5K2/8/6N1/5R2/8/8/8 w - - 0 1',
       decks: { white: ['fanatic'], black: [] },
     });
     const before = updatePiece(seeded, 'f4', { originalRole: 'pawn' });
