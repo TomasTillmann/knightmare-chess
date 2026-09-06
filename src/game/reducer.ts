@@ -15,6 +15,7 @@ import {
   squareRank,
 } from 'chessops/util';
 
+import { canBeEnPassantVictim } from './state.js';
 import type {
   AnathemaTarget,
   ApplyResult,
@@ -55,9 +56,11 @@ function setupFor(state: GameState, turn?: Color) {
     if (piece.zone !== 'board' || !piece.square) continue;
     board.set(parseSquare(piece.square), { color: piece.owner, role: piece.role });
   }
+  const opportunity = state.enPassant.length === 1 ? state.enPassant[0] : undefined;
+  const victim = opportunity ? enPassantVictim(state, opportunity) : undefined;
   setup.board = board;
-  setup.epSquare = state.enPassant.length === 1 && state.orientation === 0
-    ? parseSquare(state.enPassant[0].target)
+  setup.epSquare = opportunity && victim && state.orientation === 0
+    ? parseSquare(opportunity.target)
     : undefined;
   if (turn) setup.turn = turn;
   if (turn && turn !== fenTurn) setup.epSquare = undefined;
@@ -67,9 +70,12 @@ function setupFor(state: GameState, turn?: Color) {
     const validRank = setup.turn === 'white' ? 5 : 2;
     if (
       squareRank(setup.epSquare) !== validRank
+      || board.has(setup.epSquare)
       || board.has(setup.epSquare + forward)
       || !board.pawn.has(pawn)
       || !board[opposite(setup.turn)].has(pawn)
+      || !victim
+      || victim.square !== makeSquare(pawn)
     ) setup.epSquare = undefined;
   }
   return setup;
@@ -152,8 +158,12 @@ export function legalDests(
     }
     if (piece.royal && piece.originalRole === 'king') {
       for (const side of ['a', 'h'] as const) {
-        const to = makeSquare(kingCastlesTo(state.turn.color, side));
-        if (moveIsLegal(piece, to)) targets.add(to);
+        const rook = position.castles.rook[state.turn.color][side];
+        for (const square of [kingCastlesTo(state.turn.color, side), rook]) {
+          if (square === undefined) continue;
+          const to = makeSquare(square);
+          if (moveIsLegal(piece, to)) targets.add(to);
+        }
       }
     }
     for (const target of state.pieces) {
@@ -194,6 +204,7 @@ export function legalDests(
 
 function turnView(state: GameState, color: Color): GameState {
   const view = structuredClone(state);
+  if (setupFor(state).turn !== color) view.enPassant = [];
   view.turn = {
     color,
     phase: 'beforeMove',
@@ -246,6 +257,40 @@ function pawnForward(state: GameState, owner: Color): readonly [number, number] 
   return [file * direction, rank * direction];
 }
 
+function doubleStepEnPassant(
+  state: GameState,
+  pawn: PieceState,
+  from: SquareName,
+  to: SquareName,
+): EnPassantOpportunity[] {
+  if (
+    pawn.promoted
+    || (pawn.role !== 'pawn' && pawn.originalRole !== 'pawn')
+    || !onStartingSquare(state, pawn.owner, from)
+  ) return [];
+  const source = parseSquare(from);
+  const target = parseSquare(to);
+  const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+  if (
+    squareFile(target) - squareFile(source) !== fileStep * 2
+    || squareRank(target) - squareRank(source) !== rankStep * 2
+  ) return [];
+  const board = setupFor(state).board;
+  const middle = (squareRank(source) + rankStep) * 8 + squareFile(source) + fileStep;
+  if (board.has(middle) || board.has(target)) return [];
+  return [{
+    target: makeSquare(middle),
+    pawnId: pawn.id,
+  }];
+}
+
+function isEnPassantTarget(
+  opportunities: readonly EnPassantOpportunity[],
+  square: SquareName,
+): boolean {
+  return opportunities.some(opportunity => opportunity.target === square);
+}
+
 export function isPromotionSquare(state: GameState, owner: Color, square: SquareName): boolean {
   const [fileStep, rankStep] = pawnForward(state, owner);
   const index = parseSquare(square);
@@ -256,11 +301,13 @@ export function isPromotionSquare(state: GameState, owner: Color, square: Square
 
 export function cowardiceDests(state: GameState, from: SquareName): SquareName[] {
   const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  const enPassant = state.enPassant.filter(opportunity => enPassantVictim(state, opportunity));
   if (
     !pawn
     || (!pawn.neutral && pawn.owner === state.turn.color)
     || pawn.originalRole !== 'pawn'
     || pawn.promoted
+    || enPassant.some(opportunity => opportunity.pawnId === pawn.id)
   ) return [];
 
   const source = parseSquare(from);
@@ -273,18 +320,47 @@ export function cowardiceDests(state: GameState, from: SquareName): SquareName[]
     if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
     const destination = rank * 8 + file;
     if (board.has(destination)) break;
-    destinations.push(makeSquare(destination));
+    const square = makeSquare(destination);
+    if (!isEnPassantTarget(enPassant, square)) destinations.push(square);
   }
   return destinations;
 }
 
-function onStartingSquare(state: GameState, owner: Color, square: SquareName): boolean {
+function pawnHomeDistance(state: GameState, owner: Color, square: SquareName): number {
   const [fileStep, rankStep] = pawnForward(state, owner);
   const squareIndex = parseSquare(square);
-  if (fileStep === 1) return squareFile(squareIndex) <= 1;
-  if (fileStep === -1) return squareFile(squareIndex) >= 6;
-  if (rankStep === 1) return squareRank(squareIndex) <= 1;
-  return squareRank(squareIndex) >= 6;
+  const coordinate = fileStep ? squareFile(squareIndex) : squareRank(squareIndex);
+  return (fileStep || rankStep) > 0 ? coordinate : 7 - coordinate;
+}
+
+function enPassantVictim(
+  state: GameState,
+  opportunity: EnPassantOpportunity,
+): PieceState | undefined {
+  if (
+    !SQUARE.test(opportunity.target)
+    || state.pieces.some(piece => piece.zone === 'board' && piece.square === opportunity.target)
+  ) return undefined;
+  const victim = state.pieces.find(piece =>
+    piece.id === opportunity.pawnId
+    && piece.zone === 'board'
+    && piece.square
+    && canBeEnPassantVictim(piece)
+  );
+  if (!victim?.square) return undefined;
+  const target = parseSquare(opportunity.target);
+  const square = parseSquare(victim.square);
+  const [fileStep, rankStep] = pawnForward(state, victim.owner);
+  const homeDistance = pawnHomeDistance(state, victim.owner, victim.square);
+  return squareFile(square) === squareFile(target) + fileStep
+    && squareRank(square) === squareRank(target) + rankStep
+    && (homeDistance === 2 || homeDistance === 3)
+    ? victim
+    : undefined;
+}
+
+function onStartingSquare(state: GameState, owner: Color, square: SquareName): boolean {
+  return pawnHomeDistance(state, owner, square) <= 1;
 }
 
 export function annexationDests(state: GameState, from: SquareName): SquareName[] {
@@ -371,6 +447,22 @@ export function squaringTheCircleDests(state: GameState, from: SquareName): Squa
   return emptyCorners.length === 1 ? emptyCorners : [];
 }
 
+export function assassinDests(state: GameState, from: SquareName): SquareName[] {
+  const mover = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (!mover || (mover.owner !== state.turn.color && !mover.neutral)) return [];
+
+  const occupied = setupFor(state).board.occupied;
+  return state.pieces.flatMap(victim =>
+    victim.zone === 'board'
+      && victim.square
+      && !victim.royal
+      && (victim.owner === state.turn.color || victim.neutral)
+      && pieceAttacksSquare(state, mover, victim.square, occupied)
+      ? [victim.square]
+      : [],
+  );
+}
+
 function revokeCastlingRights(
   setup: ReturnType<typeof setupFor>,
   movedPieces: readonly PieceState[],
@@ -387,17 +479,7 @@ function revokeCastlingRights(
 }
 
 function syncFen(state: GameState, movedPieces: readonly PieceState[] = []): void {
-  state.enPassant = state.enPassant.filter(opportunity => {
-    const victim = state.pieces.find(piece =>
-      piece.id === opportunity.pawnId && piece.zone === 'board' && piece.square
-    );
-    if (!victim?.square) return false;
-    const target = parseSquare(opportunity.target);
-    const square = parseSquare(victim.square);
-    const [fileStep, rankStep] = pawnForward(state, victim.owner);
-    return squareFile(square) === squareFile(target) + fileStep
-      && squareRank(square) === squareRank(target) + rankStep;
-  });
+  state.enPassant = state.enPassant.filter(opportunity => enPassantVictim(state, opportunity));
   const setup = setupFor(state);
   revokeCastlingRights(setup, movedPieces);
   state.fen = makeFen(setup);
@@ -447,42 +529,50 @@ function pieceAttacksSquare(
   ).has(destination);
 }
 
-function neutralLegallyAttacksRoyal(
+function legallyAttacksRoyal(
   state: GameState,
-  neutral: PieceState,
+  attacker: PieceState,
   royal: PieceState,
+  controller: Color,
 ): boolean {
-  if (!pieceAttacksSquare(state, neutral, royal.square!, setupFor(state).board.occupied)) return false;
+  if (!pieceAttacksSquare(state, attacker, royal.square!, setupFor(state).board.occupied)) return false;
   const resolved = structuredClone(state);
-  resolved.pieces.find(piece => piece.id === neutral.id)!.square = royal.square;
+  resolved.pieces.find(piece => piece.id === attacker.id)!.square = royal.square;
   const captured = resolved.pieces.find(piece => piece.id === royal.id)!;
   captured.square = null;
   captured.zone = 'captured';
-  const controller = opposite(royal.owner);
   return !resolved.pieces.some(piece =>
-    piece.owner === controller
-    && piece.royal
+    piece.royal
     && piece.zone === 'board'
     && piece.square
-    && isRoyalInCheck(resolved, piece),
+    && (piece.owner === controller || (piece.id === attacker.id && piece.neutral))
+    && isRoyalInCheck(resolved, piece)
   );
 }
 
 function isRoyalInCheck(state: GameState, piece: PieceState): boolean {
   if (piece.zone !== 'board' || !piece.square) return false;
+  const hostileControllers: readonly Color[] = piece.neutral
+    ? ['white', 'black']
+    : [opposite(piece.owner)];
+  if (hostileControllers.some(hostile => isRoyalEnPassantThreatened(state, piece, hostile))) {
+    return true;
+  }
   const occupied = setupFor(state).board.occupied;
   const ordinaryAttack = state.pieces.some(attacker =>
     !attacker.neutral
-    && (piece.neutral || attacker.owner === opposite(piece.owner))
+    && hostileControllers.includes(attacker.owner)
     && attacker.zone === 'board'
     && attacker.square
-    && pieceAttacksSquare(state, attacker, piece.square!, occupied)
+    && (piece.neutral
+      ? legallyAttacksRoyal(state, attacker, piece, attacker.owner)
+      : pieceAttacksSquare(state, attacker, piece.square!, occupied))
   );
   return ordinaryAttack || state.pieces.some(neutral =>
     neutral.neutral
     && neutral.zone === 'board'
     && neutral.square
-    && neutralLegallyAttacksRoyal(state, neutral, piece),
+    && hostileControllers.some(hostile => legallyAttacksRoyal(state, neutral, piece, hostile)),
   );
 }
 
@@ -508,33 +598,41 @@ function moveLeavesRoyalInCheck(
   });
 }
 
-function enPassantCapture(state: GameState, from: SquareName, to: SquareName) {
+function enPassantCapture(
+  state: GameState,
+  from: SquareName,
+  to: SquareName,
+  controller: Color = state.turn.color,
+) {
   const moving = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
-  const opportunity = state.enPassant.find(candidate => candidate.target === to);
-  const victim = opportunity
-    ? state.pieces.find(piece => piece.id === opportunity.pawnId && piece.zone === 'board' && piece.square)
-    : undefined;
   if (
     !moving
-    || (moving.owner !== state.turn.color && !moving.neutral)
+    || (moving.owner !== controller && !moving.neutral)
     || moving.role !== 'pawn'
-    || !victim
-    || (!moving.neutral && !victim.neutral && victim.owner === moving.owner)
-    || victim.royal
     || state.pieces.some(piece => piece.zone === 'board' && piece.square === to)
   ) return undefined;
 
   const source = parseSquare(from);
   const target = parseSquare(to);
-  const victimSquare = parseSquare(victim.square!);
   const [forwardFile, forwardRank] = pawnForward(state, moving.owner);
   const fileDelta = squareFile(target) - squareFile(source);
   const rankDelta = squareRank(target) - squareRank(source);
   const diagonal = Math.abs(fileDelta) + Math.abs(rankDelta) === 2
     && fileDelta * forwardFile + rankDelta * forwardRank === 1;
-  const victimBehindTarget = squareFile(victimSquare) === squareFile(target) - forwardFile
-    && squareRank(victimSquare) === squareRank(target) - forwardRank;
-  return diagonal && victimBehindTarget ? { moving, victim } : undefined;
+  if (!diagonal) return undefined;
+
+  const victimSquare = makeSquare(
+    (squareRank(target) - forwardRank) * 8 + squareFile(target) - forwardFile,
+  );
+  const victim = state.enPassant.flatMap(opportunity => {
+    if (opportunity.target !== to) return [];
+    const candidate = enPassantVictim(state, opportunity);
+    return candidate?.square === victimSquare ? [candidate] : [];
+  })[0];
+  return victim
+    && (moving.neutral || victim.neutral || victim.owner !== moving.owner)
+    ? { moving, victim }
+    : undefined;
 }
 
 function resolveEnPassant(
@@ -552,6 +650,30 @@ function resolveEnPassant(
   return next;
 }
 
+function isRoyalEnPassantThreatened(
+  state: GameState,
+  royal: PieceState,
+  controller: Color,
+): boolean {
+  if (setupFor(state).turn !== controller) return false;
+  return state.enPassant.some(opportunity =>
+    opportunity.pawnId === royal.id
+    && state.pieces.some(attacker => {
+      if (attacker.zone !== 'board' || !attacker.square) return false;
+      const capture = enPassantCapture(state, attacker.square, opportunity.target, controller);
+      if (capture?.victim.id !== royal.id) return false;
+      const resolved = resolveEnPassant(state, attacker.id, royal.id, opportunity.target);
+      return !resolved.pieces.some(piece =>
+        piece.royal
+        && piece.zone === 'board'
+        && piece.square
+        && (piece.owner === controller || (piece.id === attacker.id && piece.neutral))
+        && isRoyalInCheck(resolved, piece)
+      );
+    })
+  );
+}
+
 function completeReplacementMove(
   state: GameState,
   color: Color,
@@ -564,7 +686,11 @@ function completeReplacementMove(
   setup.turn = opposite(color);
   setup.epSquare = enPassant.length === 1
     && state.orientation === 0
-    && state.pieces.find(piece => piece.id === enPassant[0].pawnId)?.owner === color
+    && state.pieces.some(piece =>
+      piece.id === enPassant[0].pawnId
+      && piece.owner === color
+      && piece.role === 'pawn'
+    )
     ? parseSquare(enPassant[0].target)
     : undefined;
   setup.halfmoves = pawnMoved ? 0 : setup.halfmoves + 1;
@@ -573,6 +699,12 @@ function completeReplacementMove(
   state.enPassant = enPassant;
   state.turn.phase = 'afterMove';
   state.turn.moveMade = true;
+}
+
+function resetsHalfmoveClock(piece: PieceState, capture = false): boolean {
+  return capture
+    || piece.role === 'pawn'
+    || (piece.originalRole === 'pawn' && !piece.promoted);
 }
 
 function fizzleCard(
@@ -819,21 +951,19 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
     pawns.push(pawn);
   }
 
+  const enPassant = moves.flatMap((move, index) =>
+    pawnHomeDistance(state, pawns[index].owner, move.from) === 1
+      ? doubleStepEnPassant(state, pawns[index], move.from, move.to)
+      : [],
+  );
+  if (moves.some(move => isEnPassantTarget(enPassant, move.to))) {
+    return reject(state, 'ILLEGAL_MOVE', "A Pawn cannot occupy another Pawn's en-passant target.");
+  }
+
   const wasInCheck = isKingInCheck(state, color);
   const resolved = structuredClone(state);
   moves.forEach((move, index) => {
     resolved.pieces.find(piece => piece.id === pawns[index].id)!.square = move.to;
-  });
-
-  const enPassant = moves.flatMap((move, index): EnPassantOpportunity[] => {
-    const pawn = pawns[index];
-    if (!onStartingSquare(state, pawn.owner, move.from)) return [];
-    const from = parseSquare(move.from);
-    const [fileStep, rankStep] = pawnForward(state, pawn.owner);
-    return [{
-      target: makeSquare((squareRank(from) + rankStep) * 8 + squareFile(from) + fileStep),
-      pawnId: pawn.id,
-    }];
   });
   const completed = structuredClone(resolved);
   completeReplacementMove(completed, color, true, enPassant, pawns);
@@ -1069,6 +1199,66 @@ function playSquaringTheCircle(state: GameState, target: unknown, cardInstanceId
 
   spendCard(resolved, 'squaring-the-circle', cardInstanceId);
   resolved.history.push({ type: 'cardPlayed', cardId: 'squaring-the-circle', target: moves });
+  return { ok: true, state: resolved };
+}
+
+function playAssassin(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'assassin' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Assassin is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Assassin is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target, 1);
+  if (!moves || moves.length !== 1) {
+    return reject(state, 'INVALID_TARGET', 'Choose one piece to capture another piece you control.');
+  }
+  const [move] = moves;
+  const mover = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
+  if (!mover) return reject(state, 'INVALID_TARGET', `There is no piece on ${move.from}.`);
+  if (mover.owner !== color && !mover.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
+  }
+  const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.to);
+  if (!victim || (victim.owner !== color && !victim.neutral)) {
+    return reject(state, 'WRONG_OWNER', 'Choose another piece you control to capture.');
+  }
+  if (victim.royal) return reject(state, 'INVALID_TARGET', 'A King can never be captured.');
+  if (!assassinDests(state, move.from).includes(move.to)) {
+    return reject(state, 'ILLEGAL_MOVE', 'The selected piece cannot capture that piece normally.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === mover.id)!.square = move.to;
+  const captured = resolved.pieces.find(piece => piece.id === victim.id)!;
+  captured.square = null;
+  captured.zone = 'captured';
+  completeReplacementMove(resolved, color, true, [], [mover, victim]);
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'assassin', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (moveLeavesRoyalInCheck(resolved, color, [mover])) {
+    return fizzleCard(state, 'assassin', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  spendCard(resolved, 'assassin', cardInstanceId);
+  resolved.history.push({
+    type: 'cardPlayed',
+    cardId: 'assassin',
+    target: moves,
+    capturedId: victim.id,
+  });
   return { ok: true, state: resolved };
 }
 
@@ -1324,6 +1514,7 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
 }
 
 function playCard(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (cardId === 'assassin') return playAssassin(state, target, cardInstanceId);
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
@@ -1369,14 +1560,16 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
     }
     return targets;
   }
-  if (cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
+  if (cardId !== 'assassin' && cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);
   }
 
   const steps = state.pieces.flatMap(piece =>
     piece.zone === 'board' && piece.square
-      ? (cardId === 'forced-march'
-          ? forcedMarchDests
+      ? (cardId === 'assassin'
+          ? assassinDests
+          : cardId === 'forced-march'
+            ? forcedMarchDests
           : cardId === 'annexation'
             ? annexationDests
             : cardId === 'onslaught'
@@ -1391,7 +1584,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
-  if (cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
+  if (cardId === 'assassin' || cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
     return steps.map(step => [step]);
   }
   if (cardId === 'onslaught') {
@@ -1484,7 +1677,11 @@ function movePiece(
   }
   const customEnPassant = enPassantCapture(state, fromName, toName);
   const target = state.pieces.find(piece => piece.zone === 'board' && piece.square === toName);
-  if (target?.royal && target.id !== moving.id) {
+  const enPassant = doubleStepEnPassant(state, moving, fromName, toName);
+  if (
+    (target?.royal && target.id !== moving.id)
+    || customEnPassant?.victim.royal
+  ) {
     return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
   }
 
@@ -1517,7 +1714,7 @@ function movePiece(
     return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
   }
 
-  if (castlingSide(position, move) && !moving.royal) {
+  if (castlingSide(position, move) && !moving.royal && !target?.neutral) {
     return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
   }
 
@@ -1553,7 +1750,6 @@ function movePiece(
   }
   if (moving.role === 'pawn' && (state.orientation !== 0 || !orthodox)) {
     const board = setupFor(state).board;
-    let enPassant: EnPassantOpportunity[] = [];
     const [forwardFile, forwardRank] = pawnForward(state, moving.owner);
     const fileDelta = squareFile(to) - squareFile(from);
     const rankDelta = squareRank(to) - squareRank(from);
@@ -1570,9 +1766,6 @@ function movePiece(
       && !board.has(middle)
     );
     legal &&= Boolean(promotion) === isPromotionSquare(state, moving.owner, toName);
-    if (legal && doubleForward) {
-      enPassant = [{ target: makeSquare(middle), pawnId: moving.id }];
-    }
     if (!legal) return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
 
     const next = structuredClone(state);
@@ -1590,7 +1783,7 @@ function movePiece(
     completeReplacementMove(
       next,
       state.turn.color,
-      true,
+      resetsHalfmoveClock(moving, Boolean(target)),
       enPassant,
       [moving, ...(target ? [target] : [])],
     );
@@ -1621,8 +1814,8 @@ function movePiece(
     completeReplacementMove(
       next,
       state.turn.color,
-      Boolean(target),
-      [],
+      resetsHalfmoveClock(moving, Boolean(target)),
+      enPassant,
       [moving, ...(target ? [target] : [])],
     );
     next.history.push({
@@ -1652,12 +1845,17 @@ function movePiece(
 
   if (castle) {
     const kingTo = kingCastlesTo(state.turn.color, castle);
-    const transit = from + (kingTo > from ? 1 : -1);
-    const crossing = structuredClone(state);
-    const crossingKing = crossing.pieces.find(piece => piece.id === moving.id)!;
-    crossingKing.square = makeSquare(transit);
-    if (isRoyalInCheck(state, moving) || isRoyalInCheck(crossing, crossingKing)) {
+    if (isRoyalInCheck(state, moving)) {
       return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
+    }
+    const step = Math.sign(kingTo - from);
+    for (let transit = from + step; transit !== kingTo; transit += step) {
+      const crossing = structuredClone(state);
+      const crossingKing = crossing.pieces.find(piece => piece.id === moving.id)!;
+      crossingKing.square = makeSquare(transit);
+      if (isRoyalInCheck(crossing, crossingKing)) {
+        return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
+      }
     }
   }
   const capturedSquare =
@@ -1669,8 +1867,10 @@ function movePiece(
     : state.pieces.find(
         piece => piece.zone === 'board' && piece.square === makeSquare(capturedSquare) && piece.owner !== state.turn.color,
       );
+  if (captured?.royal) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
 
   const castlingRights = setupFor(state).castlingRights;
+  const halfmoves = position.halfmoves;
   position.play(playedMove);
   const next = structuredClone(state);
   const moved = next.pieces.find(piece => piece.id === moving.id)!;
@@ -1692,11 +1892,10 @@ function movePiece(
   }
   const setup = position.toSetup();
   setup.castlingRights = castlingRights;
+  setup.halfmoves = resetsHalfmoveClock(moving, Boolean(captured)) ? 0 : halfmoves + 1;
   revokeCastlingRights(setup, [moving, ...(captured ? [captured] : [])]);
   next.fen = makeFen(setup);
-  next.enPassant = position.epSquare === undefined
-    ? []
-    : [{ target: makeSquare(position.epSquare), pawnId: moving.id }];
+  next.enPassant = enPassant;
   next.turn.phase = 'afterMove';
   next.turn.moveMade = true;
   next.history.push({
@@ -1742,6 +1941,28 @@ function settlePendingRescue(
   return result;
 }
 
+function recordCardTransition(before: GameState, result: ApplyResult): ApplyResult {
+  if (!result.ok) return result;
+  const event = result.state.history.at(-1);
+  if (event?.type !== 'cardPlayed' && event?.type !== 'cardFizzled') return result;
+
+  const origins = new Map(before.pieces.flatMap(piece =>
+    piece.zone === 'board' && piece.square ? [[piece.id, piece.square] as const] : [],
+  ));
+  event.movement = event.type === 'cardPlayed'
+    ? result.state.pieces.flatMap(piece => {
+        const from = origins.get(piece.id);
+        return from && piece.zone === 'board' && piece.square && piece.square !== from
+          ? [{ from, to: piece.square }]
+          : [];
+      })
+    : [];
+  event.preservePreviousMove = before.turn.phase === 'afterMove'
+    && before.turn.moveMade
+    && !(before.pendingRescue && event.type === 'cardFizzled');
+  return result;
+}
+
 function endTurn(state: GameState): ApplyResult {
   if (!state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Make the regular move before ending the turn.');
   if (isKingInCheck(state, state.turn.color)) {
@@ -1781,9 +2002,9 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
   if (action.type === 'move') return movePiece(state, action);
   if (action.type === 'endTurn') return endTurn(state);
   if (action.type !== 'playCard') return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
-  return settlePendingRescue(
+  return recordCardTransition(state, settlePendingRescue(
     state,
     playCard(state, action.cardId, action.target, action.cardInstanceId),
     action.cardId,
-  );
+  ));
 }

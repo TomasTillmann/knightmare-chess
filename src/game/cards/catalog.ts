@@ -12,6 +12,16 @@ export interface CardDefinition {
 }
 
 export const CARD_CATALOG: Record<CardId, CardDefinition> = {
+  assassin: {
+    id: 'assassin',
+    name: 'Assassin',
+    points: 2,
+    unique: false,
+    image: '/KC1_card1.png',
+    description: 'Move one of your pieces and capture another of your own pieces with it.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   disintegration: {
     id: 'disintegration',
     name: 'Disintegration',

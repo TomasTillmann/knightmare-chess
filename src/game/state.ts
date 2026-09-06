@@ -13,6 +13,10 @@ export interface CreateGameOptions {
   cardPlays?: Partial<Record<Color, number>>;
 }
 
+export function canBeEnPassantVictim(piece: PieceState): boolean {
+  return !piece.promoted && (piece.role === 'pawn' || piece.originalRole === 'pawn');
+}
+
 export function createGameState(options: CreateGameOptions = {}): GameState {
   const setup = parseFen(options.fen ?? INITIAL_FEN).unwrap();
   if (options.turn && options.turn !== setup.turn) setup.epSquare = undefined;
@@ -37,7 +41,14 @@ export function createGameState(options: CreateGameOptions = {}): GameState {
     : setup.epSquare - (setup.turn === 'white' ? 8 : -8);
   const epPawn = epPawnSquare === undefined
     ? undefined
-    : pieces.find(piece => piece.square === makeSquare(epPawnSquare));
+    : pieces.find(piece =>
+        piece.square === makeSquare(epPawnSquare)
+        && piece.owner !== setup.turn
+        && canBeEnPassantVictim(piece)
+      );
+  if (setup.epSquare !== undefined && (setup.board.has(setup.epSquare) || !epPawn)) {
+    setup.epSquare = undefined;
+  }
 
   return {
     fen: makeFen(setup),

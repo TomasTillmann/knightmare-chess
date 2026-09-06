@@ -9,6 +9,7 @@ import { CARD_CATALOG } from './game/cards/catalog.js';
 import {
   annexationDests,
   applyAction,
+  assassinDests,
   cowardiceDests,
   dubbingDests,
   forcedMarchDests,
@@ -26,8 +27,8 @@ const titleCase = (value: string) => value[0].toUpperCase() + value.slice(1);
 function demoGame(): GameState {
   return createGameState({
     hands: {
-      white: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
-      black: ['disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
+      white: ['assassin', 'disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
+      black: ['assassin', 'disintegration', 'fanatic', 'annexation', 'forced-march', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament', 'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump', 'dubbing', 'squaring-the-circle', 'no-quarter'],
     },
     decks: { white: [], black: [] },
   });
@@ -163,7 +164,8 @@ export default function App() {
                           secondRole: 'rook', secondOwner: 'opponent', secondLabel: 'Opponent Rook',
                         } as const
                       : null;
-  const moveCardId = selectedDefinition?.id === 'forced-march'
+  const moveCardId = selectedDefinition?.id === 'assassin'
+    || selectedDefinition?.id === 'forced-march'
     || selectedDefinition?.id === 'annexation'
     || selectedDefinition?.id === 'onslaught'
     || selectedDefinition?.id === 'long-jump'
@@ -172,8 +174,10 @@ export default function App() {
     || selectedDefinition?.id === 'cowardice'
     ? selectedDefinition.id
     : null;
-  const moveCardDests = (from: SquareName) => moveCardId === 'cowardice'
-    ? cowardiceDests(game, from)
+  const moveCardDests = (from: SquareName) => moveCardId === 'assassin'
+    ? assassinDests(game, from)
+    : moveCardId === 'cowardice'
+      ? cowardiceDests(game, from)
     : moveCardId === 'annexation'
       ? annexationDests(game, from)
     : moveCardId === 'onslaught'
@@ -187,10 +191,10 @@ export default function App() {
           : forcedMarchDests(game, from);
   const moveCardLimit = moveCardId === 'onslaught'
     ? Number.POSITIVE_INFINITY
-    : moveCardId === 'long-jump' || moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle' || moveCardId === 'cowardice' ? 1 : 2;
+    : moveCardId === 'assassin' || moveCardId === 'long-jump' || moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle' || moveCardId === 'cowardice' ? 1 : 2;
   const moveCardPieceLabel = moveCardId === 'cowardice'
     ? 'Opponent Pawn'
-    : moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle'
+    : moveCardId === 'assassin' || moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle'
     ? 'Piece'
     : moveCardId === 'long-jump' ? 'Knight' : 'Pawn';
   const moves = legalDests(game);
@@ -218,7 +222,7 @@ export default function App() {
       return matchesOwner('opponent') && piece.originalRole === 'pawn' && !piece.promoted;
     }
     if (!matchesOwner('own')) return false;
-    if (moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle') return true;
+    if (moveCardId === 'assassin' || moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle') return true;
     if (moveCardId === 'long-jump') {
       return piece.role === 'knight' || piece.originalRole === 'knight';
     }
@@ -291,6 +295,8 @@ export default function App() {
           ? `Fanatic moved the Pawn three squares from ${event.target}.`
           : event.cardId === 'annexation'
             ? `Annexation moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} forward.`
+          : event.cardId === 'assassin' && Array.isArray(event.target) && event.target[0]
+            ? `Assassin moved from ${event.target[0].from} to ${event.target[0].to} and captured your piece.`
           : event.cardId === 'forced-march'
             ? `Forced March moved ${Array.isArray(event.target) ? event.target.length : 0} Pawn${Array.isArray(event.target) && event.target.length === 1 ? '' : 's'} sideways.`
           : event.cardId === 'onslaught'
@@ -348,6 +354,8 @@ export default function App() {
       setMessage(
         moveCardId === 'annexation'
           ? 'That Pawn needs two clear forward squares.'
+          : moveCardId === 'assassin'
+            ? 'That piece cannot capture the selected piece normally.'
           : moveCardId === 'onslaught'
             ? 'That Pawn must move one square forward to an empty square.'
           : moveCardId === 'cowardice'
@@ -376,6 +384,8 @@ export default function App() {
     setMessage(
       moveCardId === 'onslaught'
         ? `${next.length} Pawn move${next.length === 1 ? '' : 's'} ready. Play Onslaught now, or choose another Pawn.`
+      : moveCardId === 'assassin'
+        ? 'Assassin ready. Play the card.'
       : moveCardId === 'cowardice'
         ? 'Cowardice ready. Play the card.'
       : moveCardId === 'long-jump'
@@ -482,6 +492,8 @@ export default function App() {
           setMessage(
             moveCardId === 'long-jump'
               ? 'Knight selection canceled. Choose a Knight.'
+              : moveCardId === 'assassin'
+                ? 'Piece selection canceled. Choose a piece you control.'
               : moveCardId === 'dubbing'
                 ? 'Piece selection canceled. Choose a piece.'
               : moveCardId === 'squaring-the-circle'
@@ -500,6 +512,8 @@ export default function App() {
         setMessage(
           moveCardId === 'long-jump'
             ? 'Long Jump is ready. Play the card.'
+            : moveCardId === 'assassin'
+              ? 'Assassin is ready. Play the card.'
             : moveCardId === 'dubbing'
               ? 'Dubbing is ready. Play the card.'
             : moveCardId === 'squaring-the-circle'
@@ -516,6 +530,8 @@ export default function App() {
         setMessage(
           moveCardId === 'long-jump'
             ? 'Choose one of your available Knights.'
+            : moveCardId === 'assassin'
+              ? 'Choose a piece that can capture another piece you control.'
             : moveCardId === 'dubbing'
               ? 'Choose an available piece you control.'
             : moveCardId === 'squaring-the-circle'
@@ -531,6 +547,8 @@ export default function App() {
       setMessage(
         moveCardId === 'annexation'
           ? `Pawn ${square} selected. Choose its two-square forward destination.`
+          : moveCardId === 'assassin'
+            ? `${titleCase(piece.role)} ${square} selected. Choose another piece you control to capture.`
           : moveCardId === 'onslaught'
             ? `Pawn ${square} selected. Choose its one-square forward destination.`
           : moveCardId === 'cowardice'
@@ -609,6 +627,8 @@ export default function App() {
             ? "Choose one of your Rooks, then choose one of your opponent's Rooks."
           : card.cardId === 'forced-march' || card.cardId === 'annexation' || card.cardId === 'onslaught'
           ? `Choose a Pawn, then choose its ${card.cardId === 'annexation' ? 'two-square forward' : card.cardId === 'onslaught' ? 'one-square forward' : 'sideways'} destination.`
+          : card.cardId === 'assassin'
+            ? 'Choose a piece you control, then choose another piece you control that it can capture normally.'
           : card.cardId === 'long-jump'
             ? 'Choose a Knight, then choose any empty square of the opposite color.'
           : card.cardId === 'dubbing'
@@ -794,13 +814,13 @@ export default function App() {
                         <option value="">Choose {moveCardPieceLabel}</option>
                         {availableCardTargets.map(piece => (
                           <option key={piece.id} value={piece.square!}>
-                            {piece.square}{moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle' ? ` (${titleCase(piece.role)})` : ''}
+                            {piece.square}{moveCardId === 'assassin' || moveCardId === 'dubbing' || moveCardId === 'squaring-the-circle' ? ` (${titleCase(piece.role)})` : ''}
                           </option>
                         ))}
                       </select>
                     </label>
                     <label>
-                      {moveCardId === 'forced-march' ? 'Sideways to' : moveCardId === 'cowardice' ? 'Backward to' : moveCardId === 'long-jump' ? 'Jump to' : moveCardId === 'dubbing' ? 'Knight move to' : moveCardId === 'squaring-the-circle' ? 'Empty corner' : 'Forward to'}
+                      {moveCardId === 'assassin' ? 'Capture on' : moveCardId === 'forced-march' ? 'Sideways to' : moveCardId === 'cowardice' ? 'Backward to' : moveCardId === 'long-jump' ? 'Jump to' : moveCardId === 'dubbing' ? 'Knight move to' : moveCardId === 'squaring-the-circle' ? 'Empty corner' : 'Forward to'}
                       <select
                         aria-label={`${moveCardPieceLabel} destination`}
                         disabled={!keyboardFrom}
@@ -889,7 +909,7 @@ export default function App() {
                 ? 'Play after an ordinary capture'
                 : preview.id === 'holy-war' || preview.id === 'anathema' || preview.id === 'holy-quest' || preview.id === 'treason' || preview.id === 'cathedral' || preview.id === 'siege' || preview.id === 'cowardice'
                 ? 'Play after your move'
-                : preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'onslaught' || preview.id === 'long-jump' || preview.id === 'dubbing' || preview.id === 'squaring-the-circle' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
+                : preview.id === 'assassin' || preview.id === 'fanatic' || preview.id === 'forced-march' || preview.id === 'annexation' || preview.id === 'onslaught' || preview.id === 'long-jump' || preview.id === 'dubbing' || preview.id === 'squaring-the-circle' || preview.id === 'evangelists' || preview.id === 'tournament' || preview.id === 'lost-castle'
                 ? 'Play instead of your move'
                 : 'Play before or after your move'}
             </span>

@@ -17,6 +17,18 @@ interface Props {
 export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const api = useRef<Api>(null);
+  const latest = state.history.at(-1);
+  const previous = state.history.at(-2);
+  const movement = latest?.type === 'move' && latest.from && latest.to
+    ? [{ from: latest.from, to: latest.to }]
+    : latest?.movement?.length
+      ? latest.movement
+      : latest?.preservePreviousMove && previous?.type === 'move' && previous.from && previous.to
+        ? [{ from: previous.from, to: previous.to }]
+        : [];
+  const lastMove: Key[] | undefined = movement.length
+    ? [...new Set(movement.flatMap(move => [move.from, move.to]))]
+    : undefined;
 
   useLayoutEffect(() => {
     if (!element.current) return;
@@ -49,6 +61,7 @@ export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget 
       animation: { enabled: true, duration: 180 },
       draggable: { enabled: !targeting },
       selectable: { enabled: true },
+      selected: targeting ? selectedTarget ?? undefined : undefined,
       movable: {
         color: targeting ? undefined : 'both',
         dests: targeting ? new Map() : legalDests(state),
@@ -61,15 +74,17 @@ export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget 
               ground.set({
                 fen: boardFen(state),
                 turnColor: state.turn.color,
-                lastMove: undefined,
                 movable: { color: 'both', dests: legalDests(state) },
               });
+              ground.set({ lastMove });
+              if (!lastMove) ground.redrawAll();
             }
           },
         },
       },
     });
-    if (targeting) ground.selectSquare(selectedTarget ?? null);
+    ground.set({ lastMove });
+    if (!lastMove) ground.redrawAll();
   }, [onMove, onTarget, selectedTarget, state, targeting]);
 
   return (
