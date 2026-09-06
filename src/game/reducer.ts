@@ -1125,11 +1125,23 @@ function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknow
   if (pieces.some(piece => !piece)) {
     return reject(state, 'INVALID_TARGET', 'Every selected source must contain a board piece.');
   }
-  const pawnIndexes = pieces.flatMap((piece, index) =>
+  let pawnIndexes = pieces.flatMap((piece, index) =>
     piece!.originalRole === 'pawn' && !piece!.promoted ? [index] : [],
   );
   if (!pawnIndexes.length) {
     return reject(state, 'WRONG_ROLE', 'Guardian must lead with an unpromoted original Pawn.');
+  }
+  if (pawnIndexes.length > 1) {
+    pawnIndexes = pawnIndexes.filter(index => {
+      const pawnMove = moves[index];
+      const followerMove = moves[1 - index];
+      const source = parseSquare(pawnMove.from);
+      const destination = parseSquare(pawnMove.to);
+      const [fileStep, rankStep] = pawnForward(state, pieces[index]!.owner);
+      return guardianDests(state, pawnMove.from).includes(pawnMove.to)
+        && followerMove.from === makeSquare((squareRank(source) - rankStep) * 8 + squareFile(source) - fileStep)
+        && followerMove.to === makeSquare((squareRank(destination) - rankStep) * 8 + squareFile(destination) - fileStep);
+    });
   }
   if (pawnIndexes.length !== 1) {
     return reject(state, 'INVALID_TARGET', 'Choose exactly one Pawn movement.');
