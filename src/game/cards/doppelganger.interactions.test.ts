@@ -27,10 +27,10 @@ test('Doppelganger lets a rook move as the opponent bishop just moved', () => {
 
 test('Doppelganger cannot copy a Pawn or capture with the copied move', () => {
   let state = createGameState({
-    fen: '4k3/8/8/8/8/8/P7/R3K3 b - - 0 1',
+    fen: '4k3/p7/8/8/8/8/8/R3K3 b - - 0 1',
     hands: { white: ['doppelganger'], black: [] }, decks: { white: [], black: [] },
   });
-  const moved = applyAction(state, { type: 'move', from: 'a2', to: 'a3' });
+  const moved = applyAction(state, { type: 'move', from: 'a7', to: 'a6' });
   assert.equal(moved.ok, true);
   if (!moved.ok) return;
   const ended = applyAction(moved.state, { type: 'endTurn' });
@@ -67,7 +67,7 @@ test('Doppelganger is available only before the mover acts', () => {
   const controlTurn = applyAction(controlMove.state, { type: 'endTurn' });
   assert.equal(controlTurn.ok, true);
   if (!controlTurn.ok) return;
-  assert.equal(applyAction(controlTurn.state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a3' }] }).ok, true);
+  assert.equal(applyAction(controlTurn.state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'b2' }] }).ok, true);
   const state = createGameState({
     fen: '4k3/8/8/8/8/8/8/R3K3 w - - 0 1',
     hands: { white: ['doppelganger'], black: [] }, decks: { white: [], black: [] },
@@ -104,10 +104,10 @@ test('Doppelganger records a card play and consumes the turn allowance', () => {
 
 test('Doppelganger does not mutate the prior state when rejected', () => {
   const state = createGameState({
-    fen: '4k3/8/8/8/8/8/P7/R3K3 b - - 0 1',
+    fen: '4k3/p7/8/8/8/8/8/R3K3 b - - 0 1',
     hands: { white: ['doppelganger'], black: [] }, decks: { white: [], black: [] },
   });
-  const moved = applyAction(state, { type: 'move', from: 'a2', to: 'a3' });
+  const moved = applyAction(state, { type: 'move', from: 'a7', to: 'a6' });
   assert.equal(moved.ok, true);
   if (!moved.ok) return;
   const ended = applyAction(moved.state, { type: 'endTurn' });
@@ -123,10 +123,10 @@ test('Doppelganger does not mutate the prior state when rejected', () => {
 
 test('Doppelganger can follow a non-card opponent move and copy a knight', () => {
   const state = createGameState({
-    fen: '4k3/8/8/8/8/8/8/R2NK3 b - - 0 1',
+    fen: '1n2k3/8/8/8/8/8/8/R3K3 b - - 0 1',
     hands: { white: ['doppelganger'], black: [] }, decks: { white: [], black: [] },
   });
-  const moved = applyAction(state, { type: 'move', from: 'd1', to: 'f2' });
+  const moved = applyAction(state, { type: 'move', from: 'b8', to: 'd7' });
   assert.equal(moved.ok, true);
   if (!moved.ok) return;
   const ended = applyAction(moved.state, { type: 'endTurn' });
@@ -151,7 +151,7 @@ test('Doppelganger works for the opposite color on consecutive turns', () => {
   if (!blackTurn.ok) return;
   state = blackTurn.state;
   const played = applyAction(state, {
-    type: 'playCard', cardId: 'doppelganger', target: [{ from: 'e8', to: 'f7' }],
+    type: 'playCard', cardId: 'doppelganger', target: [{ from: 'h8', to: 'h6' }],
   });
   assert.equal(played.ok, true);
 });
@@ -167,7 +167,7 @@ test('Doppelganger rejects an empty or malformed movement target', () => {
   const ended = applyAction(moved.state, { type: 'endTurn' });
   assert.equal(ended.ok, true);
   if (!ended.ok) return;
-  assert.equal(applyAction(ended.state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a3' }] }).ok, true);
+  assert.equal(applyAction(ended.state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'b2' }] }).ok, true);
   assert.equal(applyAction(ended.state, { type: 'playCard', cardId: 'doppelganger', target: [] }).ok, false);
 });
 
@@ -184,14 +184,14 @@ test('Doppelganger retains moved-piece identity through JSON roundtrip', () => {
 });
 
 test('An earlier pre-move card consumes the allowance before Doppelganger', () => {
-  const state = createGameState({ fen: '4k2r/8/8/8/8/8/8/R3K3 b - - 0 1', hands: { white: ['doppelganger', 'long-jump'], black: ['dubbing'] }, decks: { white: [], black: [] } });
+  const state = createGameState({ fen: '4k2r/8/8/8/8/8/8/RN2K3 b - - 0 1', hands: { white: ['doppelganger', 'long-jump'], black: ['dubbing'] }, decks: { white: [], black: [] } });
   const dubbed = applyAction(state, { type: 'playCard', cardId: 'dubbing', target: [{ from: 'h8', to: 'f7' }] });
   assert.equal(dubbed.ok, true);
   if (!dubbed.ok) return;
   const ended = applyAction(dubbed.state, { type: 'endTurn' });
   assert.equal(ended.ok, true);
   if (!ended.ok) return;
-  const prior = applyAction(ended.state, { type: 'playCard', cardId: 'long-jump', target: [{ from: 'a1', to: 'b3' }] });
+  const prior = applyAction(ended.state, { type: 'playCard', cardId: 'long-jump', target: [{ from: 'b1', to: 'd2' }] });
   assert.equal(prior.ok, true);
   if (!prior.ok) return;
   assert.equal(applyAction(prior.state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a3' }] }).ok, false);
@@ -225,32 +225,32 @@ test('Doppelganger copies Dubbing\'s preserved rook role, not knight geometry', 
   }).ok, false);
 });
 
-test('Doppelganger follows Long Jump while preserving the moved rook kind', () => {
+test('Doppelganger follows Long Jump while preserving the moved knight kind', () => {
   let state = createGameState({
-    fen: '4k2r/8/8/8/8/8/8/R3K3 b - - 0 1',
+    fen: '1n2k3/8/8/8/8/8/8/R3K3 b - - 0 1',
     hands: { white: ['doppelganger'], black: ['long-jump'] }, decks: { white: [], black: [] },
   });
-  const jumped = applyAction(state, { type: 'playCard', cardId: 'long-jump', target: [{ from: 'h8', to: 'f7' }] });
+  const jumped = applyAction(state, { type: 'playCard', cardId: 'long-jump', target: [{ from: 'b8', to: 'd7' }] });
   assert.equal(jumped.ok, true);
   if (!jumped.ok) return;
   const ended = applyAction(jumped.state, { type: 'endTurn' });
   assert.equal(ended.ok, true);
   if (!ended.ok) return;
   state = ended.state;
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a3' }] }).ok, true);
+  assert.equal(applyAction(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'c2' }] }).ok, true);
 });
 
-test('Doppelganger identifies a Madman-moved opposing rook by kind', () => {
+test('Doppelganger rejects copying a Madman-moved pawn', () => {
   let state = createGameState({
-    fen: '4k3/8/8/8/8/8/8/R3K3 b - - 0 1',
+    fen: '4k3/8/8/8/3R4/2p5/8/R3K3 b - - 0 1',
     hands: { white: ['doppelganger'], black: ['madman'] }, decks: { white: [], black: [] },
   });
-  const mad = applyAction(state, { type: 'playCard', cardId: 'madman', target: [{ from: 'a1', to: 'a3' }] });
+  const mad = applyAction(state, { type: 'playCard', cardId: 'madman', target: [{ from: 'c3', to: 'e5' }] });
   assert.equal(mad.ok, true);
   if (!mad.ok) return;
   const ended = applyAction(mad.state, { type: 'endTurn' });
   assert.equal(ended.ok, true);
   if (!ended.ok) return;
   state = ended.state;
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'e1', to: 'e3' }] }).ok, true);
+  assert.equal(applyAction(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a2' }] }).ok, false);
 });

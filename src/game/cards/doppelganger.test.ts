@@ -84,7 +84,7 @@ describe('Doppelganger', () => {
     assert.equal(after.players.white.hand.at(-1)?.id, before.players.white.deck[0]!.id);
     assert.deepEqual(after.players.white.deck, []);
     assert.deepEqual(after.history.slice(-2), [
-      { type: 'move', movement: [{ from: 'b8', to: 'c7' }] },
+      { type: 'move', from: 'b8', to: 'c7' },
       { type: 'cardPlayed', cardId: CARD, target: target('a1', 'b2'), movement: target('a1', 'b2'), preservePreviousMove: false },
     ]);
   });
@@ -114,10 +114,10 @@ describe('Doppelganger', () => {
 
   it('prioritizes direct-mate fizzle after a reachable opposing Knight move', () => {
     const before = afterOpponentMove({
-      fen: '1n3N1k/5K2/8/8/8/8/1R6/B7 b - - 0 1',
+      fen: 'n4N1k/5K2/8/8/8/8/1R6/B7 b - - 0 1',
       hands: { white: [CARD, 'fanatic', CARD], black: [] },
       decks: { white: ['disintegration'], black: [] },
-    }, 'b8', 'c6');
+    }, 'a8', 'c7');
     const selected = before.players.white.hand[2]!;
     const pieces = structuredClone(before.pieces);
     const after = ok(play(before, 'b2', 'c4', selected.id));
@@ -166,7 +166,7 @@ describe('Doppelganger', () => {
     const pawn = afterOpponentMove({ fen: '1b2k3/8/8/8/8/8/P7/4K3 b - - 0 1' }, 'b8', 'c7');
     assert.equal(play(afterOpponentMove({ fen: '1b2k3/8/8/8/8/8/8/R3K3 b - - 0 1' }, 'b8', 'c7'), 'a1', 'b2').ok, true);
     assert.equal(play(pawn, 'a2', 'b3').ok, false);
-    const friendly = afterOpponentMove({ fen: '1b2k3/8/8/8/8/1P6/8/R3K3 b - - 0 1' }, 'b8', 'c7');
+    const friendly = afterOpponentMove({ fen: '1b2k3/8/8/8/8/8/1P6/R3K3 b - - 0 1' }, 'b8', 'c7');
     assert.equal(play(friendly, 'a1', 'b2').ok, false);
     const enemy = afterOpponentMove({ fen: '1b2k3/8/8/8/8/8/1n6/R3K3 b - - 0 1' }, 'b8', 'c7');
     assert.equal(play(enemy, 'a1', 'b2').ok, false);
@@ -175,9 +175,9 @@ describe('Doppelganger', () => {
   it('does not let copied sliders jump blockers', () => {
     assert.equal(play(afterOpponentMove({ fen: '1b2k3/8/8/8/8/8/8/R3K3 b - - 0 1' }, 'b8', 'c7'), 'a1', 'b2').ok, true);
     for (const [piece, moveFrom, moveTo, fen, actorTo] of [
-      ['b', 'b8', 'c7', '1b2k3/8/8/8/8/8/8/R3K3 b - - 0 1', 'd4'],
+      ['b', 'b8', 'c7', '1b2k3/8/8/8/8/8/1P6/R3K3 b - - 0 1', 'd4'],
       ['r', 'b8', 'b7', '1r2k3/8/8/8/8/8/P7/R3K3 b - - 0 1', 'a4'],
-      ['q', 'b8', 'c7', '1q2k3/8/8/8/8/8/8/R3K3 b - - 0 1', 'd4'],
+      ['q', 'b8', 'c7', '1q2k3/8/8/8/8/8/1P6/R3K3 b - - 0 1', 'd4'],
     ] as const) {
       const state = afterOpponentMove({ fen }, moveFrom, moveTo);
       assert.equal(play(state, 'a1', actorTo).ok, false);
@@ -189,7 +189,7 @@ describe('Doppelganger', () => {
     const actor = neutral.pieces.find(piece => piece.square === 'b2');
     assert.ok(actor);
     actor.neutral = true;
-    assert.equal(play(neutral, 'b2', 'd3').ok, true);
+    assert.equal(play(neutral, 'b2', 'c3').ok, true);
     const opposing = afterOpponentMove({ fen: '1b2k3/8/8/8/8/8/1b6/4K3 b - - 0 1' }, 'b8', 'c7');
     assert.equal(play(opposing, 'b2', 'd3').ok, false);
   });
