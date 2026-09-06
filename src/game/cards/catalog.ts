@@ -109,6 +109,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  doppelganger: {
+    id: 'doppelganger',
+    name: 'Doppelganger',
+    points: 4,
+    unique: false,
+    image: '/KC4_card4.png',
+    description:
+      'Move one of your pieces (except a Pawn) as if it were a piece of the same kind as the one your opponent has just moved. You cannot capture a piece with this move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   bog: {
     id: 'bog',
     name: 'Bog',
