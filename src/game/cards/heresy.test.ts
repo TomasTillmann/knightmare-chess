@@ -139,9 +139,9 @@ describe('Heresy printed contract and movement', () => {
 describe('Heresy mandatory sequence and target validation', () => {
   it('requires every and only eligible Bishop exactly once', () => {
     const before = game({ fen: '7k/8/1b3b2/8/3B4/8/8/K7 w - - 0 1' });
-    rejected(before, moves(['b6', 'a6'], ['d4', 'e4']), 'INVALID_TARGET');
-    rejected(before, moves(['b6', 'a6'], ['f6', 'g6'], ['d4', 'e4'], ['d4', 'c4']), 'INVALID_TARGET');
     rejected(before, moves(['b6', 'a6'], ['f6', 'g6']), 'INVALID_TARGET');
+    rejected(before, moves(['b6', 'a6'], ['f6', 'g6'], ['d4', 'e4'], ['d4', 'c4']), 'INVALID_TARGET');
+    rejected(before, moves(['d4', 'e4'], ['b6', 'a6'], ['f6', 'g6']), 'WRONG_OWNER');
   });
 
   it('rejects malformed, non-canonical, stationary, distant, and wrong-role movements', () => {
@@ -225,10 +225,10 @@ describe('Heresy lifecycle, safety, and immutability', () => {
   });
 
   it('revokes castling rights when a royal or original Rook transformed into a Bishop moves', () => {
-    let before = game({ fen: 'r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 17 42' });
+    let before = game({ fen: '4k2r/8/8/8/8/8/8/R3K2R w KQk - 17 42' });
     before = patchPiece(before, 'a1', { role: 'bishop', royal: true });
     const after = ok(play(before, moves(['a1', 'a2'])));
-    assert.match(after.fen, / w Kkq - 17 42$/);
+    assert.match(after.fen, / w k - 17 42$/);
   });
 
   it('allows non-mating check but atomically fizzles direct mate and self-check', () => {

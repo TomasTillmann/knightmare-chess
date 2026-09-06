@@ -93,7 +93,7 @@ test('Heresy requires every eligible Bishop and rejects non-sequential or malfor
   }), 'h1', 'h2');
   const cases: Array<[string, unknown, string]> = [
     ['omitted newly eligible acting Bishop', [{ from: 'b4', to: 'b3' }], 'INVALID_TARGET'],
-    ['actor before opponent', [{ from: 'a4', to: 'a3' }, { from: 'b4', to: 'b3' }], 'INVALID_TARGET'],
+    ['actor before opponent', [{ from: 'a4', to: 'a3' }, { from: 'b4', to: 'b3' }], 'WRONG_OWNER'],
     ['diagonal adjacency keeps square color', [{ from: 'b4', to: 'c3' }, { from: 'a4', to: 'a3' }], 'ILLEGAL_MOVE'],
     ['collision', [{ from: 'b4', to: 'b3' }, { from: 'a4', to: 'b4' }, { from: 'b3', to: 'b4' }], 'INVALID_TARGET'],
     ['duplicate Bishop', [{ from: 'b4', to: 'b3' }, { from: 'b3', to: 'b2' }, { from: 'a4', to: 'b4' }], 'INVALID_TARGET'],
@@ -118,11 +118,11 @@ test('Heresy preserves neutral, transformed, promoted, and royal physical identi
   const tracked = ['a7', 'c7', 'a2', 'c2'].map(square => structuredClone(pieceAt(before, square)!));
 
   const state = heresy(before,
-    { from: 'a7', to: 'a6' }, { from: 'c7', to: 'c6' },
-    { from: 'a2', to: 'a3' }, { from: 'c2', to: 'c3' },
+    { from: 'a7', to: 'a6' }, { from: 'c7', to: 'c8' },
+    { from: 'a2', to: 'a3' }, { from: 'c2', to: 'd2' },
   );
 
-  assert.deepEqual(['a6', 'c6', 'a3', 'c3'].map((square, index) => ({
+  assert.deepEqual(['a6', 'c8', 'a3', 'd2'].map((square, index) => ({
     ...pieceAt(state, square), square: tracked[index].square,
   })), tracked);
   assert.equal(state.fen.split(' ')[2], 'Q', 'moving Black royal Bishop revokes Black castling only');
@@ -184,37 +184,43 @@ test('mate escape search stages an ordinary move for Heresy, but Heresy cannot e
 });
 
 test('Heresy preserves ordinary move state and en-passant unless it moves the victim', () => {
-  const before = move(game({ hands: { white: [HERESY], black: [] } }), 'e2', 'e4');
+  const before = move(game({
+    fen: '4k3/8/8/8/8/8/4P3/5B1K w - - 0 1',
+    hands: { white: [HERESY], black: [] },
+  }), 'e2', 'e4');
   const previous = structuredClone(before.history);
-  const state = heresy(before, { from: 'f1', to: 'e2' });
+  const state = heresy(before, { from: 'f1', to: 'e1' });
 
   assert.deepEqual(state.enPassant, before.enPassant);
-  assert.equal(state.fen, 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPPBPPP/RNBQK1NR b KQkq e3 0 1');
+  assert.equal(state.fen, '4k3/8/8/8/4P3/8/8/4B2K b - e3 0 1');
   assert.deepEqual(state.history.slice(0, -1), previous);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
 
   const movedVictim = structuredClone(before);
   Object.assign(pieceAt(movedVictim, 'e4')!, { role: 'bishop' });
-  assert.deepEqual(heresy(movedVictim, { from: 'e4', to: 'd4' }, { from: 'f1', to: 'e2' }).enPassant, []);
+  assert.deepEqual(heresy(movedVictim, { from: 'e4', to: 'd4' }, { from: 'f1', to: 'e1' }).enPassant, []);
 });
 
 test('Heresy respects timing, pending and outcome gates, and duplicate instances', async t => {
-  const before = game({ hands: { white: [HERESY, HERESY], black: [] }, decks: { white: ['fanatic'], black: [] } });
+  const before = game({
+    fen: '4k3/8/8/8/8/8/4P3/5B1K w - - 0 1',
+    hands: { white: [HERESY, HERESY], black: [] }, decks: { white: ['fanatic'], black: [] },
+  });
   const moved = move(before, 'e2', 'e4');
   const selected = moved.players.white.hand[1]!;
   const state = applied(moved, {
     type: 'playCard', cardId: HERESY, cardInstanceId: selected.id,
-    target: [{ from: 'f1', to: 'e2' }],
+    target: [{ from: 'f1', to: 'e1' }],
   } as Action);
   assert.equal(state.players.white.discard.at(-1)?.id, selected.id);
   assert.deepEqual(state.players.white.hand.map(card => card.cardId), [HERESY, 'fanatic']);
 
   const cases: Array<[string, State, Action, string]> = [
     ['before move', before, { type: 'playCard', cardId: HERESY, target: [] } as Action, 'INVALID_TIMING'],
-    ['second card', { ...moved, turn: { ...moved.turn, cardPlays: { white: 1, black: 0 } } }, { type: 'playCard', cardId: HERESY, target: [{ from: 'f1', to: 'e2' }] } as Action, 'CARD_ALREADY_PLAYED'],
-    ['forged instance', moved, { type: 'playCard', cardId: HERESY, cardInstanceId: 'forged', target: [{ from: 'f1', to: 'e2' }] } as Action, 'CARD_NOT_IN_HAND'],
-    ['outcome', { ...moved, outcome: { winner: 'black', reason: 'checkmate' } }, { type: 'playCard', cardId: HERESY, target: [{ from: 'f1', to: 'e2' }] } as Action, 'GAME_OVER'],
+    ['second card', { ...moved, turn: { ...moved.turn, cardPlays: { white: 1, black: 0 } } }, { type: 'playCard', cardId: HERESY, target: [{ from: 'f1', to: 'e1' }] } as Action, 'CARD_ALREADY_PLAYED'],
+    ['forged instance', moved, { type: 'playCard', cardId: HERESY, cardInstanceId: 'forged', target: [{ from: 'f1', to: 'e1' }] } as Action, 'CARD_NOT_IN_HAND'],
+    ['outcome', { ...moved, outcome: { winner: 'black', reason: 'checkmate' } }, { type: 'playCard', cardId: HERESY, target: [{ from: 'f1', to: 'e1' }] } as Action, 'GAME_OVER'],
   ];
   for (const [name, fixture, action, code] of cases) await t.test(name, () => rejected(fixture, action, code));
 });
