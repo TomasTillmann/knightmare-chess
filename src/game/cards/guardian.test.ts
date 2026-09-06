@@ -197,6 +197,34 @@ describe('Guardian optional follower and simultaneous semantics', () => {
     assert.equal(reverse.fen, forward.fen);
   });
 
+  it('lets an original Pawn follow across colors and orientations, independent of payload order', () => {
+    const fixtures = [
+      { orientation: 0 as const, color: 'white' as const, fen: '7k/8/8/8/8/8/4P3/K3P3 w - - 0 1', lead: ['e2', 'e4'], follower: ['e1', 'e3'] },
+      { orientation: 0 as const, color: 'black' as const, fen: '4p2k/4p3/8/8/8/8/8/K7 b - - 0 1', lead: ['e7', 'e5'], follower: ['e8', 'e6'] },
+      { orientation: 90 as const, color: 'white' as const, fen: '7k/8/8/8/PP6/8/8/K7 w - - 0 1', lead: ['b4', 'd4'], follower: ['a4', 'c4'] },
+      { orientation: 90 as const, color: 'black' as const, fen: '7k/8/8/8/6pp/8/8/K7 b - - 0 1', lead: ['g4', 'e4'], follower: ['h4', 'f4'] },
+    ];
+    for (const fixture of fixtures) {
+      const seeded = game({
+        fen: fixture.fen,
+        turn: fixture.color,
+        hands: fixture.color === 'white' ? { white: [CARD], black: [] } : { white: [], black: [CARD] },
+      });
+      const before = { ...seeded, orientation: fixture.orientation };
+      const lead = pieceAt(before, fixture.lead[0]);
+      const follower = pieceAt(before, fixture.follower[0]);
+      const after = ok(play(before, convoy(fixture.follower as [string, string], fixture.lead as [string, string])));
+      assert.deepEqual(pieceAt(after, fixture.lead[1]), { ...lead, square: fixture.lead[1] });
+      assert.deepEqual(pieceAt(after, fixture.follower[1]), { ...follower, square: fixture.follower[1] });
+      assert.deepEqual(after.history.at(-1)?.target, convoy(fixture.lead as [string, string], fixture.follower as [string, string]));
+    }
+  });
+
+  it('atomically rejects two unrelated Pawn moves when neither can be the follower', () => {
+    const before = game({ fen: '7k/8/8/8/8/8/3PP3/K7 w - - 0 1' });
+    rejected(before, convoy(['d2', 'd3'], ['e2', 'e3']), 'INVALID_TARGET');
+  });
+
   it('requires the follower to begin directly behind the selected Pawn', () => {
     rejected(
       game({ fen: '7k/8/8/8/8/8/3RP3/K7 w - - 0 1' }),
