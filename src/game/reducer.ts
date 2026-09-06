@@ -682,7 +682,7 @@ export function doppelgangerDests(state: GameState, from: SquareName): SquareNam
     || (source.role === 'pawn' || (source.originalRole === 'pawn' && !source.promoted))) return [];
 
   const copied = latestMovedPiece(state);
-  if (!copied || copied.role === 'pawn' || (copied.originalRole === 'pawn' && !copied.promoted)) return [];
+  if (!copied || copied.role === 'pawn') return [];
   const board = setupFor(state).board;
   return [...attacks({ color: source.owner, role: copied.role }, parseSquare(from), board.occupied).diff(board.occupied)]
     .map(makeSquare);
