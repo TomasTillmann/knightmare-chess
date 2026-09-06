@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page, test } from '@playwright/test';
+import { expect, type Page, test } from '@playwright/test';
 
 type Color = 'white' | 'black';
 type Seed = {
@@ -71,9 +71,7 @@ async function gameState(page: Page): Promise<any> {
   });
 }
 
-async function squareCenter(board: Locator, square: string) {
-  const box = await board.boundingBox();
-  if (!box) throw new Error('Chessboard is not visible');
+function squareCenter(box: { x: number; y: number; width: number; height: number }, square: string) {
   const file = square.charCodeAt(0) - 97;
   const rank = Number(square[1]) - 1;
   return { x: box.x + ((file + 0.5) * box.width) / 8, y: box.y + ((7.5 - rank) * box.height) / 8 };
@@ -81,8 +79,15 @@ async function squareCenter(board: Locator, square: string) {
 
 async function dragPiece(page: Page, from: string, to: string) {
   const board = page.getByTestId('chessboard');
-  const start = await squareCenter(board, from);
-  const end = await squareCenter(board, to);
+  await board.evaluate(element => element.scrollIntoView({ behavior: 'instant', block: 'center', inline: 'center' }));
+  const box = await board.boundingBox();
+  if (!box) throw new Error('Chessboard is not visible');
+  const start = squareCenter(box, from);
+  const end = squareCenter(box, to);
+  const viewport = page.viewportSize();
+  if (!viewport || [start, end].some(({ x, y }) => x < 0 || x >= viewport.width || y < 0 || y >= viewport.height)) {
+    throw new Error('Chess move coordinates are outside the viewport');
+  }
   await page.mouse.move(start.x, start.y);
   await page.mouse.down();
   await page.mouse.move(end.x, end.y, { steps: 8 });
@@ -126,7 +131,6 @@ test('immediate speech gates End turn, then keyboard resolution preserves the ki
   await endTurn.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
-  await page.getByTestId('chessboard').scrollIntoViewIfNeeded();
   await dragPiece(page, 'a8', 'b8');
   await expect.poll(async () => (await gameState(page)).turn.phase).toBe('afterMove');
   await expect(page.getByText('Black to move', { exact: true })).toBeVisible();
@@ -170,7 +174,6 @@ test('declining only closes the immediate window and preserves the later Doomsay
   expect(state.players.white.discard).toEqual([{ id: 'white-hand-0-doomsayer', cardId: 'doomsayer' }]);
   expect(state.outcome).toBeNull();
 
-  await page.getByTestId('chessboard').scrollIntoViewIfNeeded();
   await dragPiece(page, 'a8', 'b8');
   await expect.poll(async () => (await gameState(page)).turn.phase).toBe('afterMove');
   state = await gameState(page);
