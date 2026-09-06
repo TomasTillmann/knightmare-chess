@@ -66,7 +66,11 @@ test('a regular move, Anathema swap, and end turn form one complete White turn',
   assert.equal(swapped.turn.cardPlays.white, 1);
   assert.deepEqual(swapped.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: ANATHEMA, target },
+    {
+      type: 'cardPlayed', cardId: ANATHEMA, target,
+      movement: [{ from: target.rook, to: target.bishop }, { from: target.bishop, to: target.rook }],
+      preservePreviousMove: true,
+    },
   ]);
 
   const blackTurn = endTurn(swapped);
@@ -191,7 +195,9 @@ test('an Anathema swap that leaves the acting King in check fizzles and restores
 
   assert.equal(pieceAt(state, 'e8')?.id, bishopId);
   assert.equal(pieceAt(state, 'a8')?.id, rookId);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: ANATHEMA, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: ANATHEMA, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, ANATHEMA);
   assert.equal(endTurn(state).turn.color, 'black');
 });
@@ -235,10 +241,19 @@ test('a mixed-card Anathema replay is deterministic', () => {
   assert.equal(state.fen, 'b1r1k3/8/4p3/8/8/4P3/4K3/B1R5 b - - 1 2');
   assert.deepEqual(state.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: ANATHEMA, target: { bishop: 'c8', rook: 'a8' } },
+    {
+      type: 'cardPlayed', cardId: ANATHEMA, target: { bishop: 'c8', rook: 'a8' },
+      movement: [{ from: 'a8', to: 'c8' }, { from: 'c8', to: 'a8' }], preservePreviousMove: true,
+    },
     { type: 'move', from: 'e7', to: 'e6' },
-    { type: 'cardPlayed', cardId: ANATHEMA, target: { bishop: 'c1', rook: 'a1' } },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a2' },
+    {
+      type: 'cardPlayed', cardId: ANATHEMA, target: { bishop: 'c1', rook: 'a1' },
+      movement: [{ from: 'a1', to: 'c1' }, { from: 'c1', to: 'a1' }], preservePreviousMove: true,
+    },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a2',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'e1', to: 'e2' },
   ]);
 });

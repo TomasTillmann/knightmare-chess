@@ -66,7 +66,9 @@ test('one Annexation advance is the complete move for the turn', () => {
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: ANNEXATION, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed', cardId: ANNEXATION, target, movement: target, preservePreviousMove: false,
+  }]);
 });
 
 test('two Annexation advances resolve together and retain both en-passant rights', () => {
@@ -88,6 +90,33 @@ test('two Annexation advances resolve together and retain both en-passant rights
     ],
   );
   assert.equal(state.fen.split(' ')[3], '-', 'multiple rights live in GameState, not the single FEN slot');
+});
+
+test('Annexation atomically rejects a move onto another selected Pawn\'s en-passant target', () => {
+  const seeded = game({ fen: '7k/8/8/4p3/3p4/8/4P3/K7 w - - 0 1' });
+  const before: State = {
+    ...seeded,
+    pieces: seeded.pieces.map(piece => piece.square === 'e5' ? { ...piece, neutral: true } : piece),
+  };
+
+  rejected(
+    before,
+    {
+      type: 'playCard',
+      cardId: ANNEXATION,
+      target: [{ from: 'e2', to: 'e4' }, { from: 'e5', to: 'e3' }],
+    } as Action,
+    'ILLEGAL_MOVE',
+  );
+
+  assert.equal(pieceAt(before, 'e2')?.id, 'white-pawn-e2');
+  assert.equal(pieceAt(before, 'e5')?.id, 'black-pawn-e5');
+  assert.equal(pieceAt(before, 'e3'), undefined);
+  assert.equal(pieceAt(before, 'e4'), undefined);
+  assert.deepEqual(before.enPassant, []);
+  assert.equal(before.turn.phase, 'beforeMove');
+  assert.equal(before.turn.cardPlays.white, 0);
+  assert.equal(before.players.white.hand.some(card => card.cardId === ANNEXATION), true);
 });
 
 test('Annexation replaces the regular move and then hands play to the opponent', () => {
@@ -181,6 +210,16 @@ test('Annexation can replace the move to block an existing check', () => {
   assert.equal(positionFor(state, 'white').isCheck(), false);
 });
 
+test('a first-rank Annexation advance does not grant en passant', () => {
+  const before = game({ fen: '7k/8/8/8/8/3p4/8/K3P3 w - - 0 1' });
+  const advanced = annex(before, [{ from: 'e1', to: 'e3' }]);
+
+  assert.deepEqual(advanced.enPassant, []);
+  assert.equal(advanced.fen.split(' ')[3], '-');
+  const reply = endTurn(advanced);
+  assert.equal(legalDests(reply).get('d3')?.includes('e2'), false);
+});
+
 test('an unrelated Annexation fizzles in check and leaves the regular move available', () => {
   const before = game({
     fen: '7k/8/7b/8/8/8/P7/2K5 w - - 0 1',
@@ -192,7 +231,9 @@ test('an unrelated Annexation fizzles in check and leaves the regular move avail
   assert.equal(pieceAt(state, 'a4'), undefined);
   assert.equal(state.turn.phase, 'beforeMove');
   assert.equal(state.turn.moveMade, false);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: ANNEXATION, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: ANNEXATION, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(pieceAt(move(state, 'c1', 'b1'), 'b1')?.role, 'king');
 });
 
@@ -208,7 +249,9 @@ test('a self-uncovering Annexation fizzles and consumes the replacement move', (
   assert.equal(pieceAt(state, 'c5'), undefined);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: ANNEXATION, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: ANNEXATION, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
@@ -220,7 +263,9 @@ test('an Annexation that directly creates checkmate fizzles in full', () => {
   const state = annex(before, [{ from: 'd4', to: 'd6' }]);
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: ANNEXATION, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: ANNEXATION, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.players.white.discard.at(-1)?.cardId, ANNEXATION);
@@ -281,14 +326,24 @@ test('a mixed four-card Annexation replay is deterministic', () => {
       type: 'cardPlayed',
       cardId: ANNEXATION,
       target: [{ from: 'a2', to: 'a4' }, { from: 'c2', to: 'c4' }],
+      movement: [{ from: 'a2', to: 'a4' }, { from: 'c2', to: 'c4' }],
+      preservePreviousMove: false,
     },
-    { type: 'cardPlayed', cardId: FANATIC, target: 'e7' },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'e2' },
+    {
+      type: 'cardPlayed', cardId: FANATIC, target: 'e7',
+      movement: [{ from: 'e7', to: 'e4' }], preservePreviousMove: false,
+    },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'e2',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'a1', to: 'a2' },
     {
       type: 'cardPlayed',
       cardId: ANNEXATION,
       target: [{ from: 'a7', to: 'a5' }, { from: 'c7', to: 'c5' }],
+      movement: [{ from: 'a7', to: 'a5' }, { from: 'c7', to: 'c5' }],
+      preservePreviousMove: false,
     },
   ]);
 });

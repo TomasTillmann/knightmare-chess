@@ -119,7 +119,10 @@ describe('No Quarter contract', () => {
     const after = ok(play(before));
 
     assert.deepEqual(pieceById(after, victim.id), { ...victim, zone: 'dead' });
-    assert.deepEqual(after.history, [...before.history, { type: 'cardPlayed', cardId: CARD }]);
+    assert.deepEqual(after.history, [
+      ...before.history,
+      { type: 'cardPlayed', cardId: CARD, movement: [], preservePreviousMove: true },
+    ]);
   });
 
   it('makes the exact Coup Prince captured by a regular move dead', () => {
@@ -147,7 +150,7 @@ describe('No Quarter contract', () => {
     assert.deepEqual(pieceById(after, prince.id), { ...prince, square: null, zone: 'dead' });
     assert.deepEqual(after.history, [
       ...captured.history,
-      { type: 'cardPlayed', cardId: CARD },
+      { type: 'cardPlayed', cardId: CARD, movement: [], preservePreviousMove: true },
     ]);
   });
 
@@ -254,7 +257,12 @@ describe('No Quarter contract', () => {
       assert.ok(victim);
       const after = ok(play(before));
       assert.equal(pieceById(after, victim.id)?.zone, 'dead');
-      assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD });
+      assert.deepEqual(after.history.at(-1), {
+        type: 'cardPlayed',
+        cardId: CARD,
+        movement: [],
+        preservePreviousMove: true,
+      });
     }
   });
 });

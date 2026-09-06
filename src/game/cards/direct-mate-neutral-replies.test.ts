@@ -13,6 +13,7 @@ interface Fixture {
   target: unknown;
   neutralSquare: string;
   response: { from: string; to: string };
+  movement: { from: string; to: string }[];
   victimSquare?: string;
   afterMove?: boolean;
 }
@@ -24,6 +25,7 @@ const fixtures: Fixture[] = [
     target: 'd4',
     neutralSquare: 'c2',
     response: { from: 'c2', to: 'a1' },
+    movement: [{ from: 'd4', to: 'd7' }],
     victimSquare: 'a1',
   },
   {
@@ -32,6 +34,7 @@ const fixtures: Fixture[] = [
     target: [{ from: 'b2', to: 'b4' }],
     neutralSquare: 'g3',
     response: { from: 'g3', to: 'g7' },
+    movement: [{ from: 'b2', to: 'b4' }],
   },
   {
     cardId: 'holy-war',
@@ -39,6 +42,7 @@ const fixtures: Fixture[] = [
     target: { knight: 'g7', bishop: 'a1' },
     neutralSquare: 'g6',
     response: { from: 'g6', to: 'g7' },
+    movement: [{ from: 'a1', to: 'g7' }, { from: 'g7', to: 'a1' }],
     victimSquare: 'a1',
     afterMove: true,
   },
@@ -48,6 +52,7 @@ const fixtures: Fixture[] = [
     target: { bishop: 'd1', rook: 'b2' },
     neutralSquare: 'c3',
     response: { from: 'c3', to: 'b1' },
+    movement: [{ from: 'd1', to: 'b2' }, { from: 'b2', to: 'd1' }],
     victimSquare: 'b1',
     afterMove: true,
   },
@@ -57,6 +62,7 @@ const fixtures: Fixture[] = [
     target: { own: 'a1', opponent: 'f7' },
     neutralSquare: 'f6',
     response: { from: 'f6', to: 'f7' },
+    movement: [{ from: 'a1', to: 'f7' }, { from: 'f7', to: 'a1' }],
     victimSquare: 'a1',
   },
   {
@@ -65,6 +71,7 @@ const fixtures: Fixture[] = [
     target: [{ from: 'b2', to: 'h1' }],
     neutralSquare: 'g2',
     response: { from: 'g2', to: 'h1' },
+    movement: [{ from: 'b2', to: 'h1' }],
     victimSquare: 'b2',
   },
 ];
@@ -103,6 +110,7 @@ describe('direct-mate checks include defender-controlled neutral replies', () =>
       assert.deepEqual(before, snapshot);
       assert.deepEqual(afterCard.history.at(-1), {
         type: 'cardPlayed', cardId: fixture.cardId, target: fixture.target,
+        movement: fixture.movement, preservePreviousMove: fixture.afterMove ?? false,
       });
       const defended = applied(
         applied(afterCard, { type: 'endTurn' }),

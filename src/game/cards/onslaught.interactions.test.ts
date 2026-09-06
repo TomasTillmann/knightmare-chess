@@ -62,7 +62,13 @@ test('one Onslaught advance is the complete move for the turn', () => {
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: ONSLAUGHT, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed',
+    cardId: ONSLAUGHT,
+    target,
+    movement: target,
+    preservePreviousMove: false,
+  }]);
 
   const next = endTurn(state);
   assert.equal(next.turn.color, 'black');
@@ -182,7 +188,13 @@ test('a self-uncovering Onslaught fizzles, restores the board, and consumes the 
   const state = onslaught(before, [{ from: 'd2', to: 'd3' }]);
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: ONSLAUGHT, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled',
+    cardId: ONSLAUGHT,
+    reason: 'SELF_CHECK',
+    movement: [],
+    preservePreviousMove: false,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, ONSLAUGHT);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);

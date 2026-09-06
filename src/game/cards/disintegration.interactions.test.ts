@@ -374,7 +374,9 @@ test('after-move play resolves when the normal move had already delivered mate',
   assert.equal(positionFor(moved, 'black').isCheckmate(), true);
   const state = play(moved, 'h2');
   assert.equal(pieceAt(state, 'h2'), undefined);
-  assert.deepEqual(state.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: 'h2' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardPlayed', cardId: CARD, target: 'h2', movement: [], preservePreviousMove: true,
+  });
 });
 
 test('a mate-fizzled card is discarded and replaced', () => {
@@ -430,7 +432,10 @@ test('after-move self-check fizzle preserves the completed move and board atomic
   assert.equal(state.turn.moveMade, true);
   assert.deepEqual(state.history, [
     ...moved.history,
-    { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' },
+    {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK',
+      movement: [], preservePreviousMove: true,
+    },
   ]);
 });
 
@@ -471,6 +476,8 @@ test('direct mate takes precedence when the same after-move effect would also ca
     type: 'cardFizzled',
     cardId: CARD,
     reason: 'DIRECT_MATE',
+    movement: [],
+    preservePreviousMove: true,
   });
   assert.equal(state.players.white.discard.at(-1)?.id, playedId);
   assert.equal(state.players.white.hand.at(-1)?.id, drawnId);

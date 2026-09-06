@@ -60,7 +60,12 @@ describe('round-two No Quarter after neutral en passant', () => {
       after.pieces.find(piece => piece.id === victim.id),
       { ...capturedVictim, zone: 'dead' },
     );
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: 'no-quarter' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed',
+      cardId: 'no-quarter',
+      movement: [],
+      preservePreviousMove: true,
+    });
     assert.equal(after.players.black.discard.at(-1)?.cardId, 'no-quarter');
   });
 });

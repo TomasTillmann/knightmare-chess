@@ -91,7 +91,11 @@ describe('Cathedral contract and swap', () => {
 
     assert.deepEqual(pieceAt(after, 'b1'), { ...rook, square: 'b1' });
     assert.deepEqual(pieceAt(after, 'a1'), { ...bishop, square: 'a1' });
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: selected });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target: selected,
+      movement: [{ from: selected.rook, to: selected.bishop }, { from: selected.bishop, to: selected.rook }],
+      preservePreviousMove: true,
+    });
   });
 
   it('swaps Black pieces on Black’s turn without ending it', () => {
@@ -236,7 +240,9 @@ describe('Cathedral King safety and direct-mate rule', () => {
     const after = ok(play(before, target('b1', 'c3')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.turn.cardPlays.white, 1);
@@ -249,7 +255,9 @@ describe('Cathedral King safety and direct-mate rule', () => {
     const fizzled = ok(play(before, target('a2', 'h2')));
 
     assert.deepEqual(fizzled.pieces, before.pieces);
-    assert.deepEqual(fizzled.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(fizzled.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+    });
     assert.equal(fizzled.outcome, null);
 
     const alreadyMated = game({ fen: '7k/6Q1/5K2/8/8/8/8/R1B5 w - - 0 1' });

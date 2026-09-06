@@ -221,7 +221,9 @@ describe('Forced March lifecycle and safety', () => {
     assert.equal(after.players.white.hand.at(-1)?.id, drawn.id);
     assert.equal(after.players.white.deck.length, 0);
     assert.equal(after.turn.cardPlays.white, 1);
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target, movement: target, preservePreviousMove: false,
+    });
   });
 
   it('atomically rejects a missing or mismatched card instance', () => {
@@ -265,7 +267,9 @@ describe('Forced March lifecycle and safety', () => {
     const used = before.players.white.hand[0];
     const after = ok(play(before, moves(['b2', 'c2'])));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.id, used.id);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -279,7 +283,9 @@ describe('Forced March lifecycle and safety', () => {
     });
     const after = ok(play(before, moves(['b2', 'c2'], ['h2', 'g2'])));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
     assert.equal(after.turn.cardPlays.white, 1);

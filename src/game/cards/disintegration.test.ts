@@ -69,7 +69,10 @@ function expectSelfCheckFizzle(before: State, target: string): State {
   assert.equal(after.fen, before.fen);
   assert.deepEqual(after.history, [
     ...before.history,
-    { type: 'cardFizzled', cardId: 'disintegration', reason: 'SELF_CHECK' },
+    {
+      type: 'cardFizzled', cardId: 'disintegration', reason: 'SELF_CHECK',
+      movement: [], preservePreviousMove: true,
+    },
   ]);
   assert.equal(after.outcome, null);
   return after;
@@ -318,7 +321,10 @@ describe('Disintegration state transition', () => {
 
   it('records the resolved card play without ending the game', () => {
     const after = expectOk(play(game()));
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: 'disintegration', target: 'a2' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: 'disintegration', target: 'a2',
+      movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.outcome, null);
   });
 });
@@ -523,7 +529,10 @@ describe('Disintegration King safety and the Checkmate Rule', () => {
 
   it('records the precise direct-mate fizzle reason and no victory', () => {
     const after = expectOk(play(game({ fen: WHITE_MATE })));
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: 'disintegration', reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: 'disintegration', reason: 'DIRECT_MATE',
+      movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.outcome, null);
   });
 });

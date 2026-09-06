@@ -91,7 +91,9 @@ describe('Cowardice contract and movement', () => {
 
       assert.equal(pieceAt(after, 'd4'), undefined);
       assert.deepEqual(pieceAt(after, to), { ...pawn, square: to });
-      assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target });
+      assert.deepEqual(after.history.at(-1), {
+        type: 'cardPlayed', cardId: CARD, target, movement: target, preservePreviousMove: true,
+      });
     }
   });
 
@@ -222,7 +224,9 @@ describe('Cowardice safety and immutability', () => {
 
     assert.deepEqual(after.pieces, before.pieces);
     assert.equal(after.fen, before.fen);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.cardPlays.white, 1);
   });
@@ -235,7 +239,9 @@ describe('Cowardice safety and immutability', () => {
 
     assert.deepEqual(after.pieces, before.pieces);
     assert.equal(after.fen, before.fen);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.cardPlays.white, 1);
   });

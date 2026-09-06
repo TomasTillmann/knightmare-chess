@@ -168,7 +168,9 @@ describe('Dubbing validation and lifecycle', () => {
       cardPlays: { white: 1, black: 0 },
     });
     assert.equal(after.fen, '4k3/8/8/8/8/1R6/8/4K3 b - - 7 12');
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: move() });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target: move(), movement: move(), preservePreviousMove: false,
+    });
   });
 
   it('resets the halfmove clock for a Pawn without promoting it on the last rank', () => {
@@ -205,7 +207,9 @@ describe('Dubbing safety', () => {
     const after = ok(play(before, move('e2', 'c3')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -219,7 +223,9 @@ describe('Dubbing safety', () => {
     const after = ok(play(before, move('b2', 'c4')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.moveMade, true);
   });

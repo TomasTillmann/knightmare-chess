@@ -73,7 +73,13 @@ describe('Onslaught contract and movement', () => {
 
     assert.deepEqual(target.map(move => pieceAt(after, move.to)?.id), ids);
     assert.equal(target.every(move => !pieceAt(after, move.from)), true);
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed',
+      cardId: CARD,
+      target,
+      movement: target,
+      preservePreviousMove: false,
+    });
   });
 
   it('moves Black Pawns one square in Black’s forward direction', () => {
@@ -200,7 +206,13 @@ describe('Onslaught lifecycle and safety', () => {
     const after = ok(play(before, moves(['d2', 'd3'])));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled',
+      cardId: CARD,
+      reason: 'SELF_CHECK',
+      movement: [],
+      preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -214,7 +226,13 @@ describe('Onslaught lifecycle and safety', () => {
     const after = ok(play(before, moves(['b2', 'b3'])));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled',
+      cardId: CARD,
+      reason: 'DIRECT_MATE',
+      movement: [],
+      preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);

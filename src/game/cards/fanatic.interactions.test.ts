@@ -152,7 +152,10 @@ test('Fanatic may be used on a later turn after Disintegration', () => {
 
 test('Fanatic records one card event and no separate regular-move event', () => {
   const state = fanatic(game(), 'a2');
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: FANATIC, target: 'a2' }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed', cardId: FANATIC, target: 'a2',
+    movement: [{ from: 'a2', to: 'a5' }], preservePreviousMove: false,
+  }]);
   assert.equal(state.fen.split(' ')[0], 'rnbqkbnr/pppppppp/8/P7/8/8/1PPPPPPP/RNBQKBNR');
 });
 
@@ -373,7 +376,9 @@ test('an unrelated Fanatic fizzles in check but leaves the regular move availabl
   assert.equal(state.turn.moveMade, false);
   assert.equal(state.turn.cardPlays.white, 1);
   assert.deepEqual(state.players.white.hand.map(card => card.cardId), [DISINTEGRATION]);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.outcome, null);
   assert.equal(pieceAt(move(state, 'e1', 'd1'), 'd1')?.role, 'king');
 });
@@ -390,7 +395,9 @@ test('a self-pinning Fanatic fizzles and consumes the replacement move', () => {
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.players.white.discard.at(-1)?.cardId, FANATIC);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
@@ -405,7 +412,9 @@ test('a self-check-fizzled Fanatic turn prevents premature stalemate', () => {
   assert.equal(state.outcome, null, 'the legal replacement-card turn prevents stalemate');
 
   state = fanatic(state, 'e1');
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.outcome, null);
 });
@@ -418,7 +427,9 @@ test('a self-check fizzle adjudicates mate when the original check has no regula
   assert.equal(positionFor(before).isCheckmate(), true);
   const state = fanatic(before, 'a2');
   assert.equal(pieceAt(state, 'a2')?.role, 'pawn');
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FANATIC, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'beforeMove');
   assert.equal(state.turn.moveMade, false);
   assert.deepEqual(state.outcome, { winner: 'black', reason: 'checkmate' });
@@ -455,7 +466,9 @@ test('a Fanatic move that directly creates checkmate fizzles and restores the Pa
   assert.deepEqual(state.pieces, before.pieces);
   assert.equal(pieceAt(state, 'd4')?.role, 'pawn');
   assert.equal(pieceAt(state, 'd7'), undefined);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FANATIC, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FANATIC, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+  });
 });
 
 test('a mate-fizzled Fanatic still consumes both the card and the move', () => {
@@ -584,12 +597,24 @@ test('replaying a mixed Fanatic and Disintegration sequence is deterministic', (
     cardPlays: { white: 0, black: 1 },
   });
   assert.deepEqual(state.history, [
-    { type: 'cardPlayed', cardId: FANATIC, target: 'a2' },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a7' },
+    {
+      type: 'cardPlayed', cardId: FANATIC, target: 'a2',
+      movement: [{ from: 'a2', to: 'a5' }], preservePreviousMove: false,
+    },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a7',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'e7', to: 'e5' },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'b2' },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'b2',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'g1', to: 'f3' },
-    { type: 'cardPlayed', cardId: FANATIC, target: 'b7' },
+    {
+      type: 'cardPlayed', cardId: FANATIC, target: 'b7',
+      movement: [{ from: 'b7', to: 'b4' }], preservePreviousMove: false,
+    },
   ]);
   assert.deepEqual(state.players.white.hand, []);
   assert.deepEqual(state.players.white.discard.map(card => card.cardId), [FANATIC, DISINTEGRATION]);

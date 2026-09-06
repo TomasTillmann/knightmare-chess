@@ -63,7 +63,11 @@ test('Lost Castle swaps opposing Rooks as the complete move for the turn', () =>
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
   assert.equal(state.fen, '7k/6R1/8/8/8/8/1r6/4K3 b - - 8 20');
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: LOST_CASTLE, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed', cardId: LOST_CASTLE, target,
+    movement: [{ from: target.own, to: target.opponent }, { from: target.opponent, to: target.own }],
+    preservePreviousMove: false,
+  }]);
 
   const next = endTurn(state);
   assert.equal(next.turn.color, 'black');
@@ -155,7 +159,9 @@ test('a Lost Castle swap that moves an enemy Rook onto a checking square fizzles
   const state = lostCastle(before, { own: 'a1', opponent: 'a3' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: LOST_CASTLE, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: LOST_CASTLE, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.players.white.discard.at(-1)?.cardId, LOST_CASTLE);

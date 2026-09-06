@@ -89,7 +89,11 @@ describe('Lost Castle contract and swap', () => {
 
     assert.deepEqual(pieceAt(after, 'h7'), { ...own, square: 'h7' });
     assert.deepEqual(pieceAt(after, 'a2'), { ...opponent, square: 'a2' });
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: selected });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target: selected,
+      movement: [{ from: selected.own, to: selected.opponent }, { from: selected.opponent, to: selected.own }],
+      preservePreviousMove: false,
+    });
   });
 
   it('swaps for Black and advances Black’s FEN clocks', () => {
@@ -238,7 +242,9 @@ describe('Lost Castle King safety and direct-mate rule', () => {
     const after = ok(play(before, target('e2', 'e8')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.fen, '4r2k/8/8/8/8/8/4R3/4K3 b - - 10 20');
@@ -251,7 +257,9 @@ describe('Lost Castle King safety and direct-mate rule', () => {
     const after = ok(play(before));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.fen, '7k/7r/6Q1/8/8/8/R7/4K3 b - - 1 1');
     assert.equal(after.outcome, null);
   });

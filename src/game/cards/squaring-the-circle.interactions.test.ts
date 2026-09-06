@@ -74,6 +74,8 @@ test('ordinary turns can vacate one corner and make Squaring the Circle the comp
   assert.equal(state.turn.cardPlays.white, 1);
   assert.deepEqual(state.history.at(-1), {
     type: 'cardPlayed', cardId: SQUARING, target: [{ from: 'a2', to: 'a1' }],
+    movement: [{ from: 'a2', to: 'a1' }],
+    preservePreviousMove: false,
   });
   assert.equal(endTurn(state).turn.color, 'black');
 });

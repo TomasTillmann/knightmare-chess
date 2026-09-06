@@ -65,7 +65,11 @@ test('a regular move, Holy Quest swap, and end turn form one complete turn', () 
   assert.equal(swapped.turn.cardPlays.white, 1);
   assert.deepEqual(swapped.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: HOLY_QUEST, target },
+    {
+      type: 'cardPlayed', cardId: HOLY_QUEST, target,
+      movement: [{ from: target.knight, to: target.bishop }, { from: target.bishop, to: target.knight }],
+      preservePreviousMove: true,
+    },
   ]);
 
   const next = endTurn(swapped);
@@ -166,7 +170,9 @@ test('a Holy Quest swap that leaves the acting King in check fizzles safely', ()
   const state = holyQuest(before, { bishop: 'c2', knight: 'a3' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: HOLY_QUEST, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: HOLY_QUEST, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, HOLY_QUEST);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(endTurn(state).turn.color, 'black');
@@ -184,7 +190,9 @@ test('a Holy Quest swap that newly creates direct mate fizzles and restores both
   const state = holyQuest(before, { bishop: 'h1', knight: 'a1' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: HOLY_QUEST, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: HOLY_QUEST, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, HOLY_QUEST);
   assert.equal(state.outcome, null);
 });

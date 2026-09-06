@@ -67,7 +67,9 @@ test('one Forced March shift is the complete move for the turn', () => {
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: FORCED_MARCH, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed', cardId: FORCED_MARCH, target, movement: target, preservePreviousMove: false,
+  }]);
 });
 
 test('two Pawn shifts resolve together and preserve both identities', () => {
@@ -212,7 +214,9 @@ test('an unrelated Forced March fizzles in check but leaves the regular move ava
   assert.equal(pieceAt(state, 'b2'), undefined);
   assert.equal(state.turn.phase, 'beforeMove');
   assert.equal(state.turn.moveMade, false);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FORCED_MARCH, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FORCED_MARCH, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(pieceAt(move(state, 'e1', 'd1'), 'd1')?.role, 'king');
 });
 
@@ -228,7 +232,9 @@ test('a self-uncovering Forced March fizzles and consumes the replacement move',
   assert.equal(pieceAt(state, 'e2'), undefined);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FORCED_MARCH, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FORCED_MARCH, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
@@ -240,7 +246,9 @@ test('a Forced March move that directly creates checkmate fizzles in full', () =
   const state = forcedMarch(before, [{ from: 'd4', to: 'e4' }]);
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: FORCED_MARCH, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: FORCED_MARCH, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.players.white.discard.at(-1)?.cardId, FORCED_MARCH);
@@ -335,14 +343,24 @@ test('a mixed four-card-turn replay is deterministic', () => {
       type: 'cardPlayed',
       cardId: FORCED_MARCH,
       target: [{ from: 'a2', to: 'b2' }, { from: 'c2', to: 'd2' }],
+      movement: [{ from: 'a2', to: 'b2' }, { from: 'c2', to: 'd2' }],
+      preservePreviousMove: false,
     },
-    { type: 'cardPlayed', cardId: FANATIC, target: 'e7' },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'e2' },
+    {
+      type: 'cardPlayed', cardId: FANATIC, target: 'e7',
+      movement: [{ from: 'e7', to: 'e4' }], preservePreviousMove: false,
+    },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'e2',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'a1', to: 'a2' },
     {
       type: 'cardPlayed',
       cardId: FORCED_MARCH,
       target: [{ from: 'a7', to: 'b7' }, { from: 'c7', to: 'd7' }],
+      movement: [{ from: 'a7', to: 'b7' }, { from: 'c7', to: 'd7' }],
+      preservePreviousMove: false,
     },
   ]);
   assert.deepEqual(state.players.white.discard.map(card => card.cardId), [FORCED_MARCH, DISINTEGRATION]);

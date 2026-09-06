@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyAction, legalDests } from '../reducer.js';
+import { applyAction, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type Action = Parameters<typeof applyAction>[1];
@@ -70,4 +70,30 @@ test('castling requires the registered physical Rook, not another Rook on its ho
     const result = applyAction(restored, { type: 'move', from: 'e1', to });
     assert.equal(result.ok, true);
   }
+});
+
+test('a Coup Prince may capture a same-owner neutral checker without aliasing castling', () => {
+  const seeded = createGameState({ fen: '4k3/8/8/8/8/8/P2RK3/8 w - - 0 1' });
+  const before = {
+    ...seeded,
+    pieces: seeded.pieces.map(piece => piece.square === 'e2'
+      ? { ...piece, royal: false }
+      : piece.square === 'a2'
+        ? { ...piece, royal: true }
+        : piece.square === 'd2' ? { ...piece, neutral: true } : piece),
+  };
+  const prince = before.pieces.find(piece => piece.square === 'e2');
+  const checker = before.pieces.find(piece => piece.square === 'd2');
+  assert.ok(prince && checker);
+
+  assert.equal(isKingInCheck(before, 'white'), true);
+  assert.equal(legalDests(before).get('e2')?.includes('d2'), true);
+
+  const result = applyAction(before, { type: 'move', from: 'e2', to: 'd2' });
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  assert.equal(result.state.pieces.find(piece => piece.square === 'd2')?.id, prince.id);
+  assert.equal(result.state.pieces.find(piece => piece.id === checker.id)?.zone, 'captured');
+  assert.equal(isKingInCheck(result.state, 'white'), false);
 });

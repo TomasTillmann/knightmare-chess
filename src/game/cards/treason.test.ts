@@ -91,7 +91,13 @@ describe('Treason contract and swap', () => {
 
     assert.deepEqual(pieceAt(after, 'b7'), { ...rook, square: 'b7' });
     assert.deepEqual(pieceAt(after, 'c7'), { ...knight, square: 'c7' });
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: selected });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed',
+      cardId: CARD,
+      target: selected,
+      movement: [{ from: 'b7', to: 'c7' }, { from: 'c7', to: 'b7' }],
+      preservePreviousMove: true,
+    });
   });
 
   it('swaps White pieces when Black is acting', () => {
@@ -232,7 +238,9 @@ describe('Treason King safety and direct-mate rule', () => {
     const after = ok(play(before, target('b4', 'e4')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.turn.cardPlays.white, 1);
@@ -245,7 +253,9 @@ describe('Treason King safety and direct-mate rule', () => {
     const fizzled = ok(play(before, target('h7', 'c3')));
 
     assert.deepEqual(fizzled.pieces, before.pieces);
-    assert.deepEqual(fizzled.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(fizzled.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+    });
     assert.equal(fizzled.outcome, null);
 
     const alreadyMated = game({ fen: '7k/6Q1/5K2/8/8/rn6/8/8 w - - 0 1' });

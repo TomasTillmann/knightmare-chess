@@ -108,7 +108,9 @@ describe('Annexation contract and geometry', () => {
     assert.deepEqual(pieceAt(after, 'h4'), { ...hPawn, square: 'h4' });
     assert.equal(pieceAt(after, 'a2'), undefined);
     assert.equal(pieceAt(after, 'h2'), undefined);
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target, movement: target, preservePreviousMove: false,
+    });
   });
 
   it('uses owner-relative forward for both colors at every orientation', () => {
@@ -281,7 +283,9 @@ describe('Annexation lifecycle and safety', () => {
     assert.equal(after.players.white.hand.at(-1)?.id, drawn.id);
     assert.equal(after.players.white.deck.length, 0);
     assert.equal(after.turn.cardPlays.white, 1);
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target, movement: target, preservePreviousMove: false,
+    });
   });
 
   it('atomically rejects a missing or mismatched exact instance', () => {
@@ -307,7 +311,9 @@ describe('Annexation lifecycle and safety', () => {
     assert.equal(positionFor(before).isCheck(), false);
     const after = ok(play(before, shifts(['d2', 'd4'])));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
@@ -333,7 +339,9 @@ describe('Annexation lifecycle and safety', () => {
     });
     const after = ok(play(before, shifts(['b2', 'b4'], ['h2', 'h4'])));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
   });

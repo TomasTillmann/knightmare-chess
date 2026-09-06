@@ -65,7 +65,13 @@ test('a regular move, Siege swap, and end turn form one complete turn', () => {
   assert.equal(swapped.turn.cardPlays.white, 1);
   assert.deepEqual(swapped.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: SIEGE, target },
+    {
+      type: 'cardPlayed',
+      cardId: SIEGE,
+      target,
+      movement: [{ from: 'a1', to: 'b1' }, { from: 'b1', to: 'a1' }],
+      preservePreviousMove: true,
+    },
   ]);
 
   const next = endTurn(swapped);
@@ -157,7 +163,9 @@ test('a Siege swap that leaves the acting King in check fizzles safely', () => {
   const state = siege(before, { knight: 'a3', rook: 'c2' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: SIEGE, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: SIEGE, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, SIEGE);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(endTurn(state).turn.color, 'black');

@@ -65,7 +65,13 @@ test('a regular move, Treason swap, and end turn form one complete turn', () => 
   assert.equal(swapped.turn.cardPlays.white, 1);
   assert.deepEqual(swapped.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: TREASON, target },
+    {
+      type: 'cardPlayed',
+      cardId: TREASON,
+      target,
+      movement: [{ from: 'a8', to: 'b8' }, { from: 'b8', to: 'a8' }],
+      preservePreviousMove: true,
+    },
   ]);
 
   const next = endTurn(swapped);
@@ -154,7 +160,9 @@ test('a Treason swap that leaves the acting King in check fizzles safely', () =>
   const state = treason(before, { rook: 'a8', knight: 'e8' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: TREASON, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: TREASON, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, TREASON);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(endTurn(state).turn.color, 'black');
@@ -167,7 +175,9 @@ test('a Treason swap that newly creates direct mate fizzles and restores both pi
   const state = treason(before, { rook: 'h7', knight: 'c3' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: TREASON, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: TREASON, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, TREASON);
   assert.equal(state.outcome, null);
 });

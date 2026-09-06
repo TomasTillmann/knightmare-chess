@@ -63,7 +63,13 @@ test('Tournament swaps opposing Knights as the complete move for the turn', () =
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
   assert.equal(state.fen, '2N4k/8/8/8/8/8/8/2n1K3 b - - 8 20');
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: TOURNAMENT, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed',
+    cardId: TOURNAMENT,
+    target,
+    movement: [{ from: 'c1', to: 'c8' }, { from: 'c8', to: 'c1' }],
+    preservePreviousMove: false,
+  }]);
 
   const next = endTurn(state);
   assert.equal(next.turn.color, 'black');
@@ -155,7 +161,9 @@ test('a Tournament swap that moves an enemy Knight onto a checking square fizzle
   const state = tournament(before, { own: 'c2', opponent: 'a3' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: TOURNAMENT, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: TOURNAMENT, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.players.white.discard.at(-1)?.cardId, TOURNAMENT);

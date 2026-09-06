@@ -75,7 +75,12 @@ test('ordinary capture, selected No Quarter, replacement draw, and end turn comp
   assert.equal(state.pieces.find(piece => piece.id === victimId)?.square, null);
   assert.equal(state.players.white.discard.at(-1)?.id, selectedId);
   assert.deepEqual(state.players.white.hand.map(card => card.id), [keptId, drawnId]);
-  assert.deepEqual(state.history.at(-1), { type: 'cardPlayed', cardId: NO_QUARTER });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardPlayed',
+    cardId: NO_QUARTER,
+    movement: [],
+    preservePreviousMove: true,
+  });
   assert.equal(state.turn.cardPlays.white, 1);
 
   const next = endTurn(state);

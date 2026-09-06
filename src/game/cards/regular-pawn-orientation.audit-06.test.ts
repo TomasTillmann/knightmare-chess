@@ -22,6 +22,12 @@ function move(state: State, from: string, to: string, promotion?: string): State
   return result.state;
 }
 
+function endTurn(state: State): State {
+  const result = applyAction(state, { type: 'endTurn' });
+  if (!result.ok) assert.fail(`${result.error.code}: ${result.error.message}`);
+  return result.state;
+}
+
 test('ordinary Pawn direction rotates for both colors', () => {
   const cases = [
     { orientation: 90, fen: '7k/8/8/8/1P6/8/8/K7 w - - 0 1', from: 'b4', to: 'c4', stale: 'b5' },
@@ -118,4 +124,47 @@ test('rotated double steps create a rotated en-passant capture', () => {
   const captured = move(reply, 'd5', 'c4');
   assert.equal(captured.pieces.some(piece => piece.square === 'd4'), false);
   assert.equal(captured.pieces.find(piece => piece.square === 'c4')?.owner, 'black');
+});
+
+test('rotated ordinary double steps keep first- and second-rank en-passant rights authoritative', () => {
+  const cases = [
+    {
+      name: 'White first rank',
+      fen: '7k/8/8/8/8/8/3p4/KP6 w - - 0 1',
+      from: 'b1',
+      to: 'd1',
+      target: 'c1',
+      capturer: 'd2',
+      capturerOwner: 'black',
+    },
+    {
+      name: 'Black second rank',
+      fen: '7k/8/8/8/8/8/6p1/K3P3 b - - 0 1',
+      from: 'g2',
+      to: 'e2',
+      target: 'f2',
+      capturer: 'e1',
+      capturerOwner: 'white',
+    },
+  ] as const;
+
+  for (const fixture of cases) {
+    const before = oriented(fixture.fen, 90);
+    const pawnId = before.pieces.find(piece => piece.square === fixture.from)!.id;
+    const advanced = move(before, fixture.from, fixture.to);
+
+    assert.deepEqual(advanced.enPassant, [{ target: fixture.target, pawnId }], fixture.name);
+    assert.equal(advanced.fen.split(' ')[3], '-', fixture.name);
+
+    const reply = endTurn(advanced);
+    assert.equal(legalDests(reply).get(fixture.capturer)?.includes(fixture.target), true, fixture.name);
+    const captured = move(reply, fixture.capturer, fixture.target);
+    assert.equal(captured.pieces.find(piece => piece.square === fixture.to), undefined, fixture.name);
+    assert.equal(
+      captured.pieces.find(piece => piece.square === fixture.target)?.owner,
+      fixture.capturerOwner,
+      fixture.name,
+    );
+    assert.deepEqual(captured.enPassant, [], fixture.name);
+  }
 });

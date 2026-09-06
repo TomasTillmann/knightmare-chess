@@ -65,7 +65,9 @@ test('Dubbing is the complete move and ends the turn normally', () => {
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: DUBBING, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed', cardId: DUBBING, target, movement: target, preservePreviousMove: false,
+  }]);
 
   const next = endTurn(state);
   assert.equal(next.turn.color, 'black');
@@ -145,7 +147,9 @@ test('moving a shielding piece away fizzles and consumes the replacement move', 
   const state = dub(before, 'e2', 'c3');
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: DUBBING, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: DUBBING, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, DUBBING);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);

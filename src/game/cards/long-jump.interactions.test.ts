@@ -63,6 +63,7 @@ test('Long Jump is the complete move and can end the turn immediately', () => {
   assert.equal(state.fen, '7k/8/8/8/3N4/8/8/4K3 b - - 1 1');
   assert.deepEqual(state.history, [{
     type: 'cardPlayed', cardId: LONG_JUMP, target: [{ from: 'b1', to: 'd4' }],
+    movement: [{ from: 'b1', to: 'd4' }], preservePreviousMove: false,
   }]);
 
   const next = endTurn(state);
@@ -138,7 +139,9 @@ test('moving a shielding Knight away fizzles, restores it, and consumes the repl
   const state = jump(before, 'e2', 'b4');
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: LONG_JUMP, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: LONG_JUMP, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, LONG_JUMP);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);

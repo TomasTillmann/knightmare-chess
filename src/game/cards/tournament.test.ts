@@ -89,7 +89,13 @@ describe('Tournament contract and swap', () => {
 
     assert.deepEqual(pieceAt(after, 'b8'), { ...own, square: 'b8' });
     assert.deepEqual(pieceAt(after, 'b1'), { ...opponent, square: 'b1' });
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: selected });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed',
+      cardId: CARD,
+      target: selected,
+      movement: [{ from: 'b1', to: 'b8' }, { from: 'b8', to: 'b1' }],
+      preservePreviousMove: false,
+    });
   });
 
   it('swaps Black’s Knight with White’s and advances Black’s FEN clocks', () => {
@@ -241,7 +247,9 @@ describe('Tournament King safety and direct-mate rule', () => {
     const after = ok(play(before, target('c2', 'g8')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.fen, '6nk/8/8/8/8/8/2N5/4K3 b - - 10 20');
@@ -254,7 +262,9 @@ describe('Tournament King safety and direct-mate rule', () => {
     const after = ok(play(before, target('a1', 'f7')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.fen, '7k/5n2/6Q1/8/8/8/8/N3K3 b - - 1 1');
     assert.equal(after.outcome, null);
   });

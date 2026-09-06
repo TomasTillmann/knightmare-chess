@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction, positionFor } from '../reducer.js';
+import { applyAction, isKingInCheck, legalDests, positionFor } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
@@ -209,6 +209,64 @@ describe('Long Jump lifecycle and safety', () => {
     assert.equal(after.turn.moveMade, true);
   });
 
+  it('does not count a same-owner Rook pinned to another royal against a neutral royal', () => {
+    const before = updatePiece(game({
+      fen: '4r2k/8/8/8/8/8/4R3/1N2K3 w - - 0 1',
+    }), 'b1', { neutral: true, royal: true });
+
+    assert.equal(isKingInCheck(before, 'white'), false);
+    const after = ok(play(before, move('b1', 'h2')));
+
+    assert.equal(after.history.at(-1)?.type, 'cardPlayed');
+    assert.equal(pieceAt(after, 'h2')?.royal, true);
+    assert.equal(isKingInCheck(after, 'white'), false);
+  });
+
+  it('counts a neutral Rook pinned for one controller and SELF_CHECK-fizzles an unsafe neutral-royal jump', () => {
+    const checked = updatePiece(updatePiece(game({
+      fen: '4r2k/8/8/8/8/8/4R2N/4K3 w - - 0 1',
+    }), 'e2', { neutral: true }), 'h2', { neutral: true, royal: true });
+    assert.equal(isKingInCheck(checked, 'white'), true);
+
+    const before = updatePiece(updatePiece(game({
+      fen: '4r2k/8/8/8/8/8/4R3/1N2K3 w - - 0 1',
+    }), 'e2', { neutral: true }), 'b1', { neutral: true, royal: true });
+    const after = ok(play(before, move('b1', 'h2')));
+
+    assert.deepEqual(after.pieces, before.pieces);
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
+  });
+
+  it('does not count a neutral Queen pinned for both controllers against a neutral royal', () => {
+    const state = updatePiece(updatePiece(game({
+      fen: '3r4/6N1/8/8/k2Q3R/8/8/3K4 w - - 0 1',
+    }), 'd4', { neutral: true }), 'g7', { neutral: true, royal: true });
+
+    assert.equal(isKingInCheck(state, 'white'), false);
+    assert.equal(isKingInCheck(state, 'black'), false);
+  });
+
+  it('still counts an unpinned same-owner Rook against a neutral royal', () => {
+    const state = updatePiece(game({
+      fen: '7k/8/8/8/8/8/4R2N/4K3 w - - 0 1',
+    }), 'h2', { neutral: true, royal: true });
+
+    assert.equal(isKingInCheck(state, 'white'), true);
+  });
+
+  it('keeps a pinned Rook attack authoritative for an opposing King move', () => {
+    const state = game({
+      fen: '4r3/8/8/8/8/2k5/4R3/4K3 b - - 0 1',
+    });
+    const result = applyAction(state, { type: 'move', from: 'c3', to: 'c2' });
+
+    assert.equal(legalDests(state).get('c3')?.includes('c2') ?? false, false);
+    assert.equal(result.ok, false);
+    if (!result.ok) assert.equal(result.error.code, 'ILLEGAL_MOVE');
+  });
+
   it('fizzles and consumes the replacement move when jumping exposes a safe King', () => {
     const before = game({
       fen: '4r2k/8/8/8/8/8/4N3/4K3 w - - 9 20',
@@ -218,7 +276,9 @@ describe('Long Jump lifecycle and safety', () => {
     const after = ok(play(before, move('e2', 'a1')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -232,7 +292,9 @@ describe('Long Jump lifecycle and safety', () => {
     const after = ok(play(before, move('b2', 'c2')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.moveMade, true);
   });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyAction } from '../reducer.js';
+import { applyAction, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
@@ -68,13 +68,52 @@ test('a regular move, Cowardice retreat, and end turn form one complete turn', (
   assert.deepEqual(state.enPassant, moved.enPassant);
   assert.deepEqual(state.history, [
     { type: 'move', from: 'c2', to: 'c4' },
-    { type: 'cardPlayed', cardId: COWARDICE, target },
+    { type: 'cardPlayed', cardId: COWARDICE, target, movement: target, preservePreviousMove: true },
   ]);
 
   const next = endTurn(state);
   assert.equal(next.turn.color, 'black');
   assert.equal(next.turn.phase, 'beforeMove');
   assert.deepEqual(next.turn.cardPlays, { white: 0, black: 0 });
+});
+
+test('Cowardice rejects retreating onto a live en-passant target without spending the card', () => {
+  const ready = move(game({
+    fen: '7k/8/8/8/3p4/8/4P3/K3p3 w - - 0 1',
+  }), 'e2', 'e4');
+
+  rejected(
+    ready,
+    { type: 'playCard', cardId: COWARDICE, target: [{ from: 'e1', to: 'e3' }] } as Action,
+    'ILLEGAL_MOVE',
+  );
+
+  assert.equal(pieceAt(ready, 'e3'), undefined);
+  assert.deepEqual(ready.enPassant, [{ target: 'e3', pawnId: 'white-pawn-e2' }]);
+  assert.equal(ready.turn.phase, 'afterMove');
+  assert.equal(ready.turn.cardPlays.white, 0);
+  assert.equal(ready.players.white.hand.some(card => card.cardId === COWARDICE), true);
+  assert.equal(legalDests(endTurn(ready)).get('d4')?.includes('e3'), true);
+});
+
+test('Cowardice cannot retreat the live neutral en-passant victim', () => {
+  const seeded = game({ fen: '7k/8/8/8/3p4/8/4P3/K7 w - - 0 1' });
+  const ready = move({
+    ...seeded,
+    pieces: seeded.pieces.map(piece => piece.square === 'e2' ? { ...piece, neutral: true } : piece),
+  }, 'e2', 'e4');
+
+  rejected(
+    ready,
+    { type: 'playCard', cardId: COWARDICE, target: [{ from: 'e4', to: 'e2' }] } as Action,
+    'ILLEGAL_MOVE',
+  );
+  assert.deepEqual(ready.enPassant, [{ target: 'e3', pawnId: 'white-pawn-e2' }]);
+  assert.equal(ready.turn.cardPlays.white, 0);
+
+  const captured = move(endTurn(ready), 'd4', 'e3');
+  assert.equal(pieceAt(captured, 'e3')?.id, 'black-pawn-d4');
+  assert.equal(captured.pieces.find(piece => piece.id === 'white-pawn-e2')?.zone, 'captured');
 });
 
 test('both colors can retreat an opposing Pawn one or two squares on consecutive turns', () => {
@@ -169,7 +208,9 @@ test('a retreat that exposes the acting King to the opposing Pawn fizzles safely
   const state = cowardice(before, [{ from: 'f4', to: 'f5' }]);
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: COWARDICE, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: COWARDICE, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, COWARDICE);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
@@ -195,12 +236,24 @@ test('a mixed four-card replay is deterministic', () => {
   assert.deepEqual(state, replay());
   assert.deepEqual(state.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: COWARDICE, target: [{ from: 'a5', to: 'a6' }] },
-    { type: 'cardPlayed', cardId: FANATIC, target: 'd5' },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a2' },
+    {
+      type: 'cardPlayed', cardId: COWARDICE, target: [{ from: 'a5', to: 'a6' }],
+      movement: [{ from: 'a5', to: 'a6' }], preservePreviousMove: true,
+    },
+    {
+      type: 'cardPlayed', cardId: FANATIC, target: 'd5',
+      movement: [{ from: 'd5', to: 'd2' }], preservePreviousMove: false,
+    },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a2',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'a1', to: 'a2' },
     { type: 'move', from: 'h8', to: 'g8' },
-    { type: 'cardPlayed', cardId: COWARDICE, target: [{ from: 'e3', to: 'e2' }] },
+    {
+      type: 'cardPlayed', cardId: COWARDICE, target: [{ from: 'e3', to: 'e2' }],
+      movement: [{ from: 'e3', to: 'e2' }], preservePreviousMove: true,
+    },
   ]);
   assert.deepEqual(state.players.white.discard.map(card => card.cardId), [COWARDICE, DISINTEGRATION]);
   assert.deepEqual(state.players.black.discard.map(card => card.cardId), [FANATIC, COWARDICE]);

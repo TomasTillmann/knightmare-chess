@@ -65,7 +65,11 @@ test('Evangelists swaps the two Bishops as the complete move for the turn', () =
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.turn.cardPlays.white, 1);
   assert.equal(state.fen, '2B4k/8/8/8/8/8/8/2b1K3 b - - 8 20');
-  assert.deepEqual(state.history, [{ type: 'cardPlayed', cardId: EVANGELISTS, target }]);
+  assert.deepEqual(state.history, [{
+    type: 'cardPlayed', cardId: EVANGELISTS, target,
+    movement: [{ from: target.own, to: target.opponent }, { from: target.opponent, to: target.own }],
+    preservePreviousMove: false,
+  }]);
 
   const blackTurn = endTurn(state);
   assert.equal(blackTurn.turn.color, 'black');
@@ -175,7 +179,9 @@ test('an unrelated swap while already in check fizzles without consuming the mov
   const state = evangelists(before, { own: 'a1', opponent: 'h6' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: EVANGELISTS, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: EVANGELISTS, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'beforeMove');
   assert.equal(state.turn.moveMade, false);
   assert.equal(pieceAt(move(state, 'e1', 'd1'), 'd1')?.role, 'king');
@@ -187,7 +193,9 @@ test('a self-uncovering swap fizzles and consumes the replacement move', () => {
   const state = evangelists(before, { own: 'b4', opponent: 'a3' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: EVANGELISTS, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: EVANGELISTS, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(endTurn(state).turn.color, 'black');
@@ -199,7 +207,9 @@ test('a swap that newly creates direct mate fizzles and restores both Bishops', 
   const state = evangelists(before, { own: 'a3', opponent: 'g7' });
 
   assert.deepEqual(state.pieces, pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: EVANGELISTS, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: EVANGELISTS, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.outcome, null);

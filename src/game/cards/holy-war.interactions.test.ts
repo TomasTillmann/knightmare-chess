@@ -73,7 +73,11 @@ test('a regular move, Holy War swap, and end turn form one complete White turn',
   assert.equal(swapped.turn.cardPlays.white, 1);
   assert.deepEqual(swapped.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: HOLY_WAR, target },
+    {
+      type: 'cardPlayed', cardId: HOLY_WAR, target,
+      movement: [{ from: target.knight, to: target.bishop }, { from: target.bishop, to: target.knight }],
+      preservePreviousMove: true,
+    },
   ]);
 
   const blackTurn = endTurn(swapped);
@@ -218,7 +222,9 @@ test('a Holy War swap that leaves the acting King in check fizzles and restores 
 
   assert.equal(pieceAt(state, 'd2')?.id, knightId);
   assert.equal(pieceAt(state, 'c4')?.id, bishopId);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: HOLY_WAR, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: HOLY_WAR, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, HOLY_WAR);
   assert.equal(endTurn(state).turn.color, 'black');
 });
@@ -232,7 +238,9 @@ test('a Holy War swap that newly creates checkmate fizzles and restores both pie
   const state = holyWar(before, { knight: 'g7', bishop: 'c1' });
 
   assert.deepEqual(state.pieces, pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: HOLY_WAR, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: HOLY_WAR, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(state.turn.moveMade, true);
   assert.equal(state.outcome, null);
@@ -252,7 +260,9 @@ test('a neutral Bishop mate makes Holy War fizzle and forbids the apparent King 
   const state = holyWar(before, { knight: 'a1', bishop: 'c1' });
 
   assert.deepEqual(state.pieces, pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: HOLY_WAR, reason: 'DIRECT_MATE' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: HOLY_WAR, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+  });
 
   const candidate = structuredClone(before);
   candidate.pieces.find(piece => piece.square === 'a1')!.square = 'c1';
@@ -329,10 +339,19 @@ test('a mixed-card Holy War replay is deterministic', () => {
   assert.equal(state.fen, '1bn1k3/8/4p3/8/8/4P3/4K3/1BN5 b - - 1 2');
   assert.deepEqual(state.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: HOLY_WAR, target: { knight: 'b1', bishop: 'c1' } },
+    {
+      type: 'cardPlayed', cardId: HOLY_WAR, target: { knight: 'b1', bishop: 'c1' },
+      movement: [{ from: 'b1', to: 'c1' }, { from: 'c1', to: 'b1' }], preservePreviousMove: true,
+    },
     { type: 'move', from: 'e7', to: 'e6' },
-    { type: 'cardPlayed', cardId: HOLY_WAR, target: { knight: 'b8', bishop: 'c8' } },
-    { type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a2' },
+    {
+      type: 'cardPlayed', cardId: HOLY_WAR, target: { knight: 'b8', bishop: 'c8' },
+      movement: [{ from: 'b8', to: 'c8' }, { from: 'c8', to: 'b8' }], preservePreviousMove: true,
+    },
+    {
+      type: 'cardPlayed', cardId: DISINTEGRATION, target: 'a2',
+      movement: [], preservePreviousMove: false,
+    },
     { type: 'move', from: 'e1', to: 'e2' },
   ]);
 });

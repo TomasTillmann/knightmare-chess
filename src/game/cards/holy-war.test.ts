@@ -91,7 +91,11 @@ describe('Holy War contract and swap', () => {
 
     assert.deepEqual(pieceAt(after, 'c1'), { ...knight, square: 'c1' });
     assert.deepEqual(pieceAt(after, 'b1'), { ...bishop, square: 'b1' });
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: selected });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target: selected,
+      movement: [{ from: selected.knight, to: selected.bishop }, { from: selected.bishop, to: selected.knight }],
+      preservePreviousMove: true,
+    });
   });
 
   it('swaps Black pieces on Black’s turn', () => {
@@ -300,7 +304,9 @@ describe('Holy War King safety and checkmate rule', () => {
     const after = ok(play(before, target('b1', 'c3')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.id, used.id);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -313,7 +319,9 @@ describe('Holy War King safety and checkmate rule', () => {
     const after = ok(play(before, target('d3', 'h7')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+    });
   });
 
   it('fizzles a directly created mate, restores both pieces, and prioritizes mate over self-check', () => {
@@ -325,7 +333,9 @@ describe('Holy War King safety and checkmate rule', () => {
     const after = ok(play(before, target('g7', 'a3')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.outcome, null);

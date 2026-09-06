@@ -91,7 +91,11 @@ describe('Anathema contract and swap', () => {
 
     assert.deepEqual(pieceAt(after, 'b7'), { ...bishop, square: 'b7' });
     assert.deepEqual(pieceAt(after, 'c7'), { ...rook, square: 'c7' });
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: selected });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target: selected,
+      movement: [{ from: selected.rook, to: selected.bishop }, { from: selected.bishop, to: selected.rook }],
+      preservePreviousMove: true,
+    });
   });
 
   it('swaps White pieces when Black is acting', () => {
@@ -289,7 +293,9 @@ describe('Anathema King safety and checkmate rule', () => {
     const after = ok(play(before, target('e3', 'a3')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.id, used.id);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.turn.cardPlays.white, 1);
@@ -304,7 +310,9 @@ describe('Anathema King safety and checkmate rule', () => {
     const after = ok(play(before, target('d1', 'b2')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: true,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
     assert.equal(after.outcome, null);

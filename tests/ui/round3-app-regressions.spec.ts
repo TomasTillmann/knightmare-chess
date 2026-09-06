@@ -192,6 +192,7 @@ test('canceling promotion leaves the game unchanged and permits a valid retry', 
   await canceled;
 
   await expect.poll(() => gameStateJson(page)).toBe(before);
+  await expect(board.locator('square.last-move')).toHaveCount(0);
   await expect.poll(() => pieceOccupiesSquare(board, 'piece.white.pawn', 'g4')).toBe(true);
   await expect(page.getByText('White to move', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'End turn' })).toBeDisabled();

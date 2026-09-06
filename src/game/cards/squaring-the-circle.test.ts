@@ -197,7 +197,9 @@ describe('Squaring the Circle validation and lifecycle', () => {
     assert.equal(after.players.white.hand.at(-1)?.id, drawn.id);
     assert.deepEqual(after.players.white.deck, []);
     assert.equal(after.turn.cardPlays.white, 1);
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed', cardId: CARD, target, movement: target, preservePreviousMove: false,
+    });
   });
 
   it('atomically rejects absent, foreign, wrong-card, and malformed card instances', () => {
@@ -262,7 +264,13 @@ describe('Squaring the Circle safety and immutability', () => {
 
     assert.equal(positionFor(after, 'white').isCheck(), false);
     assert.equal(pieceAt(after, 'h1')?.originalRole, 'king');
-    assert.deepEqual(after.history.at(-1), { type: 'cardPlayed', cardId: CARD, target: move('e1', 'h1') });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardPlayed',
+      cardId: CARD,
+      target: move('e1', 'h1'),
+      movement: move('e1', 'h1'),
+      preservePreviousMove: false,
+    });
   });
 
   it('fizzles self-check atomically while spending the card and replacement move', () => {
@@ -274,7 +282,9 @@ describe('Squaring the Circle safety and immutability', () => {
     const after = ok(play(before));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -289,7 +299,9 @@ describe('Squaring the Circle safety and immutability', () => {
     const after = ok(play(before, move('b2', 'h1')));
 
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);

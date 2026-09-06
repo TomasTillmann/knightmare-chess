@@ -65,7 +65,11 @@ test('a regular move, Cathedral swap, and end turn form one complete turn', () =
   assert.equal(swapped.turn.cardPlays.white, 1);
   assert.deepEqual(swapped.history, [
     { type: 'move', from: 'e2', to: 'e3' },
-    { type: 'cardPlayed', cardId: CATHEDRAL, target },
+    {
+      type: 'cardPlayed', cardId: CATHEDRAL, target,
+      movement: [{ from: target.rook, to: target.bishop }, { from: target.bishop, to: target.rook }],
+      preservePreviousMove: true,
+    },
   ]);
 
   const next = endTurn(swapped);
@@ -157,7 +161,9 @@ test('a Cathedral swap that leaves the acting King in check fizzles safely', () 
   const state = cathedral(before, { rook: 'd2', bishop: 'c4' });
 
   assert.deepEqual(state.pieces, before.pieces);
-  assert.deepEqual(state.history.at(-1), { type: 'cardFizzled', cardId: CATHEDRAL, reason: 'SELF_CHECK' });
+  assert.deepEqual(state.history.at(-1), {
+    type: 'cardFizzled', cardId: CATHEDRAL, reason: 'SELF_CHECK', movement: [], preservePreviousMove: true,
+  });
   assert.equal(state.players.white.discard.at(-1)?.cardId, CATHEDRAL);
   assert.equal(state.turn.phase, 'afterMove');
   assert.equal(endTurn(state).turn.color, 'black');

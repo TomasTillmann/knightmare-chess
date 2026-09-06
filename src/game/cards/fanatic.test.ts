@@ -562,7 +562,9 @@ describe('Fanatic card lifecycle and replacement-move semantics', () => {
       cardInstanceId: selected.id,
       target: 'b2',
     } as unknown as Action));
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.id, selected.id);
     assert.deepEqual(after.players.white.hand.map(card => card.id), [first.id]);
   });
@@ -644,7 +646,10 @@ describe('Fanatic card lifecycle and replacement-move semantics', () => {
     const after = expectOk(play(before));
     assert.deepEqual(after.history, [
       ...before.history,
-      { type: 'cardPlayed', cardId: CARD, target: 'a2' },
+      {
+        type: 'cardPlayed', cardId: CARD, target: 'a2',
+        movement: [{ from: 'a2', to: 'a5' }], preservePreviousMove: false,
+      },
     ]);
     assert.equal(after.history.some(event => event.type === 'move'), false);
   });
@@ -719,7 +724,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     const drawn = before.players.white.deck[0];
     const after = expectOk(play(before, 'b2'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.id, used.id);
     assert.equal(after.players.white.hand.some(card => card.id === drawn.id), true);
     assert.equal(after.turn.cardPlays.white, 1);
@@ -739,7 +746,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     const drawn = before.players.black.deck[0];
     const after = expectOk(play(before, 'b7'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.black.discard.at(-1)?.id, used.id);
     assert.equal(after.players.black.hand.some(card => card.id === drawn.id), true);
     assert.equal(after.turn.cardPlays.black, 1);
@@ -791,7 +800,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
       const drawn = before.players[fixture.turn].deck[0];
       const after = expectOk(play(before, fixture.source));
       assert.deepEqual(after.pieces, before.pieces, 'the mating board effect must be rolled back');
-      assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+      assert.deepEqual(after.history.at(-1), {
+        type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+      });
       assert.equal(after.players[fixture.turn].discard.at(-1)?.id, used.id);
       assert.equal(after.players[fixture.turn].hand.some(card => card.id === drawn.id), true);
       assert.equal(after.turn.cardPlays[fixture.turn], 1);
@@ -813,7 +824,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     };
     const after = expectOk(play(before, 'a2'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
     assert.equal(after.turn.cardPlays.white, 1);
@@ -829,7 +842,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     const used = before.players.black.hand[0];
     const after = expectOk(play(before, 'e7'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.black.discard.at(-1)?.id, used.id);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -841,7 +856,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     const used = before.players.white.hand[0];
     const after = expectOk(play(before, 'e2'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.players.white.discard.at(-1)?.id, used.id);
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
@@ -852,7 +869,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     assert.equal(positionFor(before, 'white').isCheck(), true);
     const after = expectOk(play(before, 'h2'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'beforeMove');
     assert.equal(after.turn.moveMade, false);
     assert.equal(after.turn.cardPlays.white, 1);
@@ -866,7 +885,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     assert.equal(positionFor(before, 'white').isCheckmate(), true);
     const after = expectOk(play(before, 'a2'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'SELF_CHECK', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'beforeMove');
     assert.equal(after.turn.moveMade, false);
     assert.deepEqual(after.outcome, { winner: 'black', reason: 'checkmate' });
@@ -880,7 +901,9 @@ describe('Fanatic King safety and the Checkmate Rule', () => {
     assert.equal(positionFor(before, 'black').isCheck(), false);
     const after = expectOk(play(before, 'd2'));
     assert.deepEqual(after.pieces, before.pieces);
-    assert.deepEqual(after.history.at(-1), { type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE' });
+    assert.deepEqual(after.history.at(-1), {
+      type: 'cardFizzled', cardId: CARD, reason: 'DIRECT_MATE', movement: [], preservePreviousMove: false,
+    });
     assert.equal(after.turn.phase, 'afterMove');
     assert.equal(after.turn.moveMade, true);
     assert.equal(after.turn.cardPlays.white, 1);

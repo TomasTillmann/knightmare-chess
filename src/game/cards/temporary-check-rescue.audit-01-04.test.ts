@@ -33,7 +33,13 @@ test('Cowardice may repair check left temporarily by the regular move', () => {
   assert.equal(pieceAt(state, 'e4')?.id, 'black-pawn-d4');
   assert.deepEqual(state.history, [
     { type: 'move', from: 'e2', to: 'f3' },
-    { type: 'cardPlayed', cardId: 'cowardice', target: [{ from: 'd4', to: 'e4' }] },
+    {
+      type: 'cardPlayed',
+      cardId: 'cowardice',
+      target: [{ from: 'd4', to: 'e4' }],
+      movement: [{ from: 'd4', to: 'e4' }],
+      preservePreviousMove: true,
+    },
   ]);
   assert.equal(applied(state, { type: 'endTurn' }).turn.color, 'black');
 });
@@ -52,7 +58,13 @@ test('Treason may repair check left temporarily by the regular move', () => {
   assert.equal(pieceAt(state, 'f3')?.id, 'black-rook-a8');
   assert.deepEqual(state.history, [
     { type: 'move', from: 'a2', to: 'a3' },
-    { type: 'cardPlayed', cardId: 'treason', target },
+    {
+      type: 'cardPlayed',
+      cardId: 'treason',
+      target,
+      movement: [{ from: 'f3', to: 'a8' }, { from: 'a8', to: 'f3' }],
+      preservePreviousMove: true,
+    },
   ]);
   assert.equal(applied(state, { type: 'endTurn' }).turn.color, 'black');
 });
