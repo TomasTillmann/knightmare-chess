@@ -69,11 +69,8 @@ const invariant = (value: GameState): void => {
 };
 
 const delta = (before: GameState, after: GameState) => {
-  const player = (value: GameState, color: Color) => ({
-    hand: value.players[color].hand,
-    deck: { count: value.players[color].deck.length, top: value.players[color].deck[0] },
-    discard: value.players[color].discard,
-  });
+  const cardsAdded = (oldCards: CardInstance[], newCards: CardInstance[]) =>
+    newCards.filter(card => !oldCards.some(old => old.id === card.id));
   const changedPieces = new Set([...before.pieces, ...after.pieces].map(piece => piece.id));
   const pieces = [...changedPieces].flatMap(id => {
     const oldPiece = before.pieces.find(piece => piece.id === id);
@@ -83,7 +80,13 @@ const delta = (before: GameState, after: GameState) => {
   const players = (['white', 'black'] as const).flatMap(color =>
     JSON.stringify(before.players[color]) === JSON.stringify(after.players[color])
       ? []
-      : [{ color, before: player(before, color), after: player(after, color) }],
+      : [{
+          color,
+          handRemoved: cardsAdded(after.players[color].hand, before.players[color].hand),
+          handAdded: cardsAdded(before.players[color].hand, after.players[color].hand),
+          deckCount: [before.players[color].deck.length, after.players[color].deck.length],
+          discardAdded: cardsAdded(before.players[color].discard, after.players[color].discard),
+        }],
   );
   return {
     fen: [before.fen, after.fen],
