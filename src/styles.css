@@ -384,5 +384,6 @@ h1 {
   .details { grid-template-columns: 100px 1fr; }
   .keyboard-controls form { align-items: stretch; flex-direction: column; }
   .doomsayer-controls form { align-items: stretch; flex-direction: column; }
+  .doomsayer-controls select { width: 100%; min-width: 0; }
   .footer { width: min(100% - 24px, 1180px); flex-direction: column; }
 }

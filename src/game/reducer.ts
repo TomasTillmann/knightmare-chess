@@ -1712,13 +1712,20 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
 
 function namePiece(
   state: GameState,
-  action: Extract<GameAction, { type: 'namePiece' | 'pronouncePiece' | 'pieceName' | 'pronouncePieceName' | 'pieceNamed' }>,
+  action: Extract<GameAction, { type: 'namePiece' }>,
 ): ApplyResult {
-  const rawPlayer = action.speaker ?? action.player ?? action.color;
-  if (rawPlayer !== 'white' && rawPlayer !== 'black') {
+  const fields = Object.keys(action);
+  if (
+    fields.length !== 4
+    || !['type', 'speaker', 'name', 'losses'].every(field => Object.hasOwn(action, field))
+  ) {
+    return reject(state, 'INVALID_TARGET', 'Use only type, speaker, name, and losses.');
+  }
+  if (action.speaker !== 'white' && action.speaker !== 'black') {
     return reject(state, 'INVALID_TARGET', 'Choose which player intentionally named the piece.');
   }
-  if (state.pendingDoomsayer && rawPlayer !== state.pendingDoomsayer.player) {
+  const speaker = action.speaker;
+  if (state.pendingDoomsayer && speaker !== state.pendingDoomsayer.player) {
     return reject(state, 'WRONG_OWNER', 'Only the opponent may use Doomsayer\'s immediate option.');
   }
   const active = activeDoomsayers(state);
@@ -1726,55 +1733,56 @@ function namePiece(
     return reject(state, 'INVALID_TIMING', 'No Doomsayer effect is active.');
   }
 
-  const rawRole = action.role ?? action.pieceName ?? action.name ?? action.piece;
-  const role = typeof rawRole === 'string' ? rawRole : '';
+  const role = typeof action.name === 'string' ? action.name : '';
   if (!DOOMSAYER_ROLES.has(role as DoomsayerRole)) {
     return reject(state, 'INVALID_TARGET', 'Name pawn, knight, bishop, rook, or queen — never king.');
   }
 
-  const rawChoices = action.losses ?? action.pieceIds ?? action.pieceId ?? action.target;
-  const choices = rawChoices === undefined ? [] : action.losses === undefined && typeof rawChoices === 'string'
-    ? [rawChoices]
-    : Array.isArray(rawChoices)
-      ? rawChoices.map(choice => {
-          if (typeof choice === 'string') return choice;
-          const record = effectRecord(choice);
-          const value = record?.square ?? record?.victimId ?? record?.pieceId
-            ?? record?.victim ?? record?.target ?? record?.piece;
-          if (typeof value === 'string') return value;
-          const nested = effectRecord(value);
-          const token = nested?.square ?? nested?.id;
-          return typeof token === 'string' ? token : undefined;
-        })
-      : undefined;
-  if (!choices || choices.some(choice => typeof choice !== 'string') || new Set(choices).size !== choices.length) {
-    return reject(state, 'INVALID_TARGET', 'Choose each physical piece at most once.');
-  }
-  const lossSquares = choices as string[];
-
-  const candidates = doomsayerTargets(state, rawPlayer, role as DoomsayerRole);
+  const candidates = doomsayerTargets(state, speaker, role as DoomsayerRole);
   const required = Math.min(active.length, candidates.length);
-  const selected: PieceState[] = [];
-  for (const choice of lossSquares) {
-    const piece = state.pieces.find(candidate =>
-      candidate.zone === 'board' && (candidate.square === choice || candidate.id === choice),
-    );
-    if (!piece) return reject(state, 'INVALID_TARGET', 'Every loss must be an occupied board square.');
-    if (piece.owner !== rawPlayer) {
-      return reject(state, 'WRONG_OWNER', 'The named player can lose only an owned piece.');
-    }
-    if (piece.royal || captureImmune(state, piece)) {
-      return reject(state, 'INVALID_TARGET', 'That piece cannot be captured by Doomsayer.');
-    }
-    if (piece.role !== role && (piece.promoted || piece.originalRole !== role)) {
-      return reject(state, 'WRONG_ROLE', 'Every loss must match the spoken piece type.');
-    }
-    selected.push(piece);
+  if (!Array.isArray(action.losses)) {
+    return reject(state, 'INVALID_TARGET', 'Losses must be an array.');
   }
-  if (new Set(selected.map(piece => piece.id)).size !== selected.length) {
+  const losses = action.losses.map(loss => effectRecord(loss));
+  if (losses.some(loss =>
+    !loss
+    || Object.keys(loss).length !== 2
+    || !Object.hasOwn(loss, 'effectId')
+    || !Object.hasOwn(loss, 'pieceId')
+    || typeof loss.effectId !== 'string'
+    || typeof loss.pieceId !== 'string'
+  )) {
+    return reject(state, 'INVALID_TARGET', 'Each loss must contain one effectId and one pieceId.');
+  }
+  const mappings = losses as Array<{ effectId: string; pieceId: string }>;
+  if (
+    new Set(mappings.map(loss => loss.effectId)).size !== mappings.length
+    || mappings.some((loss, index) => loss.effectId !== active[index]?.card.id)
+  ) {
+    return reject(state, 'INVALID_TARGET', 'Doomsayer effects must be resolved once, in activation order.');
+  }
+  if (new Set(mappings.map(loss => loss.pieceId)).size !== mappings.length) {
     return reject(state, 'INVALID_TARGET', 'Choose each physical piece at most once.');
   }
-  if (lossSquares.length !== required) {
+  const selected = mappings.flatMap(loss => {
+    const piece = state.pieces.find(candidate =>
+      candidate.zone === 'board' && candidate.id === loss.pieceId,
+    );
+    return piece ? [piece] : [];
+  });
+  if (selected.length !== mappings.length) {
+    return reject(state, 'INVALID_TARGET', 'Every loss must identify a physical board piece.');
+  }
+  if (selected.some(piece => piece.owner !== speaker)) {
+    return reject(state, 'WRONG_OWNER', 'The named player can lose only an owned piece.');
+  }
+  if (selected.some(piece => piece.royal || captureImmune(state, piece))) {
+    return reject(state, 'INVALID_TARGET', 'That piece cannot be captured by Doomsayer.');
+  }
+  if (selected.some(piece => piece.role !== role && (piece.promoted || piece.originalRole !== role))) {
+    return reject(state, 'WRONG_ROLE', 'Every loss must match the spoken piece type.');
+  }
+  if (mappings.length !== required) {
     return reject(
       state,
       'INVALID_TARGET',
@@ -1807,20 +1815,18 @@ function namePiece(
   resolved.pendingDoomsayer = null;
   resolved.history.push({
     type: 'pieceNamed',
-    speaker: rawPlayer,
+    speaker,
     name: role as DoomsayerRole,
     capturedIds: selected.map(piece => piece.id),
     resolvedEffectIds: consumed.map(effect => effect.card.id),
   });
 
-  if (rawPlayer === resolved.turn.color) {
-    const checked = isKingInCheck(resolved, rawPlayer);
-    const escape = hasTurnEscape(resolved);
-    if (checked && !escape) {
-      resolved.outcome = { winner: opposite(rawPlayer), reason: 'checkmate' };
-    } else if (resolved.turn.phase === 'beforeMove' && !checked && !escape) {
-      resolved.outcome = { reason: 'stalemate' };
-    }
+  const checked = isKingInCheck(resolved, resolved.turn.color);
+  const escape = hasTurnEscape(resolved);
+  if (checked && !escape) {
+    resolved.outcome = { winner: opposite(resolved.turn.color), reason: 'checkmate' };
+  } else if (resolved.turn.phase === 'beforeMove' && !checked && !escape) {
+    resolved.outcome = { reason: 'stalemate' };
   }
   return { ok: true, state: resolved };
 }
@@ -2173,6 +2179,22 @@ function settlePendingRescue(
   const cardEvent = recorded?.type === 'cardFizzled'
     ? recorded
     : { type: 'cardFizzled' as const, cardId, reason: 'SELF_CHECK' as const };
+  const previousDoomsayers = new Set(activeDoomsayers(beforeCard).map(effect => effect.card.id));
+  const activatedDoomsayers = activeDoomsayers(result.state).filter(
+    effect => !previousDoomsayers.has(effect.card.id),
+  );
+  if (activatedDoomsayers.length) {
+    const activatedIds = new Set(activatedDoomsayers.map(effect => effect.card.id));
+    result.state.effects = result.state.effects.filter(
+      effect => !isDoomsayerEffect(effect) || !activatedIds.has(effect.card.id),
+    );
+    for (const effect of activatedDoomsayers) {
+      if (!result.state.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
+        result.state.players[effect.owner].discard.push(effect.card);
+      }
+    }
+    result.state.pendingDoomsayer = null;
+  }
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
   result.state.enPassant = structuredClone(pending.enPassant);
@@ -2251,7 +2273,10 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
   if (state.outcome) return reject(state, 'GAME_OVER', 'The game is already over.');
   if (!action) return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
   if (action.type === 'move') return movePiece(state, action);
-  if (action.type === 'namePiece' || action.type === 'pronouncePiece' || action.type === 'pieceName' || action.type === 'pronouncePieceName' || action.type === 'pieceNamed') return namePiece(state, action);
+  if (action.type === 'namePiece') return namePiece(state, action);
+  if ((['pronouncePiece', 'pieceName', 'pronouncePieceName', 'pieceNamed'] as unknown[]).includes(action.type)) {
+    return reject(state, 'INVALID_TARGET', 'Use the canonical namePiece action.');
+  }
   if (action.type === 'declineDoomsayer') return declineDoomsayer(state, action);
   if (action.type === 'endTurn') return endTurn(state);
   if (action.type !== 'playCard') return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');

@@ -75,6 +75,11 @@ export interface PendingDoomsayerState {
   cardInstanceId: string;
 }
 
+export interface DoomsayerLoss {
+  effectId: string;
+  pieceId: string;
+}
+
 export interface PlayerState {
   hand: CardInstance[];
   deck: CardInstance[];
@@ -125,20 +130,7 @@ export interface GameState {
 export type GameAction =
   | { type: 'move'; from: unknown; to: unknown; promotion?: unknown }
   | { type: 'playCard'; cardId: CardId; cardInstanceId?: unknown; target?: unknown }
-  | {
-      type: 'namePiece' | 'pronouncePiece' | 'pieceName' | 'pronouncePieceName' | 'pieceNamed';
-      player?: unknown;
-      color?: unknown;
-      speaker?: unknown;
-      role?: unknown;
-      pieceName?: unknown;
-      name?: unknown;
-      piece?: unknown;
-      pieceId?: unknown;
-      pieceIds?: unknown;
-      losses?: unknown;
-      target?: unknown;
-    }
+  | { type: 'namePiece'; speaker: Color; name: DoomsayerRole; losses: DoomsayerLoss[] }
   | { type: 'declineDoomsayer'; player?: unknown; color?: unknown }
   | { type: 'endTurn' };
 

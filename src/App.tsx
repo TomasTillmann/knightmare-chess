@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { flushSync } from 'react-dom';
 
 import assetRightsUrl from '../ASSET_RIGHTS.md?url';
 import licenseUrl from '../LICENSE?url';
@@ -72,6 +73,12 @@ function Hand({ color, cards, active, canPlayNoQuarter, canPlaySquaringTheCircle
               className={`card ${selected === card.id ? 'card--selected' : ''}`}
               key={card.id}
               onClick={() => { if (playable) onSelect(card); }}
+              onKeyDown={event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onSelect(card);
+                }
+              }}
               onFocus={() => onPreview(card.cardId)}
               onMouseEnter={() => onPreview(card.cardId)}
               type="button"
@@ -98,13 +105,14 @@ export default function App() {
   const [cardMoveFrom, setCardMoveFrom] = useState<SquareName | null>(null);
   const [cardMoves, setCardMoves] = useState<CardMove[]>([]);
   const [swapFrom, setSwapFrom] = useState<SquareName | null>(null);
+  const [namedSpeaker, setNamedSpeaker] = useState<Color>('white');
   const [namedRole, setNamedRole] = useState<DoomsayerRole | ''>('');
   const [namedPieceIds, setNamedPieceIds] = useState<string[]>([]);
   const preview = CARD_CATALOG[previewId] ?? CARD_CATALOG.disintegration;
   const selectedInstance = game.players[game.turn.color].hand.find(card => card.id === selectedCard);
   const selectedDefinition = selectedInstance ? CARD_CATALOG[selectedInstance.cardId] : undefined;
   const doomsayers = activeDoomsayers(game);
-  const doomsayerPlayer = game.pendingDoomsayer?.player ?? game.turn.color;
+  const doomsayerPlayer = game.pendingDoomsayer?.player ?? namedSpeaker;
   const namedCandidates = namedRole ? doomsayerTargets(game, doomsayerPlayer, namedRole) : [];
   const namedLossCount = Math.min(doomsayers.length, namedCandidates.length);
   const lastMove = game.history.at(-1)?.type === 'move' ? game.history.at(-1) : undefined;
@@ -267,7 +275,7 @@ export default function App() {
       setHasError(true);
       return false;
     }
-    setGame(result.state);
+    flushSync(() => setGame(result.state));
     setHasError(false);
     setKeyboardFrom('');
     setKeyboardTo('');
@@ -628,7 +636,7 @@ export default function App() {
   const selectCard = (card: CardInstance) => {
     const selecting = selectedCard !== card.id;
     setPreviewId(card.cardId);
-    setSelectedCard(selecting ? card.id : null);
+    flushSync(() => setSelectedCard(card.id));
     setMessage(
       selecting
         ? card.cardId === 'no-quarter'
@@ -668,7 +676,7 @@ export default function App() {
           : card.cardId === 'cowardice'
             ? "Choose an opponent's Pawn, then choose a clear one- or two-square backward destination."
           : 'Choose one of your Pawns on the board.'
-        : 'Card deselected. Make a legal move or select it again.',
+        : 'Card already selected.',
     );
     setHasError(false);
     setKeyboardTarget('');
@@ -825,14 +833,34 @@ export default function App() {
                   </div>
                   <form onSubmit={event => {
                     event.preventDefault();
-                    if (!namedRole || namedPieceIds.length !== namedLossCount) return;
+                    if (!namedRole) return;
+                    const pieceIds = new FormData(event.currentTarget).getAll('doomsayer-loss').map(String);
                     reduce({
                       type: 'namePiece',
-                      player: doomsayerPlayer,
-                      role: namedRole,
-                      losses: namedPieceIds,
+                      speaker: doomsayerPlayer,
+                      name: namedRole,
+                      losses: pieceIds.map((pieceId, index) => ({
+                        effectId: doomsayers[index].card.id,
+                        pieceId,
+                      })),
                     });
                   }}>
+                    {!game.pendingDoomsayer ? (
+                      <label>
+                        Speaker
+                        <select
+                          aria-label="Speaker"
+                          onChange={event => {
+                            setNamedSpeaker(event.target.value as Color);
+                            setNamedPieceIds([]);
+                          }}
+                          value={namedSpeaker}
+                        >
+                          <option value="white">White</option>
+                          <option value="black">Black</option>
+                        </select>
+                      </label>
+                    ) : null}
                     <label>
                       Piece name
                       <select
@@ -857,6 +885,7 @@ export default function App() {
                         Piece to lose {namedLossCount > 1 ? index + 1 : ''}
                         <select
                           aria-label={`Piece to lose ${index + 1}`}
+                          name="doomsayer-loss"
                           onChange={event => {
                             const next = namedPieceIds.slice(0, namedLossCount);
                             next[index] = event.target.value;
@@ -867,9 +896,9 @@ export default function App() {
                         >
                           <option value="">Choose physical piece</option>
                           {namedCandidates
-                            .filter(piece => !namedPieceIds.some((square, chosen) => chosen !== index && square === piece.square))
+                            .filter(piece => !namedPieceIds.some((id, chosen) => chosen !== index && id === piece.id))
                             .map(piece => (
-                              <option key={piece.id} value={piece.square!}>
+                              <option key={piece.id} label={piece.square!} value={piece.id}>
                                 {piece.square} ({titleCase(piece.role)})
                               </option>
                             ))}
