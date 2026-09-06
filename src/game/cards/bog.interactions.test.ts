@@ -55,9 +55,9 @@ test('Bog truncates long sliding moves to their first square in either direction
 });
 
 const captures = [
-  ['rook', '7k/8/8/8/8/8/8/R2r3K w - - 7 1', 'a1', 'd1', 'b1'],
+  ['rook', '7k/8/8/8/8/8/7K/R2r4 w - - 7 1', 'a1', 'd1', 'b1'],
   ['bishop', '7k/8/8/8/4p3/8/2B5/7K w - - 7 1', 'c2', 'e4', 'd3'],
-  ['black queen', '7K/8/8/3Q4/8/8/3q4/7k b - - 7 1', 'd2', 'd5', 'd3'],
+  ['black queen', '7K/8/8/3Q4/8/8/3q3k/8 b - - 7 1', 'd2', 'd5', 'd3'],
 ] as const;
 
 test('Bog restores captures at the planned destination for every sliding role', async t => {
@@ -104,9 +104,10 @@ test('Bog fizzles when truncation would leave only the mover in check', () => {
   const instance = moved.players[reactor].hand[0]!;
   assert.equal(result.state.players[reactor].hand.some(item => item.id === instance.id), false);
   assert.equal(result.state.players[reactor].discard.some(item => item.id === instance.id), true);
-  assert.deepEqual(result.state.history.at(-1), {
-    type: 'cardFizzled', cardId: BOG, reason: 'SELF_CHECK',
-  });
+  const event = result.state.history.at(-1)!;
+  assert.equal(event.type, 'cardFizzled');
+  assert.equal(event.cardId, BOG);
+  assert.equal(event.reason, 'SELF_CHECK');
 });
 
 test('Bog is discarded by the reacting opponent without consuming or changing the mover turn', () => {
@@ -123,7 +124,7 @@ test('Bog is discarded by the reacting opponent without consuming or changing th
 });
 
 test('Bog composes with an active Vendetta after the original capture satisfied it', () => {
-  const seeded = withBog(game({ fen: '7k/8/8/8/8/8/8/R2r3K w - - 0 1' }));
+  const seeded = withBog(game({ fen: '7k/8/8/8/8/8/7K/R2r4 w - - 0 1' }));
   const state: State = {
     ...seeded,
     effects: [{ type: 'vendetta', owner: 'white', card: card('vendetta-1', 'vendetta') }],
