@@ -57,7 +57,7 @@ const pieceAt = (state: GameState, square: string) =>
 const effects = (state: GameState) => state.effects.filter(effect =>
   effect && typeof effect === 'object' && (effect as Effect).type === PACIFISM,
 ) as Effect[];
-const nextWhiteTurn = (state: GameState, whiteMove: [string, string], blackMove: [string, string]) =>
+const nextWhiteTurn = (state: GameState, whiteMove: readonly [string, string], blackMove: readonly [string, string]) =>
   endTurn(move(endTurn(move(state, ...whiteMove)), ...blackMove));
 
 test('Pacifism catalog data matches the physical card', () => {

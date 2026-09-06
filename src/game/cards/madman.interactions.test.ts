@@ -111,7 +111,7 @@ test('Madman leaves active continuing effects and piece-bound markers untouched'
 
 const implementedCardIds = [
   'assassin', 'disintegration', 'doomsayer', 'fanatic', 'annexation', 'forced-march',
-  'guardian', 'heresy', 'cowardice', 'holy-war', 'anathema', 'evangelists', 'tournament',
+  'guardian', 'heresy', 'cowardice', 'holy-war', 'pacifism', 'anathema', 'evangelists', 'tournament',
   'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump',
   'dubbing', 'squaring-the-circle', 'no-quarter',
 ] as const;
@@ -121,12 +121,18 @@ test('Madman composes deterministically after every implemented card/effect', as
     [...implementedCardIds].sort(),
     Object.keys(CARD_CATALOG).filter(id => id !== MADMAN).sort(),
   );
-  assert.equal(implementedCardIds.length, 23);
+  assert.equal(implementedCardIds.length, 24);
   for (const id of implementedCardIds) await t.test(id, () => {
     const initial = game({ fen: '7k/8/8/8/3r4/2P5/8/K7 w - - 11 20' });
     initial.history.push({ type: 'cardPlayed', cardId: id });
     if (CARD_CATALOG[id].continuing) {
-      initial.effects.push({ type: id, active: true, marker: `${id}-marker` });
+      initial.effects.push(id === 'pacifism'
+        ? {
+          type: id, owner: 'white',
+          card: { id: `white-active-${id}`, cardId: id },
+          pieceId: pieceAt(initial, 'c3')!.id,
+        }
+        : { type: id, active: true, marker: `${id}-marker` });
     }
     const snapshot = structuredClone(initial);
     const action = {
