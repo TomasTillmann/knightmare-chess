@@ -527,6 +527,22 @@ export function dubbingDests(state: GameState, from: SquareName): SquareName[] {
     .map(makeSquare);
 }
 
+export function heresyDests(state: GameState, from: SquareName): SquareName[] {
+  const bishop = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (!bishop || (bishop.role !== 'bishop' && bishop.originalRole !== 'bishop')) return [];
+
+  const source = parseSquare(from);
+  const board = setupFor(state).board;
+  return [[1, 0], [-1, 0], [0, 1], [0, -1]].flatMap(([fileStep, rankStep]) => {
+    const file = squareFile(source) + fileStep;
+    const rank = squareRank(source) + rankStep;
+    const destination = rank * 8 + file;
+    return file < 0 || file > 7 || rank < 0 || rank > 7 || board.has(destination)
+      ? []
+      : [makeSquare(destination)];
+  });
+}
+
 export function squaringTheCircleDests(state: GameState, from: SquareName): SquareName[] {
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === from);
   if (!piece || (piece.owner !== state.turn.color && !piece.neutral)) return [];
@@ -1539,6 +1555,123 @@ function playCowardice(state: GameState, target: unknown, cardInstanceId?: unkno
   return { ok: true, state: resolved };
 }
 
+function playHeresy(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'heresy' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) return reject(state, 'CARD_NOT_IN_HAND', 'Heresy is not in your hand.');
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Heresy is played after the regular move.');
+  }
+  if (
+    !Array.isArray(target)
+    || Object.getPrototypeOf(target) !== Array.prototype
+    || Reflect.ownKeys(target).some(key =>
+      key !== 'length'
+      && (typeof key !== 'string' || !/^\d+$/.test(key) || Number(key) >= target.length)
+    )
+    || target.some(candidate =>
+      !candidate
+      || typeof candidate !== 'object'
+      || Array.isArray(candidate)
+      || Object.getPrototypeOf(candidate) !== Object.prototype
+      || Reflect.ownKeys(candidate).length !== 2
+      || !Object.hasOwn(candidate, 'from')
+      || !Object.hasOwn(candidate, 'to')
+    )
+  ) return reject(state, 'INVALID_TARGET', 'Choose the complete ordered list of Bishop moves.');
+  const moves = target.map(candidate => {
+    const { from, to } = candidate as Record<string, unknown>;
+    return typeof from === 'string' && typeof to === 'string' && SQUARE.test(from) && SQUARE.test(to)
+      ? { from: from as SquareName, to: to as SquareName }
+      : undefined;
+  });
+  if (moves.some(move => !move)) {
+    return reject(state, 'INVALID_TARGET', 'Every Bishop move needs valid from and to squares.');
+  }
+  const parsedMoves = moves as CardMove[];
+  if (new Set(parsedMoves.map(move => move.from)).size !== parsedMoves.length) {
+    return reject(state, 'INVALID_TARGET', 'Every eligible Bishop must move exactly once.');
+  }
+
+  const resolved = structuredClone(state);
+  const movedPieces: PieceState[] = [];
+  const movedIds = new Set<string>();
+  let offset = 0;
+  for (const owner of [opposite(color), color]) {
+    const phase = structuredClone(resolved);
+    const eligible = phase.pieces.filter(piece =>
+      piece.owner === owner
+      && piece.zone === 'board'
+      && piece.square
+      && (piece.role === 'bishop' || piece.originalRole === 'bishop')
+      && heresyDests(phase, piece.square).length,
+    );
+    if (eligible.some(piece => !parsedMoves.slice(offset).some(move => move.from === piece.square))) {
+      return reject(state, 'INVALID_TARGET', 'Every eligible Bishop must move exactly once.');
+    }
+    const phaseMoves = parsedMoves.slice(offset, offset + eligible.length);
+    if (phaseMoves.length !== eligible.length) {
+      return reject(state, 'INVALID_TARGET', 'Every eligible Bishop must move exactly once.');
+    }
+    const bishops: PieceState[] = [];
+    for (const move of phaseMoves) {
+      const bishop = phase.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
+      if (!bishop) return reject(state, 'INVALID_TARGET', `There is no Bishop on ${move.from}.`);
+      if (bishop.role !== 'bishop' && bishop.originalRole !== 'bishop') {
+        return reject(state, 'WRONG_ROLE', 'Heresy moves only Bishops.');
+      }
+      if (movedIds.has(bishop.id)) {
+        return reject(state, 'INVALID_TARGET', 'Every physical Bishop may move only once.');
+      }
+      if (bishop.owner !== owner) {
+        return reject(state, 'WRONG_OWNER', "Move the opponent's Bishops before your own.");
+      }
+      if (!heresyDests(phase, move.from).includes(move.to)) {
+        return reject(state, 'ILLEGAL_MOVE', 'Each Bishop must move to an orthogonally adjacent empty square.');
+      }
+      bishops.push(bishop);
+    }
+    if (
+      new Set(bishops.map(piece => piece.id)).size !== bishops.length
+      || new Set(bishops.map(piece => piece.id)).size !== eligible.length
+    ) return reject(state, 'INVALID_TARGET', 'Every eligible Bishop needs a distinct move and destination.');
+    if (new Set(phaseMoves.map(move => move.to)).size !== phaseMoves.length) {
+      return reject(state, 'ILLEGAL_MOVE', 'Bishops in one phase need distinct destinations.');
+    }
+
+    phaseMoves.forEach((move, index) => {
+      resolved.pieces.find(piece => piece.id === bishops[index].id)!.square = move.to;
+    });
+    movedPieces.push(...bishops);
+    bishops.forEach(bishop => movedIds.add(bishop.id));
+    offset += phaseMoves.length;
+  }
+  if (offset !== parsedMoves.length) {
+    return reject(state, 'INVALID_TARGET', 'Only eligible Bishops may be moved.');
+  }
+
+  resolved.enPassant = resolved.enPassant.filter(opportunity => !movedIds.has(opportunity.pawnId));
+  syncFen(resolved, movedPieces);
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, 'heresy', 'DIRECT_MATE', cardInstanceId);
+  }
+  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
+    return fizzleCard(state, 'heresy', 'SELF_CHECK', cardInstanceId);
+  }
+
+  spendCard(resolved, 'heresy', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'heresy', target: parsedMoves });
+  return { ok: true, state: resolved };
+}
+
 const SWAP_CARDS = {
   'holy-war': {
     name: 'Holy War', firstField: 'knight', firstRole: 'knight', firstOwner: 'own',
@@ -1786,6 +1919,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
   if (cardId === 'squaring-the-circle') return playSquaringTheCircle(state, target, cardInstanceId);
   if (cardId === 'cowardice') return playCowardice(state, target, cardInstanceId);
+  if (cardId === 'heresy') return playHeresy(state, target, cardInstanceId);
   if (cardId === 'no-quarter') return playNoQuarter(state, target, cardInstanceId);
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     return playSwapCard(state, cardId, target, cardInstanceId);
@@ -1846,6 +1980,33 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
           ? [[pawnMove], [pawnMove, { from: followerFrom, to: followerTo }]]
           : [[pawnMove]];
       });
+    });
+  }
+  if (cardId === 'heresy') {
+    const phasePlans = (phase: GameState, owner: Color): CardMove[][] => {
+      const bishops = phase.pieces.filter(piece =>
+        piece.owner === owner
+        && piece.zone === 'board'
+        && piece.square
+        && (piece.role === 'bishop' || piece.originalRole === 'bishop')
+        && heresyDests(phase, piece.square).length,
+      );
+      let plans: CardMove[][] = [[]];
+      for (const bishop of bishops) {
+        plans = plans.flatMap(plan => heresyDests(phase, bishop.square!).flatMap(to =>
+          plan.some(move => move.to === to) ? [] : [[...plan, { from: bishop.square!, to }]],
+        ));
+      }
+      return plans;
+    };
+    // ponytail: exhaustive plans are exponential; make this lazy if promoted-Bishop counts matter.
+    return phasePlans(state, opposite(state.turn.color)).flatMap(opponentMoves => {
+      const afterOpponent = structuredClone(state);
+      for (const move of opponentMoves) {
+        const bishop = afterOpponent.pieces.find(piece => piece.zone === 'board' && piece.square === move.from)!;
+        bishop.square = move.to;
+      }
+      return phasePlans(afterOpponent, state.turn.color).map(ownMoves => [...opponentMoves, ...ownMoves]);
     });
   }
   if (cardId !== 'assassin' && cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
@@ -2432,7 +2593,9 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
     piece.zone === 'board' && piece.square ? [[piece.id, piece.square] as const] : [],
   ));
   event.movement = event.type === 'cardPlayed'
-    ? result.state.pieces.flatMap(piece => {
+    ? event.cardId === 'heresy' && Array.isArray(event.target)
+      ? structuredClone(event.target) as CardMove[]
+      : result.state.pieces.flatMap(piece => {
         const from = origins.get(piece.id);
         return from && piece.zone === 'board' && piece.square && piece.square !== from
           ? [{ from, to: piece.square }]
@@ -2447,7 +2610,7 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
 
 function hasBoardOrCardEscape(state: GameState): boolean {
   const color = state.turn.color;
-  return [...legalDests(state).values()].some(dests => dests.length > 0)
+  return [...legalDests(state, isKingInCheck(state, color)).values()].some(dests => dests.length > 0)
     || state.players[color].hand.some(card =>
       cardPlayTargets(state, card.cardId).some(target => {
         const result = playCard(state, card.cardId, target, card.id);

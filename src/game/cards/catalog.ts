@@ -87,6 +87,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  heresy: {
+    id: 'heresy',
+    name: 'Heresy',
+    points: 3,
+    unique: false,
+    image: '/KC2_card4.png',
+    description:
+      'Each Bishop that can do so must be moved to an adjacent empty square by its owner, thus changing the color of the squares it moves on. Your opponent must move his Bishops first.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
   cowardice: {
     id: 'cowardice',
     name: 'Cowardice',
