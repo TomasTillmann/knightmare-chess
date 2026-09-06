@@ -472,6 +472,31 @@ export function onslaughtDests(state: GameState, from: SquareName): SquareName[]
   return setupFor(state).board.has(target) ? [] : [makeSquare(target)];
 }
 
+export function guardianDests(state: GameState, from: SquareName): SquareName[] {
+  const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (
+    !pawn
+    || (pawn.owner !== state.turn.color && !pawn.neutral)
+    || pawn.originalRole !== 'pawn'
+    || pawn.promoted
+  ) return [];
+
+  const source = parseSquare(from);
+  const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+  const board = setupFor(state).board;
+  const destinations: SquareName[] = [];
+  for (const distance of [1, 2]) {
+    if (distance === 2 && pawnHomeDistance(state, pawn.owner, from) !== 1) break;
+    const file = squareFile(source) + fileStep * distance;
+    const rank = squareRank(source) + rankStep * distance;
+    if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
+    const target = rank * 8 + file;
+    if (board.has(target)) break;
+    destinations.push(makeSquare(target));
+  }
+  return destinations;
+}
+
 export function longJumpDests(state: GameState, from: SquareName): SquareName[] {
   const knight = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
   if (
@@ -1052,6 +1077,125 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   return { ok: true, state: completed };
 }
 
+function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card =>
+      card.cardId === 'guardian' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Guardian is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Guardian is played instead of the regular move.');
+  }
+  const moves = parseCardMoves(target);
+  if (
+    !moves
+    || Object.getPrototypeOf(target) !== Array.prototype
+    || Reflect.ownKeys(target as unknown[]).some(key =>
+      key !== 'length'
+      && (typeof key !== 'string' || !/^\d+$/.test(key) || Number(key) >= moves.length)
+    )
+    || moves.some((move, index) => {
+      const candidate = (target as Array<Record<string, unknown>>)[index];
+      return Object.getPrototypeOf(candidate) !== Object.prototype
+        || Reflect.ownKeys(candidate).length !== 2
+        || !Object.hasOwn(candidate, 'from')
+        || !Object.hasOwn(candidate, 'to');
+    })
+  ) {
+    return reject(state, 'INVALID_TARGET', 'Choose one Pawn move and at most one follower move.');
+  }
+  if (
+    new Set(moves.map(move => move.from)).size !== moves.length
+  ) return reject(state, 'INVALID_TARGET', 'Choose each physical piece at most once.');
+  if (
+    moves.some(move => move.from === move.to)
+    || new Set(moves.map(move => move.to)).size !== moves.length
+  ) return reject(state, 'ILLEGAL_MOVE', 'Guardian movements must use distinct squares.');
+
+  const pieces = moves.map(move =>
+    state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from),
+  );
+  if (pieces.some(piece => !piece)) {
+    return reject(state, 'INVALID_TARGET', 'Every selected source must contain a board piece.');
+  }
+  const pawnIndexes = pieces.flatMap((piece, index) =>
+    piece!.originalRole === 'pawn' && !piece!.promoted ? [index] : [],
+  );
+  if (!pawnIndexes.length) {
+    return reject(state, 'WRONG_ROLE', 'Guardian must lead with an unpromoted original Pawn.');
+  }
+  if (pawnIndexes.length !== 1) {
+    return reject(state, 'INVALID_TARGET', 'Choose exactly one Pawn movement.');
+  }
+  const pawnIndex = pawnIndexes[0];
+  const pawn = pieces[pawnIndex]!;
+  const pawnMove = moves[pawnIndex];
+  if (pawn.owner !== color && !pawn.neutral) {
+    return reject(state, 'WRONG_OWNER', 'Choose one of your own Pawns.');
+  }
+  if (!guardianDests(state, pawnMove.from).includes(pawnMove.to)) {
+    return reject(state, 'ILLEGAL_MOVE', 'Move the Pawn one square forward, or two from its second rank.');
+  }
+
+  const followerIndex = moves.length === 2 ? 1 - pawnIndex : undefined;
+  const follower = followerIndex === undefined ? undefined : pieces[followerIndex]!;
+  const followerMove = followerIndex === undefined ? undefined : moves[followerIndex];
+  if (followerMove) {
+    const source = parseSquare(pawnMove.from);
+    const destination = parseSquare(pawnMove.to);
+    const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+    const expectedFrom = makeSquare(
+      (squareRank(source) - rankStep) * 8 + squareFile(source) - fileStep,
+    );
+    const expectedTo = makeSquare(
+      (squareRank(destination) - rankStep) * 8 + squareFile(destination) - fileStep,
+    );
+    if (followerMove.from !== expectedFrom) {
+      return reject(state, 'INVALID_TARGET', 'The following piece must begin directly behind the Pawn.');
+    }
+    if (followerMove.to !== expectedTo) {
+      return reject(state, 'ILLEGAL_MOVE', 'The following piece must remain directly behind the Pawn.');
+    }
+  }
+  if (follower && follower.owner !== color && !follower.neutral) {
+    return reject(state, 'WRONG_OWNER', 'The following piece must be under your control.');
+  }
+  const occupant = followerMove && state.pieces.find(piece =>
+    piece.zone === 'board' && piece.square === followerMove.to,
+  );
+  if (occupant && occupant.id !== pawn.id) {
+    return reject(state, 'ILLEGAL_MOVE', 'The following piece must move to an empty square.');
+  }
+
+  const wasInCheck = isKingInCheck(state, color);
+  const resolved = structuredClone(state);
+  resolved.pieces.find(piece => piece.id === pawn.id)!.square = pawnMove.to;
+  if (follower && followerMove) {
+    resolved.pieces.find(piece => piece.id === follower.id)!.square = followerMove.to;
+  }
+  const movedPieces = follower ? [pawn, follower] : [pawn];
+  completeReplacementMove(resolved, color, true, [], movedPieces);
+
+  if (isOrdinaryCheckmate(resolved, opposite(color))) {
+    return fizzleCard(state, 'guardian', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+  }
+  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
+    return fizzleCard(state, 'guardian', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+  }
+
+  const canonicalMoves = followerMove ? [pawnMove, followerMove] : [pawnMove];
+  spendCard(resolved, 'guardian', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'guardian', target: canonicalMoves });
+  return { ok: true, state: resolved };
+}
+
 function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -1623,6 +1767,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
   if (cardId === 'fanatic') return playFanatic(state, target, cardInstanceId);
   if (cardId === 'annexation') return playAnnexation(state, target, cardInstanceId);
+  if (cardId === 'guardian') return playGuardian(state, target, cardInstanceId);
   if (cardId === 'forced-march') return playForcedMarch(state, target, cardInstanceId);
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
@@ -1665,6 +1810,31 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
       }
     }
     return targets;
+  }
+  if (cardId === 'guardian') {
+    return state.pieces.flatMap(pawn => {
+      if (pawn.zone !== 'board' || !pawn.square) return [];
+      return guardianDests(state, pawn.square).flatMap(to => {
+        const pawnMove = { from: pawn.square!, to };
+        const source = parseSquare(pawn.square!);
+        const destination = parseSquare(to);
+        const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+        const followerFrom = makeSquare(
+          (squareRank(source) - rankStep) * 8 + squareFile(source) - fileStep,
+        );
+        const followerTo = makeSquare(
+          (squareRank(destination) - rankStep) * 8 + squareFile(destination) - fileStep,
+        );
+        const follower = state.pieces.find(piece =>
+          piece.zone === 'board'
+          && piece.square === followerFrom
+          && (piece.owner === state.turn.color || piece.neutral),
+        );
+        return follower
+          ? [[pawnMove], [pawnMove, { from: followerFrom, to: followerTo }]]
+          : [[pawnMove]];
+      });
+    });
   }
   if (cardId !== 'assassin' && cardId !== 'forced-march' && cardId !== 'annexation' && cardId !== 'onslaught' && cardId !== 'long-jump' && cardId !== 'dubbing' && cardId !== 'squaring-the-circle' && cardId !== 'cowardice') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square ? [piece.square] : []);

@@ -76,6 +76,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  guardian: {
+    id: 'guardian',
+    name: 'Guardian',
+    points: 3,
+    unique: true,
+    image: '/KC2_card3.png',
+    description:
+      'Move one of your Pawns forward (you may move two squares if it the Pawn is second rank). Your piece which was just behind the Pawn may follow, so it remains directly behind. Your Pawn is thus protected from capture *en passant*. Play this card on your move, instead of making a regular move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   cowardice: {
     id: 'cowardice',
     name: 'Cowardice',
