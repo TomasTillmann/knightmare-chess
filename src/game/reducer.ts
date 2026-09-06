@@ -733,8 +733,8 @@ function spendCard(
   cardId: string,
   cardInstanceId?: unknown,
   discard = true,
+  color = state.turn.color,
 ): CardInstance {
-  const color = state.turn.color;
   const player = state.players[color];
   const index = player.hand.findIndex(
     card => card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
@@ -745,6 +745,109 @@ function spendCard(
   if (drawn) player.hand.push(drawn);
   state.turn.cardPlays[color] += 1;
   return spent;
+}
+
+function recordsBogRollback(
+  state: GameState,
+  piece: PieceState,
+  from: SquareName,
+  to: SquareName,
+  promotion?: Role,
+): boolean {
+  if (
+    promotion
+    || !state.players[opposite(state.turn.color)].hand.some(card => card.cardId === 'bog')
+    || !['rook', 'bishop', 'queen'].includes(piece.role)
+  ) return false;
+  const source = parseSquare(from);
+  const destination = parseSquare(to);
+  const fileDelta = squareFile(destination) - squareFile(source);
+  const rankDelta = squareRank(destination) - squareRank(source);
+  const distance = Math.max(Math.abs(fileDelta), Math.abs(rankDelta));
+  return distance >= 2 && (
+    piece.role === 'rook'
+      ? fileDelta === 0 || rankDelta === 0
+      : piece.role === 'bishop'
+        ? Math.abs(fileDelta) === Math.abs(rankDelta)
+        : (fileDelta === 0 || rankDelta === 0) || Math.abs(fileDelta) === Math.abs(rankDelta)
+  );
+}
+
+function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const mover = state.turn.color;
+  const reactor = opposite(mover);
+  if (
+    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[reactor].hand.some(card =>
+      card.cardId === 'bog' && (cardInstanceId === undefined || card.id === cardInstanceId),
+    )
+  ) return reject(state, 'CARD_NOT_IN_HAND', 'Bog is not in your hand.');
+  if (state.turn.cardPlays[reactor] >= 1) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', "Bog must immediately follow your opponent's move.");
+  }
+  if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Bog does not take a target.');
+
+  const move = state.history.at(-1);
+  if (move?.type !== 'move' || !move.from || !move.to || move.promotion) {
+    return reject(state, 'INVALID_TIMING', "Bog must immediately follow your opponent's move.");
+  }
+  const piece = state.pieces.find(candidate =>
+    candidate.zone === 'board' && candidate.square === move.to,
+  );
+  if (!piece || (piece.owner !== mover && !piece.neutral) || !['rook', 'bishop', 'queen'].includes(piece.role)) {
+    return reject(state, 'WRONG_ROLE', 'Bog follows only a Rook, Bishop, or Queen move.');
+  }
+  const from = parseSquare(move.from);
+  const to = parseSquare(move.to);
+  const fileDelta = squareFile(to) - squareFile(from);
+  const rankDelta = squareRank(to) - squareRank(from);
+  const distance = Math.max(Math.abs(fileDelta), Math.abs(rankDelta));
+  const straight = fileDelta === 0 || rankDelta === 0;
+  const diagonal = Math.abs(fileDelta) === Math.abs(rankDelta);
+  if (
+    distance < 2
+    || (piece.role === 'rook' ? !straight : piece.role === 'bishop' ? !diagonal : !straight && !diagonal)
+  ) return reject(state, 'ILLEGAL_MOVE', 'The preceding move must travel at least two squares.');
+
+  const first = makeSquare(
+    (squareRank(from) + Math.sign(rankDelta)) * 8 + squareFile(from) + Math.sign(fileDelta),
+  );
+  const captured = move.capturedId
+    ? state.pieces.find(candidate => candidate.id === move.capturedId)
+    : undefined;
+  if (move.capturedId && (!captured || captured.zone !== 'captured' || captured.square !== null)) {
+    return reject(state, 'INVALID_TIMING', 'The preceding move cannot be reconstructed.');
+  }
+
+  const resolved = structuredClone(state);
+  resolved.pieces.find(candidate => candidate.id === piece.id)!.square = first;
+  if (captured) {
+    const restored = resolved.pieces.find(candidate => candidate.id === captured.id)!;
+    restored.square = move.to;
+    restored.zone = 'board';
+  }
+  if (move.previousFen) resolved.fen = move.previousFen;
+  else {
+    const setup = setupFor(resolved, mover);
+    setup.turn = mover;
+    setup.halfmoves = Math.max(0, setup.halfmoves - (captured ? 0 : 1));
+    if (mover === 'black') setup.fullmoves = Math.max(1, setup.fullmoves - 1);
+    resolved.fen = makeFen(setup);
+  }
+  completeReplacementMove(resolved, mover, resetsHalfmoveClock(piece), [], [piece]);
+  if (!isOrdinaryCheckmate(state, mover) && isOrdinaryCheckmate(resolved, mover)) {
+    return fizzleCard(state, 'bog', 'DIRECT_MATE', cardInstanceId, false, reactor);
+  }
+  if (isKingInCheck(resolved, mover) || isKingInCheck(resolved, reactor)) {
+    return fizzleCard(state, 'bog', 'SELF_CHECK', cardInstanceId, false, reactor);
+  }
+  resolved.outcome = null;
+  spendCard(resolved, 'bog', cardInstanceId, true, reactor);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'bog' });
+  return { ok: true, state: resolved };
 }
 
 function settleBlockedBeforeMove(state: GameState, color: Color): void {
@@ -968,9 +1071,10 @@ function fizzleCard(
   reason: 'DIRECT_MATE' | 'SELF_CHECK',
   cardInstanceId?: unknown,
   consumesMove = false,
+  spendColor = state.turn.color,
 ): ApplyResult {
   const fizzled = structuredClone(state);
-  spendCard(fizzled, cardId, cardInstanceId);
+  spendCard(fizzled, cardId, cardInstanceId, true, spendColor);
   if (consumesMove) completeReplacementMove(fizzled, state.turn.color, false);
   fizzled.history.push({ type: 'cardFizzled', cardId, reason });
   settleBlockedBeforeMove(fizzled, state.turn.color);
@@ -2185,6 +2289,7 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
 }
 
 function playCardUnchecked(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (cardId === 'bog') return playBog(state, target, cardInstanceId);
   if (cardId === 'assassin') return playAssassin(state, target, cardInstanceId);
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
@@ -2230,6 +2335,7 @@ function cardPlayTargets(state: GameState, cardId: string): unknown[] {
       : [],
   );
   if (cardId === 'doomsayer' || cardId === 'no-quarter' || cardId === 'vendetta') return [undefined];
+  if (cardId === 'bog') return [undefined];
   if (cardId === 'holy-war' || cardId === 'anathema' || cardId === 'holy-quest' || cardId === 'treason' || cardId === 'cathedral' || cardId === 'siege' || cardId === 'evangelists' || cardId === 'tournament' || cardId === 'lost-castle') {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
@@ -2642,6 +2748,7 @@ function movePiece(
       from: fromName,
       to: toName,
       capturedId: customEnPassant.victim.id,
+      ...(recordsBogRollback(state, moving, fromName, toName, promotion) ? { previousFen: state.fen } : {}),
       ...(promotion ? { promotion } : {}),
     });
     return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
@@ -2727,6 +2834,7 @@ function movePiece(
       type: 'move',
       from: fromName,
       to: toName,
+      ...(recordsBogRollback(state, moving, fromName, toName, promotion) ? { previousFen: state.fen } : {}),
       ...(promotion ? { promotion } : {}),
       ...(target ? { capturedId: target.id } : {}),
     });
@@ -2758,6 +2866,7 @@ function movePiece(
       type: 'move',
       from: fromName,
       to: toName,
+      ...(recordsBogRollback(state, moving, fromName, toName) ? { previousFen: state.fen } : {}),
       ...(target ? { capturedId: target.id } : {}),
     });
     return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
@@ -2841,6 +2950,13 @@ function movePiece(
     type: 'move',
     from: fromName,
     to: makeSquare(castle ? kingCastlesTo(state.turn.color, castle) : to),
+    ...(recordsBogRollback(
+      state,
+      moving,
+      fromName,
+      makeSquare(castle ? kingCastlesTo(state.turn.color, castle) : to),
+      promotion,
+    ) ? { previousFen: state.fen } : {}),
     ...(promotion ? { promotion } : {}),
     ...(captured ? { capturedId: captured.id } : {}),
   });

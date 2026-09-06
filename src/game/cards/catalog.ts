@@ -7,7 +7,7 @@ export interface CardDefinition {
   unique: boolean;
   image: string;
   description: string;
-  timing: TurnPhase[];
+  timing: Array<TurnPhase | 'afterOpponentMove'>;
   continuing: boolean;
 }
 
@@ -107,6 +107,17 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     description:
       "Move one of your opponent's Pawns one or two squares backward. It may not enter or cross an occupied square.",
     timing: ['afterMove'],
+    continuing: false,
+  },
+  bog: {
+    id: 'bog',
+    name: 'Bog',
+    points: 4,
+    unique: false,
+    image: '/KC4_card2.png',
+    description:
+      "Play this card after your opponent moves a Rook, Bishop or Queen two squares or more. His piece cannot make the planned move; it stops after moving one square in the chosen direction.",
+    timing: ['afterOpponentMove'],
     continuing: false,
   },
   'holy-war': {

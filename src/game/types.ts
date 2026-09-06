@@ -120,6 +120,7 @@ export interface GameEvent {
   from?: SquareName;
   to?: SquareName;
   promotion?: Role;
+  previousFen?: string;
 }
 
 export interface GameState {
