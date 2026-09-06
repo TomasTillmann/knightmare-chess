@@ -31,6 +31,21 @@ test('Pacifism on attacker removes the capture', () => {
   const base = game({ fen: FEN }); const s = { ...base, effects: [{ type: 'vendetta', owner: 'white', card: card('white-v') }, { type: 'pacifism', owner: 'white', card: card('p', 'pacifism'), pieceId: at(base, 'e2').id }] };
   expectExpired(move(s, 'e2', 'e3'));
 });
+test('playing Pacifism on the attacker expires an opponent Vendetta immediately', () => {
+  const base = game({ fen: FEN, hands: { white: ['pacifism'], black: [] } });
+  const state = { ...base, effects: [{ type: 'vendetta', owner: 'black', card: card('black-v') }] };
+  const before = structuredClone(state);
+  const pacifism = state.players.white.hand[0]!;
+  const r = result(state, { type: 'playCard', cardId: 'pacifism', cardInstanceId: pacifism.id, target: 'e2' } as Action);
+  assert.equal(r.ok, true);
+  assert.deepEqual(state, before);
+  if (r.ok) {
+    assert.equal(r.state.effects.some(e => (e as { type?: string }).type === 'vendetta'), false);
+    assert.ok(r.state.effects.some(e => (e as { type?: string; card?: { id?: string } }).card?.id === pacifism.id));
+    assert.deepEqual(r.state.players.black.discard.map(c => c.id), ['black-v']);
+    assert.equal(r.state.players.white.discard.some(c => c.id === 'black-v'), false);
+  }
+});
 test('Pacifism on victim removes the capture', () => {
   const base = game({ fen: FEN }); const p = at(base, 'd3'); const s = active({ fen: FEN }, [{ type: 'pacifism', owner: 'black', card: card('p', 'pacifism'), pieceId: p.id }]); expectExpired(move(s, 'e2', 'e3'));
 });
