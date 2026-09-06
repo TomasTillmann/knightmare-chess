@@ -2924,6 +2924,7 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
 
 function expirePacifism(result: ApplyResult): ApplyResult {
   if (!result.ok) return result;
+  result.state = expireVendettaIfBlocked(result.state);
   const expired = result.state.effects.filter((effect): effect is PacifismEffect => {
     const record = effectRecord(effect);
     const card = effectRecord(record?.card);
