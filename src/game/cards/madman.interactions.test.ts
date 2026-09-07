@@ -110,10 +110,10 @@ test('Madman leaves active continuing effects and piece-bound markers untouched'
 });
 
 const implementedCardIds = [
-  'assassin', 'disintegration', 'doomsayer', 'fanatic', 'annexation', 'forced-march',
+  'assassin', 'disintegration', 'doomsayer', 'fanatic', 'forbidden-city', 'confabulation', 'ghostwalk', 'irresistible-force', 'masquerade', 'panic', 'peace-talks', 'truce', 'annexation', 'forced-march',
   'guardian', 'heresy', 'cowardice', 'holy-war', 'pacifism', 'anathema', 'evangelists', 'tournament',
   'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump',
-  'dubbing', 'squaring-the-circle', 'no-quarter', 'vendetta', 'bog',
+  'dubbing', 'earthquake', 'figure-dance', 'squaring-the-circle', 'no-quarter', 'vendetta', 'bog', 'doppelganger', 'rebirth', 'revenge', 'toll', 'crab', 'dark-mirror',
 ] as const;
 
 test('Madman composes deterministically after every implemented card/effect', async t => {
@@ -121,7 +121,7 @@ test('Madman composes deterministically after every implemented card/effect', as
     [...implementedCardIds].sort(),
     Object.keys(CARD_CATALOG).filter(id => id !== MADMAN).sort(),
   );
-  assert.equal(implementedCardIds.length, 26);
+  assert.equal(implementedCardIds.length, 42);
   for (const id of implementedCardIds) await t.test(id, () => {
     const initial = game({
       fen: id === 'vendetta' ? '7k/8/8/8/3P4/2P5/8/K7 w - - 11 20' : '7k/8/8/8/3r4/2P5/8/K7 w - - 11 20',
@@ -129,7 +129,19 @@ test('Madman composes deterministically after every implemented card/effect', as
     });
     initial.history.push({ type: 'cardPlayed', cardId: id });
     if (CARD_CATALOG[id].continuing) {
-      initial.effects.push(id === 'pacifism'
+      if (id === 'confabulation') {
+        const carrierPawnId = pieceAt(initial, 'c3')!.id;
+        const awayComponentId = 'white-knight-away-confabulation';
+        initial.pieces.push({
+          id: awayComponentId, owner: 'white', role: 'knight', originalRole: 'knight',
+          square: null, zone: 'away', promoted: false, royal: false, neutral: false,
+        });
+        initial.effects.push({
+          type: 'confabulation', owner: 'white',
+          card: { id: 'white-active-confabulation', cardId: 'confabulation' },
+          pieceIds: [carrierPawnId, awayComponentId],
+        });
+      } else initial.effects.push(id === 'pacifism'
         ? {
           type: id, owner: 'white',
           card: { id: `white-active-${id}`, cardId: id },
@@ -153,6 +165,15 @@ test('Madman composes deterministically after every implemented card/effect', as
       assert.ok(first.state.players.white.discard.some(card => card.id === 'white-active-vendetta'));
     } else {
       assert.deepEqual(first.state.effects, snapshot.effects);
+    }
+    if (id === 'confabulation') {
+      assert.equal(pieceAt(first.state, 'e5')?.id, pieceAt(snapshot, 'c3')?.id);
+      assert.deepEqual(first.state.pieces.find(piece => piece.id === 'white-knight-away-confabulation'),
+        snapshot.pieces.find(piece => piece.id === 'white-knight-away-confabulation'));
+      assert.deepEqual(first.state.effects.find(effect => (effect as { type?: string }).type === 'confabulation'),
+        snapshot.effects.find(effect => (effect as { type?: string }).type === 'confabulation'));
+      const boardSquares = first.state.pieces.filter(piece => piece.zone === 'board').map(piece => piece.square);
+      assert.equal(new Set(boardSquares).size, boardSquares.length);
     }
     assert.equal(first.state.history.at(-2)?.cardId, id);
     assert.equal(pieceAt(first.state, 'd4')?.id, id === 'vendetta' ? 'white-pawn-d4' : 'black-rook-d4');
