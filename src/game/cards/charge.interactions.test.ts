@@ -152,7 +152,7 @@ for (let seed = 1; seed <= 20; seed++) {
     let state = createGameState({ fen: 'r3k2r/ppp2ppp/8/8/8/8/PPP2PPP/RN2K2R w - - 0 1', hands: { white: ['charge'] } });
     const identities = state.pieces.map(({ square: _square, zone: _zone, ...piece }) => piece);
     const cardIds = Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard].map(card => card.id)).sort();
-    const destinations: SquareName[] = ['a5', 'b5', 'd5', 'e4'];
+    const destinations: SquareName[] = ['a4', 'b5', 'd5', 'e4'];
     state = move(state, 'b1', 'c3');
     const destination = destinations[pick(destinations.length)];
     state = act(state, charge(state, 'c3', destination));
