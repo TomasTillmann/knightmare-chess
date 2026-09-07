@@ -612,6 +612,10 @@ export function legalDests(
   enforceVendetta = true,
 ): Map<SquareName, SquareName[]> {
   if (state.turn.moveMade || state.outcome || pendingElfReturn(state)) return new Map();
+  if (enforceVendetta && activeVendettas(state).length) {
+    const captures = vendettaCaptureDests(state);
+    if (captures.size) return captures;
+  }
   const position = positionFor(state);
   const dests = chessgroundDests(position);
   const moveIsLegal = (piece: PieceState, to: SquareName): boolean => {
@@ -624,7 +628,7 @@ export function legalDests(
       state,
       { type: 'move', from: piece.square!, to, ...(promotion ? { promotion } : {}) },
       allowAfterMoveRescue,
-      enforceVendetta,
+      false,
     ).ok);
   };
   for (const piece of state.pieces) {
@@ -703,10 +707,6 @@ export function legalDests(
     const legal = moving ? targets.filter(to => moveIsLegal(moving, to)) : [];
     if (legal.length) dests.set(from, legal);
     else dests.delete(from);
-  }
-  if (enforceVendetta && activeVendettas(state).length) {
-    const captures = vendettaCaptureDests(state);
-    if (captures.size) return captures;
   }
   return dests;
 }
