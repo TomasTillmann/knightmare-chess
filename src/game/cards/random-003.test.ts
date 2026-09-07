@@ -126,12 +126,15 @@ const reasons = [
   '117. Nc5-d7: empty legal knight destination; Black fullmove becomes 27.',
   '118. End Black; White King f2 safe from d7 Knight.',
   '119. Qd1-e2: adjacent diagonal empty square; ends with King f2 safe and royal Black b7 safe; no trap arrival or card expiry.',
+  '120. End White: Qe2 leaves both royals safe; pass to Black beforeMove, reset move allowance, retain permanent Coup/Crab/Man-Trap and all pieces/cards.',
 ];
 
 test('random campaign iteration 003: 50 moves and cards', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/003.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(reasons.length, trace.steps.length, 'every action has an independent sequential rule review');
   const state = replayTrace(trace);
+  assert.equal(state.turn.color, 'black');
+  assert.equal(state.turn.moveMade, false);
   assert.equal(trace.seed, 860003);
   assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 17);
   assert.equal(state.pieces.find(piece => piece.owner === 'black' && piece.royal)?.square, 'b7');
