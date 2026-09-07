@@ -104,20 +104,78 @@ const reasons = [
   '94 Black ends; White turn begins with no check.',
   '95 Qd1xb3: clear c2 diagonal, captures Black Bishop, gives adjacent diagonal check on a4; ordinary move may mate, f1 remains safe.',
   '96 Neutrality on enemy h6 Knight: eligible nonroyal nonqueen, continuing marker and refill; Knight stays h6, can be controlled by either player, no new King attack.',
-  '97 BUG: Black escape turn has no move or saving card; a3/b4 controlled by Qb3, Kxb3 barred by a2 Pawn, a5/b5 occupied. Rules 11.5 require White checkmate, but outcome remains null.',
+  '97 Black begins its escape turn: Doomsayer permits naming Pawn to remove its a5 Pawn, then Ka4-a5 escapes Qb3, so rules 19.3/11.5 do not require checkmate.',
+  '98 Black intentionally names Pawn and selects its a5 Pawn: rules 19.3 captures that physical Pawn and resolves/discards Doomsayer; no move, card allowance or refill is consumed.',
+  '99 Ka4-a5: adjacent square emptied by Doomsayer, outside Qb3 diagonals and all White attacks; Black escapes check and advances the move clock.',
+  '100 Black ends with King safe on a5; White receives its normal turn, Doomsayer stays discarded.',
+  '101 Rg4xg7: g5/g6 clear, captures Black g7 Pawn; Qh4 cannot attack f1 and b1 Knight shields a1 Rook, so White remains safe.',
+  '102 White ends capture; g7 Pawn stays captured, surviving continuing effects and hands unchanged.',
+  '103 Qh4-f6: diagonal through vacant g5, empty f6; no forbidden square crossed and a5 King safe.',
+  '104 Black ends Queen move; White f1 King remains shielded on f-file by f4 Bishop/f3 Pawn.',
+  '105 Nd7-e5: legal knight jump to empty e5; no King attack exposed, no capture or effect change.',
+  '106 White ends Knight move, Black regular move and card allowances reset.',
+  '107 Bombard Rc8-c4: empty c7,c6,c5 path needs no optional jump; legal replacement move onto empty c4, e4 wall not crossed, a5 safe; card spent/refilled.',
+  '108 Black ends Bombard replacement; Rc4 cannot attack f1, no second regular move available.',
+  '109 d5xe6: White Pawn captures Black e6 Pawn on forward diagonal, remains Pawn on sixth rank; f1 safe and capture clock resets.',
+  '110 White ends Pawn capture; black-pawn-e7 remains captured, no rescue or en-passant opportunity.',
+  '111 Qf6-g5: adjacent diagonal into vacant g5; a5 King unaffected, no Forbidden City traversal.',
+  '112 Black ends Queen move; no check on f1, all continuing effects persist.',
+  '113 g2xh3: White Pawn forward-diagonally captures Black original b8 Knight, distinct from neutral h6 Knight; f1 safe, no promotion.',
+  '114 White ends Pawn capture; neutral h6 Knight and its marker remain intact.',
+  '115 Qg5xf4: adjacent diagonal capture of White original f1 Bishop; f3 Pawn still blocks the Queen from f1 King, Black a5 safe.',
+  '116 Black ends Bishop capture; no extra card or rescue, captured Bishop remains returnable.',
+  '117 Bd2-e3: adjacent empty diagonal, e4 forbidden square not visited; b1 Knight/f3 Pawn still protect White f1.',
+  '118 White ends Bishop move; board/effects remain stable, Black allowance resets.',
+  '119 Rc4-c8: c5,c6,c7 empty, c8 vacant; ordinary noncapturing rook move, a5 safe.',
+  '120 Black ends rook move; c3 Pacifist still cannot be captured along the c-file.',
+  '121 h3-h4: White original g2 Pawn advances one into vacant h4, f1 remains safe; Pawn clock resets.',
+  '122 White ends Pawn advance; no double move or en-passant right created.',
+  '123 Irresistible Force h7-h6: Black Pawn pushes occupied neutral Knight h6-h5, where chain ends on empty h5; no King/obstruction/capture, marker follows Knight, replacement card spent/refilled.',
+  '124 Black ends push; h5 neutral Knight attacks neither a5 nor f1 King, and Black has completed its replacement move.',
+  '125 Ne5-g4: legal knight jump into vacant g4, avoids e4 wall; f3 Pawn shields f1 King, neutral h5 Knight untouched.',
+  '126 White ends Knight move; neither King checked, continuing markers persist.',
+  '127 Qf4xg4: adjacent horizontal capture of White original g1 Knight; e4 wall lies behind origin and is not traversed, a5 safe.',
+  '128 Black ends capture; White f1 King unthreatened, White receives normal move allowance.',
+  '129 Kf1-f2: adjacent empty f2 outside Qg4 and neutral Nh5 attacks; Black King distant, no capture, fifty regular moves reached.',
+  '130 White ends its fiftieth regular move with f2 King safe; Black begins beforeMove, no pending rescue or King return, hands and three continuing effects unchanged.',
 ];
 
-test('random campaign iteration 001: escape-less mate after 36 moves', () => {
+test('random campaign iteration 001: legal trace with available Doomsayer escape', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/001.json', import.meta.url), 'utf8')) as RandomTrace;
+  const initial = JSON.parse(readFileSync(new URL('../../../campaign/iterations/001.initial.json', import.meta.url), 'utf8')) as RandomTrace;
+  const beforeFinish = JSON.parse(readFileSync(new URL('../../../campaign/iterations/001.pre-finish.json', import.meta.url), 'utf8')) as RandomTrace;
+  assert.deepEqual(trace.steps.slice(0, 97).map(step => step.action), initial.steps.map(step => step.action));
+  assert.deepEqual(trace.steps.slice(0, 129).map(step => step.action), beforeFinish.steps.map(step => step.action));
   assert.equal(reasons.length, trace.steps.length);
+  assert.equal(trace.steps.length, 130);
+  assert.equal(trace.steps.filter(step => step.action.type === 'move').length, 50);
+  assert.equal(trace.moves, 50);
   let state = createGameState(trace.initial);
   for (const [index, step] of trace.steps.entries()) {
     const result = applyAction(state, step.action);
     assert.ok(result.ok, reasons[index]);
     checkState(result.state);
-    if (index < trace.steps.length - 1) assert.equal(digest(result.state), step.expected, reasons[index]);
+    assert.equal(digest(result.state), step.expected, reasons[index]);
     state = result.state;
+    if (index === 96) {
+      assert.equal(state.outcome, null, 'rules 11.5: a Doomsayer escape is still available');
+      const named = applyAction(state, { type: 'namePiece', speaker: 'black', name: 'pawn', losses: [{ effectId: 'white-hand-2-doomsayer', pieceId: 'black-pawn-a7' }] });
+      assert.ok(named.ok, 'rules 19.3: voluntarily name Pawn and select the owned a5 Pawn');
+      assert.equal(named.state.pieces.find(piece => piece.id === 'black-pawn-a7')?.zone, 'captured');
+      assert.equal(named.state.effects.length, state.effects.length - 1, 'resolved Doomsayer leaves play');
+      const escaped = applyAction(named.state, { type: 'move', from: 'a4', to: 'a5' });
+      assert.ok(escaped.ok, 'Ka4-a5 escapes through the vacated square');
+      const ended = applyAction(escaped.state, { type: 'endTurn' });
+      assert.ok(ended.ok, 'Black can finish its escape turn legally');
+      assert.equal(ended.state.outcome, null);
+    }
   }
   assert.equal(state.fen, trace.finalFen);
-  assert.deepEqual(state.outcome, { winner: 'white', reason: 'checkmate' }, reasons.at(-1)!);
+  assert.equal(state.fen, '2r4P/6R1/1P2P2p/kp5n/6qP/1QP1BP2/P4K2/rN5R b - - 1 30');
+  assert.equal(state.turn.color, 'black');
+  assert.equal(state.turn.phase, 'beforeMove');
+  assert.equal(state.turn.moveMade, false);
+  assert.ok(!state.pendingRescue);
+  assert.equal(state.underElfHill?.length ?? 0, 0);
+  assert.equal(state.outcome, null, reasons.at(-1)!);
 });

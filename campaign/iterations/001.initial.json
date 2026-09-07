@@ -914,283 +914,33 @@
         "type": "endTurn"
       },
       "expected": "e9c8dbc893d28bf371927dad7529df435413c9644fbbb7c23f6d3a79a4e5ede0"
-    },
-    {
-      "action": {
-        "type": "namePiece",
-        "speaker": "black",
-        "name": "pawn",
-        "losses": [
-          {
-            "effectId": "white-hand-2-doomsayer",
-            "pieceId": "black-pawn-a7"
-          }
-        ]
-      },
-      "expected": "fb1067ce9fa86a5751271a733e9ff5c98bdd8ebe13010db7d868cecafba7c5bd"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "a4",
-        "to": "a5"
-      },
-      "expected": "a89b38bbc8176fad09e04664bb01448034e5e0a21394d64ef58cc3f83f0501bf"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "a4023803382fea4006ead2d22203c585b592c42f245d26c0d6fc921e9d8e2ecf"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "g4",
-        "to": "g7"
-      },
-      "expected": "e78c219ca4e592bf12aaa787d80ab4953889753d01d4373663d192e5943624ea"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "a0b197505f74324832522f277dda2e884dcf6b28cc6c469ab2095c4661edb283"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "h4",
-        "to": "f6"
-      },
-      "expected": "de68c53f73c2ecd926c217d2b682681fe2dfcdba55ae0cac1885675169eae7c9"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "7df9c4cea3489c72daf1d5eceeddd199eb0e3240f7ef25ea8628778e46f68c5f"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "d7",
-        "to": "e5"
-      },
-      "expected": "1326b0b1ee095c7810ab3394d2d34b44025401bf01d276166a78128899f3dc8d"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "31d49e86e0273a4963b8b68fecfd9f0ea4f28d0be205dae7078e4de56fe87f35"
-    },
-    {
-      "action": {
-        "type": "playCard",
-        "cardId": "bombard",
-        "cardInstanceId": "black-deck-3-bombard",
-        "target": [
-          {
-            "from": "c8",
-            "to": "c4"
-          }
-        ]
-      },
-      "expected": "56c07fc1ada8d3adaf9c368cffc2c22a667b2a9245b17729afb7951d2b9d8ff5"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "ade237c801046fc041a2fa58d88bc6d7777ad8f4b3e30cd18c6910e4801ee40c"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "d5",
-        "to": "e6"
-      },
-      "expected": "81ad0d47dc74a84e99ea74252ced11d5ada6454154b1c84e1319cfea649c6311"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "03eede86deeb46c1741de5fc07fa1af37b6772005cc9aa7e592d50161ab58577"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "f6",
-        "to": "g5"
-      },
-      "expected": "3a62368e05d0010d29b19eb4f51230bb947ff6fbacb8618719c4fab5984b198f"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "805263d0e982f135473104968edbaf7bd87021ab728b54a0760724e9030fedf1"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "g2",
-        "to": "h3"
-      },
-      "expected": "d2ef1d752a9512a8832a2f6f83ff3115a8288a74e74bd07079cd58a8e02b4969"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "fa81e12f1debed07b644e5a5831212f46883ee05eb360557f9f22be827715f23"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "g5",
-        "to": "f4"
-      },
-      "expected": "d752a9c96451c1854227d097cace54ab3a692540c86144df355c5fe6a854a5c5"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "b1eb80a087e5ff82aab38781061a89b743cec78eba3424970c7b1133f3ec0efa"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "d2",
-        "to": "e3"
-      },
-      "expected": "35dae69044d6ca09ad60bab6fae4820f456e3059273412ef0f2025cf378361d3"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "ab5a44320541529c9b9f23c4fa95c88a0ba4a64f9a4fe43a85e6644425945256"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "c4",
-        "to": "c8"
-      },
-      "expected": "f86b7ed3f2a062df25df1d21c68f099804ab145899d29fa55caabcc899b4459a"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "ccfbd3f43944d7517e2bd0ebb1335439e5688e79dc4cc5f6fc750d687b2cf783"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "h3",
-        "to": "h4"
-      },
-      "expected": "2d291002dda0cbd2eaecd325779c6a8b81c6bdd8fd85f1d29a30f8b3cbeaf14e"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "ab5d9e3db5185f8f839d476779e29b3fe263e0530f42fb25ac005f6ca54108f1"
-    },
-    {
-      "action": {
-        "type": "playCard",
-        "cardId": "irresistible-force",
-        "cardInstanceId": "black-deck-1-irresistible-force",
-        "target": [
-          {
-            "from": "h7",
-            "to": "h6"
-          }
-        ]
-      },
-      "expected": "7632fc2c71481a68f940928e2b7ad2d10db810b543edb51fb0485d5539562cba"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "f7c1a4cb27c6e10be0f7433558628e5b07601a111fb26977cd2c1d57f2c960cb"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "e5",
-        "to": "g4"
-      },
-      "expected": "2d948e896930714c81596f9c1b604148c47fed57c8d9ac97e545fd2181ef2288"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "7bea246f294ce65f3a25ccfbb256d21cd6a04d3c483edc77bba3f2a442924ee8"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "f4",
-        "to": "g4"
-      },
-      "expected": "4b0ad375836df4058d69174ebc0ad3ec94a0f0fe3a402025bde0603ebf7fbb5c"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "dceb627e96e38e915b69a20ff5b0134bd89033f8c2bf53efad301320f77996fa"
-    },
-    {
-      "action": {
-        "type": "move",
-        "from": "f1",
-        "to": "f2"
-      },
-      "expected": "56b7885d8b4857378d48234ad82e40f061e2d106a5f4028685a1b4d6e775738c"
-    },
-    {
-      "action": {
-        "type": "endTurn"
-      },
-      "expected": "af34aced082d9fa00930d42be50beb3935b166532b682452ae10b4e38fe2b0ef"
     }
   ],
-  "moves": 50,
-  "finalFen": "2r4P/6R1/1P2P2p/kp5n/6qP/1QP1BP2/P4K2/rN5R b - - 1 30",
+  "moves": 36,
+  "finalFen": "2r4P/3N2pp/1P2p2n/pp1P4/k4BRq/1QP2P1n/P2B2P1/rN3K1R b - - 0 22",
   "sampledCards": {
     "rebirth": 3,
     "figure-dance": 3,
     "under-elf-hill": 1,
     "masquerade": 2,
     "annexation": 2,
-    "irresistible-force": 4,
+    "irresistible-force": 2,
     "knightmare": 4,
     "doomsayer": 4,
     "bog": 4,
     "neutrality": 7,
     "winged-victory": 5,
-    "charge": 5,
+    "charge": 4,
     "dungeon": 1,
     "madman": 2,
     "pacifism": 1,
-    "evangelists": 7,
+    "evangelists": 4,
     "tournament": 4,
-    "no-quarter": 5,
+    "no-quarter": 3,
     "forbidden-city": 6,
-    "bombard": 7,
+    "bombard": 4,
     "blessing": 1,
-    "vendetta": 3,
-    "holy-war": 2
-  }
+    "vendetta": 1
+  },
+  "failure": "No continuing action at step 98; outcome=null"
 }
