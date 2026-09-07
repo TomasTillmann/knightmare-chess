@@ -79,7 +79,9 @@ test('white crossing a4-a5 lets black collect b2 and preserves the move', () => 
   const captured = paid.pieces.find(piece => piece.id === 'white-pawn-b2');
   assert.deepEqual(captured, { ...pawnAt(before, 'b2'), square: null, zone: 'captured' });
   assert.equal(pawnAt(paid, 'a5').id, pawnAt(before, 'a5').id);
-  assert.deepEqual(paid.fen.split(' ').slice(1), before.fen.split(' ').slice(1));
+  const expectedFenFields = before.fen.split(' ').slice(1);
+  expectedFenFields[3] = '0'; // Losing the Pawn is a capture, so the ordinary draw counter resets.
+  assert.deepEqual(paid.fen.split(' ').slice(1), expectedFenFields);
   assert.deepEqual(paid.history.slice(0, -1), before.history);
   assert.equal(paid.history.at(-1)?.type, 'cardPlayed');
   assert.equal(paid.history.at(-1)?.cardId, 'toll');
