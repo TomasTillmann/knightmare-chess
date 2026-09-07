@@ -7303,22 +7303,13 @@ function settlePendingRescue(
   const cardEvent = recorded?.type === 'cardFizzled'
     ? recorded
     : { type: 'cardFizzled' as const, cardId, reason: 'SELF_CHECK' as const };
-  const previousDoomsayers = new Set(activeDoomsayers(beforeCard).map(effect => effect.card.id));
-  const activatedDoomsayers = activeDoomsayers(result.state).filter(
-    effect => !previousDoomsayers.has(effect.card.id),
-  );
-  if (activatedDoomsayers.length) {
-    const activatedIds = new Set(activatedDoomsayers.map(effect => effect.card.id));
-    result.state.effects = result.state.effects.filter(
-      effect => !isDoomsayerEffect(effect) || !activatedIds.has(effect.card.id),
-    );
-    for (const effect of activatedDoomsayers) {
-      if (!result.state.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-        result.state.players[effect.owner].discard.push(effect.card);
-      }
-    }
-    result.state.pendingDoomsayer = null;
+  const spent = result.state.playedCards?.at(-1);
+  const spentCard = spent && beforeCard.players[spent.player].hand.find(card => card.id === spent.cardInstanceId);
+  if (spentCard && !result.state.players[spent.player].discard.some(card => card.id === spentCard.id)) {
+    result.state.players[spent.player].discard.push(spentCard);
   }
+  result.state.effects = structuredClone(beforeCard.effects);
+  result.state.pendingDoomsayer = structuredClone(beforeCard.pendingDoomsayer);
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
   result.state.enPassant = structuredClone(pending.enPassant);
