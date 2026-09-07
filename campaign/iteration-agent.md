@@ -25,6 +25,11 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    `npm run typecheck`. Report a PASS only for 50 move commands plus every
    intervening action reviewed. A confirmed defect may yield an earlier prefix,
    which goes to a new verifier/fixer. Never approve the engine's wrong state.
+   Public `effects` entries are `unknown`: compare complete expected records or
+   narrow them explicitly before field access. For `GameAction` unions, narrow
+   `action.type` before reading card-only fields (a `flatMap` or loop is enough).
+   If shared typecheck flags another active agent's file, report its path to the
+   parent and leave that file untouched; this is not a finding in your iteration.
 6. Return `ITERATION_NNN_PASS` or `ITERATION_NNN_FINDING`, action/move/card counts,
    final FEN, exact gate results, and elapsed time. Parent verifies and commits.
 
