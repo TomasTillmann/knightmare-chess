@@ -6072,8 +6072,8 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
     && (result.state.effects !== effectsBeforeExpiry
       || state.effects.some(isFatalAttractionEffect))
     && CARD_CATALOG[cardId]?.continuing === false && cardId !== 'hostage') {
-    const reaction = cardId === 'bog' || cardId === 'revenge' || cardId === 'toll';
-    const actor = reaction ? opposite(state.turn.color) : state.turn.color;
+    const actor = result.state.playedCards?.at(-1)?.player ?? state.turn.color;
+    const reaction = actor !== state.turn.color;
     const defender = opposite(actor);
     const consumesMove = !state.turn.moveMade && result.state.turn.moveMade
       && !isKingInCheck(state, actor);
@@ -7321,6 +7321,7 @@ function settlePendingRescue(
       .filter(card => card.id !== effect.card.id);
   }
   result.state.pendingDoomsayer = structuredClone(beforeCard.pendingDoomsayer);
+  result.state.plotsAllowances = result.state.plotsAllowances?.slice(0, beforeCard.plotsAllowances?.length ?? 0);
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
   result.state.enPassant = structuredClone(pending.enPassant);
