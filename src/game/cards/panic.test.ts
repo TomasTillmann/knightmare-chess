@@ -161,6 +161,8 @@ describe('Panic printed contract', () => {
     const state = timedTurn();
     const history = structuredClone(state.history);
     const pieces = structuredClone(state.pieces);
+    const players = structuredClone(state.players);
+    const [placement, , rights, , halfmove, fullmove] = state.fen.split(' ');
     const result = applyAction(state, timeout);
     assert.equal(result.ok, true);
     if (!result.ok) return;
@@ -170,7 +172,10 @@ describe('Panic printed contract', () => {
     assert.equal(panic(result.state), undefined);
     assert.deepEqual(result.state.history, history);
     assert.deepEqual(result.state.pieces, pieces);
-    assert.equal(result.state.fen, createGameState({ turn: 'white' }).fen);
+    assert.deepEqual(result.state.players, players);
+    assert.deepEqual(result.state.fen.split(' '), [
+      placement, 'w', rights, '-', String(Number(halfmove) + 1), String(Number(fullmove) + 1),
+    ]);
   });
 
   it('rejects timeout without an effect, for the wrong player, and outside beforeMove', () => {
