@@ -930,6 +930,15 @@ export function masqueradeDests(state: GameState, from: SquareName): SquareName[
     .filter(to => !forbiddenCityBlocksMove(state, from, to));
 }
 
+export function blessingDests(state: GameState, from: SquareName): SquareName[] {
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === from);
+  if (!piece || (piece.owner !== state.turn.color && !piece.neutral)) return [];
+  const board = setupFor(state).board;
+  return [...attacks({ color: piece.owner, role: 'bishop' }, parseSquare(from), board.occupied).diff(board.occupied)]
+    .map(makeSquare)
+    .filter(to => !forbiddenCityBlocksMove(state, from, to));
+}
+
 function doppelgangerCopy(state: GameState): PieceState | undefined {
   let movement: CardMove[] | undefined;
   let ordinaryMove = false;
@@ -2463,21 +2472,22 @@ function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown
   return { ok: true, state: resolved };
 }
 
-function playMasquerade(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+function playSlidingMoveCard(state: GameState, cardId: 'masquerade' | 'blessing', target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
+  const name = CARD_CATALOG[cardId].name;
   if (
     (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card =>
-      card.cardId === 'masquerade' && (cardInstanceId === undefined || card.id === cardInstanceId),
+      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
     )
   ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Masquerade is not in your hand.');
+    return reject(state, 'CARD_NOT_IN_HAND', `${name} is not in your hand.`);
   }
   if (state.turn.cardPlays[color] >= 1) {
     return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
   }
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
-    return reject(state, 'INVALID_TIMING', 'Masquerade is played instead of the regular move.');
+    return reject(state, 'INVALID_TIMING', `${name} is played instead of the regular move.`);
   }
   const moves = parseCardMoves(target, 1);
   if (
@@ -2498,7 +2508,7 @@ function playMasquerade(state: GameState, target: unknown, cardInstanceId?: unkn
   if (piece.owner !== color && !piece.neutral) {
     return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
   }
-  if (physicalPieces(state, piece).every(component =>
+  if (cardId === 'masquerade' && physicalPieces(state, piece).every(component =>
     component.role === 'pawn' || component.originalRole === 'pawn'
   )) {
     return reject(state, 'WRONG_ROLE', 'Masquerade cannot move a Pawn.');
@@ -2506,8 +2516,9 @@ function playMasquerade(state: GameState, target: unknown, cardInstanceId?: unkn
   if (forbiddenCityBlocksMove(state, move.from, move.to)) {
     return reject(state, 'ILLEGAL_MOVE', 'That route is blocked by Forbidden City.');
   }
-  if (!masqueradeDests(state, move.from).includes(move.to)) {
-    return reject(state, 'ILLEGAL_MOVE', 'Move the piece like a Queen to an empty square.');
+  const destinations = cardId === 'blessing' ? blessingDests : masqueradeDests;
+  if (!destinations(state, move.from).includes(move.to)) {
+    return reject(state, 'ILLEGAL_MOVE', `Move the piece like a ${cardId === 'blessing' ? 'Bishop' : 'Queen'} to an empty square.`);
   }
 
   const wasInCheck = isKingInCheck(state, color);
@@ -2523,14 +2534,14 @@ function playMasquerade(state: GameState, target: unknown, cardInstanceId?: unkn
   );
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'masquerade', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, 'masquerade', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
-  spendCard(resolved, 'masquerade', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'masquerade', target: moves });
+  spendCard(resolved, cardId, cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId, target: moves });
   return { ok: true, state: resolved };
 }
 
@@ -4061,7 +4072,7 @@ function playCardUnchecked(state: GameState, cardId: string, target: unknown, ca
   if (cardId === 'onslaught') return playOnslaught(state, target, cardInstanceId);
   if (cardId === 'long-jump') return playLongJump(state, target, cardInstanceId);
   if (cardId === 'dubbing') return playDubbing(state, target, cardInstanceId);
-  if (cardId === 'masquerade') return playMasquerade(state, target, cardInstanceId);
+  if (cardId === 'masquerade' || cardId === 'blessing') return playSlidingMoveCard(state, cardId, target, cardInstanceId);
   if (cardId === 'doppelganger') return playDoppelganger(state, target, cardInstanceId);
   if (cardId === 'squaring-the-circle') return playSquaringTheCircle(state, target, cardInstanceId);
   if (cardId === 'cowardice') return playCowardice(state, target, cardInstanceId);
@@ -4182,12 +4193,14 @@ export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
       return result.ok && result.state.history.at(-1)?.type === 'cardPlayed' ? [target] : [];
     }));
   }
-  if (cardId === 'masquerade') {
+  if (cardId === 'masquerade' || cardId === 'blessing') {
+    if (state.outcome) return [];
+    const destinations = cardId === 'blessing' ? blessingDests : masqueradeDests;
     return state.pieces.flatMap(piece =>
       piece.zone === 'board' && piece.square
-        ? masqueradeDests(state, piece.square).flatMap(to => {
+        ? destinations(state, piece.square).flatMap(to => {
             const target = [{ from: piece.square!, to }];
-            const result = playCard(state, 'masquerade', target);
+            const result = playCard(state, cardId, target);
             return result.ok && result.state.history.at(-1)?.type === 'cardPlayed' ? [target] : [];
           })
         : [],

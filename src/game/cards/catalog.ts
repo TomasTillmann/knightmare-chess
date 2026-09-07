@@ -12,6 +12,16 @@ export interface CardDefinition {
 }
 
 export const CARD_CATALOG: Record<CardId, CardDefinition> = {
+  blessing: {
+    id: 'blessing',
+    name: 'Blessing',
+    points: 6,
+    unique: false,
+    image: '/KC9_card4.png',
+    description: 'On this move, any one of your pieces may move any distance diagonally, as though it were a Bishop. You cannot capture with this move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   vulture: {
     id: 'vulture',
     name: 'Vulture',
