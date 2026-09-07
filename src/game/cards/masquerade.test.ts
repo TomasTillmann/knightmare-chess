@@ -164,17 +164,17 @@ describe('Masquerade', () => {
 
   it('requires the canonical payload, current card instance, timing, and allowance', () => {
     const baseFen = '7k/8/8/8/3N4/8/8/4K3 w - - 0 1';
-    const invalidTargets: Array<[string, unknown]> = [
-      ['missing', undefined],
-      ['null', null],
-      ['bare move', { from: 'd4', to: 'd7' }],
-      ['empty list', []],
-      ['multiple moves', [{ from: 'd4', to: 'd7' }, { from: 'e1', to: 'e2' }]],
-      ['non-move element', ['d4', 'd7']],
-      ['invalid square', [{ from: 'd4', to: 'd9' }]],
-      ['same square', [{ from: 'd4', to: 'd4' }]],
+    const invalidTargets: Array<[string, unknown, string]> = [
+      ['missing', undefined, 'INVALID_TARGET'],
+      ['null', null, 'INVALID_TARGET'],
+      ['bare move', { from: 'd4', to: 'd7' }, 'INVALID_TARGET'],
+      ['empty list', [], 'INVALID_TARGET'],
+      ['multiple moves', [{ from: 'd4', to: 'd7' }, { from: 'e1', to: 'e2' }], 'INVALID_TARGET'],
+      ['non-move element', ['d4', 'd7'], 'INVALID_TARGET'],
+      ['invalid square', [{ from: 'd4', to: 'd9' }], 'INVALID_TARGET'],
+      ['same square', [{ from: 'd4', to: 'd4' }], 'ILLEGAL_MOVE'],
     ];
-    for (const [label, target] of invalidTargets) {
+    for (const [label, target, code] of invalidTargets) {
       const state = game(baseFen);
       const snapshot = structuredClone(state);
       const result = applyAction(state, {
@@ -184,7 +184,7 @@ describe('Masquerade', () => {
         target,
       });
       assert.equal(result.ok, false, label);
-      if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET', label);
+      if (!result.ok) assert.equal(result.error.code, code, label);
       assert.deepStrictEqual(result.state, snapshot, label);
       assert.deepStrictEqual(state, snapshot, label);
     }

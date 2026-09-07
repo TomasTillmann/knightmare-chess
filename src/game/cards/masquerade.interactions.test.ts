@@ -78,7 +78,7 @@ test('Forbidden City blocks a Masquerade ray through its marked square', () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET');
+  if (!result.ok) assert.equal(result.error.code, 'ILLEGAL_MOVE');
 });
 
 for (const [name, orientation, from, to, role] of [
@@ -117,7 +117,7 @@ test('Masquerade rejects a Pawn', () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET');
+  if (!result.ok) assert.equal(result.error.code, 'WRONG_ROLE');
 });
 
 test('Masquerade still rejects a Pawn transformed into a Crab', () => {
@@ -141,7 +141,7 @@ test('Masquerade still rejects a Pawn transformed into a Crab', () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET');
+  if (!result.ok) assert.equal(result.error.code, 'WRONG_ROLE');
 });
 
 function confabulatedState(pawnComponent = false) {
@@ -213,7 +213,7 @@ test('Vendetta blocks Masquerade when a legal capture exists', () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET');
+  if (!result.ok) assert.equal(result.error.code, 'ILLEGAL_MOVE');
 });
 
 test('expired Vendetta permits Masquerade when no legal capture exists', () => {
@@ -252,7 +252,7 @@ test('Masquerade cannot capture on its Queen-style move', () => {
   });
 
   assert.equal(result.ok, false);
-  if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET');
+  if (!result.ok) assert.equal(result.error.code, 'ILLEGAL_MOVE');
   assert.deepEqual(result.state, before);
 });
 
