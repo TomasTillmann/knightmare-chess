@@ -110,7 +110,7 @@ test('Madman leaves active continuing effects and piece-bound markers untouched'
 });
 
 const implementedCardIds = [
-  'assassin', 'disintegration', 'doomsayer', 'fanatic', 'forbidden-city', 'confabulation', 'ghostwalk', 'irresistible-force', 'masquerade', 'panic', 'peace-talks', 'truce', 'annexation', 'forced-march',
+  'assassin', 'disintegration', 'doomsayer', 'fanatic', 'forbidden-city', 'confabulation', 'ghostwalk', 'irresistible-force', 'masquerade', 'panic', 'peace-talks', 'truce', 'vulture', 'annexation', 'forced-march',
   'guardian', 'heresy', 'cowardice', 'holy-war', 'pacifism', 'anathema', 'evangelists', 'tournament',
   'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump',
   'dubbing', 'earthquake', 'figure-dance', 'squaring-the-circle', 'no-quarter', 'vendetta', 'bog', 'doppelganger', 'rebirth', 'revenge', 'toll', 'crab', 'dark-mirror',
@@ -121,7 +121,7 @@ test('Madman composes deterministically after every implemented card/effect', as
     [...implementedCardIds].sort(),
     Object.keys(CARD_CATALOG).filter(id => id !== MADMAN).sort(),
   );
-  assert.equal(implementedCardIds.length, 42);
+  assert.equal(implementedCardIds.length, 43);
   for (const id of implementedCardIds) await t.test(id, () => {
     const initial = game({
       fen: id === 'vendetta' ? '7k/8/8/8/3P4/2P5/8/K7 w - - 11 20' : '7k/8/8/8/3r4/2P5/8/K7 w - - 11 20',
