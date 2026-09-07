@@ -7637,6 +7637,7 @@ function panicTimeout(state: GameState): ApplyResult {
   resolved.effects = resolved.effects.filter(effect =>
     !isPanicEffect(effect) || effect.player !== state.turn.color
   );
+  completeReplacementMove(resolved, state.turn.color, false);
   return advanceTurn(resolved);
 }
 
