@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 20,
+  "nextIteration": 23,
   "coverageAuditsCompleted": 1,
   "iterations": [
     {
@@ -183,6 +183,40 @@
       "status": "passed",
       "finalFen": "4k3/6r1/7n/2n5/8/P6N/3q4/5K1R w - - 0 28",
       "testCommit": "bf96cdd"
+    },
+    {
+      "id": 17,
+      "agent": "iteration_017",
+      "seed": 860017,
+      "reviewedActions": 114,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "3rb2r/p3p2n/nq1k1pbp/1PppN3/1PP1P1pP/1Q1RB3/3KNPP1/P5BR b - - 1 28",
+      "testCommit": "768872e"
+    },
+    {
+      "id": 18,
+      "agent": "iteration_018",
+      "seed": 860018,
+      "reviewedActions": 123,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1b5/ppknpp1p/2b2P2/2pP4/3B1P1P/1R1P1K2/P7/r1Q5 b - - 0 27",
+      "testCommit": "0c13018"
+    },
+    {
+      "id": 19,
+      "agent": "iteration_019",
+      "seed": 860019,
+      "reviewedActions": 82,
+      "reviewedMoves": 35,
+      "status": "fixed",
+      "finalFen": "r3kbnr/p2n4/b5P1/2p1p1pp/1pP4P/3Q1N2/B2PPP2/1NKRR2B w kq - 2 21",
+      "observedFinalFenBeforeFix": "r3kbnr/p2n4/b5P1/2p1p1pp/1pP4P/3Q1N2/B2PPP2/1NKRR2B b kq - 1 20",
+      "testCommit": "9557ceb",
+      "finding": "Panic timeout left FEN actor and skipped-move bookkeeping stale",
+      "fixCommit": "e35a40f",
+      "audit": "audit-019.md"
     }
   ],
   "coverageAudits": [
