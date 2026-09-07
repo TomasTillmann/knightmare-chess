@@ -117,6 +117,13 @@ export interface PanicEffect {
   durationMs: 15000;
 }
 
+export interface ChallengeEffect {
+  type: 'challenge';
+  owner: Color;
+  player: Color;
+  pieceId: string;
+}
+
 export interface ConfabulationEffect {
   type: 'confabulation';
   owner: Color;

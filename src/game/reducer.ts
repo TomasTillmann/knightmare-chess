@@ -23,6 +23,7 @@ import type {
   BoardOrientation,
   CardInstance,
   CardMove,
+  ChallengeEffect,
   Color,
   ConfabulationEffect,
   CrabEffect,
@@ -126,6 +127,30 @@ function isPanicEffect(effect: unknown): effect is PanicEffect {
     && record.player === opposite(record.owner)
     && record.durationMs === 15000
   );
+}
+
+function isChallengeEffect(effect: unknown): effect is ChallengeEffect {
+  const record = effectRecord(effect);
+  return record?.type === 'challenge'
+    && (record.owner === 'white' || record.owner === 'black')
+    && record.player === opposite(record.owner)
+    && typeof record.pieceId === 'string';
+}
+
+function challengesFor(state: GameState, player = state.turn.color): ChallengeEffect[] {
+  return state.effects.filter((effect): effect is ChallengeEffect =>
+    isChallengeEffect(effect) && effect.player === player,
+  );
+}
+
+function clearChallenge(state: GameState, player: Color): void {
+  state.effects = state.effects.filter(effect => !isChallengeEffect(effect) || effect.player !== player);
+}
+
+function challengeAllows(state: GameState, pieces: readonly PieceState[], player = state.turn.color): boolean {
+  return challengesFor(state, player).every(effect => pieces.some(piece =>
+    physicalPieces(state, piece).some(component => component.id === effect.pieceId),
+  ));
 }
 
 function clearCompletedPanic(before: GameState, result: ApplyResult): ApplyResult {
@@ -1484,6 +1509,7 @@ function pieceAttacksSquare(
   target: SquareName,
   occupied: SquareSet,
 ): boolean {
+  if (!challengeAllows(state, [piece], piece.owner)) return false;
   const victim = state.pieces.find(candidate =>
     candidate.zone === 'board' && candidate.square === target && candidate.id !== piece.id,
   );
@@ -1743,6 +1769,7 @@ function completeReplacementMove(
   state.enPassant = enPassant;
   state.turn.phase = 'afterMove';
   state.turn.moveMade = true;
+  clearChallenge(state, color);
 }
 
 function resetsHalfmoveClock(piece: PieceState, capture = false): boolean {
@@ -3799,6 +3826,39 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
   return { ok: true, state: resolved };
 }
 
+function playChallenge(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card => card.cardId === 'challenge'
+      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Challenge is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
+    return reject(state, 'INVALID_TIMING', 'Challenge is played after your move.');
+  }
+  if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose a board square.');
+  const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
+  if (!piece) return reject(state, 'INVALID_TARGET', 'Choose an occupied square.');
+  if (piece.owner === color && !piece.neutral) return reject(state, 'WRONG_OWNER', 'Choose an opponent piece.');
+  if (piece.royal || hasRole(state, piece, 'king') || hasRole(state, piece, 'queen')) {
+    return reject(state, 'WRONG_ROLE', 'Challenge cannot name a King or Queen.');
+  }
+  if (!legalDests(turnView(state, opposite(color)), false).get(piece.square!)?.length) {
+    return reject(state, 'INVALID_TARGET', 'The challenged piece must have a legal move.');
+  }
+  const resolved = structuredClone(state);
+  clearChallenge(resolved, opposite(color));
+  resolved.effects.push({ type: 'challenge', owner: color, player: opposite(color), pieceId: piece.id } satisfies ChallengeEffect);
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
+    return fizzleCard(state, 'challenge', 'DIRECT_MATE', cardInstanceId);
+  }
+  if (isKingInCheck(resolved, color)) return fizzleCard(state, 'challenge', 'SELF_CHECK', cardInstanceId);
+  spendCard(resolved, 'challenge', cardInstanceId);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'challenge', target: target as SquareName });
+  return { ok: true, state: resolved };
+}
+
 function playPanic(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if (
@@ -4085,6 +4145,7 @@ function playVulture(state: GameState, target: unknown, cardInstanceId?: unknown
 }
 
 function playCardUnchecked(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (cardId === 'challenge') return playChallenge(state, target, cardInstanceId);
   if (cardId === 'vulture') return playVulture(state, target, cardInstanceId);
   if (cardId === 'truce') return playTruce(state, target, cardInstanceId);
   if (cardId === 'ghostwalk') return playGhostwalk(state, target, cardInstanceId);
@@ -4132,6 +4193,15 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
     && activeVendettas(state).length > 0
     && vendettaCaptureDests(state).size > 0;
   const result = playCardUnchecked(state, cardId, target, cardInstanceId);
+  if (result.ok && !state.turn.moveMade && result.state.turn.moveMade) {
+    const used = state.pieces.filter(piece => {
+      const after = result.state.pieces.find(candidate => candidate.id === piece.id);
+      return after && (after.square !== piece.square || after.zone !== piece.zone);
+    });
+    if (!challengeAllows(state, used)) {
+      return reject(state, 'ILLEGAL_MOVE', 'Challenge requires using the named piece.');
+    }
+  }
   const effectsBeforeExpiry = result.ok ? result.state.effects : undefined;
   expirePieceEffects(result);
   if (result.ok && result.state.history.at(-1)?.type === 'cardPlayed'
@@ -4169,6 +4239,14 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'challenge') {
+    if (state.outcome) return [];
+    return state.pieces.flatMap(piece => {
+      if (piece.zone !== 'board' || !piece.square) return [];
+      const result = playChallenge(state, piece.square);
+      return result.ok && result.state.history.at(-1)?.type === 'cardPlayed' ? [piece.square] : [];
+    });
+  }
   if (cardId === 'breakthrough') {
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square
       ? breakthroughDests(state, piece.square).map(to => [{ from: piece.square!, to }]) : []);
@@ -4631,6 +4709,8 @@ function finishRegularMove(
   movedPieces: readonly PieceState[],
   allowAfterMoveRescue: boolean,
 ): ApplyResult {
+  if (!challengeAllows(before, movedPieces)) return reject(before, 'ILLEGAL_MOVE', 'Challenge requires moving the named piece.');
+  clearChallenge(next, before.turn.color);
   if (!moveLeavesRoyalInCheck(next, before.turn.color, movedPieces)) {
     return { ok: true, state: next };
   }
@@ -5237,11 +5317,13 @@ function hasDoomsayerEscape(state: GameState, seen = new Set<string>()): boolean
 }
 
 function hasTurnEscape(state: GameState): boolean {
+  if (challengesFor(state).length && !isKingInCheck(state, state.turn.color)) return true;
   return hasBoardOrCardEscape(state) || hasDoomsayerEscape(state);
 }
 
 function advanceTurn(state: GameState): ApplyResult {
   let next = structuredClone(state);
+  clearChallenge(next, state.turn.color);
   delete next.cardResponse;
   const nextColor = opposite(state.turn.color);
   next.turn = {
@@ -5268,6 +5350,18 @@ function advanceTurn(state: GameState): ApplyResult {
 }
 
 function endTurn(state: GameState): ApplyResult {
+  if (!state.turn.moveMade && challengesFor(state).length && !state.pendingDoomsayer) {
+    if (isKingInCheck(state, state.turn.color)) return reject(state, 'KING_IN_CHECK', 'Your King is still in check.');
+    const skipped = structuredClone(state);
+    skipped.enPassant = [];
+    const setup = setupFor(skipped);
+    setup.epSquare = undefined;
+    setup.turn = opposite(state.turn.color);
+    setup.halfmoves += 1;
+    if (state.turn.color === 'black') setup.fullmoves += 1;
+    skipped.fen = makeFen(setup);
+    return advanceTurn(skipped);
+  }
   if (!state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Make the regular move before ending the turn.');
   if (state.pendingDoomsayer) {
     return reject(state, 'INVALID_TIMING', 'The opponent must name a piece or decline Doomsayer before the turn can end.');

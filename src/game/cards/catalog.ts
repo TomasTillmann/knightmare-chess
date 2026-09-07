@@ -333,6 +333,16 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  challenge: {
+    id: 'challenge',
+    name: 'Challenge',
+    points: 6,
+    unique: false,
+    image: '/KC10_card2.png',
+    description: 'Choose a piece of your opponent (except King or Queen). On his next move, your opponent must use that piece, or lose his turn. You may not name a piece your opponent does not possess or cannot legally move.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
   evangelists: {
     id: 'evangelists',
     name: 'Evangelists',
