@@ -175,6 +175,8 @@ export interface GameState {
   };
   effects: unknown[];
   history: GameEvent[];
+  playedCards?: Array<{ player: Color; cardInstanceId: string }>;
+  cardResponse?: { player: Color; historyLength: number };
   orientation: BoardOrientation;
   enPassant: EnPassantOpportunity[];
   pendingRescue?: PendingRescueState | null;

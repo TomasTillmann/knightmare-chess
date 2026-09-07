@@ -7,11 +7,21 @@ export interface CardDefinition {
   unique: boolean;
   image: string;
   description: string;
-  timing: Array<TurnPhase | 'afterOpponentMove'>;
+  timing: Array<TurnPhase | 'afterOpponentMove' | 'afterOpponentCard'>;
   continuing: boolean;
 }
 
 export const CARD_CATALOG: Record<CardId, CardDefinition> = {
+  vulture: {
+    id: 'vulture',
+    name: 'Vulture',
+    points: 5,
+    unique: false,
+    image: '/KC9_card3.png',
+    description: 'Take the last card played by your opponent and put it in your hand. If each player has his own deck of cards, you must also discard your top undrawn card.',
+    timing: ['afterOpponentCard'],
+    continuing: false,
+  },
   truce: {
     id: 'truce',
     name: 'Truce',

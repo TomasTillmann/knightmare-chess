@@ -1061,6 +1061,7 @@ function spendCard(
     card => card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
   );
   const [spent] = player.hand.splice(index, 1);
+  (state.playedCards ??= []).push({ player: color, cardInstanceId: spent.id });
   if (discard) player.discard.push(spent);
   const drawn = player.deck.shift();
   if (drawn) player.hand.push(drawn);
@@ -4006,7 +4007,37 @@ function playTruce(state: GameState, target: unknown, cardInstanceId?: unknown):
   return { ok: true, state: resolved };
 }
 
+function playVulture(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const response = state.cardResponse;
+  if (!response || response.historyLength !== state.history.length) {
+    return reject(state, 'INVALID_TIMING', 'Vulture immediately follows an opponent card.');
+  }
+  const color = opposite(response.player);
+  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card => card.cardId === 'vulture'
+      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Vulture is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Vulture does not take a target.');
+  const discard = state.players[response.player].discard;
+  const played = state.playedCards?.slice().reverse().find(entry => entry.player === response.player
+    && discard.some(card => card.id === entry.cardInstanceId));
+  if (!played) return reject(state, 'INVALID_TARGET', 'There is no eligible played card to take.');
+  const resolved = structuredClone(state);
+  const opponentDiscard = resolved.players[response.player].discard;
+  const [taken] = opponentDiscard.splice(opponentDiscard.findIndex(card => card.id === played.cardInstanceId), 1);
+  const player = resolved.players[color];
+  const cost = player.deck.shift();
+  if (cost) player.discard.push(cost);
+  spendCard(resolved, 'vulture', cardInstanceId, true, color);
+  player.hand.push(taken);
+  resolved.history.push({ type: 'cardPlayed', cardId: 'vulture', player: color });
+  return { ok: true, state: resolved };
+}
+
 function playCardUnchecked(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (cardId === 'vulture') return playVulture(state, target, cardInstanceId);
   if (cardId === 'truce') return playTruce(state, target, cardInstanceId);
   if (cardId === 'ghostwalk') return playGhostwalk(state, target, cardInstanceId);
   if (cardId === 'irresistible-force') return playIrresistibleForce(state, target, cardInstanceId);
@@ -4089,6 +4120,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'vulture') return !state.outcome && playVulture(state, undefined).ok ? [undefined] : [];
   if (cardId === 'truce') return !state.outcome && playTruce(state, undefined).ok ? [undefined] : [];
   if (cardId === 'panic') {
     if (state.outcome) return [];
@@ -5001,6 +5033,8 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
   if (!result.ok) return result;
   const event = result.state.history.at(-1);
   if (event?.type !== 'cardPlayed' && event?.type !== 'cardFizzled') return result;
+  const played = result.state.playedCards?.at(-1);
+  if (played) result.state.cardResponse = { player: played.player, historyLength: result.state.history.length };
   if (event.type === 'cardPlayed' && (event.cardId === 'forbidden-city' || event.cardId === 'confabulation')) {
     return result;
   }
@@ -5153,6 +5187,7 @@ function hasTurnEscape(state: GameState): boolean {
 
 function advanceTurn(state: GameState): ApplyResult {
   let next = structuredClone(state);
+  delete next.cardResponse;
   const nextColor = opposite(state.turn.color);
   next.turn = {
     color: nextColor,
