@@ -25,6 +25,9 @@ Mandatory self-check rescues search shuffled cards and targets for a legal cure.
 After checkpoint 010, bounded random integers use rejection sampling. Pending
 Doomsayer choices, successful Abduction recall, and Panic timer expiry are sampled
 alongside their alternatives. Fixed action traces preserve earlier iterations.
+From iteration 020, proposals also respect an opposing-card response during the
+actor's own turn and saved Plots timing windows. An immediate Fog proposal may
+precede resolution of a newly opened Abduction or Doomsayer choice.
 Legal availability depends on timing,
 targets, and the board; this is not a uniform distribution over reachable positions.
 Terminal candidates are avoided to pursue 50 actual regular moves. Such conditioning

@@ -20,6 +20,16 @@ export interface RandomTrace {
 
 export const digest = (state: GameState): string => createHash('sha256').update(JSON.stringify(state)).digest('hex');
 
+export function maySampleCard(state: GameState, card: { id: string; cardId: string }, owner: 'white' | 'black'): boolean {
+  const extra = state.plotsAllowances?.some(item => item.player === owner && item.remaining > 0 && item.eligibleCards.includes(card.id));
+  if (state.turn.cardPlays[owner] && !extra) return false;
+  if (extra) return true;
+  const timing = CARD_CATALOG[card.cardId]!.timing;
+  return owner === state.turn.color && timing.includes(state.turn.phase)
+    || owner !== state.turn.color && state.turn.moveMade && timing.includes('afterOpponentMove')
+    || !!state.cardResponse && state.cardResponse.player !== owner && timing.includes('afterOpponentCard');
+}
+
 // These checks use physical piece records and ordinary chess, not reducer-generated expectations.
 export function checkState(state: GameState): void {
   const board = state.pieces.filter(piece => piece.zone === 'board');
@@ -137,11 +147,7 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       for (const card of rescue ? shuffle(hand) : [hand[bounded(hand.length)]!]) {
       trace.sampledCards[card.cardId] = (trace.sampledCards[card.cardId] ?? 0) + 1;
       const owner = state.players.white.hand.includes(card) ? 'white' : 'black';
-      if (state.turn.cardPlays[owner] && !state.plotsAllowances?.some(item => item.player === owner && item.remaining)) continue;
-      const timing = CARD_CATALOG[card.cardId]!.timing;
-      if (owner === state.turn.color ? !timing.includes(state.turn.phase)
-        : !timing.some(window => window === 'afterOpponentMove' && state.turn.moveMade
-          || window === 'afterOpponentCard' && state.cardResponse)) continue;
+      if (!maySampleCard(state, card, owner)) continue;
       const targets = cardPlayTargets(state, card.cardId);
       if (!targets.length) continue;
       for (const target of rescue ? shuffle(targets) : [targets[bounded(targets.length)]]) {
@@ -164,7 +170,9 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       return attempt({ type: 'namePiece', speaker, name,
         losses: pieces.map((piece, index) => ({ effectId: active[index]!.card.id, pieceId: piece.id })) });
     };
-    if (state.pendingAbduction) {
+    if ((state.pendingAbduction || state.pendingDoomsayer) && state.cardResponse && bounded(3) !== 0 && cards()) {
+      // An immediate opposing-card reaction may cancel the newly opened choice.
+    } else if (state.pendingAbduction) {
       const pending = state.pendingAbduction;
       if (pending.phase === 'concealment') attempt({ type: 'revealAbduction' });
       else if (bounded(2)) {
