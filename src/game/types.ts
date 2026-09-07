@@ -17,6 +17,8 @@ export interface PieceState {
   promoted: boolean;
   royal: boolean;
   neutral: boolean;
+  neutralBeforeEffects?: boolean;
+  capturedAtPly?: number;
 }
 
 export interface CardInstance {
@@ -35,6 +37,7 @@ export interface EnPassantOpportunity {
 }
 
 export interface PendingRescueState {
+  before?: GameState;
   fen: string;
   pieces: PieceState[];
   enPassant: EnPassantOpportunity[];
@@ -58,9 +61,44 @@ export interface SiegeTarget {
   rook: SquareName;
 }
 
+export interface SplitKnightTarget {
+  knight: SquareName;
+  targets: SquareName[];
+}
+
+export interface EvilEyeTarget {
+  attacker: SquareName;
+  victim: SquareName;
+}
+
+export interface SanctuaryTarget {
+  king: SquareName;
+  rook: SquareName;
+}
+
+export interface ManOfStrawTarget {
+  king: SquareName;
+  pawn: SquareName;
+}
+
 export interface EvangelistsTarget {
   own: SquareName;
   opponent: SquareName;
+}
+
+export interface WingedVictoryTarget {
+  pieceId: string;
+  to: SquareName;
+}
+
+export interface ResurrectionTarget {
+  pieceId: string;
+  to: SquareName;
+}
+
+export interface HostageTarget {
+  pieceId: string;
+  pawn: SquareName;
 }
 
 export type EarthquakeDirection = 'clockwise' | 'counterclockwise';
@@ -90,6 +128,13 @@ export interface PacifismEffect {
   pieceId: string;
 }
 
+export interface FatalAttractionEffect {
+  type: 'fatal-attraction';
+  owner: Color;
+  card: CardInstance;
+  pieceId: string;
+}
+
 export interface CrabEffect {
   type: 'crab';
   owner: Color;
@@ -97,11 +142,33 @@ export interface CrabEffect {
   pieceId: string;
 }
 
+export interface CurseEffect {
+  type: 'curse';
+  owner: Color;
+  card: CardInstance;
+  pieceId: string;
+}
+
+export interface ManTrapEffect {
+  type: 'man-trap';
+  owner: Color;
+  card: CardInstance;
+  square: SquareName;
+}
+
 export interface ForbiddenCityEffect {
   type: 'forbidden-city';
   owner: Color;
   card: CardInstance;
   square: SquareName;
+}
+
+export interface FortificationEffect {
+  type: 'fortification';
+  owner: Color;
+  card: CardInstance;
+  from: SquareName;
+  to: SquareName;
 }
 
 export interface VendettaEffect {
@@ -119,6 +186,13 @@ export interface PanicEffect {
 
 export interface ChallengeEffect {
   type: 'challenge';
+  owner: Color;
+  player: Color;
+  pieceId: string;
+}
+
+export interface DungeonEffect {
+  type: 'dungeon';
   owner: Color;
   player: Color;
   pieceId: string;
@@ -151,7 +225,10 @@ export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled' | 'pieceNamed' | 'doomsayerDeclined';
   movedPieceId?: string;
   movedRoles?: Role[];
+  castlingRook?: { pieceId: string; to: SquareName };
   cardId?: CardId;
+  copiedCardId?: CardId;
+  deckOwner?: Color;
   capturedId?: string;
   capturedIds?: string[];
   effectIds?: string[];
@@ -164,7 +241,7 @@ export interface GameEvent {
   immediate?: boolean;
   movement?: CardMove[];
   preservePreviousMove?: boolean;
-  target?: SquareName | CardMove[] | readonly PromotionDeclaration[] | HolyWarTarget | AnathemaTarget | SiegeTarget | EvangelistsTarget | EarthquakeTarget;
+  target?: SquareName | CardMove | CardMove[] | readonly PromotionDeclaration[] | HolyWarTarget | AnathemaTarget | SanctuaryTarget | ManOfStrawTarget | SiegeTarget | SplitKnightTarget | EvilEyeTarget | EvangelistsTarget | EarthquakeTarget | WingedVictoryTarget | HostageTarget;
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;
@@ -173,6 +250,45 @@ export interface GameEvent {
 }
 
 export interface GameState {
+  riposteLostMoves?: Color[];
+  riposteSkipped?: Color;
+  riposteCheckDeferred?: Color;
+  legacyCapture?: { historyLength: number; pieceIds: string[] };
+  fogCheckpoint?: { before: GameState; player: Color; card: CardInstance; historyLength: number };
+  fogLocked?: Color[];
+  chaosCheckpoint?: { before: GameState; movement: string; historyLength: number; card?: CardInstance };
+  chaosForbidden?: { player: Color; movement: string };
+  shieldMove?: { player: Color; pieceIds: string[]; capturedOpponent?: boolean };
+  plotsAllowances?: Array<{
+    player: Color;
+    remaining: number;
+    eligibleCards: string[];
+    window: {
+      phase: TurnPhase;
+      moveMade: boolean;
+      shieldMove?: GameState['shieldMove'];
+      reaction?: GameEvent;
+      capture?: GameEvent;
+      legacyCapture?: GameState['legacyCapture'];
+      cardResponse?: { player: Color; historyLength: number };
+      fogCheckpoint?: GameState['fogCheckpoint'];
+    };
+  }>;
+  /** Present only while evaluating one card in its saved Plots window. */
+  plotsExecution?: {
+    player: Color;
+    allowanceIndex?: number;
+    window: NonNullable<GameState['plotsAllowances']>[number]['window'];
+  };
+  pendingAbduction?: {
+    phase: 'concealment' | 'recall';
+    player: Color;
+    durationMs: 10000;
+    pieceId: string;
+    requiresPieceId: boolean;
+    before: GameState;
+  } | null;
+  underElfHill?: Array<{ pieceId: string; player: Color; returning: boolean; returned?: boolean }>;
   fen: string;
   pieces: PieceState[];
   players: Record<Color, PlayerState>;
@@ -195,6 +311,10 @@ export interface GameState {
 }
 
 export type GameAction =
+  | { type: 'revealAbduction' }
+  | { type: 'answerAbduction'; player: Color; role: Role; owner: Color; square: SquareName; pieceId?: string }
+  | { type: 'abductionTimeout' }
+  | { type: 'returnKing'; to: unknown }
   | { type: 'move'; from: unknown; to: unknown; promotion?: unknown }
   | { type: 'playCard'; cardId: CardId; cardInstanceId?: unknown; target?: unknown }
   | { type: 'namePiece'; speaker: Color; name: DoomsayerRole; losses: DoomsayerLoss[] }
