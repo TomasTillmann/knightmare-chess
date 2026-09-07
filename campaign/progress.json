@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 14,
+  "nextIteration": 17,
   "coverageAuditsCompleted": 1,
   "iterations": [
     {
@@ -112,6 +112,20 @@
       "testCommit": "bf24b00"
     },
     {
+      "id": 11,
+      "agent": "iteration_011",
+      "seed": 860011,
+      "reviewedActions": 55,
+      "reviewedMoves": 23,
+      "status": "fixed",
+      "finalFen": "r1bqk1rB/1ppp3p/p1n1pp2/1N3Pp1/4n2P/1P2b3/N1PPP1PB/R2QK2R b KQq - 0 12",
+      "observedFinalFenBeforeFix": "r1bqk1rB/1ppp3p/p1n1pp2/1N3Pp1/4n2P/1P2b3/N1PPP1PB/R2QK2R b KQq - 4 12",
+      "testCommit": "9247c0f",
+      "finding": "Toll capture failed to reset halfmove clock",
+      "fixCommit": "424b325",
+      "audit": "audit-011.md"
+    },
+    {
       "id": 12,
       "agent": "iteration_012",
       "seed": 860012,
@@ -120,6 +134,21 @@
       "status": "passed",
       "finalFen": "r2n1bn1/5kpp/p4p2/1p1p1P2/3q1pPP/PPN5/K1P4R/3R1BN1 w - - 2 25",
       "testCommit": "9c869b9"
+    },
+    {
+      "id": 13,
+      "agent": "iteration_013",
+      "seed": 860013,
+      "reviewedActions": 18,
+      "reviewedMoves": 7,
+      "status": "fixed",
+      "finalFen": "r1bqkbnr/pppQ1pp1/n7/4p2p/8/PP3P2/1PP1P1PP/RNB1KBNR b KQkq - 0 4",
+      "observedFinalFenBeforeFix": "r1bqkbnr/pppQ1pp1/n7/4p2p/8/PP3P2/1PP1P1PP/RNB1KBNR b KQkq - 0 4",
+      "testCommit": "a64190a",
+      "finding": "Opponent Plots spent wrong physical card and retained fizzled allowance",
+      "fixCommit": "573c231",
+      "audit": "audit-013.md",
+      "additionalRegressionCommit": "7222d15"
     }
   ],
   "coverageAudits": [

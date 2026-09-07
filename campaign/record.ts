@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { RandomTrace } from '../src/game/cards/random-campaign.js';
+import { applyAction } from '../src/game/reducer.js';
+import { createGameState } from '../src/game/state.js';
 
 const id = Number(process.argv[2]);
 const status = process.argv[3];
@@ -18,8 +20,19 @@ const rows = readFileSync(new URL(`./iterations/${number}.txt`, import.meta.url)
 const path = new URL('./progress.json', import.meta.url);
 const progress = JSON.parse(readFileSync(path, 'utf8'));
 const previous = progress.iterations.find((item: { id: number }) => item.id === id) ?? {};
+let finalFen = rows[reviewedActions - 1].fen[1];
+if (status === 'fixed') {
+  let state = createGameState(trace.initial);
+  for (const step of trace.steps.slice(0, reviewedActions)) {
+    const result = applyAction(state, step.action);
+    assert.ok(result.ok, 'fixed prefix must replay');
+    state = result.state;
+  }
+  finalFen = state.fen;
+}
 const entry = { ...previous, id, agent: `iteration_${number}`, seed: trace.seed, reviewedActions, reviewedMoves, status,
-  finalFen: rows[reviewedActions - 1].fen[1],
+  finalFen,
+  ...(status === 'fixed' ? { observedFinalFenBeforeFix: rows[reviewedActions - 1].fen[1] } : {}),
   testCommit: execFileSync('git', ['log', '-1', '--format=%h', '--', `src/game/cards/random-${number}.test.ts`], { encoding: 'utf8' }).trim() };
 progress.iterations = [...progress.iterations.filter((item: { id: number }) => item.id !== id), entry]
   .sort((left: { id: number }, right: { id: number }) => left.id - right.id);
