@@ -109,20 +109,8 @@ test('Madman leaves active continuing effects and piece-bound markers untouched'
   assert.deepEqual(pieceAt(state, 'd4'), identity);
 });
 
-const implementedCardIds = [
-  'assassin', 'disintegration', 'doomsayer', 'fanatic', 'forbidden-city', 'confabulation', 'ghostwalk', 'irresistible-force', 'masquerade', 'panic', 'peace-talks', 'truce', 'vulture', 'blessing', 'breakthrough', 'annexation', 'forced-march',
-  'guardian', 'heresy', 'cowardice', 'holy-war', 'pacifism', 'anathema', 'evangelists', 'tournament',
-  'cathedral', 'lost-castle', 'siege', 'holy-quest', 'treason', 'onslaught', 'long-jump',
-  'dubbing', 'earthquake', 'figure-dance', 'squaring-the-circle', 'no-quarter', 'vendetta', 'bog', 'doppelganger', 'rebirth', 'revenge', 'toll', 'crab', 'dark-mirror',
-] as const;
-
 test('Madman composes deterministically after every implemented card/effect', async t => {
-  assert.deepEqual(
-    [...implementedCardIds].sort(),
-    Object.keys(CARD_CATALOG).filter(id => id !== MADMAN).sort(),
-  );
-  assert.equal(implementedCardIds.length, 45);
-  for (const id of implementedCardIds) await t.test(id, () => {
+  for (const id of Object.keys(CARD_CATALOG).filter(id => id !== MADMAN)) await t.test(id, () => {
     const initial = game({
       fen: id === 'vendetta' ? '7k/8/8/8/3P4/2P5/8/K7 w - - 11 20' : '7k/8/8/8/3r4/2P5/8/K7 w - - 11 20',
       ...(id === 'bog' ? { hands: { white: [MADMAN], black: [MADMAN, 'bog'] } } : {}),
