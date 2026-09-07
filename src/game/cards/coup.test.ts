@@ -97,7 +97,8 @@ test('The marked Knight keeps Knight destinations and its marker follows a regul
 
 test('The marked Bishop keeps sliding movement', () => {
   const after = turn(coup(setup('7k/6p1/8/8/8/8/8/2B1K3 w - - 0 1'), 'c1'), 'white');
-  assert.ok(legalDests(after).get('c1')?.includes('h6'));
+  assert.ok(legalDests(after).get('c1')?.includes('g5'));
+  assert.equal(legalDests(after).get('c1')?.includes('h6'), false);
   assert.equal(legalDests(after).get('c1')?.includes('c2'), false);
 });
 
