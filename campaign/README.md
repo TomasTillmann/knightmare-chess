@@ -20,6 +20,9 @@ Sampling: independently shuffled full catalog decks, five-card hands, using the
 explicit temporary deck-building variant in rules §4.3. Randomized candidate order
 samples one card in hand uniformly before checking its timing and one random target.
 Mandatory self-check rescues search shuffled cards and targets for a legal cure.
+After checkpoint 010, bounded random integers use rejection sampling. Pending
+Doomsayer choices, successful Abduction recall, and Panic timer expiry are sampled
+alongside their alternatives. Fixed action traces preserve earlier iterations.
 Legal availability depends on timing,
 targets, and the board; this is not a uniform distribution over reachable positions.
 Terminal candidates are avoided to pursue 50 actual regular moves. Such conditioning

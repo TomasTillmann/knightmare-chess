@@ -179,7 +179,11 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
     } else if (trace.moves >= 50) {
       attempt({ type: 'endTurn' });
     } else {
-      if (activeDoomsayers(state).length && bounded(3) === 0) nameRandomPiece(state.turn.color);
+      if (!state.turn.moveMade && state.effects.some(effect => {
+        const item = effect as { type?: string; player?: string };
+        return item.type === 'panic' && item.player === state.turn.color;
+      }) && bounded(2)) attempt({ type: 'panicTimeout' });
+      if (!chosen && activeDoomsayers(state).length && bounded(3) === 0) nameRandomPiece(state.turn.color);
       if (!chosen && bounded(3) !== 0) cards();
       if (!chosen && !state.turn.moveMade) {
         const moves = shuffle([...legalDests(state)].flatMap(([from, targets]) => targets.map(to => ({ from, to }))));
