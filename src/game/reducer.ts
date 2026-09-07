@@ -6756,6 +6756,8 @@ function namePiece(
       checkpoint.fen = pending.fen;
       checkpoint.pieces = structuredClone(pending.pieces);
       checkpoint.enPassant = structuredClone(pending.enPassant);
+      checkpoint.effects = structuredClone(pending.before?.effects ?? checkpoint.effects)
+        .filter(effect => !isDoomsayerEffect(effect) || !consumedIds.has(effect.card.id));
       const checkpointLosses = selected.flatMap(piece => {
         const loss = checkpoint.pieces.find(candidate => candidate.id === piece.id);
         if (!loss) return [];
@@ -6769,6 +6771,7 @@ function namePiece(
       pending.fen = makeFen(setup);
       pending.pieces = checkpoint.pieces;
       pending.enPassant = checkpoint.enPassant;
+      if (pending.before) pending.before.effects = checkpoint.effects;
     }
   }
 
@@ -7308,7 +7311,12 @@ function settlePendingRescue(
   if (spentCard && !result.state.players[spent.player].discard.some(card => card.id === spentCard.id)) {
     result.state.players[spent.player].discard.push(spentCard);
   }
-  result.state.effects = structuredClone(beforeCard.effects);
+  result.state.effects = structuredClone(pending.before?.effects ?? beforeCard.effects);
+  for (const effect of result.state.effects) {
+    if (!isRetainedContinuingEffect(effect)) continue;
+    result.state.players[effect.owner].discard = result.state.players[effect.owner].discard
+      .filter(card => card.id !== effect.card.id);
+  }
   result.state.pendingDoomsayer = structuredClone(beforeCard.pendingDoomsayer);
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
