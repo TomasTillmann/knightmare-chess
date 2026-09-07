@@ -12,6 +12,11 @@ let moves = 0;
 let actions = 0;
 let reviewedMoves = 0;
 let reviewedActions = 0;
+let validActions = 0;
+let validMoves = 0;
+const actionTypes: Record<string, number> = {};
+const cardTargetShapes: Record<string, number> = {};
+const cardTimings: Record<string, number> = {};
 const failures: string[] = [];
 const seeds = new Set<number>();
 for (const name of runs) {
@@ -32,12 +37,21 @@ for (const name of runs) {
   // The offending action has a corrected regression, but its generated state is invalid.
   const accepted = entry?.status === 'fixed' ? reviewed - 1 : reviewed;
   assert.ok(accepted >= 0 && accepted <= trace.steps.length);
+  validActions += accepted;
+  validMoves += trace.steps.slice(0, accepted).filter(step => step.action.type === 'move').length;
   for (const step of trace.steps.slice(0, accepted)) if (step.action.type === 'playCard') cards[step.action.cardId]!.played++;
   const rows = readFileSync(new URL(name.replace('.json', '.txt'), directory), 'utf8').split('\n').filter(line => line.startsWith('{'));
   assert.equal(rows.length, trace.steps.length);
   for (const line of rows.slice(0, accepted)) {
     const row = JSON.parse(line);
+    actionTypes[row.action.type] = (actionTypes[row.action.type] ?? 0) + 1;
     if (row.action.type !== 'playCard') continue;
+    const shape = row.action.target === undefined ? 'none' : Array.isArray(row.action.target) ? 'array'
+      : row.action.target && typeof row.action.target === 'object' ? Object.keys(row.action.target).sort().join(',') : typeof row.action.target;
+    const key = `${row.action.cardId}:${shape}`;
+    cardTargetShapes[key] = (cardTargetShapes[key] ?? 0) + 1;
+    const timing = `${row.action.cardId}:${row.turn[0].phase}`;
+    cardTimings[timing] = (cardTimings[timing] ?? 0) + 1;
     const kind = row.events.at(-1)?.type;
     if (kind === 'cardPlayed') cards[row.action.cardId]!.applied++;
     if (kind === 'cardFizzled') cards[row.action.cardId]!.fizzled++;
@@ -48,7 +62,8 @@ for (const name of runs) {
   reviewedMoves += trace.steps.slice(0, reviewed).filter(step => step.action.type === 'move').length;
   if (trace.failure || trace.moves !== 50) failures.push(`${name}: ${trace.failure ?? 'short trace'}`);
 }
-console.log(JSON.stringify({ generatedIterations: runs.length, moves, actions, reviewedMoves, reviewedActions, failures,
+console.log(JSON.stringify({ generatedIterations: runs.length, moves, actions, reviewedMoves, reviewedActions,
+  validMoves, validActions, actionTypes, cardTargetShapes, cardTimings, failures,
   sampledCardTypes: catalog.filter(id => cards[id]!.sampled > 0).length,
   playedCardTypes: catalog.filter(id => cards[id]!.played > 0).length,
   appliedCardTypes: catalog.filter(id => cards[id]!.applied > 0).length,

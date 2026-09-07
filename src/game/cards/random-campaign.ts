@@ -93,10 +93,16 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
     value ^= value + Math.imul(value ^ value >>> 7, value | 61);
     return (value ^ value >>> 14) >>> 0;
   };
+  const bounded = (size: number): number => {
+    const limit = 0x100000000 - 0x100000000 % size;
+    let value: number;
+    do { value = random(); } while (value >= limit);
+    return value % size;
+  };
   const shuffle = <T>(items: readonly T[]): T[] => {
     const copy = [...items];
     for (let i = copy.length - 1; i > 0; i--) {
-      const j = random() % (i + 1);
+      const j = bounded(i + 1);
       [copy[i], copy[j]] = [copy[j]!, copy[i]!];
     }
     return copy;
@@ -125,7 +131,7 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
     const cards = (rescue = false) => {
       const hand = [...state.players.white.hand, ...state.players.black.hand];
       if (!hand.length) return false;
-      for (const card of rescue ? shuffle(hand) : [hand[random() % hand.length]!]) {
+      for (const card of rescue ? shuffle(hand) : [hand[bounded(hand.length)]!]) {
       trace.sampledCards[card.cardId] = (trace.sampledCards[card.cardId] ?? 0) + 1;
       const owner = state.players.white.hand.includes(card) ? 'white' : 'black';
       if (state.turn.cardPlays[owner] && !state.plotsAllowances?.some(item => item.player === owner && item.remaining)) continue;
@@ -135,7 +141,7 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
           || window === 'afterOpponentCard' && state.cardResponse)) continue;
       const targets = cardPlayTargets(state, card.cardId);
       if (!targets.length) continue;
-      for (const target of rescue ? shuffle(targets) : [targets[random() % targets.length]]) {
+      for (const target of rescue ? shuffle(targets) : [targets[bounded(targets.length)]]) {
         const action: GameAction = { type: 'playCard', cardId: card.cardId, cardInstanceId: card.id,
           ...(target === undefined ? {} : { target }) };
         if (rescue) {
@@ -147,10 +153,25 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       }
       return false;
     };
+    const nameRandomPiece = (speaker: 'white' | 'black') => {
+      const active = activeDoomsayers(state);
+      if (!active.length) return false;
+      const name = shuffle(['pawn', 'knight', 'bishop', 'rook', 'queen'] as const)[0]!;
+      const pieces = shuffle(doomsayerTargets(state, speaker, name)).slice(0, active.length);
+      return attempt({ type: 'namePiece', speaker, name,
+        losses: pieces.map((piece, index) => ({ effectId: active[index]!.card.id, pieceId: piece.id })) });
+    };
     if (state.pendingAbduction) {
-      attempt({ type: state.pendingAbduction.phase === 'concealment' ? 'revealAbduction' : 'abductionTimeout' });
+      const pending = state.pendingAbduction;
+      if (pending.phase === 'concealment') attempt({ type: 'revealAbduction' });
+      else if (bounded(2)) {
+        const piece = pending.before.pieces.find(piece => piece.id === pending.pieceId)!;
+        attempt({ type: 'answerAbduction', player: pending.player, owner: piece.owner,
+          role: piece.role, square: piece.square!, pieceId: piece.id });
+      } else attempt({ type: 'abductionTimeout' });
     } else if (state.pendingDoomsayer) {
-      attempt({ type: 'declineDoomsayer', player: state.pendingDoomsayer.player });
+      if (bounded(2)) nameRandomPiece(state.pendingDoomsayer.player);
+      if (!chosen) attempt({ type: 'declineDoomsayer', player: state.pendingDoomsayer.player });
     } else if (state.underElfHill?.some(entry => entry.returning && !entry.returned)) {
       for (const to of shuffle(underElfHillReturnSquares(state))) if (attempt({ type: 'returnKing', to })) break;
     } else if (state.pendingRescue) {
@@ -158,7 +179,8 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
     } else if (trace.moves >= 50) {
       attempt({ type: 'endTurn' });
     } else {
-      if (random() % 3 !== 0) cards();
+      if (activeDoomsayers(state).length && bounded(3) === 0) nameRandomPiece(state.turn.color);
+      if (!chosen && bounded(3) !== 0) cards();
       if (!chosen && !state.turn.moveMade) {
         const moves = shuffle([...legalDests(state)].flatMap(([from, targets]) => targets.map(to => ({ from, to }))));
         for (const move of moves) {
