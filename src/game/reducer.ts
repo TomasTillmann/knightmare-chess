@@ -632,6 +632,40 @@ export function darkMirrorDests(state: GameState, from: SquareName): SquareName[
   }).sort((left, right) => parseSquare(left) - parseSquare(right));
 }
 
+export function breakthroughDests(state: GameState, from: SquareName): SquareName[] {
+  const carrier = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
+  if (!carrier || (carrier.owner !== state.turn.color && !carrier.neutral)
+    || captureForbidden(state, carrier) || hasCrabEffect(state, carrier.id)) return [];
+  const source = parseSquare(from);
+  const occupied = setupFor(state).board.occupied;
+  const required = activeVendettas(state).length > 0 && vendettaCaptureDests(state).size > 0;
+  return [...new Set(physicalPieces(state, carrier).flatMap(pawn => {
+    if (pawn.originalRole !== 'pawn' || pawn.promoted) return [];
+    const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
+    const forwardX = squareFile(source) + forwardFile;
+    const forwardY = squareRank(source) + forwardRank;
+    if (forwardX < 0 || forwardX > 7 || forwardY < 0 || forwardY > 7) return [];
+    const forward = forwardY * 8 + forwardX;
+    const capturesForward = physicalPieces(state, carrier).some(component =>
+      component.role !== 'pawn'
+      && attacks({ color: component.owner, role: component.role }, source, occupied).has(forward),
+    );
+    const sides = capturesForward ? [-1, 1] : [0];
+    return sides.flatMap(side => {
+      const file = squareFile(source) + forwardFile + side * forwardRank;
+      const rank = squareRank(source) + forwardRank - side * forwardFile;
+      if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
+      const to = makeSquare(rank * 8 + file);
+      const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === to);
+      return victim && (carrier.neutral || victim.neutral || carrier.owner !== victim.owner)
+        && (!required || victim.owner === opposite(state.turn.color))
+        && !physicalPieces(state, victim).some(piece => piece.royal)
+        && !captureImmune(state, victim) && !forbiddenCityBlocksMove(state, from, to)
+        ? [to] : [];
+    });
+  }))].sort((left, right) => parseSquare(left) - parseSquare(right));
+}
+
 function doubleStepEnPassant(
   state: GameState,
   pawn: PieceState,
@@ -2734,19 +2768,20 @@ function playAssassin(state: GameState, target: unknown, cardInstanceId?: unknow
   return { ok: true, state: resolved };
 }
 
-function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unknown, cardId = 'dark-mirror'): ApplyResult {
   const color = state.turn.color;
+  const name = CARD_CATALOG[cardId].name;
   if (
     (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card =>
-      card.cardId === 'dark-mirror' && (cardInstanceId === undefined || card.id === cardInstanceId),
+      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
     )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Dark Mirror is not in your hand.');
+  ) return reject(state, 'CARD_NOT_IN_HAND', `${name} is not in your hand.`);
   if (state.turn.cardPlays[color] >= 1) {
     return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
   }
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
-    return reject(state, 'INVALID_TIMING', 'Dark Mirror is played instead of the regular move.');
+    return reject(state, 'INVALID_TIMING', `${name} is played instead of the regular move.`);
   }
   const moves = parseCardMoves(target, 1);
   if (
@@ -2760,7 +2795,7 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
     || Reflect.ownKeys((target as object[])[0]).length !== 2
     || !Object.hasOwn((target as object[])[0], 'from')
     || !Object.hasOwn((target as object[])[0], 'to')
-  ) return reject(state, 'INVALID_TARGET', 'Choose exactly one backward diagonal Pawn capture.');
+  ) return reject(state, 'INVALID_TARGET', 'Choose exactly one Pawn capture.');
 
   const [move] = moves;
   const pawn = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
@@ -2769,10 +2804,10 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
     return reject(state, 'WRONG_OWNER', 'Choose a Pawn you control.');
   }
   if (!hasUnpromotedPawn(state, pawn)) {
-    return reject(state, 'WRONG_ROLE', 'Dark Mirror can move only an unpromoted original Pawn.');
+    return reject(state, 'WRONG_ROLE', `${name} can move only an unpromoted original Pawn.`);
   }
   if (hasCrabEffect(state, pawn.id)) {
-    return reject(state, 'INVALID_TARGET', 'Crab prevents that Pawn from using Dark Mirror.');
+    return reject(state, 'INVALID_TARGET', `Crab prevents that Pawn from using ${name}.`);
   }
   const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.to);
   if (!victim) return reject(state, 'INVALID_TARGET', 'The target square is empty.');
@@ -2786,10 +2821,12 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
   const fileDelta = squareFile(destination) - squareFile(source);
   const rankDelta = squareRank(destination) - squareRank(source);
   if (
-    Math.abs(fileDelta) + Math.abs(rankDelta) !== 2
-    || fileDelta * forwardFile + rankDelta * forwardRank !== -1
+    cardId === 'breakthrough'
+      ? !breakthroughDests(state, move.from).includes(move.to)
+      : Math.abs(fileDelta) + Math.abs(rankDelta) !== 2
+        || fileDelta * forwardFile + rankDelta * forwardRank !== -1
   ) {
-    return reject(state, 'ILLEGAL_MOVE', 'That is not a legal Dark Mirror capture.');
+    return reject(state, 'ILLEGAL_MOVE', `That is not a legal ${name} capture.`);
   }
   if (captureForbidden(state, pawn) || captureImmune(state, victim)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot capture or the target cannot be captured.');
@@ -2803,16 +2840,16 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
   completeReplacementMove(resolved, color, true, [], [resolvedPawn, victim]);
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'dark-mirror', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
+    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (moveLeavesRoyalInCheck(resolved, color, [resolvedPawn])) {
-    return fizzleCard(state, 'dark-mirror', 'SELF_CHECK', cardInstanceId, !wasInCheck);
+    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
-  spendCard(resolved, 'dark-mirror', cardInstanceId);
+  spendCard(resolved, cardId, cardInstanceId);
   resolved.history.push({
     type: 'cardPlayed',
-    cardId: 'dark-mirror',
+    cardId,
     target: moves,
     capturedId: victim.id,
   });
@@ -4058,6 +4095,7 @@ function playCardUnchecked(state: GameState, cardId: string, target: unknown, ca
   if (cardId === 'toll') return playToll(state, target, cardInstanceId);
   if (cardId === 'assassin') return playAssassin(state, target, cardInstanceId);
   if (cardId === 'dark-mirror') return playDarkMirror(state, target, cardInstanceId);
+  if (cardId === 'breakthrough') return playDarkMirror(state, target, cardInstanceId, cardId);
   if (cardId === 'forbidden-city') return playForbiddenCity(state, target, cardInstanceId);
   if (cardId === 'disintegration') return playDisintegration(state, target, cardInstanceId);
   if (cardId === 'doomsayer') return playDoomsayer(state, target, cardInstanceId);
@@ -4120,7 +4158,7 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
   }
   if (captureRequired && result.ok && result.state.turn.moveMade) {
     const event = result.state.history.at(-1);
-    const victim = event?.cardId === 'dark-mirror' && event.capturedId
+    const victim = (event?.cardId === 'dark-mirror' || event?.cardId === 'breakthrough') && event.capturedId
       ? state.pieces.find(piece => piece.id === event.capturedId)
       : undefined;
     if (!victim || victim.owner !== opposite(state.turn.color)) {
@@ -4131,6 +4169,10 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'breakthrough') {
+    return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square
+      ? breakthroughDests(state, piece.square).map(to => [{ from: piece.square!, to }]) : []);
+  }
   if (cardId === 'vulture') return !state.outcome && playVulture(state, undefined).ok ? [undefined] : [];
   if (cardId === 'truce') return !state.outcome && playTruce(state, undefined).ok ? [undefined] : [];
   if (cardId === 'panic') {

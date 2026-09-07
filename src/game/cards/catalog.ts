@@ -323,6 +323,16 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  breakthrough: {
+    id: 'breakthrough',
+    name: 'Breakthrough',
+    points: 6,
+    unique: false,
+    image: '/KC10_card1.png',
+    description: 'On this move, one of your Pawns can capture by moving forward. It cannot move forward unless it captures. If for any reason this Pawn could already capture by a forward move, this card lets it capture with a diagonal move instead.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   evangelists: {
     id: 'evangelists',
     name: 'Evangelists',
