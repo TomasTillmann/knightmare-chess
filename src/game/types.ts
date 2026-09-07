@@ -63,6 +63,18 @@ export interface EvangelistsTarget {
   opponent: SquareName;
 }
 
+export type EarthquakeDirection = 'clockwise' | 'counterclockwise';
+
+export interface PromotionDeclaration {
+  square: SquareName;
+  role: 'queen' | 'rook' | 'bishop' | 'knight';
+}
+
+export interface EarthquakeTarget {
+  direction: EarthquakeDirection;
+  promotions: PromotionDeclaration[];
+}
+
 export type DoomsayerRole = Exclude<Role, 'king'>;
 
 export interface DoomsayerEffect {
@@ -78,10 +90,38 @@ export interface PacifismEffect {
   pieceId: string;
 }
 
+export interface CrabEffect {
+  type: 'crab';
+  owner: Color;
+  card: CardInstance;
+  pieceId: string;
+}
+
+export interface ForbiddenCityEffect {
+  type: 'forbidden-city';
+  owner: Color;
+  card: CardInstance;
+  square: SquareName;
+}
+
 export interface VendettaEffect {
   type: 'vendetta';
   owner: Color;
   card: CardInstance;
+}
+
+export interface PanicEffect {
+  type: 'panic';
+  owner: Color;
+  player: Color;
+  durationMs: 15000;
+}
+
+export interface ConfabulationEffect {
+  type: 'confabulation';
+  owner: Color;
+  card: CardInstance;
+  pieceIds: [string, string];
 }
 
 export interface PendingDoomsayerState {
@@ -115,7 +155,7 @@ export interface GameEvent {
   immediate?: boolean;
   movement?: CardMove[];
   preservePreviousMove?: boolean;
-  target?: SquareName | CardMove[] | HolyWarTarget | AnathemaTarget | SiegeTarget | EvangelistsTarget;
+  target?: SquareName | CardMove[] | readonly PromotionDeclaration[] | HolyWarTarget | AnathemaTarget | SiegeTarget | EvangelistsTarget | EarthquakeTarget;
   reason?: 'DIRECT_MATE' | 'SELF_CHECK';
   from?: SquareName;
   to?: SquareName;
@@ -139,6 +179,7 @@ export interface GameState {
   enPassant: EnPassantOpportunity[];
   pendingRescue?: PendingRescueState | null;
   pendingDoomsayer?: PendingDoomsayerState | null;
+  turnCheckpoint?: GameState | null;
   outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' } | null;
 }
 
@@ -147,6 +188,7 @@ export type GameAction =
   | { type: 'playCard'; cardId: CardId; cardInstanceId?: unknown; target?: unknown }
   | { type: 'namePiece'; speaker: Color; name: DoomsayerRole; losses: DoomsayerLoss[] }
   | { type: 'declineDoomsayer'; player?: unknown; color?: unknown }
+  | { type: 'panicTimeout' }
   | { type: 'endTurn' };
 
 export type GameErrorCode =

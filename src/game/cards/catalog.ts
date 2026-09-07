@@ -12,6 +12,71 @@ export interface CardDefinition {
 }
 
 export const CARD_CATALOG: Record<CardId, CardDefinition> = {
+  truce: {
+    id: 'truce',
+    name: 'Truce',
+    points: 5,
+    unique: false,
+    image: '/KC9_card2.png',
+    description: 'Capture is now forbidden. This effect lasts until a King is in check or a stalemate occurs. If a stalemate occurs, discard this card and start counting moves again for the purpose of determining stalemate.',
+    timing: ['afterMove'],
+    continuing: true,
+  },
+  'forbidden-city': {
+    id: 'forbidden-city',
+    name: 'Forbidden City',
+    points: 5,
+    unique: false,
+    image: '/KC7_card3.png',
+    description:
+      'Place a marker in any unoccupied square. No pieces can enter this square, or pass through it, for the rest of the game. Knights and other "jumping" pieces may still pass over it.',
+    timing: ['afterMove'],
+    continuing: true,
+  },
+  confabulation: {
+    id: 'confabulation',
+    name: 'Confabulation',
+    points: 5,
+    unique: false,
+    image: '/KC7_card4.png',
+    description:
+      'Make a legal move which puts two of your pieces (other than Kings) on the same square. These two pieces "merge" into a new piece. It can move, capture, and be affected by cards like either one of them. Move the two pieces together. Confabulated Pawns cannot promote.',
+    timing: ['beforeMove'],
+    continuing: true,
+  },
+  ghostwalk: {
+    id: 'ghostwalk',
+    name: 'Ghostwalk',
+    points: 5,
+    unique: false,
+    image: '/KC8_card1.png',
+    description:
+      'On this move, one of your pieces gains the ability to pass through your own pieces. It may not pass through enemy pieces, and must end its move on an empty square, without capturing. Its move must be otherwise legal.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
+  'irresistible-force': {
+    id: 'irresistible-force',
+    name: 'Irresistible Force',
+    points: 5,
+    unique: false,
+    image: '/KC8_card2.png',
+    description:
+      'Move one of your Pawns to the occupied square in front of it, by pushing the piece occupying that square to the next square. If that square is occupied, the piece there is pushed to the next square, and so on. If a piece is pushed from the last rank off the chessboard, it is taken! A King cannot be pushed.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
+  masquerade: {
+    id: 'masquerade',
+    name: 'Masquerade',
+    points: 5,
+    unique: false,
+    image: '/KC8_card3.png',
+    description:
+      'Move one of your pieces, except a Pawn, as if it were a Queen. You cannot capture a piece with this move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
   assassin: {
     id: 'assassin',
     name: 'Assassin',
@@ -109,6 +174,49 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  doppelganger: {
+    id: 'doppelganger',
+    name: 'Doppelganger',
+    points: 4,
+    unique: false,
+    image: '/KC4_card4.png',
+    description:
+      'Move one of your pieces (except a Pawn) as if it were a piece of the same kind as the one your opponent has just moved. You cannot capture a piece with this move.',
+    timing: ['beforeMove'],
+    continuing: false,
+  },
+  rebirth: {
+    id: 'rebirth',
+    name: 'Rebirth',
+    points: 4,
+    unique: true,
+    image: '/KC6_card1.png',
+    description:
+      'Move one enemy piece to any square it could have occupied at the beginning of the game. The square must be empty or contain one of your pieces. If one of your pieces is in the square, it is captured.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
+  revenge: {
+    id: 'revenge',
+    name: 'Revenge',
+    points: 4,
+    unique: false,
+    image: '/KC6_card2.png',
+    description: "Remove one of your opponent's Pawns from the chessboard. It is regarded as captured.",
+    timing: ['afterOpponentMove'],
+    continuing: false,
+  },
+  toll: {
+    id: 'toll',
+    name: 'Toll',
+    points: 4,
+    unique: false,
+    image: '/KC6_card3.png',
+    description:
+      'Play this card when your opponent has just moved a piece toward you across the "frontier" - the line separating your half of the board from his. He must "pay" by choosing a Pawn to lose. If he does not wish to pay, his turn is canceled. He gets back any card he used, but he cannot make another move.',
+    timing: ['afterOpponentMove'],
+    continuing: false,
+  },
   bog: {
     id: 'bog',
     name: 'Bog',
@@ -171,6 +279,28 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     image: '/KC6_card4.png',
     description: 'Swap the positions of a Bishop and a Rook belonging to your opponent.',
     timing: ['afterMove'],
+    continuing: false,
+  },
+  crab: {
+    id: 'crab',
+    name: 'Crab',
+    points: 5,
+    unique: false,
+    image: '/KC7_card1.png',
+    description:
+      'One of your Pawns becomes a Crab for the rest of the game. Place a marker underneath it as a reminder. A Crab moves and captures diagonally, like a Bishop, but only forward and only one square at a time. If a Crab reaches the last rank, it is promoted like a regular Pawn.',
+    timing: ['afterMove'],
+    continuing: true,
+  },
+  'dark-mirror': {
+    id: 'dark-mirror',
+    name: 'Dark Mirror',
+    points: 5,
+    unique: false,
+    image: '/KC7_card2.png',
+    description:
+      'On this move, one of your Pawns can capture by moving diagonally backward instead of forward.',
+    timing: ['beforeMove'],
     continuing: false,
   },
   evangelists: {
@@ -276,6 +406,28 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['beforeMove'],
     continuing: false,
   },
+  earthquake: {
+    id: 'earthquake',
+    name: 'Earthquake',
+    points: 4,
+    unique: false,
+    image: '/KC5_card2.png',
+    description:
+      'Turn the chessboard 90 degrees in any direction. Pawns move away from their owner, any in the new last rank is promoted, your opponent promoting first. Pawns in the first rank can move one or two squares forward. If undone, the rotation is reversed with the same rules.',
+    timing: ['afterMove'],
+    continuing: true,
+  },
+  'figure-dance': {
+    id: 'figure-dance',
+    name: 'Figure Dance',
+    points: 4,
+    unique: false,
+    image: '/KC5_card3.png',
+    description:
+      'Move every piece on a corner square one corner counterclockwise. Pawns reaching their last rank are promoted.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
   'squaring-the-circle': {
     id: 'squaring-the-circle',
     name: 'Squaring the Circle',
@@ -295,6 +447,28 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     image: '/KC5_card4.png',
     description:
       'Play this card after you capture any enemy piece without using a card. The captured piece is now dead and cannot be brought back into play with another card.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
+  panic: {
+    id: 'panic',
+    name: 'Panic',
+    points: 5,
+    unique: false,
+    image: '/KC8_card4.png',
+    description:
+      'Your opponent has 15 seconds to make his next move. If he has not moved within this time, he loses his turn.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
+  'peace-talks': {
+    id: 'peace-talks',
+    name: 'Peace Talks',
+    points: 5,
+    unique: false,
+    image: '/KC9_card1.png',
+    description:
+      'Remove any one "continuing effect" card from play, placing it in the owner\'s discard pile. The effect of that card is immediately cancelled. If any piece is left in an illegal situation, its owner must correct the problem on his next move or lose that piece.',
     timing: ['afterMove'],
     continuing: false,
   },
