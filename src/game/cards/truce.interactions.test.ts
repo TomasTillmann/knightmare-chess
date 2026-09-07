@@ -54,7 +54,10 @@ test('Truce permits quiet moves without mutating the input', () => {
   const next = act(state, { type: 'move', from: 'a1', to: 'b1' });
   assert.deepEqual(state, before);
   assert.equal(next.pieces.find(piece => piece.id === 'white-rook-a1')?.square, 'b1');
-  assert.equal(next.history.at(-1)?.previousFen, state.fen);
+  assert.deepEqual(next.history.slice(0, -1), before.history);
+  assert.equal(next.history.at(-1)?.type, 'move');
+  assert.equal(next.history.at(-1)?.from, 'a1');
+  assert.equal(next.history.at(-1)?.to, 'b1');
   assert.equal(boardFen(next), next.fen.split(' ')[0]);
   assert.deepEqual(next.effects, state.effects);
 });
