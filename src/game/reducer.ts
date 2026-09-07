@@ -1829,6 +1829,9 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
   const resolved = structuredClone(state);
   losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured');
   resolved.fen = [boardFen(resolved), ...state.fen.split(' ').slice(1)].join(' ');
+  const setup = parseFen(resolved.fen).unwrap();
+  setup.halfmoves = 0;
+  resolved.fen = makeFen(setup);
   resolved.enPassant = structuredClone(state.enPassant);
   if (!isOrdinaryCheckmate(state, mover) && isOrdinaryCheckmate(resolved, mover)) {
     const result = fizzleCard(state, 'toll', 'DIRECT_MATE', selected.id, false, reactor);
