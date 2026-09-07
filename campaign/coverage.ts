@@ -7,8 +7,11 @@ const directory = new URL('./iterations/', import.meta.url);
 const catalog = Object.keys(CARD_CATALOG).sort();
 const cards = Object.fromEntries(catalog.map(id => [id, { dealt: 0, sampled: 0, played: 0, applied: 0, fizzled: 0 }]));
 const runs = readdirSync(directory).filter(name => /^\d{3}\.json$/.test(name)).sort();
+const ledger = JSON.parse(readFileSync(new URL('./progress.json', import.meta.url), 'utf8'));
 let moves = 0;
 let actions = 0;
+let reviewedMoves = 0;
+let reviewedActions = 0;
 const failures: string[] = [];
 const seeds = new Set<number>();
 for (const name of runs) {
@@ -23,10 +26,16 @@ for (const name of runs) {
     for (const id of hand) cards[id]!.dealt++;
   }
   for (const [id, count] of Object.entries(trace.sampledCards)) cards[id]!.sampled += count;
-  for (const step of trace.steps) if (step.action.type === 'playCard') cards[step.action.cardId]!.played++;
+  const entry = ledger.iterations.find((item: { id: number; status: string }) =>
+    item.id === Number(name.slice(0, 3)) && ['passed', 'fixed'].includes(item.status));
+  const reviewed = entry?.reviewedActions ?? 0;
+  // The offending action has a corrected regression, but its generated state is invalid.
+  const accepted = entry?.status === 'fixed' ? reviewed - 1 : reviewed;
+  assert.ok(accepted >= 0 && accepted <= trace.steps.length);
+  for (const step of trace.steps.slice(0, accepted)) if (step.action.type === 'playCard') cards[step.action.cardId]!.played++;
   const rows = readFileSync(new URL(name.replace('.json', '.txt'), directory), 'utf8').split('\n').filter(line => line.startsWith('{'));
   assert.equal(rows.length, trace.steps.length);
-  for (const line of rows) {
+  for (const line of rows.slice(0, accepted)) {
     const row = JSON.parse(line);
     if (row.action.type !== 'playCard') continue;
     const kind = row.events.at(-1)?.type;
@@ -35,13 +44,16 @@ for (const name of runs) {
   }
   moves += trace.moves;
   actions += trace.steps.length;
+  reviewedActions += reviewed;
+  reviewedMoves += trace.steps.slice(0, reviewed).filter(step => step.action.type === 'move').length;
   if (trace.failure || trace.moves !== 50) failures.push(`${name}: ${trace.failure ?? 'short trace'}`);
 }
-console.log(JSON.stringify({ generatedIterations: runs.length, moves, actions, failures,
+console.log(JSON.stringify({ generatedIterations: runs.length, moves, actions, reviewedMoves, reviewedActions, failures,
   sampledCardTypes: catalog.filter(id => cards[id]!.sampled > 0).length,
   playedCardTypes: catalog.filter(id => cards[id]!.played > 0).length,
   appliedCardTypes: catalog.filter(id => cards[id]!.applied > 0).length,
   neverPlayed: catalog.filter(id => !cards[id]!.played), cards,
   limitations: ['Legal availability is state dependent.', 'Terminal candidates are conditioned out.',
     'Mandatory self-check rescue searches legal cards in random order.',
-    'Generated traces require a separate fresh-agent semantic review before acceptance.'] }, null, 2));
+    'Dealt and sampled counts cover generated traces; played/applied/fizzled cover only reviewed valid prefixes.',
+    'An offending action and its unreviewed suffix do not count as validated card coverage.'] }, null, 2));

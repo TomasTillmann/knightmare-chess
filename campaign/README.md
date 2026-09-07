@@ -32,4 +32,6 @@ audits, resolved confirmed findings, a full engine test pass, and typecheck.
 ## Progress
 
 Runner validated independently on seed 859999: 50 moves, 110 actions, replay passed.
-Iterations 001–003 are in fresh-agent review; 0 / 300 accepted so far.
+The durable acceptance ledger is `progress.json`. Each accepted entry records its
+reviewed prefix, final position, and regression commit. Confirmed bug prefixes
+exclude their offending generated state and unreviewed suffix from valid card coverage.

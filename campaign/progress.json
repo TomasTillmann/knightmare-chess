@@ -1,0 +1,115 @@
+{
+  "requestedIterations": 300,
+  "nextIteration": 11,
+  "coverageAuditsCompleted": 0,
+  "iterations": [
+    {
+      "id": 1,
+      "agent": "iteration_001",
+      "seed": 860001,
+      "reviewedActions": 130,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finding": "False alarm: Doomsayer namePiece escape was omitted by generator; tool corrected",
+      "testCommit": "9283346",
+      "finalFen": "2r4P/6R1/1P2P2p/kp5n/6qP/1QP1BP2/P4K2/rN5R b - - 1 30"
+    },
+    {
+      "id": 2,
+      "agent": "iteration_002",
+      "seed": 860002,
+      "reviewedActions": 63,
+      "reviewedMoves": 27,
+      "status": "fixed",
+      "finding": "Failed Man-Trap rescue leaves new effect active",
+      "testCommit": "9c1772f",
+      "fixCommit": "cafd2cf",
+      "audit": "audit-002.md",
+      "parentAuditExtraProbes": 2,
+      "finalFen": "r3kbnr/2p3p1/B4pn1/1p1p3p/2BP2P1/2P3PN/PP5P/RNbK3R b kq - 3 14"
+    },
+    {
+      "id": 3,
+      "agent": "iteration_003",
+      "seed": 860003,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "testCommit": "5863932",
+      "finalFen": "2b1r3/1p1nk3/bPp5/3pppNq/P3r1p1/1R1PR1P1/3PQK2/n1B2B2 b - - 5 27"
+    },
+    {
+      "id": 4,
+      "agent": "iteration_004",
+      "seed": 860004,
+      "reviewedActions": 106,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "Bnq2k1B/1bpp3p/pr5n/1p2bp2/P2PPPP1/1P6/R1P4P/3K1NNR w - - 0 26",
+      "testCommit": "3b0dafb"
+    },
+    {
+      "id": 5,
+      "agent": "iteration_005",
+      "seed": 860005,
+      "status": "fixed",
+      "reviewedActions": 47,
+      "reviewedMoves": 21,
+      "finalFen": "1n1q1knr/r1pp2p1/1p1bQp2/pb5p/P1P1p3/4PN2/1P1K1PPP/RNB2B1R w - - 1 12",
+      "testCommit": "483c634",
+      "finding": "Failed Earthquake rescue did not restore expired Truce",
+      "fixCommit": "7e21e56",
+      "audit": "audit-005.md"
+    },
+    {
+      "id": 6,
+      "agent": "iteration_006",
+      "seed": 860006,
+      "reviewedActions": 110,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2r1kbnr/5p1p/8/N1pNP1p1/1Pb1P3/P5PP/6Bn/1R2K1BR b k - 0 26",
+      "testCommit": "1fb4f2f"
+    },
+    {
+      "id": 7,
+      "agent": "iteration_007",
+      "seed": 860007,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rn3kr1/p1Pp1b1P/Q1N1P1p1/p7/7P/1RN1bP2/2P2pK1/2q3R1 w - - 1 29",
+      "testCommit": "38e2eba"
+    },
+    {
+      "id": 8,
+      "agent": "iteration_008",
+      "seed": 860008,
+      "reviewedActions": 108,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "Pnb1k2q/p1b2r1p/2pr2p1/2n1ppN1/N1PP1P2/4K1PP/P1QP4/R2B1RB1 b - - 3 26",
+      "testCommit": "cf018a2"
+    },
+    {
+      "id": 9,
+      "agent": "iteration_009",
+      "seed": 860009,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2Pqkb1R/rp2pppp/3n3n/4Q3/R1b4r/3P4/1PPPP2N/bNBQ1BKN w - - 3 28",
+      "testCommit": "0c69956"
+    },
+    {
+      "id": 10,
+      "agent": "iteration_010",
+      "seed": 860010,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1n1qk3/3p4/r1ppp1p1/1p2b2B/1BN5/4b3/P1PP1P2/5RNK b - - 2 26",
+      "testCommit": "bf24b00"
+    }
+  ]
+}

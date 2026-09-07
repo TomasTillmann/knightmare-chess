@@ -1,0 +1,32 @@
+# Fresh iteration agent instructions
+
+Own only your assigned `src/game/cards/random-NNN.test.ts` and generated
+`campaign/iterations/NNN.json` / `.txt` artifacts. No production or runner edits,
+commits, UI tests, or full engine suite. Parent records the initial target hash.
+
+1. Within 30 seconds apply a real `*** Update File` to the assigned placeholder:
+   add a runnable `node:test` using `readFileSync(new URL('../../../campaign/iterations/NNN.json', import.meta.url))`
+   and `replayTrace` / `RandomTrace` from `./random-campaign.js`. Before this patch,
+   inspect only this instruction, assigned target, narrowly relevant public APIs/rules.
+2. Run `node --import tsx campaign/run.ts generate N`. Artifact writes are user
+   authorized; use `require_escalated` if necessary. Preserve all generated files.
+3. Read EVERY generated `.txt` action row in manageable batches. Independently
+   reason in order against `rules.md`, `cards.md`, and printed catalog metadata:
+   actual movement paths, captures, identity, promotion, King safety, card timing,
+   targets, spending/drawing/discard, effects/rewinds, turn/clock/en-passant state.
+   Reducer acceptance and state hashes are not independent semantic proof.
+4. Preserve one explicit numbered rationale per action in the test, and assert
+   rationale count equals the reviewed action count. Do not auto-label passes.
+   Stop at the FIRST suspicious invalid state, document precise expected state
+   and rule, and write a targeted failing expectation. Later generated actions
+   remain unreviewed and must not be counted as passed. A runner stall may be
+   missed legal input or a legitimate terminal position; investigate that distinction.
+5. Run only `node --import tsx --test src/game/cards/random-NNN.test.ts` and
+   `npm run typecheck`. Report a PASS only for 50 move commands plus every
+   intervening action reviewed. A confirmed defect may yield an earlier prefix,
+   which goes to a new verifier/fixer. Never approve the engine's wrong state.
+6. Return `ITERATION_NNN_PASS` or `ITERATION_NNN_FINDING`, action/move/card counts,
+   final FEN, exact gate results, and elapsed time. Parent verifies and commits.
+
+The user requests one fresh agent for every iteration. The 50-move review is the
+bounded responsibility; the earlier 45-second audit shape does not replace it.

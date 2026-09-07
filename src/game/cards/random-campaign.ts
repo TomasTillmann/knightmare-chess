@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { Chess } from 'chessops/chess';
 import { makeBoardFen, parseFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
-import { applyAction, cardPlayTargets, legalDests, underElfHillReturnSquares } from '../reducer.js';
+import { activeDoomsayers, applyAction, cardPlayTargets, doomsayerTargets, legalDests, underElfHillReturnSquares } from '../reducer.js';
 import { createGameState, type CreateGameOptions } from '../state.js';
 import type { GameAction, GameState } from '../types.js';
 import { CARD_CATALOG } from './catalog.js';
@@ -85,7 +85,7 @@ export function replayTrace(trace: RandomTrace): GameState {
   return state;
 }
 
-export function generateTrace(seed: number, progress?: (step: number, moves: number) => void): { trace: RandomTrace; review: string } {
+export function generateTrace(seed: number, progress?: (step: number, moves: number, state: GameState) => void): { trace: RandomTrace; review: string } {
   let randomState = seed >>> 0;
   const random = () => {
     randomState += 0x6d2b79f5;
@@ -109,14 +109,16 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
   const trace: RandomTrace = { seed, initial, steps: [], moves: 0, finalFen: state.fen, sampledCards: {} };
   const lines = [`Seed ${seed}; standard starting board; shuffled catalog house-variant decks (rules §4.3).`,
     'Each row must be independently reviewed against rules.md/cards.md; hashes alone are not an oracle.'];
-  for (let index = 0; trace.moves < 50 && index < 400; index++) {
-    progress?.(index, trace.moves);
+  const unresolved = () => !state.outcome && (state.turn.moveMade || state.pendingRescue || state.pendingAbduction
+    || state.pendingDoomsayer || state.underElfHill?.some(entry => entry.returning && !entry.returned));
+  for (let index = 0; (trace.moves < 50 || unresolved()) && index < 400; index++) {
+    progress?.(index, trace.moves, state);
     const original = digest(state);
     let chosen: { action: GameAction; state: GameState } | undefined;
     const attempt = (action: GameAction): boolean => {
       const result = applyAction(state, action);
       assert.equal(digest(state), original, 'candidate evaluation mutated its input');
-      if (!result.ok || result.state.outcome) return false;
+      if (!result.ok || result.state.outcome && trace.moves < 50) return false;
       chosen = { action, state: result.state };
       return true;
     };
@@ -153,6 +155,8 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       for (const to of shuffle(underElfHillReturnSquares(state))) if (attempt({ type: 'returnKing', to })) break;
     } else if (state.pendingRescue) {
       cards(true);
+    } else if (trace.moves >= 50) {
+      attempt({ type: 'endTurn' });
     } else {
       if (random() % 3 !== 0) cards();
       if (!chosen && !state.turn.moveMade) {
@@ -167,6 +171,22 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       }
       if (!chosen) attempt({ type: 'endTurn' });
       if (!chosen) cards();
+      if (!chosen) {
+        const active = activeDoomsayers(state);
+        const combinations = <T>(items: T[], count: number): T[][] => count === 0 ? [[]]
+          : items.flatMap((item, index) => combinations(items.slice(index + 1), count - 1).map(rest => [item, ...rest]));
+        for (const name of shuffle(['pawn', 'knight', 'bishop', 'rook', 'queen'] as const)) {
+          if (!active.length) break;
+          const pieces = shuffle(doomsayerTargets(state, state.turn.color, name));
+          for (const selected of combinations(pieces, Math.min(pieces.length, active.length))) {
+            if (!selected.length) continue;
+            if (attempt({ type: 'namePiece', speaker: state.turn.color, name,
+              losses: selected.map((piece, index) => ({ effectId: active[index]!.card.id, pieceId: piece.id })) })) break;
+          }
+          if (chosen) break;
+        }
+      }
+      if (!chosen) cards(true);
     }
     if (!chosen) { trace.failure = `No continuing action at step ${index + 1}; outcome=${JSON.stringify(state.outcome)}`; break; }
     const { action, state: after } = chosen;
@@ -191,7 +211,7 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
     if (trace.failure) break;
   }
   trace.finalFen = state.fen;
-  if (trace.moves < 50 && !trace.failure) trace.failure = '400-action bound exhausted';
+  if ((trace.moves < 50 || unresolved()) && !trace.failure) trace.failure = '400-action bound exhausted';
   lines.push(`FINAL ${JSON.stringify({ moves: trace.moves, fen: trace.finalFen, failure: trace.failure })}`);
   return { trace, review: lines.join('\n') + '\n' };
 }
