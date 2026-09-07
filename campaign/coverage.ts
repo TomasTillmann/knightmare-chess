@@ -4,9 +4,12 @@ import { CARD_CATALOG } from '../src/game/cards/catalog.js';
 import type { RandomTrace } from '../src/game/cards/random-campaign.js';
 
 const directory = new URL('./iterations/', import.meta.url);
+const throughIteration = Number(process.argv[2] ?? 300);
+assert.ok(Number.isInteger(throughIteration) && throughIteration >= 1 && throughIteration <= 300);
 const catalog = Object.keys(CARD_CATALOG).sort();
 const cards = Object.fromEntries(catalog.map(id => [id, { dealt: 0, sampled: 0, played: 0, applied: 0, fizzled: 0 }]));
-const runs = readdirSync(directory).filter(name => /^\d{3}\.json$/.test(name)).sort();
+const runs = readdirSync(directory).filter(name => /^\d{3}\.json$/.test(name)
+  && Number(name.slice(0, 3)) <= throughIteration).sort();
 const ledger = JSON.parse(readFileSync(new URL('./progress.json', import.meta.url), 'utf8'));
 let moves = 0;
 let actions = 0;
@@ -62,7 +65,7 @@ for (const name of runs) {
   reviewedMoves += trace.steps.slice(0, reviewed).filter(step => step.action.type === 'move').length;
   if (trace.failure || trace.moves !== 50) failures.push(`${name}: ${trace.failure ?? 'short trace'}`);
 }
-console.log(JSON.stringify({ generatedIterations: runs.length, moves, actions, reviewedMoves, reviewedActions,
+console.log(JSON.stringify({ throughIteration, generatedIterations: runs.length, moves, actions, reviewedMoves, reviewedActions,
   validMoves, validActions, actionTypes, cardTargetShapes, cardTimings, failures,
   sampledCardTypes: catalog.filter(id => cards[id]!.sampled > 0).length,
   playedCardTypes: catalog.filter(id => cards[id]!.played > 0).length,

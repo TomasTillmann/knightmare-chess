@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 17,
+  "nextIteration": 20,
   "coverageAuditsCompleted": 1,
   "iterations": [
     {
@@ -149,6 +149,40 @@
       "fixCommit": "573c231",
       "audit": "audit-013.md",
       "additionalRegressionCommit": "7222d15"
+    },
+    {
+      "id": 14,
+      "agent": "iteration_014",
+      "seed": 860014,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2kp1rP1/1np2p2/5b2/3bp1p1/pp1Q2rP/P3P3/2B1N2R/R1B2K2 b - - 0 27",
+      "testCommit": "ab67b30"
+    },
+    {
+      "id": 15,
+      "agent": "iteration_015",
+      "seed": 860015,
+      "reviewedActions": 65,
+      "reviewedMoves": 30,
+      "status": "fixed",
+      "finalFen": "b4bnr/p1pP1N2/np1kp1p1/1B3p1p/Q6P/q3P1r1/PP1P1PP1/RNB2K1R b - - 3 16",
+      "observedFinalFenBeforeFix": "b4bnr/p1pP1N2/np1kp1p1/1B3p1p/Q6P/q3P1r1/PP1P1PP1/RNB2K1R b - - 3 16",
+      "testCommit": "1395cf9",
+      "finding": "Successful Chaos cancellation misclassified as self-check fizzle",
+      "fixCommit": "62b02df",
+      "audit": "audit-015.md"
+    },
+    {
+      "id": 16,
+      "agent": "iteration_016",
+      "seed": 860016,
+      "reviewedActions": 114,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4k3/6r1/7n/2n5/8/P6N/3q4/5K1R w - - 0 28",
+      "testCommit": "bf96cdd"
     }
   ],
   "coverageAudits": [

@@ -15,6 +15,8 @@ Run generation: `node --import tsx campaign/run.ts generate N`.
 Run replay: `node --import tsx campaign/run.ts replay N`.
 Run one test: `node --import tsx --test src/game/cards/random-NNN.test.ts`.
 Only engine tests and typecheck are permitted.
+Run a coverage checkpoint through a numbered iteration with
+`node --import tsx campaign/coverage.ts 20`; later in-flight runs are excluded.
 
 Sampling: independently shuffled full catalog decks, five-card hands, using the
 explicit temporary deck-building variant in rules §4.3. Randomized candidate order
