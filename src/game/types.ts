@@ -149,6 +149,8 @@ export interface PlayerState {
 
 export interface GameEvent {
   type: 'move' | 'cardPlayed' | 'cardFizzled' | 'pieceNamed' | 'doomsayerDeclined';
+  movedPieceId?: string;
+  movedRoles?: Role[];
   cardId?: CardId;
   capturedId?: string;
   capturedIds?: string[];

@@ -343,6 +343,16 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     timing: ['afterMove'],
     continuing: false,
   },
+  charge: {
+    id: 'charge',
+    name: 'Charge!',
+    points: 6,
+    unique: false,
+    image: '/KC10_card3.png',
+    description: 'One of your Knights can make two moves in a row, as long as it does not capture anything with its first move.',
+    timing: ['afterMove'],
+    continuing: false,
+  },
   evangelists: {
     id: 'evangelists',
     name: 'Evangelists',

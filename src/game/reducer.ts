@@ -3826,6 +3826,62 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
   return { ok: true, state: resolved };
 }
 
+function chargeKnight(state: GameState): PieceState | undefined {
+  const move = reactionEvent(state);
+  if (move?.type !== 'move' || move.capturedId || move.capturedIds?.length
+    || (move.movedRoles && !move.movedRoles.includes('knight'))) return undefined;
+  return state.pieces.find(piece => (!move.movedPieceId || piece.id === move.movedPieceId)
+    && piece.zone === 'board' && piece.square === move.to
+    && (piece.owner === state.turn.color || piece.neutral)
+    && hasRole(state, piece, 'knight'));
+}
+
+function playCharge(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  const color = state.turn.color;
+  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card => card.cardId === 'charge'
+      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'Charge! is not in your hand.');
+  }
+  if (state.turn.cardPlays[color] >= 1) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const previous = reactionEvent(state);
+  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade
+    || previous?.type !== 'move' || previous.capturedId || previous.capturedIds?.length) {
+    return reject(state, 'INVALID_TIMING', 'Charge! follows a quiet regular move by your Knight.');
+  }
+  const moves = parseCardMoves(target, 1);
+  if (!moves) return reject(state, 'INVALID_TARGET', 'Choose one valid Knight move.');
+  const knight = state.pieces.find(piece => piece.zone === 'board' && piece.square === moves[0].from);
+  if (!knight) return reject(state, 'INVALID_TARGET', 'Choose an occupied square.');
+  if (knight.owner !== color && !knight.neutral) return reject(state, 'WRONG_OWNER', 'Choose your Knight.');
+  if (!hasRole(state, knight, 'knight')) return reject(state, 'WRONG_ROLE', 'Charge! requires a Knight.');
+  if ((previous.movedPieceId && knight.id !== previous.movedPieceId) || knight.square !== previous.to
+    || (previous.movedRoles && !previous.movedRoles.includes('knight'))) {
+    return reject(state, 'INVALID_TARGET', 'Move the same Knight once more.');
+  }
+  const view = turnView(state, color);
+  const result = movePiece(view, { type: 'move', ...moves[0] }, 'defer', false);
+  if (!result.ok) return reject(state, result.error.code, result.error.message);
+  const resolved = result.state;
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
+    return fizzleCard(state, 'charge', 'DIRECT_MATE', cardInstanceId);
+  }
+  if (moveLeavesRoyalInCheck(resolved, color, physicalPieces(state, knight))) {
+    return fizzleCard(state, 'charge', 'SELF_CHECK', cardInstanceId);
+  }
+  resolved.turn = structuredClone(state.turn);
+  const setup = parseFen(resolved.fen).unwrap();
+  const previousSetup = parseFen(state.fen).unwrap();
+  setup.fullmoves = previousSetup.fullmoves;
+  if (setup.halfmoves > 0) setup.halfmoves = previousSetup.halfmoves;
+  resolved.fen = makeFen(setup);
+  spendCard(resolved, 'charge', cardInstanceId);
+  Object.assign(resolved.history.at(-1)!, {
+    type: 'cardPlayed', cardId: 'charge', target: moves, preservePreviousMove: false,
+  });
+  return { ok: true, state: resolved };
+}
+
 function playChallenge(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
@@ -4145,6 +4201,7 @@ function playVulture(state: GameState, target: unknown, cardInstanceId?: unknown
 }
 
 function playCardUnchecked(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (cardId === 'charge') return playCharge(state, target, cardInstanceId);
   if (cardId === 'challenge') return playChallenge(state, target, cardInstanceId);
   if (cardId === 'vulture') return playVulture(state, target, cardInstanceId);
   if (cardId === 'truce') return playTruce(state, target, cardInstanceId);
@@ -4239,6 +4296,15 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
+  if (cardId === 'charge') {
+    const knight = chargeKnight(state);
+    if (state.outcome || !knight?.square) return [];
+    return Array.from({ length: 64 }, (_, square) => [{ from: knight.square!, to: makeSquare(square) }])
+      .filter(target => {
+        const result = playCard(state, 'charge', target);
+        return result.ok && result.state.history.at(-1)?.type === 'cardPlayed';
+      });
+  }
   if (cardId === 'challenge') {
     if (state.outcome) return [];
     return state.pieces.flatMap(piece => {
@@ -4707,10 +4773,17 @@ function finishRegularMove(
   before: GameState,
   next: GameState,
   movedPieces: readonly PieceState[],
-  allowAfterMoveRescue: boolean,
+  allowAfterMoveRescue: boolean | 'defer',
 ): ApplyResult {
+  const event = next.history.at(-1)!;
+  if (before.players[before.turn.color].hand.some(card => card.cardId === 'charge')) {
+    event.movedPieceId = movedPieces[0].id;
+    event.movedRoles = [...new Set(movedPieces.flatMap(piece =>
+      piece.promoted ? [piece.role] : [piece.role, piece.originalRole]))];
+  }
   if (!challengeAllows(before, movedPieces)) return reject(before, 'ILLEGAL_MOVE', 'Challenge requires moving the named piece.');
   clearChallenge(next, before.turn.color);
+  if (allowAfterMoveRescue === 'defer') return { ok: true, state: next };
   if (!moveLeavesRoyalInCheck(next, before.turn.color, movedPieces)) {
     return { ok: true, state: next };
   }
@@ -4730,7 +4803,7 @@ function finishRegularMove(
 function movePiece(
   state: GameState,
   action: Extract<GameAction, { type: 'move' }>,
-  allowAfterMoveRescue = true,
+  allowAfterMoveRescue: boolean | 'defer' = true,
   enforceVendetta = true,
 ): ApplyResult {
   if (state.turn.moveMade || state.turn.phase !== 'beforeMove') {
@@ -5191,7 +5264,7 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
           : [];
       })
     : [];
-  event.preservePreviousMove = before.turn.phase === 'afterMove'
+  event.preservePreviousMove ??= before.turn.phase === 'afterMove'
     && before.turn.moveMade
     && !(before.pendingRescue && event.type === 'cardFizzled');
   return result;
