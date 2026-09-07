@@ -38,6 +38,9 @@ export function checkState(state: GameState): void {
   assert.equal(new Set(cards.map(card => card.id)).size, cards.length, 'a card cannot occupy two player zones');
   const fen = parseFen(state.fen).unwrap();
   // FEN advances when the move is made; turn.color retains the actor during reactions.
+  if (state.turn.phase === 'beforeMove' && !state.turn.moveMade) {
+    assert.equal(fen.turn, state.turn.color, 'before-move FEN must identify the next actor');
+  }
   assert.equal(fen.board.occupied.size(), board.length, 'FEN piece count agrees with physical board');
   for (const piece of board) {
     const encoded = fen.board.get(parseSquare(piece.square!)!);
