@@ -18,7 +18,9 @@ Only engine tests and typecheck are permitted.
 
 Sampling: independently shuffled full catalog decks, five-card hands, using the
 explicit temporary deck-building variant in rules §4.3. Randomized candidate order
-gives cards in hand equal proposal priority. Legal availability depends on timing,
+samples one card in hand uniformly before checking its timing and one random target.
+Mandatory self-check rescues search shuffled cards and targets for a legal cure.
+Legal availability depends on timing,
 targets, and the board; this is not a uniform distribution over reachable positions.
 Terminal candidates are avoided to pursue 50 actual regular moves. Such conditioning
 must be disclosed in coverage reports. A coverage audit is required after each 10
@@ -29,4 +31,5 @@ audits, resolved confirmed findings, a full engine test pass, and typecheck.
 
 ## Progress
 
-Preparation in progress; 0 / 300 iterations complete.
+Runner validated independently on seed 859999: 50 moves, 110 actions, replay passed.
+Iterations 001–003 are in fresh-agent review; 0 / 300 accepted so far.
