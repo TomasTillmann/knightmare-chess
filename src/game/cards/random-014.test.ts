@@ -1,0 +1,174 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { replayTrace, type RandomTrace } from './random-campaign.js';
+
+const trace: RandomTrace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/014.json', import.meta.url), 'utf8'));
+
+// Independent ordered review: rules §§8–13, 15.1/15.4, 17.1, 20–22; cards.md;
+// inspected artwork KC15_card1, KC11_card3, KC18_card4/2, KC7_card4,
+// KC5_card1, KC15_card3, KC20_card1, KC3_card2. Unmentioned identities,
+// hands and effects remain unchanged. Every safe completed move permits endTurn;
+// it resets both allowances, retains valid en-passant until the next move,
+// and does not itself advance clocks. No move here promotes or captures a King.
+const rationale = [
+  '1. White b2-b4 crosses empty b3; pawn clock resets, b3 en-passant opportunity appears, Ke1 stays safe.',
+  '2. White ends b4; Black starts beforeMove with b3 opportunity retained.',
+  '3. Black Nb8-c6 jumps to vacancy, expires b3, increments halfmove to 1 and fullmove to 2; Ke8 safe.',
+  '4. Black ends Nc6; White starts without resource changes.',
+  '5. White g2-g3 advances into vacancy, resetting pawn clock without exposing Ke1.',
+  '6. White ends g3; Black receives its move.',
+  '7. Black Ng8-h6 is an unobstructed Knight jump to vacancy; halfmove 1, fullmove 3, King safe.',
+  '8. Black ends Nh6; White receives its move.',
+  '9. White g3-g4 advances one into vacancy; pawn clock resets, no en-passant or check.',
+  '10. White Siege legally swaps own Nb1/Ra1 after moving. No capture or extra move; King safe, no mate. Non-move swap preserves history and clocks; spend Siege, draw Neutrality.',
+  '11. White ends after Siege; both allowances reset while swapped identities remain.',
+  '12. Black Ra8-b8 moves one into the vacated Knight square; queenside castling is lost, halfmove 1/fullmove 4.',
+  '13. Black ends Rb8 safely; White starts with unchanged cards.',
+  '14. White b4-b5 advances to vacancy and resets clock; no self-check.',
+  '15. White Haunting Memories copies latest non-unique Siege in afterMove timing: Na1/Rb1 swap back, preserving identities/history, no capture/mate; discard copy, draw Dubbing.',
+  '16. White ends the copied swap; Black starts, original White corner arrangement restored.',
+  '17. Black e7-e5 crosses empty e6, resets clock and establishes e6 opportunity; fullmove 5, Ke8 safe.',
+  '18. Black ends e5; White receives e6 opportunity.',
+  '19. White h2-h4 crosses empty h3; e6 expires, h3 opportunity replaces it, pawn clock zero.',
+  '20. White ends h4 safely; Black starts with h3 retained.',
+  '21. Black Bf8-a3 slides through empty e7,d6,c5,b4; h3 expires, halfmove 1/fullmove 6. Ba3 does not attack Ke1.',
+  '22. Black ends Ba3; White starts with safe King.',
+  '23. White e2-e3 advances into vacancy; reset clock and preserve King safety.',
+  '24. White Neutrality after moving marks opposing nonroyal h7 Pawn. Owner/direction remain Black; keep continuing card beside board, draw Hostage. No movement or check.',
+  '25. White ends; Black starts with h7 neutral and all pieces unmoved by the card.',
+  '26. Black g7-g5 crosses vacant g6; pawn clock zero/fullmove 7, g6 opportunity appears, neutral h7 unchanged.',
+  '27. Black ends g5; White receives g6 opportunity.',
+  '28. White f2-f4 crosses vacant f3; expires g6, creates f3, clock zero and King safe.',
+  '29. White ends f4; Black starts with f3 retained.',
+  '30. Black a7-a5 crosses vacant a6; expires f3, creates a6 capturable by Pb5, fullmove 8.',
+  '31. Black ends a5; White can use a6 en-passant on its move.',
+  '32. White Bf1-d3 crosses vacant e2 to vacancy; declines and expires a6; halfmove 1, King safe.',
+  '33. White ends Bd3; Black starts without any en-passant opportunity.',
+  '34. Black Ba3-e7 crosses empty b4,c5,d6; halfmove 2/fullmove 9 and Ke8 stays safe.',
+  '35. Black ends Be7; White starts, neutral Pawn marker unchanged.',
+  '36. White Nb1-c3 jumps to vacancy; halfmove 3 and Ke1 safe.',
+  '37. White ends Nc3; Black starts with unchanged resources.',
+  '38. Black Rh8-f8 slides through empty g8; loses kingside castling, halfmove 4/fullmove 10.',
+  '39. Black Merciless follows its noncapturing Rook move; same Rf8 returns via empty g8 to h8, no capture/mate/self-check. No second clock increment; spend once and draw Revenge.',
+  '40. Black ends the extra Rook move; lost castling rights do not return.',
+  '41. White Ke1-e2 enters a vacant unattacked square; revokes White castling, halfmove 5.',
+  '42. White ends Ke2; Black starts, both sides now lack castling.',
+  '43. Black Confabulation replaces its move: Qd8 legally steps onto own nonroyal Pd7 and merges. Pawn carrier/away Queen retain identities and combined powers; no capture, safe Kings, halfmove 6/fullmove 11. Keep effect, draw Under Elf Hill.',
+  '44. Black ends its replacement move; White starts facing the combined d7 Queen/Pawn.',
+  '45. White f4xg5 captures original Black g7 Pawn diagonally; clock zero, Ke2 remains safe.',
+  '46. White ends the capture; Black starts, g7 Pawn remains captured.',
+  '47. Black Rh8-f8 slides through empty g8; halfmove 1/fullmove 12, no King exposure.',
+  '48. Black ends Rf8; White starts with both continuing effects retained.',
+  '49. White b5xc6 captures original Nb8 diagonally; clock zero, Ke2 safe.',
+  '50. White ends the capture; Black starts with Nb8 captured.',
+  '51. Black combined Pd7/Qd8 moves d7-d8 using Queen power; one square into vacancy, no promotion. Pawn carrier resets clock, fullmove 13; both components stay merged.',
+  '52. Black ends combined d8 move; White starts, no component is captured or split.',
+  '53. White Dubbing replaces its move: Pd2-c4 is a Knight jump to vacancy, remaining a Pawn without capture. King safe, no mate; clock zero, discard Dubbing and draw Abduction.',
+  '54. White ends Dubbing; Black starts with Pc4 identity retained.',
+  '55. Black Rf8-h8 crosses vacant g8; halfmove 1/fullmove 14, safe King.',
+  '56. Black ends Rh8; White starts with unchanged effects.',
+  '57. White Nc3-d5 jumps into vacancy; halfmove 2, neither King checked.',
+  '58. White ends Nd5; Black starts.',
+  '59. Black b7-b5 crosses vacant b6; pawn clock zero/fullmove 15 and b6 opportunity appears.',
+  '60. Black ends b5; White receives b6 opportunity.',
+  '61. White Bc1-b2 enters vacancy, expires b6 and increments halfmove to 1; Ke2 stays safe.',
+  '62. White ends Bb2; Black starts with no en-passant.',
+  '63. Black b5-b4 advances into vacancy; pawn clock zero/fullmove 16, no check.',
+  '64. Black ends b4; White starts.',
+  '65. White Rh1-h2 enters the vacated Pawn square; halfmove 1, no King exposure.',
+  '66. White ends Rh2; Black starts.',
+  '67. Black Bc8-b7 enters vacancy; halfmove 2/fullmove 17, no King exposure.',
+  '68. Black ends Bb7; White starts.',
+  '69. White Ke2-e1 enters vacancy beyond all Black attacks; halfmove 3, castling remains lost.',
+  '70. White ends Ke1; Black starts.',
+  '71. Black a5-a4 advances into vacancy; pawn clock zero/fullmove 18.',
+  '72. Black ends a4; White starts with safe King.',
+  '73. White Ke1-f1 enters vacancy, unattacked by Ng4 (still h6), Bishops or combined d8 piece; halfmove 1.',
+  '74. White ends Kf1; Black starts.',
+  '75. Black Nh6xg4 jumps onto and captures original White g2 Pawn; clock zero/fullmove 19, Kf1 not checked by Ng4.',
+  '76. Black ends the capture; White starts.',
+  '77. White Bb2-c1 returns diagonally into vacancy; halfmove 1, Kf1 safe.',
+  '78. White ends Bc1; Black starts.',
+  '79. Black Bb7xc6 captures original White b2 Pawn one diagonal step; clock zero/fullmove 20.',
+  '80. Black ends Bxc6; White starts, Pawn remains captured.',
+  '81. White Ng1-e2 jumps to vacancy; halfmove 1 and Kf1 stays safe.',
+  '82. White ends Ne2; Black starts.',
+  '83. Black Bc6xd5 captures original White Nb1 one diagonal step; clock zero/fullmove 21.',
+  '84. Black ends Bxd5; White starts with Nb1 captured.',
+  '85. White controls neutral Black h7 Pawn and advances it h7-h6 in its original Black direction. Pawn clock resets, both Kings safe, neutrality and owner retained.',
+  '86. White ends neutral h6 move; Black starts.',
+  '87. Black Under Elf Hill replaces its move, sending Ke8 away without capture. It cannot threaten or be checked while away; no direct mate; clock 1/fullmove 22, discard card and draw Neutrality.',
+  '88. Black ends its replacement move; White starts while Black King remains away.',
+  '89. White Qd1-e1 moves horizontally into vacancy; Kf1 safe, halfmove 2, absent King stays away.',
+  '90. White ends Qe1; Black starts with mandatory King return due before any optional action.',
+  '91. Black returns the same King at vacant unattacked edge c8. No move/card/clock consumed; King cannot move or capture for this turn.',
+  '92. Black controls neutral h6 Pawn and captures White original f2 Pawn on g5 diagonally. Neutral identity persists; clock zero/fullmove 23, Kc8 remains safe and immobile.',
+  '93. Black Neutrality after moving marks opposing Bd3. Ne2 blocks its new diagonal threat to White Kf1; Black Kc8 safe. Keep continuing card, draw Knightmare, preserve board/clocks.',
+  '94. Black ends; King return restriction expires, White starts with both neutral markers plus composite retained.',
+  '95. White Ne2-d4 is geometric Knight movement but uncovers neutral Bd3-e2-f1 check against its own King. This is provisional under §11.6, so pendingRescue must be set and endTurn unavailable.',
+  '96. Black Knightmare reacts to that latest move, restoring Ne2, pre-move clock and White beforeMove. Neutrality was an earlier independent card and persists; discard only Knightmare, draw Long Jump, forbid repeating Ne2-d4.',
+  '97. White instead moves Qe1-d2 diagonally into vacancy, a different move. Ne2 continues blocking the neutral Bishop; Kf1 safe, halfmove 1, Black reaction allowance stays spent.',
+  '98. White ends replacement Qd2; Black begins a fresh turn with both allowances reset.',
+  '99. Black Rh8-e8 passes vacant g8,f8 to vacancy; halfmove 2/fullmove 24, Kc8 remains safe.',
+  '100. Black ends Re8; White starts.',
+  '101. White moves neutral Bd3xc2 and captures its own original c2 Pawn, expressly allowed by Neutrality. Same Bishop and marker persist; clock zero, Kf1 safe.',
+  '102. White ends Bxc2; Black starts, White Pawn remains captured.',
+  '103. Black Rb8-b7 moves into vacancy; halfmove 1/fullmove 25, Kc8 safe.',
+  '104. Black ends Rb7; White starts.',
+  '105. White Qd2-d4 crosses d3 vacated by the neutral Bishop; destination vacant, halfmove 2. Black Bd5 blocks the Queen line toward the combined d8 piece.',
+  '106. White ends Qd4; Black starts with neither King checked.',
+  '107. Black Re8-f8 moves into vacancy; halfmove 3/fullmove 26, Kc8 safe.',
+  '108. Black ends Rf8; White starts.',
+  '109. White Madman replaces its move: original Pd2 jumps c4-e6 over Bd5 then e6-g8 over Pf7. Both landings vacant, jumped pieces retained; no promotion authorized at g8. King safe, no direct mate; reset clock, discard Madman and draw Rebirth.',
+  '110. White ends Madman; Black starts facing an unpromoted Pawn on g8.',
+  '111. Black Be7-f6 moves one diagonal into vacancy; halfmove 1/fullmove 27, Kc8 safe.',
+  '112. Black Siege swaps own Ng4/Rb7 after its move: Knight goes b7 and Rook g4 with no capture or extra clock. Neither King checked/mated; discard Siege, draw Disintegration.',
+  '113. Black ends Siege; White starts with swapped identities and both allowances reset.',
+  '114. White a2-a3 advances one into vacancy; clock zero, Kf1 safe and all effects retained.',
+  '115. White final endTurn gives Black beforeMove, no pending rescue or return, unchanged board/resources and zeroed allowances.',
+];
+
+test('iteration 014: all 115 actions and 50 move commands independently reviewed', () => {
+  assert.equal(rationale.length, trace.steps.length);
+  rationale.forEach((line, index) => assert.ok(line.startsWith(`${index + 1}. `)));
+  assert.equal(trace.seed, 860014);
+  assert.equal(trace.steps.filter(step => step.action.type === 'move').length, 50);
+  assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 11);
+  assert.equal(trace.steps.filter(step => step.action.type === 'endTurn').length, 53);
+  assert.equal(trace.steps.filter(step => step.action.type === 'returnKing').length, 1);
+  const state = replayTrace(trace);
+  assert.equal(state.fen, '2kp1rP1/1np2p2/5b2/3bp1p1/pp1Q2rP/P3P3/2B1N2R/R1B2K2 b - - 0 27');
+  assert.deepEqual(state.turn, { color: 'black', phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } });
+  assert.equal(state.outcome, null);
+  assert.ok(!state.pendingRescue);
+  assert.deepEqual(state.enPassant, []);
+  assert.deepEqual(state.underElfHill, []);
+  assert.equal(state.orientation, 0);
+  assert.deepEqual(state.pieces.filter(piece => piece.zone !== 'board').map(piece => [piece.id, piece.zone]).sort(), [
+    ['white-knight-b1', 'captured'], ['white-pawn-b2', 'captured'], ['white-pawn-c2', 'captured'],
+    ['white-pawn-f2', 'captured'], ['white-pawn-g2', 'captured'], ['black-knight-b8', 'captured'],
+    ['black-queen-d8', 'away'], ['black-pawn-g7', 'captured'],
+  ].sort());
+  assert.equal(state.pieces.filter(piece => piece.zone === 'board').length, 24);
+  assert.deepEqual(state.pieces.filter(piece => piece.royal).map(piece => [piece.id, piece.square]), [['white-king-e1', 'f1'], ['black-king-e8', 'c8']]);
+  const pawn = state.pieces.find(piece => piece.id === 'white-pawn-d2')!;
+  assert.deepEqual([pawn.square, pawn.role, pawn.originalRole, pawn.promoted], ['g8', 'pawn', 'pawn', false]);
+  assert.equal(state.pieces.find(piece => piece.id === 'black-pawn-d7')?.square, 'd8');
+  assert.equal(state.pieces.find(piece => piece.id === 'black-knight-g8')?.square, 'b7');
+  assert.equal(state.pieces.find(piece => piece.id === 'black-rook-a8')?.square, 'g4');
+  assert.equal(state.pieces.find(piece => piece.id === 'white-knight-g1')?.square, 'e2');
+  assert.deepEqual(state.pieces.filter(piece => piece.neutral).map(piece => [piece.id, piece.owner, piece.square]), [
+    ['white-bishop-f1', 'white', 'c2'], ['black-pawn-h7', 'black', 'g5'],
+  ]);
+  assert.deepEqual(state.effects, [
+    { type: 'neutrality', owner: 'white', card: { id: 'white-deck-0-neutrality', cardId: 'neutrality' }, pieceId: 'black-pawn-h7' },
+    { type: 'confabulation', owner: 'black', card: { id: 'black-hand-4-confabulation', cardId: 'confabulation' }, pieceIds: ['black-pawn-d7', 'black-queen-d8'] },
+    { type: 'neutrality', owner: 'black', card: { id: 'black-deck-2-neutrality', cardId: 'neutrality' }, pieceId: 'white-bishop-f1' },
+  ]);
+  assert.deepEqual(state.players.white.hand.map(card => card.cardId), ['hidden-passage', 'fanatic', 'hostage', 'abduction', 'rebirth']);
+  assert.deepEqual(state.players.black.hand.map(card => card.cardId), ['squaring-the-circle', 'vulture', 'revenge', 'long-jump', 'disintegration']);
+  assert.deepEqual([state.players.white.deck.length, state.players.black.deck.length], [70, 69]);
+  assert.deepEqual(state.players.white.discard.map(card => card.cardId), ['siege', 'haunting-memories', 'dubbing', 'madman']);
+  assert.deepEqual(state.players.black.discard.map(card => card.cardId), ['merciless', 'under-elf-hill', 'knightmare', 'siege']);
+});
