@@ -7295,7 +7295,7 @@ function settlePendingRescue(
     return result;
   }
   const pending = beforeCard.pendingRescue;
-  if (!pending || !result.ok || result.state.pendingAbduction) return result;
+  if (!pending || !result.ok || !result.state.pendingRescue || result.state.pendingAbduction) return result;
   const movedPieces = pending.movedPieceIds.flatMap(id => {
     const piece = result.state.pieces.find(candidate => candidate.id === id);
     return piece ? [piece] : [];
