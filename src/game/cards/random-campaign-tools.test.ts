@@ -5,6 +5,22 @@ import { createGameState } from '../state.js';
 import type { GameAction, GameState } from '../types.js';
 import { generateTrace, maySampleCard } from './random-campaign.js';
 
+test('a staged rescue may continue through Abduction before its mandatory resolution', () => {
+  const stop = Symbol('rescue card chosen');
+  let staged: GameState | undefined;
+  let selected: GameState | undefined;
+  try {
+    generateTrace(860069, (step, _moves, state) => {
+      if (step === 77) staged = state;
+      if (step === 78) { selected = state; throw stop; }
+    });
+  } catch (error) { if (error !== stop) throw error; }
+  assert.ok(staged?.pendingRescue, 'the King move is provisionally awaiting an after-move rescue');
+  assert.ok(selected?.pendingAbduction, 'the generator must allow Abduction to open its mandatory response');
+  assert.ok(selected.pendingRescue, 'rescue settles only after the Abduction response');
+  assert.equal(selected.turn.cardPlays.white, 1);
+});
+
 test('a uniformly proposed playable card survives an invalid target candidate', () => {
   // This seed proposes White's Fanatic first. Broad public target candidates
   // contain non-Pawns, but all eight starting Pawns have a legal three-step move.
