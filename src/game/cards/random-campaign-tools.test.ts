@@ -11,6 +11,24 @@ const act = (state: GameState, action: GameAction) => {
   return result.state;
 };
 
+test('random proposals include Legacy after an own-move Man-Trap capture', () => {
+  let state = createGameState({ fen: '2b1k3/8/8/3p4/8/5N2/8/2B1K3 w - - 0 1',
+    hands: { white: ['evangelists', 'legacy'], black: ['man-trap'] } });
+  state = act(state, { type: 'playCard', cardId: 'evangelists', target: cardPlayTargets(state, 'evangelists')[0] });
+  state = act(state, { type: 'endTurn' });
+  state = act(state, { type: 'move', from: 'd5', to: 'd4' });
+  state = act(state, { type: 'playCard', cardId: 'man-trap', target: 'd4' });
+  state = act(state, { type: 'endTurn' });
+  state = act(state, { type: 'move', from: 'f3', to: 'd4' });
+  const card = state.players.white.hand.find(card => card.cardId === 'legacy')!;
+  const target = 'white-hand-0-evangelists';
+  assert.ok(cardPlayTargets(state, 'legacy').includes(target));
+  const resolved = act(state, { type: 'playCard', cardId: 'legacy', cardInstanceId: card.id, target });
+  assert.equal(resolved.fen, state.fen);
+  assert.ok(resolved.players.white.hand.some(card => card.id === target));
+  assert.equal(maySampleCard(state, card, 'white'), true);
+});
+
 test('random proposals include a reaction to an opposing card during the actor own turn', () => {
   let state = createGameState({ fen: '7k/8/8/8/8/8/8/R6K w - - 0 1', hands: { white: ['fog-of-war'], black: ['bog'] } });
   state = act(state, { type: 'move', from: 'a1', to: 'a3' });
