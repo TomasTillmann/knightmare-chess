@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 64,
+  "nextIteration": 69,
   "coverageAuditsCompleted": 6,
   "iterations": [
     {
@@ -641,6 +641,50 @@
       "status": "passed",
       "finalFen": "5knr/1R2p2p/B6b/p3rp2/P2PPbp1/4BPNN/1PPQ2PP/p4K1R b - - 9 28",
       "testCommit": "0691283"
+    },
+    {
+      "id": 62,
+      "agent": "iteration_062",
+      "seed": 860062,
+      "reviewedActions": 116,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "3kp3/bp2pp2/b7/6b1/1q6/2Nn1P2/PP1PPrP1/B1BK2Q1 b - - 1 27",
+      "testCommit": "7ad69b9"
+    },
+    {
+      "id": 63,
+      "agent": "iteration_063",
+      "seed": 860063,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "Pnb4r/2qp2Q1/4k3/PpP3p1/4np2/5PPN/3BPRN1/3RK3 b - - 0 27",
+      "testCommit": "077ef16"
+    },
+    {
+      "id": 64,
+      "agent": "iteration_064",
+      "seed": 860064,
+      "reviewedActions": 59,
+      "reviewedMoves": 26,
+      "status": "fixed",
+      "finalFen": "r1b2q1R/2ppk1pp/7n/2b1p3/pnP2p2/8/PPNP1PKP/r1B3NR b - - 0 14",
+      "observedFinalFenBeforeFix": "r1b2q1R/2ppk1pp/7n/2b1p3/pnP2p2/8/PPNP1PKP/r1B3NR b - - 1 14",
+      "testCommit": "017c32c",
+      "finding": "Rebirth capture failed to reset the halfmove clock",
+      "fixCommit": "d48ac29",
+      "audit": "audit-064.md"
+    },
+    {
+      "id": 65,
+      "agent": "iteration_065",
+      "seed": 860065,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r3k3/b4pr1/3p1b2/p1pn1KB1/2PPB2p/1P2P3/P4PPP/1R4NR w - - 2 26",
+      "testCommit": "3a53b80"
     }
   ],
   "coverageAudits": [
@@ -682,12 +726,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 46,
-    "tests": 4941,
-    "passed": 4941,
+    "afterIteration": 65,
+    "tests": 4961,
+    "passed": 4961,
     "failed": 0,
-    "seconds": 21.288,
-    "scope": "All engine tests and numbered iterations through046"
+    "seconds": 28.228,
+    "scope": "All engine tests and numbered iterations through065"
   },
   "performanceFixes": [
     {
