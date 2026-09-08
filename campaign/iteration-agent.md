@@ -48,6 +48,8 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    Public `effects` entries are `unknown`: compare complete expected records or
    narrow them explicitly before field access. For `GameAction` unions, narrow
    `action.type` before reading card-only fields (a `flatMap` or loop is enough).
+   `legalDests(state, allowAfterMoveRescue = false)` returns a Map: query it with
+   `.get(square)?.includes(target)`, never pass a square as its second argument.
    Movement payload fields remain `unknown` even inside `action.type === 'move'`:
    start that branch with `assert.ok(typeof action.from === 'string' && typeof action.to === 'string')`
    before `parseSquare`, indexing, or string operations. This is a recurring
