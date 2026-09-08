@@ -25,9 +25,12 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    A raw FEN en-passant target may survive a non-move card even when uncapturable;
    independently distinguish that serialization from legal capture availability.
    Evaluate en-passant availability for the prospective capturing player in a
-   before-move context. While Truce is active, independently inspect raw royal
+   before-move context; for a legal capture, independently simulate moving the
+   captor and removing the passed Pawn, then check royal safety. While Truce is active, independently inspect raw royal
    attacks too: a check would end Truce, so hardcoding check=false proves nothing.
-   Assert each played card's exact target and input-state immutability per action.
+   Assert each played card's exact physical instance, owner, timing, and target.
+   Independently account for history events, including canceled moves and fizzles.
+   Assert input-state immutability for every trace action and rescue probe.
 4. Preserve one explicit numbered rationale per action in the test, and assert
    rationale count equals the reviewed action count. Do not auto-label passes.
    Stop at the FIRST suspicious invalid state, document precise expected state
