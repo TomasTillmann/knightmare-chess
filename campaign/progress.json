@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
   "nextIteration": 154,
-  "coverageAuditsCompleted": 14,
+  "coverageAuditsCompleted": 15,
   "iterations": [
     {
       "id": 1,
@@ -1586,6 +1586,18 @@
       "status": "passed",
       "finalFen": "r4bn1/p2k3p/4b1p1/1PB5/1npP4/1P2rNQ1/4PP2/RN1K1B1R w - - 6 29",
       "testCommit": "5a29ffb"
+    },
+    {
+      "id": 152,
+      "agent": "iteration_152",
+      "seed": 860152,
+      "status": "finding",
+      "reviewedActions": 67,
+      "reviewedMoves": 24,
+      "finding": "Failed Fortification rescue drops Think Again replacement prohibition and allows canceled Rh8-h7 again",
+      "testCommit": "061e10c",
+      "verificationCommit": "c804013",
+      "expectedFinalFen": "Rn1k1b1r/3npp2/Bp1pp2p/2p5/4N3/5PP1/1PPPP2N/rRQ1KBNq b - - 3 15"
     }
   ],
   "coverageAudits": [
@@ -1670,6 +1682,12 @@
     {
       "afterIteration": 140,
       "report": "coverage-140.md",
+      "playedTypes": 80,
+      "appliedTypes": 80
+    },
+    {
+      "afterIteration": 150,
+      "report": "coverage-150.md",
       "playedTypes": 80,
       "appliedTypes": 80
     }
