@@ -49,6 +49,9 @@ Runner validated independently on seed 859999: 50 moves, 110 actions, replay pas
 The durable acceptance ledger is `progress.json`. Each accepted entry records its
 reviewed prefix, final position, and regression commit. Confirmed bug prefixes
 exclude their offending generated state and unreviewed suffix from valid card coverage.
+The coverage report's `failures` field preserves original generator failures,
+including fixed iteration 091. Read these alongside the ledger's fix and audit
+records; their presence alone does not mean the current engine still fails.
 
 Iteration 090 exposed a missed defect in the earlier review of 017: Assassin
 self-capture does not qualify a Pawn for Winged Victory. Iteration 017 now stops
