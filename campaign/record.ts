@@ -15,6 +15,8 @@ const reviewedActions = Number(process.argv[4] ?? trace.steps.length);
 assert.ok(reviewedActions > 0 && reviewedActions <= trace.steps.length);
 const reviewedMoves = trace.steps.slice(0, reviewedActions).filter(step => step.action.type === 'move').length;
 if (status === 'passed') assert.equal(reviewedMoves, 50);
+const rejectedFinalAction = process.argv[5] === 'rejected';
+assert.ok(!rejectedFinalAction || status === 'fixed');
 const rows = readFileSync(new URL(`./iterations/${number}.txt`, import.meta.url), 'utf8')
   .split('\n').filter(line => line.startsWith('{')).map(line => JSON.parse(line));
 const path = new URL('./progress.json', import.meta.url);
@@ -23,15 +25,19 @@ const previous = progress.iterations.find((item: { id: number }) => item.id === 
 let finalFen = rows[reviewedActions - 1].fen[1];
 if (status === 'fixed') {
   let state = createGameState(trace.initial);
-  for (const step of trace.steps.slice(0, reviewedActions)) {
+  for (const [index, step] of trace.steps.slice(0, reviewedActions).entries()) {
     const result = applyAction(state, step.action);
-    assert.ok(result.ok, 'fixed prefix must replay');
+    if (rejectedFinalAction && index === reviewedActions - 1) {
+      assert.equal(result.ok, false, 'invalid final action must now reject');
+      assert.deepEqual(result.state, state, 'rejection must preserve state');
+    } else assert.ok(result.ok, 'fixed prefix must replay');
     state = result.state;
   }
   finalFen = state.fen;
 }
 const entry = { ...previous, id, agent: `iteration_${number}`, seed: trace.seed, reviewedActions, reviewedMoves, status,
   finalFen,
+  ...(rejectedFinalAction ? { rejectedFinalAction: true } : {}),
   ...(status === 'fixed' ? { observedFinalFenBeforeFix: rows[reviewedActions - 1].fen[1] } : {}),
   testCommit: execFileSync('git', ['log', '-1', '--format=%h', '--', `src/game/cards/random-${number}.test.ts`], { encoding: 'utf8' }).trim() };
 progress.iterations = [...progress.iterations.filter((item: { id: number }) => item.id !== id), entry]

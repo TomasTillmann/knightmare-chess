@@ -49,3 +49,16 @@ Runner validated independently on seed 859999: 50 moves, 110 actions, replay pas
 The durable acceptance ledger is `progress.json`. Each accepted entry records its
 reviewed prefix, final position, and regression commit. Confirmed bug prefixes
 exclude their offending generated state and unreviewed suffix from valid card coverage.
+
+Iteration 090 exposed a missed defect in the earlier review of 017: Assassin
+self-capture does not qualify a Pawn for Winged Victory. Iteration 017 now stops
+at action 26 (25 valid actions), retaining its original trace and historical
+rationales. Coverage checkpoints through 080 predate this correction; later
+coverage recomputes the shorter valid prefix from the acceptance ledger.
+
+Capture provenance was added during 090. Replay digests omit only the new
+`capturedBy` field to preserve original trace fingerprints. State invariants
+check its valid color and captured-zone lifecycle; semantic capture assertions
+and dedicated eligibility regressions check the actual captor. Legacy physical
+projections retain their original fields. New iterations explicitly check the
+captor, including reaction owners and Hostage's original attacker.

@@ -46,6 +46,10 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    hypothetical capture must also preserve its controller's King safety (§15.1).
    If shared typecheck flags another active agent's file, report its path to the
    parent and leave that file untouched; this is not a finding in your iteration.
+   Captured pieces now have optional `capturedBy`: independently assert the actual
+   captor, including reaction/effect owners and Hostage's original attacker.
+   Returning a piece or making it dead clears this field. Replay digests omit
+   only this additive field to preserve historical traces; hashes do not test it.
 6. Return `ITERATION_NNN_PASS` or `ITERATION_NNN_FINDING`, action/move/card counts,
    final FEN, exact gate results, and elapsed time. Parent verifies and commits.
 
