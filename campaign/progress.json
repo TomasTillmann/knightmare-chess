@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 151,
+  "nextIteration": 154,
   "coverageAuditsCompleted": 14,
   "iterations": [
     {
@@ -1545,13 +1545,17 @@
       "id": 148,
       "agent": "iteration_148",
       "seed": 860148,
-      "status": "finding",
+      "status": "fixed",
       "reviewedActions": 50,
       "reviewedMoves": 20,
       "finding": "Plots Within Plots prematurely rewinds a pending self-check move instead of preserving its immediate eligible Dungeon rescue allowance",
       "testCommit": "eecc7c5",
       "verificationCommit": "c221c51",
-      "expectedFinalFen": "r1bk2R1/2p1pppn/R3p3/4p2b/8/1P1P1N2/n1P2P1P/2BQKBr1 w - - 1 12"
+      "expectedFinalFen": "r1bk2R1/2p1pppn/R3p3/4p2b/8/1P1P1N2/n1P2P1P/2BQKBr1 w - - 1 12",
+      "finalFen": "r1bk2R1/2p1pppn/R3p3/4p2b/8/1P1P1N2/n1P2P1P/2BQKBr1 w - - 1 12",
+      "observedFinalFenBeforeFix": "r1bk1nR1/2p1ppp1/R3p3/4p2b/8/1P1P1N2/n1P2P1P/2BQKBr1 b - - 0 11",
+      "fixCommit": "fd059c2",
+      "audit": "audit-148.md"
     },
     {
       "id": 149,
@@ -1562,6 +1566,26 @@
       "status": "passed",
       "finalFen": "1nbk2r1/3qb2p/1p4p1/p1rnp3/5pP1/1PP1pP1R/3KP1BP/1NQ5 w - - 5 28",
       "testCommit": "68544b2"
+    },
+    {
+      "id": 150,
+      "agent": "iteration_150",
+      "seed": 860150,
+      "reviewedActions": 119,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "N2q1k1r/N5np/1r1p4/p1b1pp2/Pp2Pp1P/1PQ5/n2P2P1/R2R3B b - - 1 27",
+      "testCommit": "c31188d"
+    },
+    {
+      "id": 151,
+      "agent": "iteration_151",
+      "seed": 860151,
+      "reviewedActions": 113,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r4bn1/p2k3p/4b1p1/1PB5/1npP4/1P2rNQ1/4PP2/RN1K1B1R w - - 6 29",
+      "testCommit": "5a29ffb"
     }
   ],
   "coverageAudits": [
@@ -1651,12 +1675,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 140,
-    "tests": 5084,
-    "passed": 5084,
+    "afterIteration": 150,
+    "tests": 5119,
+    "passed": 5119,
     "failed": 0,
-    "seconds": 34.839,
-    "scope": "All engine tests and numbered iterations through 140"
+    "seconds": 36.741,
+    "scope": "All engine tests and numbered iterations through 150"
   },
   "performanceFixes": [
     {
