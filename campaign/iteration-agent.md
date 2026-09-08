@@ -35,6 +35,8 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    Assert each played card's exact physical instance, owner, timing, and target.
    Independently account for history events, including canceled moves and fizzles.
    Assert input-state immutability for every trace action and rescue probe.
+   Also clone each GameAction before applyAction and assert its payload is unchanged;
+   checking only the GameState does not cover command-payload mutation.
 4. Preserve one explicit numbered rationale per action in the test, and assert
    rationale count equals the reviewed action count. Do not auto-label passes.
    Stop at the FIRST suspicious invalid state, document precise expected state
