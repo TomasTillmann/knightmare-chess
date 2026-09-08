@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyAction } from '../reducer.js';
+import { applyAction, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
 
@@ -155,3 +155,66 @@ test('self-check result fizzles atomically while spending the card', () => {
   assert.equal(result.state.players.white.hand.some(card => card.cardId === 'doppelganger'), false);
   assert.equal(result.state.history.at(-1)?.type, 'cardFizzled');
 });
+
+function afterPawnMove(fen: string, actorColor: 'white' | 'black'): State {
+  let state = createGameState({ fen, hands: { [actorColor]: ['doppelganger'] } });
+  assert.equal(isKingInCheck(state, 'white'), false, 'initial White King is safe');
+  assert.equal(isKingInCheck(state, 'black'), false, 'initial Black King is safe');
+  state = succeed(state, { type: 'move', from: actorColor === 'white' ? 'h7' : 'h2', to: actorColor === 'white' ? 'h6' : 'h3' });
+  return succeed(state, { type: 'endTurn' });
+}
+
+for (const color of ['white', 'black'] as const) {
+  for (const [symbol, role] of [['N', 'knight'], ['B', 'bishop'], ['R', 'rook'], ['Q', 'queen']] as const) {
+    test(`${color} ${role} copies a Pawn's quiet step in its own forward direction`, () => {
+      const state = afterPawnMove(color === 'white'
+        ? `6k1/7p/8/8/3${symbol}4/8/8/K7 b - - 0 1`
+        : `k7/8/8/3${symbol.toLowerCase()}4/8/8/7P/6K1 w - - 0 1`, color);
+      const from = color === 'white' ? 'd4' : 'd5';
+      const to = color === 'white' ? 'd5' : 'd4';
+      const actor = state.pieces.find(piece => piece.square === from);
+      assert.ok(actor);
+      const result = play(state, from, to);
+      assert.equal(result.ok, true, result.ok ? '' : result.error.message);
+      if (!result.ok) return;
+      const moved = result.state.pieces.find(piece => piece.square === to);
+      assert.equal(moved?.id, actor.id);
+      assert.equal(moved?.role, role);
+      assert.equal(result.state.turn.moveMade, true);
+    });
+  }
+}
+
+for (const [color, fen, from, to] of [
+  ['white', '6k1/7p/8/8/8/8/8/K2N4 b - - 0 1', 'd1', 'd3'],
+  ['white', '6k1/7p/8/8/8/8/3N4/K7 b - - 0 1', 'd2', 'd4'],
+  ['black', 'k2n4/8/8/8/8/8/7P/6K1 w - - 0 1', 'd8', 'd6'],
+  ['black', 'k7/3n4/8/8/8/8/7P/6K1 w - - 0 1', 'd7', 'd5'],
+] as const) {
+  test(`${color} copies a Pawn double step from ${from}`, () => {
+    const state = afterPawnMove(fen, color);
+    const actor = state.pieces.find(piece => piece.square === from);
+    assert.ok(actor);
+    const result = play(state, from, to);
+    assert.equal(result.ok, true, result.ok ? '' : result.error.message);
+    if (!result.ok) return;
+    assert.equal(result.state.pieces.find(piece => piece.square === to)?.id, actor.id);
+    assert.equal(result.state.pieces.find(piece => piece.square === to)?.role, 'knight');
+  });
+}
+
+for (const [label, fen, from, destinations] of [
+  ['wrong geometry', '6k1/7p/8/8/3N4/8/8/K7 b - - 0 1', 'd4', ['d3', 'c5', 'e5', 'e4', 'd6']],
+  ['friendly occupied destination', '6k1/7p/8/3P4/3N4/8/8/K7 b - - 0 1', 'd4', ['d5']],
+  ['enemy occupied destination', '6k1/7p/8/3p4/3N4/8/8/K7 b - - 0 1', 'd4', ['d5']],
+  ['blocked double step', '6k1/7p/8/8/8/3P4/3N4/K7 b - - 0 1', 'd2', ['d4']],
+] as const) {
+  test(`copied Pawn rejects ${label} without changing state`, () => {
+    const state = afterPawnMove(fen, 'white');
+    const before = structuredClone(state);
+    for (const to of destinations) {
+      assert.equal(play(state, from, to).ok, false);
+      assert.deepEqual(state, before);
+    }
+  });
+}

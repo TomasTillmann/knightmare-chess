@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { applyAction } from "../reducer.js";
+import { applyAction, isKingInCheck } from "../reducer.js";
 import { createGameState } from "../state.js";
 import type { GameAction, GameState } from "../types.js";
 
@@ -22,6 +22,46 @@ function reject(state: GameState, action: GameAction): void {
   const result = applyAction(state, action);
   assert.equal(result.ok, false);
   assert.equal(JSON.stringify(state), snapshot);
+}
+
+const pawnCopyFixtures = [
+  { name: "white knight", fen: "6k1/7p/8/8/3N4/8/8/K7 b - - 7 1", color: "white", pawnFrom: "h7", pawnTo: "h6", from: "d4", to: "d5" },
+  { name: "black knight", fen: "k7/8/8/3n4/8/8/7P/6K1 w - - 7 1", color: "black", pawnFrom: "h2", pawnTo: "h3", from: "d5", to: "d4" },
+  { name: "white last-rank knight", fen: "6k1/3N3p/8/8/8/8/8/K7 b - - 7 1", color: "white", pawnFrom: "h7", pawnTo: "h6", from: "d7", to: "d8" },
+  { name: "white double-step knight", fen: "6k1/7p/8/8/8/8/3N4/K7 b - - 7 1", color: "white", pawnFrom: "h7", pawnTo: "h6", from: "d2", to: "d4" },
+  { name: "black double-step bishop", fen: "k7/3b4/8/8/8/8/7P/6K1 w - - 7 1", color: "black", pawnFrom: "h2", pawnTo: "h3", from: "d7", to: "d5" },
+] as const;
+
+for (const fixture of pawnCopyFixtures) {
+  for (const invariant of ["identity", "pawn status", "turn accounting"] as const) {
+    test(`Doppelganger copying a Pawn preserves ${invariant}: ${fixture.name}`, () => {
+      let state = createGameState({ fen: fixture.fen, hands: { white: fixture.color === "white" ? ["doppelganger"] : [], black: fixture.color === "black" ? ["doppelganger"] : [] }, decks: { white: [], black: [] } });
+      assert.equal(isKingInCheck(state, "white"), false, "white fixture king starts safe");
+      assert.equal(isKingInCheck(state, "black"), false, "black fixture king starts safe");
+      state = apply(state, { type: "move", from: fixture.pawnFrom, to: fixture.pawnTo });
+      state = apply(state, { type: "endTurn" });
+      const before = state;
+      const actor = state.pieces.find(piece => piece.square === fixture.from)!;
+      assert.ok(actor);
+      state = apply(state, { type: "playCard", cardId: "doppelganger", target: [{ from: fixture.from, to: fixture.to }] });
+      if (invariant === "identity") {
+        assert.deepEqual(state.pieces.find(piece => piece.id === actor.id), { ...actor, square: fixture.to });
+        assert.equal(state.pieces.length, before.pieces.length);
+        assertValid(state);
+      } else if (invariant === "pawn status") {
+        assert.equal(state.pieces.find(piece => piece.id === actor.id)?.role, actor.role);
+        assert.deepEqual(state.enPassant, []);
+        assert.equal(state.history.at(-1)?.promotion, undefined);
+      } else {
+        assert.equal(state.players[fixture.color].hand.length, 0);
+        assert.equal(state.players[fixture.color].discard.length, 1);
+        assert.equal(state.turn.cardPlays[fixture.color], 1);
+        assert.equal(state.turn.moveMade, true);
+        assert.equal(state.turn.color, fixture.color);
+        assert.equal(Number(state.fen.split(" ")[4]), Number(before.fen.split(" ")[4]) + 1);
+      }
+    });
+  }
 }
 
 test("Doppelganger copies Dubbing's rook base role after a knight move", () => {
