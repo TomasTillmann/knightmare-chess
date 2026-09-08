@@ -197,7 +197,7 @@ test('fizzles when rotation newly exposes the acting royal to check', () => {
   assert.equal(result.state.history.at(-1)?.reason, 'SELF_CHECK')
 })
 
-test('fizzles a rotation that creates immediate direct checkmate', () => {
+test('retains a Continuing Effect rotation that causes immediate mate', () => {
   const state = ready('6P1/5KPk/8/8/8/8/8/8 w - - 7 12')
   const defender = structuredClone(state)
   defender.turn.color = 'black'
@@ -211,7 +211,61 @@ test('fizzles a rotation that creates immediate direct checkmate', () => {
   const result = play(state, target('clockwise'))
   assert.equal(result.ok, true)
   if (!result.ok) return
-  assert.equal(result.state.orientation, 0)
-  assert.equal(result.state.history.at(-1)?.type, 'cardFizzled')
-  assert.equal(result.state.history.at(-1)?.reason, 'DIRECT_MATE')
+  assert.equal(result.state.orientation, 90)
+  assert.equal(isKingInCheck(result.state, 'black'), true)
+  assert.equal(isKingInCheck(result.state, 'white'), false)
+  assert.notEqual(result.state.history.at(-1)?.type, 'cardFizzled')
+  const cardId = state.players.white.hand[0]!.id
+  assert.equal(result.state.effects.filter(effect => (effect as { card?: { id?: string } }).card?.id === cardId).length, 1)
+  assert.ok(result.state.players.white.discard.every(card => card.id !== cardId))
 })
+
+for (const [blackRole, whiteRole, mates] of [
+  ['rook', 'queen', true],
+  ['rook', 'rook', true],
+  ['knight', 'queen', false],
+  ['bishop', 'queen', false],
+  ['queen', 'queen', false],
+] as const) {
+  test(`retains clockwise promotion to Black ${blackRole} and White ${whiteRole}, mate=${mates}`, () => {
+    const initial = createGameState({ fen: '2R5/k6P/pp6/8/8/8/8/4K1N1 w - - 0 1', hands: { white: ['earthquake'] } })
+    const moved = applyAction(initial, { type: 'move', from: 'g1', to: 'f3' })
+    assert.equal(moved.ok, true)
+    if (!moved.ok) return
+    const state = moved.state
+    const snapshot = structuredClone(state)
+    const cardId = state.players.white.hand[0]!.id
+    assert.equal(isKingInCheck(state, 'white'), false)
+    assert.equal(isKingInCheck(state, 'black'), false)
+
+    // Verify mate geometry independently of whether the card resolves.
+    const geometry = structuredClone(state)
+    geometry.orientation = 90
+    Object.assign(piece(geometry, 'a6'), { role: blackRole, promoted: true })
+    Object.assign(piece(geometry, 'h7'), { role: whiteRole, promoted: true })
+    geometry.turn.color = 'black'
+    geometry.turn.phase = 'beforeMove'
+    geometry.turn.moveMade = false
+    assert.equal(isKingInCheck(geometry, 'white'), false)
+    assert.equal(isKingInCheck(geometry, 'black'), true)
+    assert.equal([...legalDests(geometry).values()].every(destinations => destinations.length === 0), mates)
+    if (!mates) assert.ok((legalDests(geometry).get('a6')?.length ?? 0) > 0, 'promoted defender can interpose')
+
+    const promotions = target('clockwise', [{ square: 'a6', role: blackRole }, { square: 'h7', role: whiteRole }])
+    const result = play(state, promotions)
+    assert.deepEqual(state, snapshot)
+    assert.equal(result.ok, true)
+    if (!result.ok) return
+    assert.equal(result.state.orientation, 90)
+    for (const [square, role] of [['a6', blackRole], ['h7', whiteRole]] as const) {
+      assert.deepEqual(piece(result.state, square), { ...piece(state, square), role, promoted: true })
+    }
+    assert.equal(isKingInCheck(result.state, 'white'), false)
+    assert.equal(isKingInCheck(result.state, 'black'), true)
+    assert.equal(result.state.effects.filter(effect => (effect as { card?: { id?: string } }).card?.id === cardId).length, 1)
+    assert.ok(result.state.players.white.hand.every(card => card.id !== cardId))
+    assert.ok(result.state.players.white.discard.every(card => card.id !== cardId))
+    assert.notEqual(result.state.history.at(-1)?.type, 'cardFizzled')
+    assert.deepEqual(result.state.history.at(-1)?.target, promotions)
+  })
+}

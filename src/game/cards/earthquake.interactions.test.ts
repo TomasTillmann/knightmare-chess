@@ -187,7 +187,7 @@ test('can rescue the actor king from check by rotating attack geometry', () => {
   assert.equal(earthquake(state, 'clockwise').orientation, 90);
 });
 
-test('direct mate caused by rotation fizzles without mutating the input', () => {
+test('continuing rotation may cause mate without mutating the input', () => {
   const state = make('6P1/5KPk/8/8/8/8/8/8 w - - 0 1');
   assert.equal(isKingInCheck(state, 'black'), false);
   const initialBlackTurn = beforeMove(structuredClone(state));
@@ -202,7 +202,100 @@ test('direct mate caused by rotation fizzles without mutating the input', () => 
   const result = applyAction(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'clockwise', promotions: [] } });
   assert.deepEqual(state, snapshot);
   assert.equal(result.ok, true);
-  if (result.ok) assert.equal(result.state.history.at(-1)?.reason, 'DIRECT_MATE');
+  if (result.ok) {
+    assert.equal(result.state.orientation, 90);
+    assert.notEqual(result.state.history.at(-1)?.reason, 'DIRECT_MATE');
+    assert.equal(isKingInCheck(result.state, 'black'), true);
+    assert.equal(isKingInCheck(result.state, 'white'), false);
+  }
+});
+
+for (const role of ['queen', 'rook'] as const) {
+  for (const lifecycle of ['geometry', 'accounting', 'immutable input', 'end turn'] as const) {
+    test(`mate with h7 ${role}: ${lifecycle}`, () => {
+      const initial = createGameState({
+        fen: '2R5/k6P/pp6/8/8/8/8/4K1N1 w - - 0 1',
+        hands: { white: ['earthquake'] },
+      });
+      initial.players.white.deck = [{ id: 'replacement', cardId: 'earthquake' }];
+      initial.players.black.hand = [];
+      initial.players.black.deck = [];
+      const moved = applyAction(initial, { type: 'move', from: 'g1', to: 'f3' });
+      assert.equal(moved.ok, true);
+      const state = moved.state;
+      const snapshot = structuredClone(state);
+      const card = state.players.white.hand[0];
+      if (lifecycle === 'geometry') {
+        const reference = beforeMove(state);
+        reference.orientation = 90;
+        reference.turn.color = 'black';
+        Object.assign(at(reference, 'a6')!, { role: 'rook', promoted: true });
+        Object.assign(at(reference, 'h7')!, { role, promoted: true });
+        assert.equal(isKingInCheck(reference, 'white'), false);
+        assert.equal(isKingInCheck(reference, 'black'), true);
+        assert.equal([...legalDests(reference).values()].flat().length, 0);
+      }
+      const after = earthquake(state, 'clockwise', [
+        { square: 'a6', role: 'rook' }, { square: 'h7', role },
+      ]);
+
+      if (lifecycle === 'geometry') {
+        assert.equal(after.orientation, 90);
+        assert.equal(isKingInCheck(after, 'white'), false);
+        assert.equal(isKingInCheck(after, 'black'), true);
+        const defender = beforeMove(after);
+        defender.turn.color = 'black';
+        assert.equal([...legalDests(defender).values()].flat().length, 0);
+        assert.equal(after.outcome, null, 'mate adjudication waits for the defending turn');
+      } else if (lifecycle === 'accounting') {
+        assert.equal(after.effects.length, state.effects.length + 1);
+        assert.ok(after.effects.some(effect =>
+          (effect as { card?: { id: string } }).card?.id === card.id));
+        assert.deepEqual(after.players.white.discard, state.players.white.discard);
+        assert.deepEqual(after.players.white.hand, [{ id: 'replacement', cardId: 'earthquake' }]);
+        assert.deepEqual(after.players.white.deck, []);
+        assert.deepEqual(after.turn, {
+          ...state.turn, cardPlays: { ...state.turn.cardPlays, white: state.turn.cardPlays.white + 1 },
+        });
+        assert.deepEqual(after.history[0], state.history[0]);
+        assert.equal(at(after, 'f3')?.id, at(state, 'f3')?.id);
+        assert.equal(after.history.at(-1)?.type, 'cardPlayed');
+      } else if (lifecycle === 'immutable input') {
+        assert.deepEqual(state, snapshot);
+        for (const [square, promotedRole] of [['a6', 'rook'], ['h7', role]] as const) {
+          assert.equal(at(state, square)?.role, 'pawn');
+          assert.equal(at(after, square)?.id, at(state, square)?.id);
+          assert.equal(at(after, square)?.role, promotedRole);
+          assert.equal(at(after, square)?.promoted, true);
+        }
+      } else {
+        const ended = applyAction(after, { type: 'endTurn' });
+        assert.equal(ended.ok, true);
+        assert.deepEqual(ended.state.outcome, { winner: 'white', reason: 'checkmate' });
+        assert.equal(ended.state.orientation, 90);
+        assert.equal(at(ended.state, 'a6')?.role, 'rook');
+        assert.equal(at(ended.state, 'h7')?.role, role);
+        assert.deepEqual(ended.state.effects, after.effects);
+        assert.deepEqual(ended.state.players.white, after.players.white);
+      }
+    });
+  }
+}
+
+test('rotation that exposes the actor king still fizzles and spends the card', () => {
+  const state = make('k7/8/8/8/4K3/5p2/8/8 w - - 0 1');
+  const snapshot = structuredClone(state);
+  assert.equal(isKingInCheck(state, 'white'), false);
+  const reference = structuredClone(state);
+  reference.orientation = 90;
+  assert.equal(isKingInCheck(reference, 'white'), true);
+  const after = earthquake(state, 'clockwise');
+  assert.deepEqual(state, snapshot);
+  assert.equal(after.orientation, state.orientation);
+  assert.deepEqual(after.pieces, state.pieces);
+  assert.deepEqual(after.effects, state.effects);
+  assert.equal(after.history.at(-1)?.reason, 'SELF_CHECK');
+  assert.equal(after.players.white.discard.some(card => card.id === state.players.white.hand[0].id), true);
 });
 
 test('rejects malformed targets atomically', () => {
