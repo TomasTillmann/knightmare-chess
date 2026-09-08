@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 110,
-  "coverageAuditsCompleted": 10,
+  "nextIteration": 112,
+  "coverageAuditsCompleted": 11,
   "iterations": [
     {
       "id": 1,
@@ -1124,6 +1124,36 @@
       "status": "passed",
       "finalFen": "rnqQ2r1/pb4kp/Pp5b/4ppP1/P1P1P3/4P1PN/R4K1P/2B4R b - - 4 26",
       "testCommit": "9517a34"
+    },
+    {
+      "id": 108,
+      "agent": "iteration_108",
+      "seed": 860108,
+      "reviewedActions": 113,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r6q/p2k3r/bpn1p1pp/2p1p3/PPP1pB1b/5P1R/N5PP/1R1KQB2 b - - 6 27",
+      "testCommit": "a62af35"
+    },
+    {
+      "id": 109,
+      "agent": "iteration_109",
+      "seed": 860109,
+      "reviewedActions": 107,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "n5nr/2p3p1/2B1k3/4bp1p/Q2PPB1P/6PR/PPP2P2/R4KN1 b - - 5 26",
+      "testCommit": "93d311f"
+    },
+    {
+      "id": 110,
+      "agent": "iteration_110_retry",
+      "seed": 860110,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4rbn1/2q1pkB1/ppp2p2/P2Pbrp1/2p5/1Q2P1pR/1P3PP1/1R2KBN1 b - - 3 27",
+      "testCommit": "53ebf76"
     }
   ],
   "coverageAudits": [
@@ -1186,15 +1216,21 @@
       "report": "coverage-100.md",
       "playedTypes": 79,
       "appliedTypes": 79
+    },
+    {
+      "afterIteration": 110,
+      "report": "coverage-110.md",
+      "playedTypes": 79,
+      "appliedTypes": 79
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 100,
-    "tests": 5005,
-    "passed": 5005,
+    "afterIteration": 110,
+    "tests": 5019,
+    "passed": 5019,
     "failed": 0,
-    "seconds": 31.754,
-    "scope": "All engine tests and numbered iterations through100"
+    "seconds": 31.099,
+    "scope": "All engine tests and numbered iterations through110"
   },
   "performanceFixes": [
     {
