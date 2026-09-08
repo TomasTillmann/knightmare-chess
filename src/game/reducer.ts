@@ -6786,6 +6786,11 @@ function namePiece(
     resolvedEffectIds: consumed.map(effect => effect.card.id),
   });
 
+  if (state.pendingDoomsayer && state.pendingRescue) {
+    return recordCardTransition(state, settlePendingRescue(state, { ok: true, state: resolved },
+      active.find(effect => effect.card.id === state.pendingDoomsayer!.cardInstanceId)!.card.cardId));
+  }
+
   if (resolved.pendingRescue) {
     const pending = resolved.pendingRescue;
     const speech = structuredClone(resolved.history.at(-1)!);
@@ -6851,7 +6856,9 @@ function declineDoomsayer(
   const resolved = structuredClone(state);
   resolved.pendingDoomsayer = null;
   resolved.history.push({ type: 'doomsayerDeclined', player });
-  return { ok: true, state: resolved };
+  if (!state.pendingRescue) return { ok: true, state: resolved };
+  return recordCardTransition(state, settlePendingRescue(state, { ok: true, state: resolved },
+    activeDoomsayers(state).find(effect => effect.card.id === state.pendingDoomsayer!.cardInstanceId)!.card.cardId));
 }
 
 function hasAfterMoveRescue(state: GameState, movedPieces: readonly PieceState[]): boolean {
@@ -6862,7 +6869,8 @@ function hasAfterMoveRescue(state: GameState, movedPieces: readonly PieceState[]
       const result = playCard(state, card.cardId, target, card.id);
       return result.ok
         && result.state.history.at(-1)?.type === 'cardPlayed'
-        && !moveLeavesRoyalInCheck(result.state, color, movedPieces);
+        && (!moveLeavesRoyalInCheck(result.state, color, movedPieces)
+          || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state, new Set(), movedPieces));
     }),
   );
 }
@@ -7337,7 +7345,8 @@ function settlePendingRescue(
     return result;
   }
   const pending = beforeCard.pendingRescue;
-  if (!pending || !result.ok || !result.state.pendingRescue || result.state.pendingAbduction) return result;
+  if (!pending || !result.ok || !result.state.pendingRescue || result.state.pendingAbduction
+    || result.state.pendingDoomsayer) return result;
   const movedPieces = pending.movedPieceIds.flatMap(id => {
     const piece = result.state.pieces.find(candidate => candidate.id === id);
     return piece ? [piece] : [];
@@ -7352,9 +7361,11 @@ function settlePendingRescue(
   const recorded = result.state.history.at(-1);
   const cardEvent = recorded?.type === 'cardFizzled'
     ? recorded
-    : { type: 'cardFizzled' as const, cardId, reason: 'SELF_CHECK' as const };
+    : { type: 'cardFizzled' as const, cardId, reason: 'SELF_CHECK' as const,
+      ...(beforeCard.pendingDoomsayer && cardId === 'haunting-memories' ? { copiedCardId: 'doomsayer' } : {}) };
   const spent = result.state.playedCards?.at(-1);
-  const spentCard = spent && beforeCard.players[spent.player].hand.find(card => card.id === spent.cardInstanceId);
+  const spentCard = spent && (beforeCard.players[spent.player].hand.find(card => card.id === spent.cardInstanceId)
+    ?? activeDoomsayers(beforeCard).find(effect => effect.card.id === spent.cardInstanceId)?.card);
   if (spentCard && !result.state.players[spent.player].discard.some(card => card.id === spentCard.id)) {
     result.state.players[spent.player].discard.push(spentCard);
   }
@@ -7364,7 +7375,7 @@ function settlePendingRescue(
     result.state.players[effect.owner].discard = result.state.players[effect.owner].discard
       .filter(card => card.id !== effect.card.id);
   }
-  result.state.pendingDoomsayer = structuredClone(beforeCard.pendingDoomsayer);
+  result.state.pendingDoomsayer = null;
   result.state.plotsAllowances = result.state.plotsAllowances?.slice(0, beforeCard.plotsAllowances?.length ?? 0);
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
@@ -7515,7 +7526,8 @@ function hasBoardOrCardEscape(state: GameState): boolean {
       cardPlayTargets(state, card.cardId).some(target => {
         const result = playCard(state, card.cardId, target, card.id);
         if (!result.ok || result.state.outcome) return false;
-        if (result.state.turn.moveMade) return !isKingInCheck(result.state, color);
+        if (result.state.turn.moveMade) return !isKingInCheck(result.state, color)
+          || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state);
         if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
         return legalDests(result.state, true, true, true).size > 0;
       }),
@@ -7533,7 +7545,7 @@ function combinations<T>(values: readonly T[], count: number, start = 0): T[][] 
   return result;
 }
 
-function hasDoomsayerEscape(state: GameState, seen = new Set<string>()): boolean {
+function hasDoomsayerEscape(state: GameState, seen = new Set<string>(), movedPieces: readonly PieceState[] = []): boolean {
   const active = activeDoomsayers(state);
   if (!active.length) return false;
   const signature = `${active.map(effect => effect.card.id).join(',')}|${state.pieces
@@ -7544,7 +7556,7 @@ function hasDoomsayerEscape(state: GameState, seen = new Set<string>()): boolean
   seen.add(signature);
 
   for (const role of DOOMSAYER_ROLES) {
-    const candidates = doomsayerTargets(state, state.turn.color, role);
+    const candidates = doomsayerTargets(state, state.pendingDoomsayer?.player ?? state.turn.color, role);
     const required = Math.min(active.length, candidates.length);
     if (!required) continue;
     for (const losses of combinations(candidates, required)) {
@@ -7561,6 +7573,10 @@ function hasDoomsayerEscape(state: GameState, seen = new Set<string>()): boolean
         !isDoomsayerEffect(effect) || !consumedIds.has(effect.card.id),
       );
       resolved.pendingDoomsayer = null;
+      if (state.pendingDoomsayer) {
+        if (!moveLeavesRoyalInCheck(resolved, state.turn.color, movedPieces)) return true;
+        continue;
+      }
       if (hasBoardOrCardEscape(resolved) || hasDoomsayerEscape(resolved, seen)) return true;
     }
   }
