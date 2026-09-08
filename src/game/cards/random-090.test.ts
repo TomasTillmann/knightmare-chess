@@ -125,7 +125,7 @@ test('iteration 090 independent semantic review', () => {
       const moving = expected.pieces.find(p => p.square === from)!
       assert.ok(moving, `${n}: physical mover at ${from}`)
       const victim = expected.pieces.find(p => p.square === to)
-      if (victim) { assert.equal(victim.royal, false); victim.square = null; victim.zone = 'captured' }
+      if (victim) { assert.equal(victim.royal, false); victim.square = null; victim.zone = 'captured'; victim.capturedBy = actor }
       moving.square = to
     }
     let resetClock = false
@@ -235,6 +235,7 @@ test('iteration 090 independent semantic review', () => {
   assert.ok(captureByAssassin)
   assert.deepEqual(state.pieces.find(p => p.id === 'white-pawn-f2'), captureByAssassin.pieces.find(p => p.id === 'white-pawn-f2'))
   assert.equal(state.pieces.find(p => p.id === 'white-pawn-f2')!.zone, 'captured')
+  assert.equal(state.pieces.find(p => p.id === 'white-pawn-f2')!.capturedBy, 'white')
   assert.equal(state.fen, '3q1b2/1ppkp2r/p2p1pp1/5n2/P3Pp2/5bPP/1PPK4/r3PRNB w - - 0 20')
   assert.deepEqual(trace.steps[80]!.action, { type: 'playCard', cardId: 'winged-victory', cardInstanceId: 'white-deck-2-winged-victory', target: { pieceId: 'white-pawn-f2', to: 'e5' } })
   const original = structuredClone(state)

@@ -18,7 +18,8 @@ export interface RandomTrace {
   failure?: string;
 }
 
-export const digest = (state: GameState): string => createHash('sha256').update(JSON.stringify(state)).digest('hex');
+export const digest = (state: GameState): string => createHash('sha256')
+  .update(JSON.stringify(state, (key, value) => key === 'capturedBy' ? undefined : value)).digest('hex');
 
 export function maySampleCard(state: GameState, card: { id: string; cardId: string }, owner: 'white' | 'black'): boolean {
   const extra = state.plotsAllowances?.some(item => item.player === owner && item.remaining > 0 && item.eligibleCards.includes(card.id));
@@ -40,6 +41,10 @@ export function checkState(state: GameState): void {
   for (const piece of state.pieces) {
     assert.equal(piece.zone === 'board', piece.square !== null, `${piece.id}: zone agrees with square`);
     if (piece.square) assert.match(piece.square, /^[a-h][1-8]$/);
+    if (piece.capturedBy !== undefined) {
+      assert.ok(piece.capturedBy === 'white' || piece.capturedBy === 'black', `${piece.id}: valid capture actor`);
+      assert.equal(piece.zone, 'captured', `${piece.id}: capture actor only on captured pieces`);
+    }
     if (piece.royal) assert.ok(piece.zone === 'board' || piece.zone === 'away', 'a King cannot be captured or dead');
   }
   for (const color of ['white', 'black'] as const) {
