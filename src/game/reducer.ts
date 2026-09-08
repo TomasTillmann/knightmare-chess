@@ -1232,7 +1232,7 @@ export function doppelgangerDests(state: GameState, from: SquareName): SquareNam
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === from);
   const copied = doppelgangerCopy(state);
   const copiedRoles = copied
-    ? physicalPieces(state, copied).map(component => component.role).filter(role => role !== 'pawn')
+    ? physicalPieces(state, copied).map(component => component.role)
     : [];
   if (
     !piece
@@ -1243,11 +1243,25 @@ export function doppelgangerDests(state: GameState, from: SquareName): SquareNam
   ) return [];
 
   const board = setupFor(state).board;
-  return [...new Set(copiedRoles.flatMap(role => [...attacks(
-    { color: piece.owner, role },
-    parseSquare(from),
-    board.occupied,
-  ).diff(board.occupied)].map(makeSquare)))].filter(to => curseAllowsMove(state, piece, from, to));
+  const source = parseSquare(from);
+  return [...new Set(copiedRoles.flatMap(role => {
+    const destinations: SquareName[] = [];
+    if (role === 'pawn') {
+      const [fileStep, rankStep] = pawnForward(state, piece.owner);
+      const maxDistance = onStartingSquare(state, piece.owner, from) ? 2 : 1;
+      for (let distance = 1; distance <= maxDistance; distance += 1) {
+        const file = squareFile(source) + fileStep * distance;
+        const rank = squareRank(source) + rankStep * distance;
+        if (file < 0 || file > 7 || rank < 0 || rank > 7 || board.has(rank * 8 + file)) break;
+        destinations.push(makeSquare(rank * 8 + file));
+      }
+    } else {
+      destinations.push(...[...attacks(
+        { color: piece.owner, role }, source, board.occupied,
+      ).diff(board.occupied)].map(makeSquare));
+    }
+    return destinations.filter(to => !forbiddenCityBlocksMove(state, from, to, role === 'knight'));
+  }))].filter(to => curseAllowsMove(state, piece, from, to));
 }
 
 export function heresyDests(state: GameState, from: SquareName): SquareName[] {
@@ -3278,9 +3292,6 @@ function playDoppelganger(state: GameState, target: unknown, cardInstanceId?: un
   if (!copied) {
     return reject(state, 'INVALID_TIMING', 'There is no single previous move to copy.');
   }
-  if (physicalPieces(state, copied).every(component => component.role === 'pawn')) {
-    return reject(state, 'WRONG_ROLE', 'Doppelganger cannot copy a Pawn.');
-  }
   const moves = parseCardMoves(target, 1);
   if (!moves || moves.length !== 1) {
     return reject(state, 'INVALID_TARGET', 'Choose one valid piece move.');
@@ -3297,19 +3308,6 @@ function playDoppelganger(state: GameState, target: unknown, cardInstanceId?: un
   if (!doppelgangerDests(state, move.from).includes(move.to)) {
     return reject(state, 'ILLEGAL_MOVE', 'Copy the last moved piece to an empty square.');
   }
-  const copiedGeometry = physicalPieces(state, copied).some(component =>
-    component.role !== 'pawn'
-    && !forbiddenCityBlocksMove(state, move.from, move.to, component.role === 'knight')
-    && attacks(
-      { color: piece.owner, role: component.role },
-      parseSquare(move.from),
-      setupFor(state).board.occupied,
-    ).has(parseSquare(move.to)),
-  );
-  if (!copiedGeometry) {
-    return reject(state, 'ILLEGAL_MOVE', 'That route is blocked by Forbidden City.');
-  }
-
   const wasInCheck = isKingInCheck(state, color);
   const resolved = structuredClone(state);
   resolved.pieces.find(candidate => candidate.id === piece.id)!.square = move.to;
