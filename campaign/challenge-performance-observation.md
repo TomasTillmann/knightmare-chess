@@ -1,0 +1,11 @@
+# Iteration 116 legality-search timing observation
+
+The complete generator finished 111 actions / 50 move commands in 90.11 seconds. A stable public state after action 77 is preserved permanently in `fixtures/challenge-target-slow.json`; the prefix can also be reconstructed from the original trace. The temporary audit copy was removed after verification. The position is `rn1r2b1/2p1k1pR/1p1bQq1n/P2pp3/3PPp1P/P7/2P2PP1/1NBKRN1B b - - 9 18`.
+
+Parent probes ran each `legalDests` call in a separate Node child with a five-second timeout. The unchanged state timed out. Removing only Black's hand completed in 38 ms (three movable pieces); removing only White's hand still timed out; removing both hands completed in 38 ms. These modified-hand fixtures isolate cost and are not counted as numbered iteration coverage.
+
+Keeping only one original Black hand card at a time: Doomsayer 50 ms / three pieces; Challenge timed out; Truce 68 ms / three pieces; Fireball 77 ms / five pieces; Riposte 40 ms / three pieces. Direct `cardPlayTargets` on the unchanged before-move state completed in 0–1 ms for Doomsayer, Challenge, Truce and Fireball. The slow path therefore depends on Challenge during legal-move enumeration, separately from the verified Doomsayer response defect.
+
+After the Doomsayer fix, the full state still exceeded five seconds under concurrent load and measured 3.630 seconds in isolation. Regression `bf63be0` bounded the query and checked nonempty results plus full input immutability. Its final two-second child-process budget (`c2c266e`) includes startup and measured load margin; the original isolated query exceeds it.
+
+Production fix `fcc76ff` lazily shares the opponent legal-move map across a single Challenge target listing. It preserves target validation order and rescues where Challenge removes check by restricting the opponent's next piece. The isolated query now takes 785–793 ms; the full-suite regression took 1.914 seconds including process startup. All 5,051 engine tests passed in 29.183 seconds, with typecheck passing. The fresh independent audit passed 59 probes in two groups, including both-color rescues, every returned move in the reproduced position, rejected opening targets, and the designated next move. See `audit-challenge-performance.md` and its retained run journal.

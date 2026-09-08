@@ -1368,6 +1368,16 @@
       "fixCommit": "dd9fc26",
       "audit": "audit-passing-performance.md",
       "finding": "Vendetta target discovery simulated noncaptures and fully enumerated impossible Passing swaps"
+    },
+    {
+      "iteration": 116,
+      "regressionCommit": "bf63be0",
+      "timingMarginCommit": "c2c266e",
+      "fixCommit": "fcc76ff",
+      "audit": "audit-challenge-performance.md",
+      "finding": "Challenge target listing redundantly recomputed opponent legal moves for every candidate",
+      "baselineSeconds": 3.63,
+      "fixedQueryMilliseconds": 785
     }
   ],
   "samplerTargetFix": {
