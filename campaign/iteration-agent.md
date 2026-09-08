@@ -38,6 +38,10 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    computed intermediate square strings an explicit `string` annotation.
    Verify actual rank/file/diagonal alignment before saying a piece blocks a
    King attack; an unaligned Queen or Bishop has no such ray to block.
+   Before naming a blocker, inspect that step's actual board and verify the
+   occupied square lies strictly between the attacker and target. Do not add
+   speculative blocker explanations to quiet moves: a concise movement reason
+   plus the independent royal-safety assertion is sufficient.
    Apply §11.7 legal-capture restrictions when assessing check: a neutral piece's
    hypothetical capture must also preserve its controller's King safety (§15.1).
    If shared typecheck flags another active agent's file, report its path to the
