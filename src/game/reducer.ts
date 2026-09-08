@@ -800,6 +800,7 @@ export function forcedMarchDests(state: GameState, from: SquareName): SquareName
     !pawn
     || (pawn.owner !== state.turn.color && !pawn.neutral)
     || !hasUnpromotedPawn(state, pawn)
+    || !dungeonAllowsMove(state, pawn)
   ) return [];
 
   const square = parseSquare(from);
