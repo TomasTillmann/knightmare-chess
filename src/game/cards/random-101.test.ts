@@ -1,4 +1,3 @@
-// Iteration 101: assigned fresh-agent regression target.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

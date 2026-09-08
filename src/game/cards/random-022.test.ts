@@ -7,7 +7,6 @@ import { checkState, digest, type RandomTrace } from './random-campaign.js';
 
 // Rules §§8–11 govern every turn boundary, draw and temporary self-check below.
 // Unmentioned piece identities, hands, effects and clocks stay unchanged.
-// Action 98 was independently verified in campaign/verify-022.md before review resumed.
 const rationale = [
   '1. White h2-h3 advances to an empty square; pawn clock resets and King e1 stays screened.',
   '2. Close White turn; Black receives its move and both card allowances reset.',

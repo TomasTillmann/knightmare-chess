@@ -1,5 +1,0 @@
-Passing in the Night target enumeration after iteration 086 action 44 took 72.615 seconds and returned no targets. The position contains Confabulation, Vendetta, Fortification, and a Chaos rewind. Ordinary legal-move enumeration took 48 ms.
-
-Fresh test-only regression e5fcc2b failed its five-second bound. Fresh test-blind implementation dd9fc26 filters capture candidates before simulating moves, stops existence searches at the first capture, and skips impossible noncapturing Passing targets under Vendetta. Public query time fell to 6.87 ms with the same empty result. Thirteen directed implementation checks passed; exhaustive public action comparison matched all 888 legal targets among 1,632 ordinary-start candidates.
-
-Parent targeted gates and typecheck passed. The complete engine suite through accepted iteration 089 passed 4,991 tests with zero failures in 28.453 seconds; unfinished iteration 090 was excluded. Fresh engine-only audit passed 24 probes across two groups. Its report and executed source hashes are retained separately. No numbered move trace was replaced for this performance correction.
