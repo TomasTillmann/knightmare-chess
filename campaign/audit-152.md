@@ -1,0 +1,8 @@
+# Audit 152
+
+- Baseline: `AUDIT_152_CLEAN`, 94 probes, 3 groups, 0 findings, 634 ms, SHA-256 `3f7f737c24153a91da8c9a7b03e562fe7ba070365c0197d489790d7e50f8be63`.
+- Independent white mirror: `controlColors = ['black', 'white']`, using the mirrored White Kd1/c1 self-check fixture and the §11.6/17.1 chaos/fortification cases.
+- Final: `AUDIT_152_CLEAN`, 101 probes, 4 groups, 0 findings, 635 ms, SHA-256 `cf22a470d9f59bfd20a93fd78f509ad369acbdd99382328d5e34c933d782dc3b`.
+- Parent verified the complete scaffold and mirrored geometry before acknowledging cleanup. Temporary scaffold and public repro were deleted; all run records remain. Earlier attempts missed startup/patch checkpoints, and one queued malformed-input group landed after interruption; the later parent-validated scaffold retained it.
+- Fix `7ec113c` restores the saved cancellation prohibition in the shared failed-rescue rollback. Expanded targeted gate: 28/28; full engine suite through iteration 153: 5,148/5,148 in 37.181 seconds; typecheck passed.
+- Historical iterations 034 (action 91) and 079 (action 80) contained the same missed defect. Parent compared every transition against the pre-fix production engine: the only changes are the restored `chaosForbidden` and its following move's `chaosCheckpoint.before.chaosForbidden`. Every original command remains legal and both final boards are identical. Original JSON/text traces and all prior semantic assertions remain intact; test-only commit `6838076` adds explicit ban assertions and two literal replay-hash corrections per trace. An isolated pre-fix-engine run produced 15 passes/13 failures across the 28 expanded regressions; the corrected engine passes all 28. The isolated copy was deleted.

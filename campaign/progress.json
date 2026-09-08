@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 154,
+  "nextIteration": 159,
   "coverageAuditsCompleted": 15,
   "iterations": [
     {
@@ -373,7 +373,11 @@
       "reviewedMoves": 50,
       "status": "passed",
       "finalFen": "6kr/1b1Nqrp1/p6n/1p1PBQ2/PpB1PP1b/3PR3/5P2/n3KRN1 w A - 3 25",
-      "testCommit": "6cb2210"
+      "testCommit": "6cb2210",
+      "retrospectiveFinding": "Same canceled-movement-ban rollback defect found in iteration 152; original trace preserved, explicit corrected assertions and two replay hashes retain the full 50-move sequence",
+      "retrospectiveFirstInvalidAction": 91,
+      "retrospectiveFixCommit": "7ec113c",
+      "retrospectiveTestCommit": "6838076"
     },
     {
       "id": 35,
@@ -834,7 +838,11 @@
       "reviewedMoves": 50,
       "status": "passed",
       "finalFen": "2b2q1Q/2rpp1br/5Pkp/1pp3p1/1nP1PN2/PPKP3N/1P5P/1B3n1R b - - 4 25",
-      "testCommit": "2983a44"
+      "testCommit": "2983a44",
+      "retrospectiveFinding": "Same canceled-movement-ban rollback defect found in iteration 152; original trace preserved, explicit corrected assertions and two replay hashes retain the full 50-move sequence",
+      "retrospectiveFirstInvalidAction": 80,
+      "retrospectiveFixCommit": "7ec113c",
+      "retrospectiveTestCommit": "6838076"
     },
     {
       "id": 80,
@@ -1591,13 +1599,62 @@
       "id": 152,
       "agent": "iteration_152",
       "seed": 860152,
-      "status": "finding",
+      "status": "fixed",
       "reviewedActions": 67,
       "reviewedMoves": 24,
       "finding": "Failed Fortification rescue drops Think Again replacement prohibition and allows canceled Rh8-h7 again",
       "testCommit": "061e10c",
       "verificationCommit": "c804013",
-      "expectedFinalFen": "Rn1k1b1r/3npp2/Bp1pp2p/2p5/4N3/5PP1/1PPPP2N/rRQ1KBNq b - - 3 15"
+      "expectedFinalFen": "Rn1k1b1r/3npp2/Bp1pp2p/2p5/4N3/5PP1/1PPPP2N/rRQ1KBNq b - - 3 15",
+      "finalFen": "Rn1k1b1r/3npp2/Bp1pp2p/2p5/4N3/5PP1/1PPPP2N/rRQ1KBNq b - - 3 15",
+      "observedFinalFenBeforeFix": "Rn1k1b1r/3npp2/Bp1pp2p/2p5/4N3/5PP1/1PPPP2N/rRQ1KBNq b - - 3 15",
+      "fixCommit": "7ec113c",
+      "audit": "audit-152.md",
+      "historicalRegressions": [
+        34,
+        79
+      ],
+      "historicalRegressionCommit": "6838076"
+    },
+    {
+      "id": 153,
+      "agent": "iteration_153",
+      "seed": 860153,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2b3n1/4r2r/p1n1qb2/P3p1N1/1pPp2p1/1Q1P4/2K1P2P/B1R2B1R w - - 3 27",
+      "testCommit": "38309c5"
+    },
+    {
+      "id": 154,
+      "agent": "iteration_154",
+      "seed": 860154,
+      "reviewedActions": 116,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "br2q3/4k1pr/2ppp1Pp/4nP1K/1p1P1P2/PP5B/2P4P/1RB2Q1R b - - 0 27",
+      "testCommit": "d558e1d"
+    },
+    {
+      "id": 155,
+      "agent": "iteration_155",
+      "seed": 860155,
+      "reviewedActions": 107,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1b2b1nr/2kp4/r1p2ppp/ppq1p1NP/P1P1PQ2/RP1P2n1/1KB2PPB/1N5R w - - 3 26",
+      "testCommit": "be634ad"
+    },
+    {
+      "id": 156,
+      "agent": "iteration_156",
+      "seed": 860156,
+      "reviewedActions": 108,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2b1q2r/2n1np2/3p3b/1pkp4/4P2p/2P1P3/1Q1P1PP1/R1B1KBN1 b - - 0 25",
+      "testCommit": "4a78a84"
     }
   ],
   "coverageAudits": [
@@ -1693,12 +1750,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 150,
-    "tests": 5119,
-    "passed": 5119,
+    "afterIteration": 153,
+    "tests": 5148,
+    "passed": 5148,
     "failed": 0,
-    "seconds": 36.741,
-    "scope": "All engine tests and numbered iterations through 150"
+    "seconds": 37.181,
+    "scope": "All engine tests and numbered iterations through 153"
   },
   "performanceFixes": [
     {
