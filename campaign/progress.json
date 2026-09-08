@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 32,
+  "nextIteration": 36,
   "coverageAuditsCompleted": 3,
   "iterations": [
     {
@@ -327,6 +327,56 @@
       "status": "passed",
       "finalFen": "8/n1p1nkp1/pr3p2/1pP2P2/1P1pP3/P1B1P2R/R1K1bP1P/6q1 b - - 2 28",
       "testCommit": "e38a098"
+    },
+    {
+      "id": 31,
+      "agent": "iteration_031",
+      "seed": 860031,
+      "reviewedActions": 125,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1b5/p1kn3r/7p/4P1p1/P4P2/R4QRP/nP1P4/5K2 w - - 2 31",
+      "testCommit": "51758c6"
+    },
+    {
+      "id": 32,
+      "agent": "iteration_032",
+      "seed": 860032,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1n1k2n1/3p2p1/r1B5/p3rp2/PNp2P2/1PR1P2K/6P1/1B1Q3R b - - 0 27",
+      "testCommit": "0036455"
+    },
+    {
+      "id": 33,
+      "agent": "iteration_033",
+      "seed": 860033,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rNbk1bn1/1p1B2p1/3p2p1/5pp1/6P1/2Q1P2R/1PPP1P2/3KQRN1 b - - 2 27",
+      "testCommit": "0cc6fbb"
+    },
+    {
+      "id": 34,
+      "agent": "iteration_034",
+      "seed": 860034,
+      "reviewedActions": 107,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "6kr/1b1Nqrp1/p6n/1p1PBQ2/PpB1PP1b/3PR3/5P2/n3KRN1 w A - 3 25",
+      "testCommit": "6cb2210"
+    },
+    {
+      "id": 35,
+      "agent": "iteration_035",
+      "seed": 860035,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1nb1brk1/6P1/pp2pB2/5QN1/3R2PP/1P5R/P1PK4/1rB2r2 w - - 6 28",
+      "testCommit": "4cc32d2"
     }
   ],
   "coverageAudits": [
@@ -350,11 +400,20 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 30,
-    "tests": 4922,
-    "passed": 4922,
+    "afterIteration": 35,
+    "tests": 4928,
+    "passed": 4928,
     "failed": 0,
-    "seconds": 61.1,
-    "scope": "All engine tests and numbered iterations through030; in-progress campaign files excluded"
-  }
+    "seconds": 20.185,
+    "scope": "All engine tests and numbered iterations through035"
+  },
+  "performanceFixes": [
+    {
+      "iteration": 31,
+      "regressionCommit": "5416c9e",
+      "fixCommit": "ba9884e",
+      "audit": "audit-rescue-performance.md",
+      "finding": "Existential legality checks unnecessarily enumerated every move and card rescue"
+    }
+  ]
 }
