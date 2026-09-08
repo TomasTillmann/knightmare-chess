@@ -1365,11 +1365,7 @@ function recordsBogRollback(
   const rankDelta = squareRank(destination) - squareRank(source);
   const distance = Math.max(Math.abs(fileDelta), Math.abs(rankDelta));
   return distance >= 2 && (
-    piece.role === 'rook'
-      ? fileDelta === 0 || rankDelta === 0
-      : piece.role === 'bishop'
-        ? Math.abs(fileDelta) === Math.abs(rankDelta)
-        : (fileDelta === 0 || rankDelta === 0) || Math.abs(fileDelta) === Math.abs(rankDelta)
+    fileDelta === 0 || rankDelta === 0 || Math.abs(fileDelta) === Math.abs(rankDelta)
   );
 }
 
@@ -1570,8 +1566,24 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   }
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Bog does not take a target.');
 
-  const move = reactionEvent(state);
-  if (move?.type !== 'move' || !move.from || !move.to || move.promotion) {
+  const event = reactionEvent(state);
+  const cardId = event?.copiedCardId ?? event?.cardId;
+  const checkpoint = state.chaosCheckpoint?.before;
+  const additional = cardId === 'crusade' || cardId === 'merciless';
+  const preceding = additional && checkpoint ? reactionEvent(checkpoint) : undefined;
+  const castle = preceding?.castlingRook;
+  const turnOrigin = castle
+    ? `${castle.to[0] === 'd' ? 'a' : 'h'}${castle.to[1]}` as SquareName
+    : preceding?.from;
+  const movementCard = event?.type === 'cardPlayed'
+    && ['masquerade', 'blessing', 'doppelganger', 'bombard', 'ghostwalk', 'crusade', 'merciless']
+      .includes(cardId ?? '');
+  const movement = movementCard ? event.movement ?? parseCardMoves(event.target, 1) : undefined;
+  const move = event && { ...event,
+    from: turnOrigin ?? movement?.[0]?.from ?? event.from,
+    to: movement?.at(-1)?.to ?? event.to,
+  };
+  if ((!movementCard && move?.type !== 'move') || !move?.from || !move.to || move.promotion) {
     return reject(state, 'INVALID_TIMING', "Bog must immediately follow your opponent's move.");
   }
   const piece = state.pieces.find(candidate =>
@@ -1589,21 +1601,31 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   const diagonal = Math.abs(fileDelta) === Math.abs(rankDelta);
   if (
     distance < 2
-    || (piece.role === 'rook' ? !straight : piece.role === 'bishop' ? !diagonal : !straight && !diagonal)
+    || !straight && !diagonal
   ) return reject(state, 'ILLEGAL_MOVE', 'The preceding move must travel at least two squares.');
 
-  const first = makeSquare(
-    (squareRank(from) + Math.sign(rankDelta)) * 8 + squareFile(from) + Math.sign(fileDelta),
-  );
-  const captured = move.capturedId
+  const step = Math.sign(rankDelta) * 8 + Math.sign(fileDelta);
+  let first = makeSquare(from + step);
+  if (cardId === 'ghostwalk') {
+    while (first !== move.to && checkpoint?.pieces.some(candidate =>
+      candidate.zone === 'board' && candidate.square === first)) {
+      first = makeSquare(parseSquare(first) + step);
+    }
+  } else if (cardId === 'bombard' && checkpoint && (
+    checkpoint.pieces.some(candidate => candidate.zone === 'board' && candidate.square === first)
+    || forbiddenCitySquares(checkpoint).has(first)
+  )) {
+    first = makeSquare(parseSquare(first) + step);
+  }
+  const captured = move.capturedId && first !== move.to
     ? state.pieces.find(candidate => candidate.id === move.capturedId)
     : undefined;
-  if (move.capturedId && (!captured || captured.zone !== 'captured' || captured.square !== null)) {
+  if (move.capturedId && first !== move.to && (!captured || captured.zone !== 'captured' || captured.square !== null)) {
     return reject(state, 'INVALID_TIMING', 'The preceding move cannot be reconstructed.');
   }
 
   const resolved = structuredClone(state);
-  const before = captured ? state.chaosCheckpoint?.before : undefined;
+  const before = captured ? checkpoint : undefined;
   if (captured) {
     const victim = before?.pieces.find(candidate => candidate.id === captured.id);
     const components = before && victim ? physicalPieces(before, victim) : [];
@@ -1625,9 +1647,18 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
       delete restored.capturedBy;
     }
   }
+  if (resolved.pieces.some(candidate => candidate.zone === 'board' && candidate.square === first
+    && candidate.id !== piece.id) || forbiddenCitySquares(resolved).has(first)) {
+    return reject(state, 'ILLEGAL_MOVE', 'The shortened move has no available destination.');
+  }
   resolved.pieces.find(candidate => candidate.id === piece.id)!.square = first;
-  if (before) resolved.fen = before.fen;
-  else if (move.previousFen) resolved.fen = move.previousFen;
+  if (additional && checkpoint) {
+    const setup = parseFen(checkpoint.fen).unwrap();
+    setup.halfmoves = Math.max(0, setup.halfmoves - 1);
+    if (mover === 'black') setup.fullmoves = Math.max(1, setup.fullmoves - 1);
+    resolved.fen = makeFen(setup);
+  } else if (move.previousFen) resolved.fen = move.previousFen;
+  else if (checkpoint) resolved.fen = checkpoint.fen;
   else {
     const setup = setupFor(resolved, mover);
     setup.turn = mover;
@@ -1635,7 +1666,8 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     if (mover === 'black') setup.fullmoves = Math.max(1, setup.fullmoves - 1);
     resolved.fen = makeFen(setup);
   }
-  completeReplacementMove(resolved, mover, resetsHalfmoveClock(piece), [], [piece]);
+  completeReplacementMove(resolved, mover,
+    resetsHalfmoveClock(piece, Boolean(move.capturedId && first === move.to)), [], [piece]);
   if (before) {
     springManTraps(before, resolved);
     if (resolved.shieldMove) resolved.shieldMove.capturedOpponent = resolved.pieces.some(candidate =>
