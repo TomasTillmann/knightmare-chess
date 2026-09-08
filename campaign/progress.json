@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 136,
+  "nextIteration": 139,
   "coverageAuditsCompleted": 13,
   "iterations": [
     {
@@ -1380,6 +1380,41 @@
       "status": "passed",
       "finalFen": "1r2k2r/b3p2b/pnp2pp1/3q1PN1/3p2np/2N3P1/R1B1P2P/5KBp b k - 2 27",
       "testCommit": "6ae70f5"
+    },
+    {
+      "id": 133,
+      "agent": "iteration_133",
+      "seed": 860133,
+      "reviewedActions": 125,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4k2B/3p2pP/1r3pR1/4r3/N1B1B3/b7/1RP3Pq/R1Q1K3 w - - 3 31",
+      "testCommit": "8595676"
+    },
+    {
+      "id": 134,
+      "agent": "iteration_134",
+      "seed": 860134,
+      "reviewedActions": 113,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1qn1b1r/4k3/4pp1p/p1p2pp1/bpP1nBPP/1P3R1P/3R4/1NQK1B1P w - - 2 28",
+      "testCommit": "34c7574"
+    },
+    {
+      "id": 135,
+      "agent": "iteration_135_cli",
+      "seed": 860135,
+      "reviewedActions": 113,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1bn2b2/1p1kppp1/p7/3P3R/4p3/p3Q3/2B5/1R2K3 b - - 0 28",
+      "testCommit": "9d94547",
+      "agentRuntime": "codex exec --approve-for-me",
+      "agentThreadId": "01a07f2f-d6c8-7572-8a43-cc7f4381a18c",
+      "initialTargetSha256": "cc822c2941a08a33085b928f3f720ac8eec64b40b59620017ca8f2122c388c6a",
+      "firstPatchAt": "2026-09-08T04:04:08.008Z",
+      "agentElapsedSecondsApprox": 260
     }
   ],
   "coverageAudits": [
