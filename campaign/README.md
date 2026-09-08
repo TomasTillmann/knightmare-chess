@@ -20,7 +20,9 @@ Run a coverage checkpoint through a numbered iteration with
 
 Sampling: independently shuffled full catalog decks, five-card hands, using the
 explicit temporary deck-building variant in rules §4.3. Randomized candidate order
-samples one card in hand uniformly before checking its timing and one random target.
+samples one card in hand uniformly before checking its timing. From iteration 047,
+it shuffles that card's target candidates and tries them until one is legal, so
+cards with broad candidate lists are not disadvantaged by an invalid first target.
 Mandatory self-check rescues search shuffled cards and targets for a legal cure.
 After checkpoint 010, bounded random integers use rejection sampling. Pending
 Doomsayer choices, successful Abduction recall, and Panic timer expiry are sampled
