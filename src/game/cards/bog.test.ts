@@ -4,8 +4,57 @@ import { describe, it } from 'node:test';
 import { CARD_CATALOG } from './catalog.js';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
+import type { GameAction, GameState } from '../types.js';
 
 const CARD = 'bog';
+
+function bogCompositeAction(state: GameState, action: GameAction): GameState {
+  const result = applyAction(state, action);
+  assert.equal(result.ok, true, JSON.stringify(result.ok ? action : result.error));
+  if (!result.ok) throw new Error('Composite fixture action failed');
+  return result.state;
+}
+
+describe('Bog reverses a capture of a Confabulated piece', () => {
+  const sliders = [
+    { role: 'rook', fen: '1n5k/8/r7/8/8/8/R7/7K b - - 0 1', from: 'a2', first: 'a3' },
+    { role: 'queen', fen: '1n5k/8/r7/8/8/8/Q7/7K b - - 0 1', from: 'a2', first: 'a3' },
+    { role: 'bishop', fen: '1n5k/8/r7/8/8/3B4/8/7K b - - 0 1', from: 'd3', first: 'c4' },
+  ] as const;
+  for (const slider of sliders) {
+    for (const check of ['identities', 'effect', 'rook movement', 'knight movement', 'accounting and immutability']) {
+      it(`${slider.role}: restores ${check}`, () => {
+        const initial = createGameState({ fen: slider.fen, hands: { white: [], black: ['confabulation', CARD] }, decks: { white: [], black: [] } });
+        const merged = bogCompositeAction(initial, { type: 'playCard', cardId: 'confabulation', target: [{ from: 'b8', to: 'a6' }] });
+        const before = bogCompositeAction(merged, { type: 'endTurn' });
+        const victims = before.pieces.filter(piece => piece.owner === 'black' && !piece.royal);
+        assert.equal(victims.length, 2);
+        assert.equal(before.effects.length, 1);
+        const captured = bogCompositeAction(before, { type: 'move', from: slider.from, to: 'a6' });
+        for (const victim of victims) assert.equal(captured.pieces.find(piece => piece.id === victim.id)?.zone, 'captured');
+        const snapshot = JSON.stringify(captured);
+        const stopped = bogCompositeAction(captured, { type: 'playCard', cardId: CARD });
+        assert.equal(stopped.pieces.find(piece => piece.square === slider.first)?.role, slider.role);
+        if (check === 'identities') {
+          assert.deepEqual(stopped.pieces.filter(piece => victims.some(victim => victim.id === piece.id)), victims);
+        } else if (check === 'effect') {
+          assert.deepEqual(stopped.effects, before.effects);
+        } else if (check.endsWith('movement')) {
+          const ready = bogCompositeAction(stopped, { type: 'endTurn' });
+          const destination = check === 'rook movement' ? 'b6' : 'c5';
+          const moved = bogCompositeAction(ready, { type: 'move', from: 'a6', to: destination });
+          assert.deepEqual(moved.pieces.filter(piece => victims.some(victim => victim.id === piece.id)), victims.map(piece => piece.square === 'a6' ? { ...piece, square: destination } : piece));
+          assert.deepEqual(moved.effects, before.effects);
+        } else {
+          assert.equal(JSON.stringify(captured), snapshot);
+          assert.deepEqual(stopped.players.black.hand, []);
+          assert.deepEqual(stopped.players.black.discard.map(card => card.cardId), [CARD]);
+          assert.equal(stopped.pieces.length, before.pieces.length);
+        }
+      });
+    }
+  }
+});
 
 function assertBogControl() {
   const before = createGameState({

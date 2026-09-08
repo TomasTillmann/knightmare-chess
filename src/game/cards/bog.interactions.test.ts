@@ -36,6 +36,74 @@ const at = (state: State, square: string) =>
   state.pieces.find(piece => piece.zone === 'board' && piece.square === square);
 const card = (id: string, cardId: string) => ({ id, cardId });
 
+const compositeCaptures = [
+  ['white rook east', '7k/8/8/8/8/3r4/7K/R2n4 b - - 0 1', 'd3', 'd1', 'a1', 'b1', 'f2', 'd4'],
+  ['white bishop northeast', '7k/8/4r3/8/4n3/8/2B5/7K b - - 0 1', 'e6', 'e4', 'c2', 'd3', 'g5', 'e6'],
+  ['black queen north', '7K/8/8/3N1R2/8/8/3q3k/8 w - - 0 1', 'f5', 'd5', 'd2', 'd3', 'f6', 'a5'],
+] as const;
+
+for (const [name, fen, mergeFrom, destination, from, stopped, knightTo, rookTo] of compositeCaptures) {
+  function restoredComposite() {
+    const owner: Color = fen.includes(' b ') ? 'black' : 'white';
+    let before = game({ fen, hands: { [owner]: ['confabulation', BOG] } });
+    const victimIds = [at(before, mergeFrom)!.id, at(before, destination)!.id];
+    before = applied(before, {
+      type: 'playCard', cardId: 'confabulation', target: [{ from: mergeFrom, to: destination }],
+    });
+    before = applied(before, { type: 'endTurn' });
+    const victims = before.pieces.filter(piece => victimIds.includes(piece.id));
+    assert.equal(victims.length, 2, 'public Confabulation must merge both components');
+    assert.equal(before.effects.length, 1, 'Confabulation must be active before the capture');
+    assert.equal(at(before, mergeFrom), undefined);
+    const moved = move(before, from, destination);
+    assert.equal(moved.pieces.filter(piece => victims.some(victim => victim.id === piece.id) && piece.zone === 'captured').length, 2);
+    const resolved = bog(moved);
+    return { before, victims, resolved, owner };
+  }
+
+  test(`Bog composite capture: ${name} restores every physical component and capture metadata`, () => {
+    const { before, victims, resolved } = restoredComposite();
+    for (const victim of victims) assert.deepEqual(resolved.pieces.find(piece => piece.id === victim.id), victim);
+    assert.equal(at(resolved, stopped)?.id, at(before, from)?.id);
+    assert.equal(at(resolved, from), undefined);
+    assert.equal(resolved.pieces.filter(piece => piece.zone === 'board').length, before.pieces.filter(piece => piece.zone === 'board').length);
+  });
+
+  test(`Bog composite capture: ${name} restores the live merger and its retained card`, () => {
+    const { before, resolved, owner } = restoredComposite();
+    assert.deepEqual(resolved.effects, before.effects);
+    assert.deepEqual(resolved.players[owner].discard.filter(item => item.cardId === 'confabulation'), []);
+    assert.equal(resolved.players[owner].discard.filter(item => item.cardId === BOG).length, 1);
+  });
+
+  for (const [mode, to] of [['knight', knightTo], ['rook', rookTo]] as const) {
+    test(`Bog composite capture: ${name} retains ${mode} movement for both components`, () => {
+      const { resolved, victims } = restoredComposite();
+      const next = move(applied(resolved, { type: 'endTurn' }), destination, to);
+      assert.equal(at(next, destination), undefined);
+      for (const victim of victims) {
+        const component = next.pieces.find(piece => piece.id === victim.id)!;
+        assert.equal(component.zone, victim.zone);
+        assert.equal(component.square, victim.zone === 'board' ? to : victim.square);
+      }
+      assert.equal(next.effects.some(effect => (effect as { type?: string }).type === 'confabulation'), true);
+    });
+  }
+
+  test(`Bog composite capture: ${name} preserves the restored object under a second capture`, () => {
+    const { resolved, victims } = restoredComposite();
+    let next = applied(resolved, { type: 'endTurn' });
+    const king = next.pieces.find(piece => piece.owner === next.turn.color && piece.role === 'king')!;
+    next = move(next, king.square!, king.square === 'h8' ? 'g8' : 'g2');
+    next = applied(next, { type: 'endTurn' });
+    next = move(next, stopped, destination);
+    const capture = next.history.at(-1)!;
+    assert.deepEqual([...(capture.capturedIds ?? [capture.capturedId])].sort(), victims.map(piece => piece.id).sort());
+    for (const victim of victims) assert.equal(next.pieces.find(piece => piece.id === victim.id)?.zone, 'captured');
+    assert.equal(next.effects.some(effect => (effect as { type?: string }).type === 'confabulation'), false);
+  });
+}
+
 const slides = [
   ['white rook north', '7k/8/8/8/8/8/8/R6K w - - 0 1', 'a1', 'a6', 'a2'],
   ['white rook west', '7k/8/8/8/8/8/8/3R3K w - - 0 1', 'd1', 'a1', 'c1'],
