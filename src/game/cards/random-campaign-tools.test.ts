@@ -9,10 +9,13 @@ test('a staged rescue may continue through Abduction before its mandatory resolu
   const stop = Symbol('rescue card chosen');
   let staged: GameState | undefined;
   let selected: GameState | undefined;
+  let previous: GameState | undefined;
   try {
-    generateTrace(860069, (step, _moves, state) => {
-      if (step === 77) staged = state;
-      if (step === 78) { selected = state; throw stop; }
+    generateTrace(860069, (_step, _moves, state) => {
+      if (previous?.pendingRescue && !previous.pendingAbduction && state.pendingAbduction) {
+        staged = previous; selected = state; throw stop;
+      }
+      previous = state;
     });
   } catch (error) { if (error !== stop) throw error; }
   assert.ok(staged?.pendingRescue, 'the King move is provisionally awaiting an after-move rescue');
