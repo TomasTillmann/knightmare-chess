@@ -2,11 +2,56 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction } from '../reducer.js';
+import { applyAction, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { GameAction, GameState } from '../types.js';
 
 const CARD = 'bog';
+
+describe('Bog responds to card-generated slider moves', () => {
+  const cases = [
+    ['bombard', '7k/8/8/8/8/8/P7/R6K w - - 0 1', 'a1', 'a6', 'a3', 'rook', true],
+    ['bombard', '7k/8/8/8/P7/8/8/R6K w - - 0 1', 'a1', 'a6', 'a2', 'rook', true],
+    ['bombard', '7k/8/8/8/8/8/8/Rn5K w - - 0 1', 'a1', 'f1', 'c1', 'rook', true],
+    ['ghostwalk', '7k/8/8/8/8/P7/P7/R6K w - - 0 1', 'a1', 'a6', 'a4', 'rook', true],
+    ['ghostwalk', '7k/8/8/8/8/8/P7/R6K w - - 0 1', 'a1', 'a6', 'a3', 'rook', true],
+    ['ghostwalk', '7k/8/8/8/8/2P5/1P6/B6K w - - 0 1', 'a1', 'f6', 'd4', 'bishop', true],
+    ['ghostwalk', '6k1/8/8/8/P7/8/8/Q6K w - - 0 1', 'a1', 'a6', 'a2', 'queen', true],
+    ['masquerade', '6k1/8/8/8/8/8/8/B6K w - - 0 1', 'a1', 'a6', 'a2', 'bishop', true],
+    ['masquerade', '7k/8/8/8/8/8/8/R6K w - - 0 1', 'a1', 'f6', 'b2', 'rook', true],
+    ['masquerade', '6k1/8/8/8/8/8/8/Q6K w - - 0 1', 'a1', 'f6', 'b2', 'queen', true],
+    ['masquerade', '7k/8/8/8/8/8/8/N6K w - - 0 1', 'a1', 'a6', 'a1', 'knight', false],
+    ['masquerade', '6k1/8/8/8/8/8/8/B6K w - - 0 1', 'a1', 'a2', 'a1', 'bishop', false],
+    ['masquerade', '7k/8/8/8/8/8/8/R6K w - - 0 1', 'a1', 'b2', 'a1', 'rook', false],
+    ['ghostwalk', '7k/8/8/8/8/8/8/R6K w - - 0 1', 'a1', 'a2', 'a1', 'rook', false],
+    ['ghostwalk', '7k/8/8/8/8/8/P7/7K w - - 0 1', 'a2', 'a4', 'a2', 'pawn', false],
+  ] as const;
+  for (const [cardId, fen, from, to, first, role, playable] of cases) {
+    it(`${cardId}: ${role} ${from}-${to}, ${playable ? `stops at ${first}` : 'ineligible'}`, () => {
+      if (!playable) assertBogControl();
+      const safeFen = fen.replace(/^[^/]+\/8\/8\//, '8/8/7k/');
+      const initial = createGameState({ fen: safeFen, hands: { white: [cardId], black: [CARD] }, decks: { white: [], black: [] } });
+      assert.equal(isKingInCheck(initial, 'white'), false, 'White fixture King starts safe');
+      assert.equal(isKingInCheck(initial, 'black'), false, 'Black fixture King starts safe');
+      const mover = initial.pieces.find(piece => piece.square === from)!;
+      const moved = bogCompositeAction(initial, { type: 'playCard', cardId, target: [{ from, to }] });
+      assert.equal(moved.pieces.find(piece => piece.id === mover.id)?.square, to, 'movement card must actually move the fixture');
+      const snapshot = JSON.stringify(moved);
+      const result = applyAction(moved, { type: 'playCard', cardId: CARD });
+      assert.equal(result.ok, playable);
+      assert.equal(JSON.stringify(moved), snapshot);
+      if (!result.ok) return;
+      assert.equal(result.state.pieces.find(piece => piece.id === mover.id)?.square, first);
+      assert.equal(result.state.pieces.find(piece => piece.id === mover.id)?.role, role);
+      assert.deepEqual(result.state.players.white.hand, []);
+      assert.deepEqual(result.state.players.black.hand, []);
+      assert.deepEqual(result.state.players.white.discard.map(card => card.cardId), [cardId]);
+      assert.deepEqual(result.state.players.black.discard.map(card => card.cardId), [CARD]);
+      const next = bogCompositeAction(result.state, { type: 'endTurn' });
+      assert.equal(applyAction(next, { type: 'move', from: 'h6', to: 'h7' }).ok, true);
+    });
+  }
+});
 
 function bogCompositeAction(state: GameState, action: GameAction): GameState {
   const result = applyAction(state, action);

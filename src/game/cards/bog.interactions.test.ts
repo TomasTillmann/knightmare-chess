@@ -36,6 +36,60 @@ const at = (state: State, square: string) =>
   state.pieces.find(piece => piece.zone === 'board' && piece.square === square);
 const card = (id: string, cardId: string) => ({ id, cardId });
 
+// Official FAQ p. 13: an extra move is part of the total turn displacement.
+const extraMoveBogs = [
+  ['Merciless north', '7k/8/8/8/8/8/8/R6K w - - 7 1', 'merciless', 'a1', 'a3', 'a6', 'a2'],
+  ['Merciless capture', '7k/8/n7/8/8/8/8/R6K w - - 7 1', 'merciless', 'a1', 'a3', 'a6', 'a2'],
+  ['Crusade northeast', '7k/8/8/8/8/8/8/2B4K w - - 7 1', 'crusade', 'c1', 'e3', 'g5', 'd2'],
+  ['Crusade capture', '7k/8/8/6n1/8/8/8/2B4K w - - 7 1', 'crusade', 'c1', 'e3', 'g5', 'd2'],
+  ['Merciless castling rook', '4k3/8/8/8/8/8/8/R3K3 w Q - 7 1', 'merciless', 'a1', 'd1', 'h1', 'b1'],
+] as const;
+
+for (const [name, fen, extra, origin, middle, destination, stopped] of extraMoveBogs) {
+  function resolvedExtraMove() {
+    const before = game({ fen, hands: { white: [extra], black: [BOG] } });
+    const actor = at(before, origin)!;
+    const victim = at(before, destination);
+    const first = origin === 'a1' && middle === 'd1'
+      ? move(before, 'e1', 'c1') : move(before, origin, middle);
+    assert.equal(at(first, middle)?.id, actor.id, 'first move fixture is valid');
+    const doubled = applied(first, {
+      type: 'playCard', cardId: extra, target: [{ from: middle, to: destination }],
+    });
+    assert.equal(at(doubled, destination)?.id, actor.id, 'extra move fixture is valid');
+    if (victim) assert.equal(doubled.pieces.find(piece => piece.id === victim.id)?.zone, 'captured');
+    return { before, actor, victim, doubled, resolved: bog(doubled) };
+  }
+
+  test(`Bog after ${name}: stops one square from the turn origin`, () => {
+    const { actor, resolved } = resolvedExtraMove();
+    assert.equal(at(resolved, stopped)?.id, actor.id);
+    assert.equal(at(resolved, middle), undefined);
+    if (middle === 'd1') assert.equal(at(resolved, 'c1')?.role, 'king');
+  });
+
+  test(`Bog after ${name}: preserves physical victims and clocks`, () => {
+    const { before, victim, resolved } = resolvedExtraMove();
+    if (victim) assert.deepEqual(resolved.pieces.find(piece => piece.id === victim.id), victim);
+    else assert.equal(at(resolved, destination), undefined);
+    assert.equal(resolved.pieces.filter(piece => piece.zone === 'board').length,
+      before.pieces.filter(piece => piece.zone === 'board').length);
+    assert.equal(resolved.fen.split(' ')[4], '8');
+    assert.equal(resolved.fen.split(' ')[5], '1');
+  });
+
+  test(`Bog after ${name}: spends both cards once and grants no third move`, () => {
+    const { resolved } = resolvedExtraMove();
+    assert.equal(resolved.players.white.hand.some(item => item.cardId === extra), false);
+    assert.equal(resolved.players.white.discard.filter(item => item.cardId === extra).length, 1);
+    assert.equal(resolved.players.black.discard.filter(item => item.cardId === BOG).length, 1);
+    assert.deepEqual(resolved.turn, {
+      color: 'white', phase: 'afterMove', moveMade: true, cardPlays: { white: 1, black: 1 },
+    });
+    assert.equal(applyAction(resolved, { type: 'move', from: stopped, to: middle } as Action).ok, false);
+  });
+}
+
 const compositeCaptures = [
   ['white rook east', '7k/8/8/8/8/3r4/7K/R2n4 b - - 0 1', 'd3', 'd1', 'a1', 'b1', 'f2', 'd4'],
   ['white bishop northeast', '7k/8/4r3/8/4n3/8/2B5/7K b - - 0 1', 'e6', 'e4', 'c2', 'd3', 'g5', 'e6'],
