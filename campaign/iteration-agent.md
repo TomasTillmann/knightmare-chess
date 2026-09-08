@@ -14,6 +14,9 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    reason in order against `rules.md`, `cards.md`, and printed catalog metadata:
    actual movement paths, captures, identity, promotion, King safety, card timing,
    targets, spending/drawing/discard, effects/rewinds, turn/clock/en-passant state.
+   For each provisional self-check move, independently identify a concrete held
+   card and legal target sequence that can cure it; assert that witness from the
+   checkpoint, since a pendingRescue flag alone does not prove the move is valid.
    Reducer acceptance and state hashes are not independent semantic proof.
    Assert regular-move geometry and both royal threat states using the expected
    physical board and the applicable variant rules, rather than relying solely
