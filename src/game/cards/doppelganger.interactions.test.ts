@@ -32,6 +32,59 @@ const pawnCopyFixtures = [
   { name: "black double-step bishop", fen: "k7/3b4/8/8/8/8/7P/6K1 w - - 7 1", color: "black", pawnFrom: "h2", pawnTo: "h3", from: "d7", to: "d5" },
 ] as const;
 
+function crabCopyState(): GameState {
+  let state = createGameState({ fen: "6k1/5p2/8/8/3N4/8/8/1K6 b - - 0 1", hands: { black: ["crab"], white: ["doppelganger"] }, decks: { white: [], black: [] } });
+  state = apply(state, { type: "move", from: "f7", to: "f6" });
+  state = apply(state, { type: "playCard", cardId: "crab", target: "f6" });
+  state = apply(state, { type: "endTurn" });
+  state = apply(state, { type: "move", from: "d4", to: "f5" });
+  state = apply(state, { type: "endTurn" });
+  state = apply(state, { type: "move", from: "f6", to: "e5" });
+  return apply(state, { type: "endTurn" });
+}
+
+for (const fixture of [
+  { name: "forward right", destinations: ["g6"], accepted: true },
+  { name: "forward left", destinations: ["e6"], accepted: true },
+  { name: "ordinary pawn step", destinations: ["f6"], accepted: false },
+  { name: "backward diagonal", destinations: ["e4", "g4"], accepted: false },
+  { name: "double diagonal", destinations: ["d7", "h7"], accepted: false },
+] as const) {
+  for (const invariant of ["legality", "identity", "accounting"] as const) {
+    test(`Doppelganger copies permanent Crab ${fixture.name}: ${invariant}`, () => {
+      const before = crabCopyState();
+      const snapshot = JSON.stringify(before);
+      const actor = before.pieces.find(piece => piece.square === "f5")!;
+      assert.ok(actor);
+      assert.equal(isKingInCheck(before, "white"), false);
+      assert.equal(isKingInCheck(before, "black"), false);
+      for (const to of fixture.destinations) {
+        const result = applyAction(before, { type: "playCard", cardId: "doppelganger", target: [{ from: "f5", to }] });
+        assert.equal(result.ok, fixture.accepted, `Crab ${fixture.name} to ${to}`);
+        assert.equal(JSON.stringify(before), snapshot, "input remains immutable");
+        if (!result.ok) {
+          assert.deepEqual(result.state, before);
+          continue;
+        }
+        if (invariant === "legality") {
+          assertValid(result.state);
+          assert.equal(result.state.pieces.length, before.pieces.length);
+        } else if (invariant === "identity") {
+          assert.deepEqual(result.state.pieces.find(piece => piece.id === actor.id), { ...actor, square: to });
+          assert.deepEqual(result.state.effects, before.effects);
+          assert.deepEqual(result.state.enPassant, []);
+        } else {
+          assert.equal(result.state.players.white.hand.length, 0);
+          assert.equal(result.state.players.white.discard.length, 1);
+          assert.equal(result.state.turn.cardPlays.white, 1);
+          assert.equal(result.state.turn.moveMade, true);
+          assert.equal(result.state.turn.color, "white");
+        }
+      }
+    });
+  }
+}
+
 for (const fixture of pawnCopyFixtures) {
   for (const invariant of ["identity", "pawn status", "turn accounting"] as const) {
     test(`Doppelganger copying a Pawn preserves ${invariant}: ${fixture.name}`, () => {
