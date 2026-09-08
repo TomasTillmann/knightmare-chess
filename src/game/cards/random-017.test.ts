@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { applyAction } from '../reducer.js';
+import { createGameState } from '../state.js';
+import { checkState, digest, type RandomTrace } from './random-campaign.js';
 
 // Sequential semantic review against rules.md §§8–11,13.9–10,16.2,19.1,21,22.5
-// and cards.md/catalog printed timing. Every unchanged identity, hand, effect and
-// clock in each recorded row was checked; endTurn does not advance clocks again.
+// and cards.md/catalog printed timing. Rows 1–25 are approved; row 26 is the
+// first defect. Later rationale strings retain the historical, unapproved review.
 // Truce suppresses capture threats, so later geometric attacks are not check.
 const rationale = [
   '1. White a2-a4 crosses empty a3 to empty a4; pawn clock resets, a3 EP opportunity begins; e1 stays screened.',
@@ -124,7 +126,7 @@ const rationale = [
   '114. White completes the fiftieth regular move; Black begins beforeMove with reset allowances, Truce/c3 trap retained and no pending response.',
 ];
 
-test('iteration 017 replays its independently reviewed action prefix', () => {
+test('iteration 017 validates 25 actions and rejects own-capture Winged Victory at 26', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/017.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(trace.seed, 860017);
   assert.equal(rationale.length, 114);
@@ -132,31 +134,53 @@ test('iteration 017 replays its independently reviewed action prefix', () => {
   rationale.forEach((reason, index) => assert.ok(reason.startsWith(`${index + 1}. `)));
   assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 9);
   assert.equal(trace.steps.filter(step => step.action.type === 'endTurn').length, 55);
-  const state = replayTrace(trace);
-  assert.equal(state.fen, '3rb2r/p3p2n/nq1k1pbp/1PppN3/1PP1P1pP/1Q1RB3/3KNPP1/P5BR b - - 1 28');
-  assert.deepEqual(state.turn, { color: 'black', phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } });
-  assert.equal(state.orientation, 0);
-  assert.equal(state.pieces.filter(piece => piece.zone === 'board').length, 31);
-  assert.deepEqual(state.pieces.filter(piece => piece.zone !== 'board').map(piece => [piece.id, piece.zone]), [['black-pawn-b7', 'captured']]);
-  const piece = (id: string) => state.pieces.find(candidate => candidate.id === id)!;
-  assert.equal(piece('white-pawn-d2').square, 'e4', 'Assassin victim returned by Winged Victory');
-  assert.equal(piece('white-pawn-e2').square, 'a1', 'Dubbing pawn subsequently relocated to corner');
-  assert.equal(piece('white-pawn-e2').promoted, false);
-  assert.equal(piece('white-knight-g1').square, 'e5', 'Holy War preserves physical knight');
-  assert.equal(piece('white-bishop-f1').square, 'g1');
-  assert.equal(piece('black-bishop-f8').square, 'e8', 'Holy Quest preserves physical bishop');
-  assert.equal(piece('black-knight-g8').square, 'h7');
-  assert.deepEqual(state.pieces.filter(p => p.royal).map(p => [p.owner, p.square]).sort(), [['black', 'd6'], ['white', 'd2']]);
-  assert.deepEqual(state.effects, [
-    { type: 'truce', owner: 'black', card: { id: 'black-hand-3-truce', cardId: 'truce' } },
-    { type: 'man-trap', owner: 'white', card: { id: 'white-deck-0-man-trap', cardId: 'man-trap' }, square: 'c3' },
-  ]);
-  assert.deepEqual(state.enPassant, []);
-  assert.ok(!state.pendingRescue);
-  assert.deepEqual(state.players.white.hand.map(card => card.cardId), ['no-quarter', 'disintegration', 'dark-mirror', 'bog', 'challenge']);
-  assert.deepEqual(state.players.black.hand.map(card => card.cardId), ['anathema', 'riposte', 'toll', 'hostage', 'betrayal']);
-  assert.equal(state.players.white.deck.length, 68);
-  assert.equal(state.players.black.deck.length, 73);
-  assert.deepEqual(state.players.white.discard.map(card => card.cardId), ['assassin', 'holy-war', 'winged-victory', 'dubbing', 'holy-quest', 'squaring-the-circle']);
-  assert.deepEqual(state.players.black.discard.map(card => card.cardId), ['hidden-passage']);
+  // First defect: step 5 Assassin captured White own pawn; step 26 Winged
+  // Victory cannot return it. Original rationales 26 onward are historical,
+  // unapproved actions retained for review, not accepted gameplay.
+  let state = createGameState(trace.initial);
+  checkState(state);
+  for (const [index, step] of trace.steps.slice(0, 25).entries()) {
+    const original = digest(state);
+    const result = applyAction(state, step.action);
+    assert.equal(digest(state), original, `step ${index + 1}: input mutation`);
+    assert.ok(result.ok, rationale[index]);
+    checkState(result.state);
+    assert.equal(digest(result.state), step.expected, rationale[index]);
+    state = result.state;
+  }
+  assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-d2')?.capturedBy, 'white');
+  const before = structuredClone(state);
+  const result = applyAction(state, trace.steps[25]!.action);
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.state, before, 'Rejected return spends no card and changes no state');
+  assert.deepEqual(state, before, 'Input remains unchanged');
+
+  // Historical final assertions below describe the unapproved suffix.
+  // const state = replayTrace(trace);
+  // assert.equal(state.fen, '3rb2r/p3p2n/nq1k1pbp/1PppN3/1PP1P1pP/1Q1RB3/3KNPP1/P5BR b - - 1 28');
+  // assert.deepEqual(state.turn, { color: 'black', phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } });
+  // assert.equal(state.orientation, 0);
+  // assert.equal(state.pieces.filter(piece => piece.zone === 'board').length, 31);
+  // assert.deepEqual(state.pieces.filter(piece => piece.zone !== 'board').map(piece => [piece.id, piece.zone]), [['black-pawn-b7', 'captured']]);
+  // const piece = (id: string) => state.pieces.find(candidate => candidate.id === id)!;
+  // assert.equal(piece('white-pawn-d2').square, 'e4', 'Assassin victim returned by Winged Victory');
+  // assert.equal(piece('white-pawn-e2').square, 'a1', 'Dubbing pawn subsequently relocated to corner');
+  // assert.equal(piece('white-pawn-e2').promoted, false);
+  // assert.equal(piece('white-knight-g1').square, 'e5', 'Holy War preserves physical knight');
+  // assert.equal(piece('white-bishop-f1').square, 'g1');
+  // assert.equal(piece('black-bishop-f8').square, 'e8', 'Holy Quest preserves physical bishop');
+  // assert.equal(piece('black-knight-g8').square, 'h7');
+  // assert.deepEqual(state.pieces.filter(p => p.royal).map(p => [p.owner, p.square]).sort(), [['black', 'd6'], ['white', 'd2']]);
+  // assert.deepEqual(state.effects, [
+  // { type: 'truce', owner: 'black', card: { id: 'black-hand-3-truce', cardId: 'truce' } },
+  // { type: 'man-trap', owner: 'white', card: { id: 'white-deck-0-man-trap', cardId: 'man-trap' }, square: 'c3' },
+  // ]);
+  // assert.deepEqual(state.enPassant, []);
+  // assert.ok(!state.pendingRescue);
+  // assert.deepEqual(state.players.white.hand.map(card => card.cardId), ['no-quarter', 'disintegration', 'dark-mirror', 'bog', 'challenge']);
+  // assert.deepEqual(state.players.black.hand.map(card => card.cardId), ['anathema', 'riposte', 'toll', 'hostage', 'betrayal']);
+  // assert.equal(state.players.white.deck.length, 68);
+  // assert.equal(state.players.black.deck.length, 73);
+  // assert.deepEqual(state.players.white.discard.map(card => card.cardId), ['assassin', 'holy-war', 'winged-victory', 'dubbing', 'holy-quest', 'squaring-the-circle']);
+  // assert.deepEqual(state.players.black.discard.map(card => card.cardId), ['hidden-passage']);
 });
