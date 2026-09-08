@@ -152,7 +152,7 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       if (!maySampleCard(state, card, owner)) continue;
       const targets = cardPlayTargets(state, card.cardId);
       if (!targets.length) continue;
-      for (const target of rescue ? shuffle(targets) : [targets[bounded(targets.length)]]) {
+      for (const target of shuffle(targets)) {
         const action: GameAction = { type: 'playCard', cardId: card.cardId, cardInstanceId: card.id,
           ...(target === undefined ? {} : { target }) };
         if (rescue) {
