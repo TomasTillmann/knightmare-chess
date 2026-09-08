@@ -145,6 +145,11 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       const result = applyAction(state, action);
       assert.equal(digest(state), original, 'candidate evaluation mutated its input');
       if (!result.ok || result.state.outcome && trace.moves < 50) return false;
+      // Mate and stalemate can become terminal only when the reaction window closes.
+      if (trace.moves < 50 && result.state.turn.moveMade) {
+        const closed = applyAction(result.state, { type: 'endTurn' });
+        if (closed.ok && closed.state.outcome) return false;
+      }
       chosen = { action, state: result.state };
       return true;
     };
