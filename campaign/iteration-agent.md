@@ -32,6 +32,12 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    start that branch with `assert.ok(typeof action.from === 'string' && typeof action.to === 'string')`
    before `parseSquare`, indexing, or string operations. This is a recurring
    compile failure; use this exact narrowing before adding movement assertions.
+   A narrowed string is still not the `SquareName` union: when assigning a
+   validated board square to a typed piece or en-passant record, import
+   `SquareName` and cast only after confirming canonical square syntax. Give
+   computed intermediate square strings an explicit `string` annotation.
+   Verify actual rank/file/diagonal alignment before saying a piece blocks a
+   King attack; an unaligned Queen or Bishop has no such ray to block.
    Apply §11.7 legal-capture restrictions when assessing check: a neutral piece's
    hypothetical capture must also preserve its controller's King safety (§15.1).
    If shared typecheck flags another active agent's file, report its path to the
