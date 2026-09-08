@@ -76,6 +76,10 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    is fine where those representations have identical semantics. A cancellation
    assertion includes its full movement token; a pending rescue assertion includes
    its pre-move board, FEN, en-passant, history position, and moved identities.
+   Distinguish historical metadata from active permissions. Failed self-check
+   rollbacks can retain an inert `shieldMove` while `moveMade` is false; independently
+   probe the relevant public card timing before treating that token alone as a bug.
+   The next completed move must replace it, and no invalid card permission may result.
 6. Return `ITERATION_NNN_PASS` or `ITERATION_NNN_FINDING`, action/move/card counts,
    final FEN, exact gate results, and elapsed time. Parent verifies and commits.
 
