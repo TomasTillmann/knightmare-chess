@@ -286,6 +286,16 @@ test('iteration 202: 111 independently reviewed actions, exact identities and re
     const querySnapshot=structuredClone(state);
     for(const color of ['white','black'] as const) assert.equal(isKingInCheck(state,color),checked(pieces,color),`${label}: independent royal attacks for ${color}`);
     assert.deepEqual(state,querySnapshot,'royal query mutation');
+    if(n===58) {
+      // The regular-card mate rule ignores the defender's hidden cards (§11.2).
+      // White can answer this check with the ordinary King move f1-g1.
+      const escapePieces=structuredClone(pieces),king=at(escapePieces,'f1')!;
+      assert.equal(king.royal,true);assert.equal(at(escapePieces,'g1'),undefined);
+      king.square='g1';assert.equal(checked(escapePieces,'white'),false);
+      const closed=immutableApply(state,{type:'endTurn'});assert.ok(closed.ok);
+      const escape=immutableApply(closed.state,{type:'move',from:'f1',to:'g1'});assert.ok(escape.ok);
+      assert.deepEqual(escape.state.pieces,escapePieces);assert.equal(escape.state.pendingRescue??null,null);
+    }
     if(action.type==='move'||action.type==='playCard') {
       assert.equal(checked(pieces,actor),n===60,`${label}: acting King safe except proven provisional rescue`);
       if(action.type==='playCard')assert.equal(checked(pieces,cards[n]!.owner),false,`${label}: card player's King safe`);
