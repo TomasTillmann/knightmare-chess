@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 142,
-  "coverageAuditsCompleted": 13,
+  "nextIteration": 144,
+  "coverageAuditsCompleted": 14,
   "iterations": [
     {
       "id": 1,
@@ -1452,6 +1452,16 @@
       "agentElapsedSecondsApprox": 270
     },
     {
+      "id": 139,
+      "agent": "iteration_139",
+      "seed": 860139,
+      "reviewedActions": 114,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1n3bnR/B5k1/p4ppp/1p6/5PP1/PP1Np1NB/1r1P3P/2rQK3 w - - 2 27",
+      "testCommit": "dfd0916"
+    },
+    {
       "id": 140,
       "agent": "iteration_140",
       "seed": 860140,
@@ -1460,6 +1470,16 @@
       "status": "passed",
       "finalFen": "rq2k3/1pp3p1/p4n2/2rpNP1P/1PN3p1/2PP4/P4P2/Q1KR1R1b w - - 1 27",
       "testCommit": "7d11458"
+    },
+    {
+      "id": 141,
+      "agent": "iteration_141",
+      "seed": 860141,
+      "reviewedActions": 112,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2b1n1kr/pr4bp/1q4p1/1ppPpp2/2p1PPP1/BQPN3P/1P3K1R/P5R1 w - - 2 27",
+      "testCommit": "8ca6454"
     }
   ],
   "coverageAudits": [
@@ -1540,15 +1560,21 @@
       "report": "coverage-130.md",
       "playedTypes": 79,
       "appliedTypes": 79
+    },
+    {
+      "afterIteration": 140,
+      "report": "coverage-140.md",
+      "playedTypes": 80,
+      "appliedTypes": 80
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 130,
-    "tests": 5066,
-    "passed": 5066,
+    "afterIteration": 140,
+    "tests": 5084,
+    "passed": 5084,
     "failed": 0,
-    "seconds": 33.182,
-    "scope": "All engine tests and numbered iterations through 130"
+    "seconds": 34.839,
+    "scope": "All engine tests and numbered iterations through 140"
   },
   "performanceFixes": [
     {
