@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 36,
+  "nextIteration": 45,
   "coverageAuditsCompleted": 3,
   "iterations": [
     {
@@ -377,6 +377,70 @@
       "status": "passed",
       "finalFen": "1nb1brk1/6P1/pp2pB2/5QN1/3R2PP/1P5R/P1PK4/1rB2r2 w - - 6 28",
       "testCommit": "4cc32d2"
+    },
+    {
+      "id": 36,
+      "agent": "iteration_036",
+      "seed": 860036,
+      "reviewedActions": 114,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1b5/2qn2p1/3Pk1n1/p1p3r1/7p/P2Pp1PK/NB1P1P1P/R6R b - - 0 28",
+      "testCommit": "11924aa"
+    },
+    {
+      "id": 37,
+      "agent": "iteration_037",
+      "seed": 860037,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rn4n1/p1bp1k1b/2pqp3/p3P2P/1Q3p2/N7/PPrB2PR/1N1BK3 w - - 0 27",
+      "testCommit": "a4ad878"
+    },
+    {
+      "id": 38,
+      "agent": "iteration_038",
+      "seed": 860038,
+      "reviewedActions": 110,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1n2r3/3b2bp/2Np1p2/1p2p1p1/2BP2P1/2r1Bk1N/PPP4P/3R2KR w - - 0 26",
+      "testCommit": "87ba1d4"
+    },
+    {
+      "id": 39,
+      "agent": "iteration_039",
+      "seed": 860039,
+      "reviewedActions": 97,
+      "reviewedMoves": 42,
+      "status": "fixed",
+      "finalFen": "1n1q2br/1p2pk1K/3p4/1p2np2/p4Q1B/4R3/2BNP1P1/4R1N1 b - - 0 23",
+      "observedFinalFenBeforeFix": "1n1q2br/1p2pk1p/3p3K/1p2np2/p4Q1B/4R3/2BNPPP1/4R1N1 w - - 0 23",
+      "testCommit": "284fc07",
+      "finding": "Opponent Revenge prematurely canceled a provisional move despite a legal saving Challenge",
+      "fixCommit": "571c1e0",
+      "audit": "audit-039.md"
+    },
+    {
+      "id": 40,
+      "agent": "iteration_040",
+      "seed": 860040,
+      "reviewedActions": 128,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1b3n1/4k2p/2p5/3p3P/pp1PP1R1/5nP1/2P2P1N/2K3B1 w - - 0 29",
+      "testCommit": "f810774"
+    },
+    {
+      "id": 41,
+      "agent": "iteration_041",
+      "seed": 860041,
+      "reviewedActions": 113,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rP3b1r/8/P2pkn1p/6q1/2PP1p1p/B3PN1P/3P1R2/5K2 b - - 5 27",
+      "testCommit": "71fcb7c"
     }
   ],
   "coverageAudits": [
@@ -400,12 +464,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 35,
-    "tests": 4928,
-    "passed": 4928,
+    "afterIteration": 39,
+    "tests": 4932,
+    "passed": 4932,
     "failed": 0,
-    "seconds": 20.185,
-    "scope": "All engine tests and numbered iterations through035"
+    "seconds": 24.558,
+    "scope": "All engine tests and numbered iterations through039"
   },
   "performanceFixes": [
     {
