@@ -111,7 +111,7 @@ test('iteration 019: Panic timeout must publish the new side to move', () => {
     assert.ok(result.ok, rationale[index])
     state = result.state
     checkState(state)
-    assert.equal(digest(state), step.expected, rationale[index])
+    assert.equal(digest(state, 1), step.expected, rationale[index])
   }
   assert.equal(state.fen, 'r3kbnr/p2n4/b5P1/2p1p1pp/1pP4P/3Q1N2/B2PPP2/1NKRR2B b kq - 1 20')
   assert.equal(state.turn.color, 'black')

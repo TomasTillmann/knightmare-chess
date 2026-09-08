@@ -82,7 +82,7 @@ test('random iteration 002: failed Man-Trap rescue must not retain its effect', 
     assert.ok(result.ok, review[index]);
     state = result.state;
     checkState(state);
-    if (index < 62) assert.equal(digest(state), step.expected, review[index]);
+    if (index < 62) assert.equal(digest(state, 1), step.expected, review[index]);
   }
   assert.equal(state.fen, 'r3kbnr/2p3p1/B4pn1/1p1p3p/2BP2P1/2P3PN/PP5P/RNbK3R b kq - 3 14');
   assert.equal(state.effects.some(effect => typeof effect === 'object' && effect !== null

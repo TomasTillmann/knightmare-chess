@@ -212,6 +212,6 @@ test('iteration 039: unrelated opposing Revenge must preserve the provisional mo
       assert.equal(state.turn.moveMade, true);
       assert.ok(state.pendingRescue);
       assert.equal(state.turn.cardPlays.white, 0);
-    } else assert.equal(digest(state), expected, rationales[index]);
+    } else assert.equal(digest(state, 1), expected, rationales[index]);
   }
 });

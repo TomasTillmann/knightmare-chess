@@ -145,7 +145,7 @@ test('iteration 017 validates 25 actions and rejects own-capture Winged Victory 
     assert.equal(digest(state), original, `step ${index + 1}: input mutation`);
     assert.ok(result.ok, rationale[index]);
     checkState(result.state);
-    assert.equal(digest(result.state), step.expected, rationale[index]);
+    assert.equal(digest(result.state, 1), step.expected, rationale[index]);
     state = result.state;
   }
   assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-d2')?.capturedBy, 'white');

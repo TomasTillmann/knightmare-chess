@@ -155,7 +155,7 @@ test('random campaign iteration 001: legal trace with available Doomsayer escape
     const result = applyAction(state, step.action);
     assert.ok(result.ok, reasons[index]);
     checkState(result.state);
-    assert.equal(digest(result.state), step.expected, reasons[index]);
+    assert.equal(digest(result.state, 1), step.expected, reasons[index]);
     state = result.state;
     if (index === 96) {
       assert.equal(state.outcome, null, 'rules 11.5: a Doomsayer escape is still available');

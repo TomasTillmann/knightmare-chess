@@ -39,7 +39,7 @@ function reviewedPrefix() {
     assert.ok(result.ok, rationale[index]);
     state = result.state;
     checkState(state);
-    assert.equal(digest(state), step.expected, `reviewed action ${index + 1}`);
+    assert.equal(digest(state, 1), step.expected, `reviewed action ${index + 1}`);
   }
   return state;
 }

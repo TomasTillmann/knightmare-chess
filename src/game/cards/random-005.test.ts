@@ -68,13 +68,13 @@ test('iteration 005: failed rescue restores Truce expired by the taken-back King
     assert.ok(result.ok, reviewed[index]);
     state = result.state;
     checkState(state);
-    assert.equal(digest(state), step.expected, reviewed[index]);
+    assert.equal(digest(state, 1), step.expected, reviewed[index]);
   }
   const beforeMove = state;
   const moved = applyAction(beforeMove, trace.steps[45]!.action);
   assert.ok(moved.ok, reviewed[45]);
   assert.ok(moved.state.pendingRescue);
-  assert.equal(digest(moved.state), trace.steps[45]!.expected);
+  assert.equal(digest(moved.state, 1), trace.steps[45]!.expected);
   const attemptedRescue = applyAction(moved.state, trace.steps[46]!.action);
   assert.ok(attemptedRescue.ok, reviewed[46]);
   const after = attemptedRescue.state;

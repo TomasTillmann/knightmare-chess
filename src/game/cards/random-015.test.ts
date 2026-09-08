@@ -89,7 +89,7 @@ test('iteration 015: Chaos cancellation of a provisional check escape is success
     assert.equal(digest(state), before, `action ${index + 1} must be immutable`)
     assert.ok(result.ok, review[index])
     checkState(result.state)
-    assert.equal(digest(result.state), step.expected, review[index])
+    assert.equal(digest(result.state, 1), step.expected, review[index])
     state = result.state
   }
   assert.ok(state.pendingRescue)

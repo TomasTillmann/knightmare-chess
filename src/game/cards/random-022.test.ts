@@ -155,7 +155,7 @@ test('iteration 022: fifty moves preserve neutral threat legality and card ident
     assert.equal(digest(state), before, `action ${index + 1}: input state must not mutate`);
     assert.ok(result.ok, rationale[index]);
     checkState(result.state);
-    assert.equal(digest(result.state), step.expected, rationale[index]);
+    assert.equal(digest(result.state, 1), step.expected, rationale[index]);
     state = result.state;
     if (index === 96) {
       assert.ok(state.pendingRescue);

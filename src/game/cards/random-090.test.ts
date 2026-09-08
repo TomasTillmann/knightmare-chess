@@ -227,7 +227,7 @@ test('iteration 090 independent semantic review', () => {
       escape.pieces.find(p => p.id === 'white-king-e1')!.square = 'd2'
       assert.ok(royalSafe(escape, 'white'), 'Figure Dance check has the independently safe d2 escape')
     }
-    assert.equal(digest(state), step.expected, `${n}: generated state unchanged`)
+    assert.equal(digest(state, 1), step.expected, `${n}: generated state unchanged`)
     if (n === 46) captureByAssassin = state
   }
   assert.equal(trace.steps.slice(0, 80).filter(s => s.action.type === 'move').length, 35)

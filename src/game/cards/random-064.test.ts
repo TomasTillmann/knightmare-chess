@@ -155,7 +155,7 @@ test('iteration 064: Rebirth capture resets the halfmove clock at first invalid 
       assert.deepEqual(state.enPassant, [])
       assert.equal(state.fen, 'r1b2q1R/2ppk1pp/7n/2b1p3/pnP2p2/8/PPNP1PKP/r1B3NR b - - 0 14', rationales[index])
     } else {
-      assert.equal(digest(state), step.expected, rationales[index])
+      assert.equal(digest(state, 1), step.expected, rationales[index])
     }
   }
 })

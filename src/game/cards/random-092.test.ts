@@ -270,7 +270,7 @@ test('iteration 092: 112 independently reviewed actions and 50 regular commands'
     }
     if (number === 103) assert.equal(checked(state, 'black'), true);
     checkState(state);
-    assert.equal(digest(state), step.expected, `${label}: stored trace changed; review production changes`);
+    assert.equal(digest(state, 1), step.expected, `${label}: stored trace changed; review production changes`);
     states.push(state);
   }
   assert.equal(trace.steps.filter(s => s.action.type === 'move').length, 50);

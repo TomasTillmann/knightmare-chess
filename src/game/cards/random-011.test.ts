@@ -82,7 +82,7 @@ test('iteration 011: Toll capture resets the halfmove clock at first invalid act
     assert.ok(result.ok, rationale[index]);
     state = result.state;
     checkState(state);
-    if (index < 54) assert.equal(digest(state), step.expected, rationale[index]);
+    if (index < 54) assert.equal(digest(state, 1), step.expected, rationale[index]);
   }
   assert.deepEqual(state.pieces.find(piece => piece.id === 'white-pawn-a2'), {
     id: 'white-pawn-a2', owner: 'white', role: 'pawn', originalRole: 'pawn',
