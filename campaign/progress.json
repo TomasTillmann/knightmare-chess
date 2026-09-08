@@ -2310,12 +2310,14 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 200,
-    "tests": 5254,
-    "passed": 5254,
+    "afterIteration": 208,
+    "tests": 5265,
+    "passed": 5265,
     "failed": 0,
-    "seconds": 50.722,
-    "scope": "All engine tests and accepted numbered iterations through 200"
+    "seconds": 192.153,
+    "concurrency": 2,
+    "typecheck": "passed",
+    "scope": "All engine tests and accepted numbered iterations through 208; interrupted drafts excluded"
   },
   "performanceFixes": [
     {
@@ -2387,5 +2389,6 @@
       "generatedActions": 120,
       "generatedMoves": 50
     }
-  ]
+  ],
+  "stopReport": "stopped.md"
 }
