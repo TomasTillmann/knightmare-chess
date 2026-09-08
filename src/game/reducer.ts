@@ -5234,7 +5234,12 @@ function playCoup(state: GameState, target: unknown, cardInstanceId?: unknown): 
   return { ok: true, state: resolved };
 }
 
-function playChallenge(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+function playChallenge(
+  state: GameState,
+  target: unknown,
+  cardInstanceId?: unknown,
+  opponentDests = () => legalDests(turnView(state, opposite(state.turn.color)), false),
+): ApplyResult {
   const color = state.turn.color;
   if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card => card.cardId === 'challenge'
@@ -5252,7 +5257,7 @@ function playChallenge(state: GameState, target: unknown, cardInstanceId?: unkno
   if (piece.royal || hasRole(state, piece, 'king') || hasRole(state, piece, 'queen')) {
     return reject(state, 'WRONG_ROLE', 'Challenge cannot name a King or Queen.');
   }
-  if (!legalDests(turnView(state, opposite(color)), false).get(piece.square!)?.length) {
+  if (!opponentDests().get(piece.square!)?.length) {
     return reject(state, 'INVALID_TARGET', 'The challenged piece must have a legal move.');
   }
   const resolved = structuredClone(state);
@@ -6399,9 +6404,11 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
   }
   if (cardId === 'challenge') {
     if (state.outcome) return [];
+    let dests: Map<SquareName, SquareName[]> | undefined;
+    const opponentDests = () => dests ??= legalDests(turnView(state, opposite(state.turn.color)), false);
     return state.pieces.flatMap(piece => {
       if (piece.zone !== 'board' || !piece.square) return [];
-      const result = playChallenge(state, piece.square);
+      const result = playChallenge(state, piece.square, undefined, opponentDests);
       return result.ok && result.state.history.at(-1)?.type === 'cardPlayed' ? [piece.square] : [];
     });
   }
