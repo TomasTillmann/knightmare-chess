@@ -57,6 +57,8 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    Immediately copy those narrowed properties into local constants if a callback
    uses them (`const from = action.from, to = action.to`); TypeScript does not
    retain mutable property narrowing inside callbacks.
+   The project targets ES2022: use a copied array's reverse().find() or a backward
+   loop instead of Array.findLast(), which is unavailable in its type library.
    A narrowed string is still not the `SquareName` union: when assigning a
    validated board square to a typed piece or en-passant record, import
    `SquareName` and cast only after confirming canonical square syntax. Give
