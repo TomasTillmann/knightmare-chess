@@ -1,0 +1,9 @@
+Verdict: the alleged Neutrality bug is false; no production change.
+
+Public proof: White's provisional King is on d3, Black's King is on d8, and d4–d7 are empty. Ordinary Black Rc3 initially checks White. Once neutral, hypothetical Rc3xd3 would itself attack Black Kd8 along that open file. Black cannot make that capture while leaving its own King attacked. Under §15.1 neutral moves must preserve the acting King's safety; §11.7 defines threat by legal capture capability, not raw geometry. Consequently the neutral Rc3 does not check White Kd3, and §11.6 permits Neutrality to resolve and clear pending rescue.
+
+Production review: playNeutrality refreshes the marker and checks acting-King safety; isRoyalInCheck calls legallyAttacksRoyal for neutral attackers. That helper stages the hypothetical capture and rejects it if the controller's King is attacked. This is the required rule behavior, not a missing check.
+
+Executed public probes: eight assertions passed in 16.12 ms, checking pre-card check, accepted action, both post-card Kings safe, pending rescue cleared, hypothetical neutral Rc3xd3 checking Black, moving Black's King to e8 restoring White's check, and placing a d6 blocker restoring White's check. The latter two controls confirm that Black's d-file safety is the decisive condition. The first probe attempt stopped on a harness-only null-versus-undefined assertion; corrected to the observed public API null and reran successfully.
+
+Checks: supplied black-box command remains 0 passed / 1 failed (3.94 seconds); its expected fizzle contradicts the public rule proof above. npm run typecheck passed. No test sources, test commits, campaign iterations, permanent fixtures, full tests, or UI tests inspected/run. No temporary files were created. Measured elapsed time from initial report patch through completed probes and checks: 63.80 seconds; report finalization followed.

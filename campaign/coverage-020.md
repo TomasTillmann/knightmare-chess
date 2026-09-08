@@ -1,0 +1,9 @@
+# Coverage audit through iteration 020
+
+COVERAGE_020_DONE. Two executions: one baseline group, then baseline plus exactly one independent accepted-prefix accounting group. Zero findings. Runtime measurements are recorded in `coverage-020-runs.jsonl`; total agent work completed within the 45-second budget.
+
+The independent group recomputed every card's play count from accepted JSON trace prefixes, verified that invalid/unreviewed suffixes actually contain card plays, checked applied plus fizzled equals accepted plays for every card, and reconciled action totals. Iterations 021 and later are excluded.
+
+Twenty iterations contain 1,924 validated actions, including 843 moves and 188 card plays. All 80 card types were sampled; 66 were played and 64 applied. Never played: Abduction, Charge, Crusade, Fanatic, Fortification, Legacy, Long Jump, Man of Straw, Mystic Shield, Onslaught, Revenge, Split Knight, Toll, Vulture.
+
+Sampler inspection: rejection sampling removes bounded-integer modulo bias; shuffled catalog decks include each of the 80 cards once per player. Ordinary proposals select a hand instance and then one target conditionally uniformly. This does not imply uniformity over legal actions or reachable states: timing and allowance eligibility, mandatory choices, rescue fallback, terminal-candidate rejection, differing target counts, and the 50-move bound change opportunities. Dealt/sampled counts describe generated traces, while played/applied/fizzled counts describe accepted prefixes. Aggregate sampling cannot establish that rare timing, target, promotion, Abduction-answer, or multi-card interaction branches were exercised. Accepted action types contain no Abduction answers/timeouts or Panic timeout. Continue tracking these opportunity gaps without representing 80 sampled types as comprehensive behavior coverage.

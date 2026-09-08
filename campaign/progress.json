@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
   "nextIteration": 23,
-  "coverageAuditsCompleted": 1,
+  "coverageAuditsCompleted": 2,
   "iterations": [
     {
       "id": 1,
@@ -217,6 +217,26 @@
       "finding": "Panic timeout left FEN actor and skipped-move bookkeeping stale",
       "fixCommit": "e35a40f",
       "audit": "audit-019.md"
+    },
+    {
+      "id": 20,
+      "agent": "iteration_020",
+      "seed": 860020,
+      "reviewedActions": 108,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "3rk2r/6bp/2p2p1n/ppQnp3/4PPpP/PP3NP1/5K1R/R1B2N2 w - - 0 27",
+      "testCommit": "d9ef278"
+    },
+    {
+      "id": 21,
+      "agent": "iteration_021",
+      "seed": 860021,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r5rb/ppB1p2p/2p1k2n/5pN1/P4PPP/NPP2P2/R1B5/4QKR1 w - - 1 26",
+      "testCommit": "4fef256"
     }
   ],
   "coverageAudits": [
@@ -225,6 +245,12 @@
       "report": "coverage-010.md",
       "playedTypes": 54,
       "appliedTypes": 53
+    },
+    {
+      "afterIteration": 20,
+      "report": "coverage-020.md",
+      "playedTypes": 66,
+      "appliedTypes": 64
     }
   ]
 }
