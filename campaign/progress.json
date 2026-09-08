@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 69,
+  "nextIteration": 71,
   "coverageAuditsCompleted": 6,
   "iterations": [
     {
@@ -685,6 +685,46 @@
       "status": "passed",
       "finalFen": "r3k3/b4pr1/3p1b2/p1pn1KB1/2PPB2p/1P2P3/P4PPP/1R4NR w - - 2 26",
       "testCommit": "3a53b80"
+    },
+    {
+      "id": 66,
+      "agent": "iteration_066",
+      "seed": 860066,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4kr2/5r2/p1p1qp1p/5Q1P/4P1R1/1PNP2P1/P4K1N/2B2B2 w - - 9 29",
+      "testCommit": "513210e"
+    },
+    {
+      "id": 67,
+      "agent": "iteration_067",
+      "seed": 860067,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "5kn1/2p2p2/p2b1npp/rP2P3/2P1qP2/B5Pb/8/N2K1B1R b - - 0 27",
+      "testCommit": "6b45d6c"
+    },
+    {
+      "id": 68,
+      "agent": "iteration_068",
+      "seed": 860068,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1rb2k1r/1p1p4/pN4pq/2PPN3/6P1/P3BPQp/1P4B1/R2K1R2 b - - 0 26",
+      "testCommit": "1b5b0dc"
+    },
+    {
+      "id": 70,
+      "agent": "iteration_070",
+      "seed": 860070,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r2qk2N/1bp1b1p1/2n1R3/p1p1pp1p/P1P4P/1P1P1P2/4P1KR/4rBN1 b - - 3 27",
+      "testCommit": "5896b33"
     }
   ],
   "coverageAudits": [
@@ -726,12 +766,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 65,
-    "tests": 4961,
-    "passed": 4961,
+    "afterIteration": 68,
+    "tests": 4965,
+    "passed": 4965,
     "failed": 0,
-    "seconds": 28.228,
-    "scope": "All engine tests and numbered iterations through065"
+    "seconds": 27.862,
+    "scope": "All engine tests and numbered iterations through068;069 continuation pending"
   },
   "performanceFixes": [
     {
@@ -747,5 +787,14 @@
     "regressionCommit": "2ff278f",
     "fixCommit": "1ac8ec1",
     "verification": "verify-sampler-targets.md"
+  },
+  "samplerMandatoryChoiceFix": {
+    "fromIteration": 71,
+    "regeneratedIteration": 69,
+    "regressionCommit": "fe6ef65",
+    "fixtureCorrectionCommit": "67095be",
+    "fixCommit": "5569a83",
+    "verification": "verify-sampler-abduction.md",
+    "originalTrace": "iterations/069.stalled.json"
   }
 }

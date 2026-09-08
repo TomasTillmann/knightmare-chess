@@ -30,6 +30,10 @@ alongside their alternatives. Fixed action traces preserve earlier iterations.
 From iteration 020, proposals also respect an opposing-card response during the
 actor's own turn and saved Plots timing windows. An immediate Fog proposal may
 precede resolution of a newly opened Abduction or Doomsayer choice.
+From iteration 071, rescue sampling also permits mandatory intermediate choices
+before judging whether the rescue succeeded. Iteration 069 was regenerated with
+this correction; its original stalled trace and reviewed prefix remain in
+`iterations/069.stalled.json` and `.txt`. Iteration 070 retains its earlier trace.
 Legal availability depends on timing,
 targets, and the board; this is not a uniform distribution over reachable positions.
 Terminal candidates are avoided to pursue 50 actual regular moves. Such conditioning
