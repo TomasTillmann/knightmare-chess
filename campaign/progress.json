@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 180,
+  "nextIteration": 181,
   "coverageAuditsCompleted": 17,
   "iterations": [
     {
@@ -1853,6 +1853,16 @@
       "status": "passed",
       "finalFen": "3k2br/3P1Ppp/8/bp6/5rB1/2N1p1p1/p1n1PBR1/1R3K2 w - - 2 30",
       "testCommit": "f63bee3"
+    },
+    {
+      "id": 176,
+      "agent": "iteration_176",
+      "seed": 860176,
+      "reviewedActions": 116,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4R3/2k2p2/1pBpp1pn/p7/3PP1pq/N6N/P2P1b1P/1RBK2Qr b - - 0 26",
+      "testCommit": "c74aaf1"
     },
     {
       "id": 177,
