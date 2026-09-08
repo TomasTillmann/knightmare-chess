@@ -1,0 +1,3707 @@
+{
+  "state": {
+    "fen": "r2qk1nr/p1pp2p1/b1n1p1pp/7P/P4b1N/4P3/1PPP1PP1/RNBQK3 w Qkq - 0 11",
+    "pieces": [
+      {
+        "id": "white-rook-a1",
+        "owner": "white",
+        "role": "rook",
+        "originalRole": "rook",
+        "square": "a1",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-knight-b1",
+        "owner": "white",
+        "role": "knight",
+        "originalRole": "knight",
+        "square": "b1",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-bishop-c1",
+        "owner": "white",
+        "role": "bishop",
+        "originalRole": "bishop",
+        "square": "c1",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-queen-d1",
+        "owner": "white",
+        "role": "queen",
+        "originalRole": "queen",
+        "square": "d1",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-king-e1",
+        "owner": "white",
+        "role": "king",
+        "originalRole": "king",
+        "square": "e1",
+        "zone": "board",
+        "promoted": false,
+        "royal": true,
+        "neutral": false
+      },
+      {
+        "id": "white-bishop-f1",
+        "owner": "white",
+        "role": "bishop",
+        "originalRole": "bishop",
+        "square": null,
+        "zone": "captured",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-knight-g1",
+        "owner": "white",
+        "role": "knight",
+        "originalRole": "knight",
+        "square": "h4",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-rook-h1",
+        "owner": "white",
+        "role": "rook",
+        "originalRole": "rook",
+        "square": null,
+        "zone": "away",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-a2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "a4",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-b2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "b2",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-c2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "c2",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-d2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "d2",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-e2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "e3",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-f2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "f2",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-g2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "g2",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "white-pawn-h2",
+        "owner": "white",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "h5",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-a7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "a7",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-b7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": null,
+        "zone": "captured",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-c7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "c7",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-d7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "d7",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-e7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "e6",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-f7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "g6",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-g7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "g7",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-pawn-h7",
+        "owner": "black",
+        "role": "pawn",
+        "originalRole": "pawn",
+        "square": "h6",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-rook-a8",
+        "owner": "black",
+        "role": "rook",
+        "originalRole": "rook",
+        "square": "a8",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-knight-b8",
+        "owner": "black",
+        "role": "knight",
+        "originalRole": "knight",
+        "square": "c6",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-bishop-c8",
+        "owner": "black",
+        "role": "bishop",
+        "originalRole": "bishop",
+        "square": "a6",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-queen-d8",
+        "owner": "black",
+        "role": "queen",
+        "originalRole": "queen",
+        "square": "d8",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-king-e8",
+        "owner": "black",
+        "role": "king",
+        "originalRole": "king",
+        "square": "e8",
+        "zone": "board",
+        "promoted": false,
+        "royal": true,
+        "neutral": false
+      },
+      {
+        "id": "black-bishop-f8",
+        "owner": "black",
+        "role": "bishop",
+        "originalRole": "bishop",
+        "square": "f4",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-knight-g8",
+        "owner": "black",
+        "role": "knight",
+        "originalRole": "knight",
+        "square": "g8",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      },
+      {
+        "id": "black-rook-h8",
+        "owner": "black",
+        "role": "rook",
+        "originalRole": "rook",
+        "square": "h8",
+        "zone": "board",
+        "promoted": false,
+        "royal": false,
+        "neutral": false
+      }
+    ],
+    "players": {
+      "white": {
+        "hand": [
+          {
+            "id": "white-hand-0-dungeon",
+            "cardId": "dungeon"
+          },
+          {
+            "id": "white-hand-1-resurrection",
+            "cardId": "resurrection"
+          },
+          {
+            "id": "white-hand-3-passing-in-the-night",
+            "cardId": "passing-in-the-night"
+          },
+          {
+            "id": "white-deck-0-anathema",
+            "cardId": "anathema"
+          },
+          {
+            "id": "white-deck-1-fanatic",
+            "cardId": "fanatic"
+          }
+        ],
+        "deck": [
+          {
+            "id": "white-deck-2-under-elf-hill",
+            "cardId": "under-elf-hill"
+          },
+          {
+            "id": "white-deck-3-cathedral",
+            "cardId": "cathedral"
+          },
+          {
+            "id": "white-deck-4-forced-march",
+            "cardId": "forced-march"
+          },
+          {
+            "id": "white-deck-5-haunting-memories",
+            "cardId": "haunting-memories"
+          },
+          {
+            "id": "white-deck-6-think-again",
+            "cardId": "think-again"
+          },
+          {
+            "id": "white-deck-7-hidden-passage",
+            "cardId": "hidden-passage"
+          },
+          {
+            "id": "white-deck-8-figure-dance",
+            "cardId": "figure-dance"
+          },
+          {
+            "id": "white-deck-9-abduction",
+            "cardId": "abduction"
+          },
+          {
+            "id": "white-deck-10-tournament",
+            "cardId": "tournament"
+          },
+          {
+            "id": "white-deck-11-chaos",
+            "cardId": "chaos"
+          },
+          {
+            "id": "white-deck-12-dubbing",
+            "cardId": "dubbing"
+          },
+          {
+            "id": "white-deck-13-neutrality",
+            "cardId": "neutrality"
+          },
+          {
+            "id": "white-deck-14-onslaught",
+            "cardId": "onslaught"
+          },
+          {
+            "id": "white-deck-15-crab",
+            "cardId": "crab"
+          },
+          {
+            "id": "white-deck-16-fatal-attraction",
+            "cardId": "fatal-attraction"
+          },
+          {
+            "id": "white-deck-17-assassin",
+            "cardId": "assassin"
+          },
+          {
+            "id": "white-deck-18-annexation",
+            "cardId": "annexation"
+          },
+          {
+            "id": "white-deck-19-blessing",
+            "cardId": "blessing"
+          },
+          {
+            "id": "white-deck-20-revenge",
+            "cardId": "revenge"
+          },
+          {
+            "id": "white-deck-21-legacy",
+            "cardId": "legacy"
+          },
+          {
+            "id": "white-deck-22-rebirth",
+            "cardId": "rebirth"
+          },
+          {
+            "id": "white-deck-23-winged-victory",
+            "cardId": "winged-victory"
+          },
+          {
+            "id": "white-deck-24-toll",
+            "cardId": "toll"
+          },
+          {
+            "id": "white-deck-25-truce",
+            "cardId": "truce"
+          },
+          {
+            "id": "white-deck-26-breakthrough",
+            "cardId": "breakthrough"
+          },
+          {
+            "id": "white-deck-27-no-quarter",
+            "cardId": "no-quarter"
+          },
+          {
+            "id": "white-deck-28-doomsayer",
+            "cardId": "doomsayer"
+          },
+          {
+            "id": "white-deck-29-betrayal",
+            "cardId": "betrayal"
+          },
+          {
+            "id": "white-deck-30-man-of-straw",
+            "cardId": "man-of-straw"
+          },
+          {
+            "id": "white-deck-31-knightmare",
+            "cardId": "knightmare"
+          },
+          {
+            "id": "white-deck-32-evil-eye",
+            "cardId": "evil-eye"
+          },
+          {
+            "id": "white-deck-33-bog",
+            "cardId": "bog"
+          },
+          {
+            "id": "white-deck-34-doppelganger",
+            "cardId": "doppelganger"
+          },
+          {
+            "id": "white-deck-35-long-jump",
+            "cardId": "long-jump"
+          },
+          {
+            "id": "white-deck-36-plots-within-plots",
+            "cardId": "plots-within-plots"
+          },
+          {
+            "id": "white-deck-37-lost-castle",
+            "cardId": "lost-castle"
+          },
+          {
+            "id": "white-deck-38-masquerade",
+            "cardId": "masquerade"
+          },
+          {
+            "id": "white-deck-39-disintegration",
+            "cardId": "disintegration"
+          },
+          {
+            "id": "white-deck-40-siege",
+            "cardId": "siege"
+          },
+          {
+            "id": "white-deck-41-coup",
+            "cardId": "coup"
+          },
+          {
+            "id": "white-deck-42-dark-mirror",
+            "cardId": "dark-mirror"
+          },
+          {
+            "id": "white-deck-43-bombard",
+            "cardId": "bombard"
+          },
+          {
+            "id": "white-deck-44-riposte",
+            "cardId": "riposte"
+          },
+          {
+            "id": "white-deck-45-man-trap",
+            "cardId": "man-trap"
+          },
+          {
+            "id": "white-deck-46-holy-war",
+            "cardId": "holy-war"
+          },
+          {
+            "id": "white-deck-47-sanctuary",
+            "cardId": "sanctuary"
+          },
+          {
+            "id": "white-deck-48-peace-talks",
+            "cardId": "peace-talks"
+          },
+          {
+            "id": "white-deck-49-earthquake",
+            "cardId": "earthquake"
+          },
+          {
+            "id": "white-deck-50-forbidden-city",
+            "cardId": "forbidden-city"
+          },
+          {
+            "id": "white-deck-51-curse",
+            "cardId": "curse"
+          },
+          {
+            "id": "white-deck-52-crusade",
+            "cardId": "crusade"
+          },
+          {
+            "id": "white-deck-53-squaring-the-circle",
+            "cardId": "squaring-the-circle"
+          },
+          {
+            "id": "white-deck-54-charge",
+            "cardId": "charge"
+          },
+          {
+            "id": "white-deck-55-cowardice",
+            "cardId": "cowardice"
+          },
+          {
+            "id": "white-deck-56-vulture",
+            "cardId": "vulture"
+          },
+          {
+            "id": "white-deck-57-irresistible-force",
+            "cardId": "irresistible-force"
+          },
+          {
+            "id": "white-deck-58-challenge",
+            "cardId": "challenge"
+          },
+          {
+            "id": "white-deck-59-madman",
+            "cardId": "madman"
+          },
+          {
+            "id": "white-deck-60-evangelists",
+            "cardId": "evangelists"
+          },
+          {
+            "id": "white-deck-61-holy-quest",
+            "cardId": "holy-quest"
+          },
+          {
+            "id": "white-deck-62-treason",
+            "cardId": "treason"
+          },
+          {
+            "id": "white-deck-63-pacifism",
+            "cardId": "pacifism"
+          },
+          {
+            "id": "white-deck-64-mystic-shield",
+            "cardId": "mystic-shield"
+          },
+          {
+            "id": "white-deck-65-guardian",
+            "cardId": "guardian"
+          },
+          {
+            "id": "white-deck-66-ghostwalk",
+            "cardId": "ghostwalk"
+          },
+          {
+            "id": "white-deck-67-fireball",
+            "cardId": "fireball"
+          },
+          {
+            "id": "white-deck-68-fog-of-war",
+            "cardId": "fog-of-war"
+          },
+          {
+            "id": "white-deck-69-heresy",
+            "cardId": "heresy"
+          },
+          {
+            "id": "white-deck-70-panic",
+            "cardId": "panic"
+          },
+          {
+            "id": "white-deck-71-split-knight",
+            "cardId": "split-knight"
+          },
+          {
+            "id": "white-deck-72-vendetta",
+            "cardId": "vendetta"
+          },
+          {
+            "id": "white-deck-73-hostage",
+            "cardId": "hostage"
+          },
+          {
+            "id": "white-deck-74-merciless",
+            "cardId": "merciless"
+          }
+        ],
+        "discard": []
+      },
+      "black": {
+        "hand": [
+          {
+            "id": "black-hand-1-riposte",
+            "cardId": "riposte"
+          },
+          {
+            "id": "black-hand-4-doomsayer",
+            "cardId": "doomsayer"
+          },
+          {
+            "id": "black-deck-0-under-elf-hill",
+            "cardId": "under-elf-hill"
+          },
+          {
+            "id": "black-deck-1-tournament",
+            "cardId": "tournament"
+          },
+          {
+            "id": "black-deck-2-heresy",
+            "cardId": "heresy"
+          }
+        ],
+        "deck": [
+          {
+            "id": "black-deck-3-legacy",
+            "cardId": "legacy"
+          },
+          {
+            "id": "black-deck-4-plots-within-plots",
+            "cardId": "plots-within-plots"
+          },
+          {
+            "id": "black-deck-5-crab",
+            "cardId": "crab"
+          },
+          {
+            "id": "black-deck-6-charge",
+            "cardId": "charge"
+          },
+          {
+            "id": "black-deck-7-fortification",
+            "cardId": "fortification"
+          },
+          {
+            "id": "black-deck-8-fanatic",
+            "cardId": "fanatic"
+          },
+          {
+            "id": "black-deck-9-dark-mirror",
+            "cardId": "dark-mirror"
+          },
+          {
+            "id": "black-deck-10-bog",
+            "cardId": "bog"
+          },
+          {
+            "id": "black-deck-11-toll",
+            "cardId": "toll"
+          },
+          {
+            "id": "black-deck-12-long-jump",
+            "cardId": "long-jump"
+          },
+          {
+            "id": "black-deck-13-split-knight",
+            "cardId": "split-knight"
+          },
+          {
+            "id": "black-deck-14-evangelists",
+            "cardId": "evangelists"
+          },
+          {
+            "id": "black-deck-15-man-trap",
+            "cardId": "man-trap"
+          },
+          {
+            "id": "black-deck-16-panic",
+            "cardId": "panic"
+          },
+          {
+            "id": "black-deck-17-revenge",
+            "cardId": "revenge"
+          },
+          {
+            "id": "black-deck-18-fireball",
+            "cardId": "fireball"
+          },
+          {
+            "id": "black-deck-19-vulture",
+            "cardId": "vulture"
+          },
+          {
+            "id": "black-deck-20-ghostwalk",
+            "cardId": "ghostwalk"
+          },
+          {
+            "id": "black-deck-21-think-again",
+            "cardId": "think-again"
+          },
+          {
+            "id": "black-deck-22-man-of-straw",
+            "cardId": "man-of-straw"
+          },
+          {
+            "id": "black-deck-23-haunting-memories",
+            "cardId": "haunting-memories"
+          },
+          {
+            "id": "black-deck-24-passing-in-the-night",
+            "cardId": "passing-in-the-night"
+          },
+          {
+            "id": "black-deck-25-dungeon",
+            "cardId": "dungeon"
+          },
+          {
+            "id": "black-deck-26-neutrality",
+            "cardId": "neutrality"
+          },
+          {
+            "id": "black-deck-27-cowardice",
+            "cardId": "cowardice"
+          },
+          {
+            "id": "black-deck-28-curse",
+            "cardId": "curse"
+          },
+          {
+            "id": "black-deck-29-holy-quest",
+            "cardId": "holy-quest"
+          },
+          {
+            "id": "black-deck-30-winged-victory",
+            "cardId": "winged-victory"
+          },
+          {
+            "id": "black-deck-31-resurrection",
+            "cardId": "resurrection"
+          },
+          {
+            "id": "black-deck-32-figure-dance",
+            "cardId": "figure-dance"
+          },
+          {
+            "id": "black-deck-33-challenge",
+            "cardId": "challenge"
+          },
+          {
+            "id": "black-deck-34-forbidden-city",
+            "cardId": "forbidden-city"
+          },
+          {
+            "id": "black-deck-35-bombard",
+            "cardId": "bombard"
+          },
+          {
+            "id": "black-deck-36-breakthrough",
+            "cardId": "breakthrough"
+          },
+          {
+            "id": "black-deck-37-confabulation",
+            "cardId": "confabulation"
+          },
+          {
+            "id": "black-deck-38-guardian",
+            "cardId": "guardian"
+          },
+          {
+            "id": "black-deck-39-irresistible-force",
+            "cardId": "irresistible-force"
+          },
+          {
+            "id": "black-deck-40-abduction",
+            "cardId": "abduction"
+          },
+          {
+            "id": "black-deck-41-fatal-attraction",
+            "cardId": "fatal-attraction"
+          },
+          {
+            "id": "black-deck-42-evil-eye",
+            "cardId": "evil-eye"
+          },
+          {
+            "id": "black-deck-43-merciless",
+            "cardId": "merciless"
+          },
+          {
+            "id": "black-deck-44-no-quarter",
+            "cardId": "no-quarter"
+          },
+          {
+            "id": "black-deck-45-squaring-the-circle",
+            "cardId": "squaring-the-circle"
+          },
+          {
+            "id": "black-deck-46-truce",
+            "cardId": "truce"
+          },
+          {
+            "id": "black-deck-47-dubbing",
+            "cardId": "dubbing"
+          },
+          {
+            "id": "black-deck-48-cathedral",
+            "cardId": "cathedral"
+          },
+          {
+            "id": "black-deck-49-blessing",
+            "cardId": "blessing"
+          },
+          {
+            "id": "black-deck-50-doppelganger",
+            "cardId": "doppelganger"
+          },
+          {
+            "id": "black-deck-51-holy-war",
+            "cardId": "holy-war"
+          },
+          {
+            "id": "black-deck-52-mystic-shield",
+            "cardId": "mystic-shield"
+          },
+          {
+            "id": "black-deck-53-annexation",
+            "cardId": "annexation"
+          },
+          {
+            "id": "black-deck-54-onslaught",
+            "cardId": "onslaught"
+          },
+          {
+            "id": "black-deck-55-anathema",
+            "cardId": "anathema"
+          },
+          {
+            "id": "black-deck-56-betrayal",
+            "cardId": "betrayal"
+          },
+          {
+            "id": "black-deck-57-disintegration",
+            "cardId": "disintegration"
+          },
+          {
+            "id": "black-deck-58-sanctuary",
+            "cardId": "sanctuary"
+          },
+          {
+            "id": "black-deck-59-earthquake",
+            "cardId": "earthquake"
+          },
+          {
+            "id": "black-deck-60-treason",
+            "cardId": "treason"
+          },
+          {
+            "id": "black-deck-61-lost-castle",
+            "cardId": "lost-castle"
+          },
+          {
+            "id": "black-deck-62-rebirth",
+            "cardId": "rebirth"
+          },
+          {
+            "id": "black-deck-63-masquerade",
+            "cardId": "masquerade"
+          },
+          {
+            "id": "black-deck-64-siege",
+            "cardId": "siege"
+          },
+          {
+            "id": "black-deck-65-fog-of-war",
+            "cardId": "fog-of-war"
+          },
+          {
+            "id": "black-deck-66-assassin",
+            "cardId": "assassin"
+          },
+          {
+            "id": "black-deck-67-hidden-passage",
+            "cardId": "hidden-passage"
+          },
+          {
+            "id": "black-deck-68-peace-talks",
+            "cardId": "peace-talks"
+          },
+          {
+            "id": "black-deck-69-pacifism",
+            "cardId": "pacifism"
+          },
+          {
+            "id": "black-deck-70-madman",
+            "cardId": "madman"
+          },
+          {
+            "id": "black-deck-71-hostage",
+            "cardId": "hostage"
+          },
+          {
+            "id": "black-deck-72-coup",
+            "cardId": "coup"
+          },
+          {
+            "id": "black-deck-73-knightmare",
+            "cardId": "knightmare"
+          },
+          {
+            "id": "black-deck-74-crusade",
+            "cardId": "crusade"
+          }
+        ],
+        "discard": [
+          {
+            "id": "black-hand-2-forced-march",
+            "cardId": "forced-march"
+          },
+          {
+            "id": "black-hand-0-chaos",
+            "cardId": "chaos"
+          }
+        ]
+      }
+    },
+    "turn": {
+      "color": "white",
+      "phase": "beforeMove",
+      "moveMade": false,
+      "cardPlays": {
+        "white": 0,
+        "black": 1
+      }
+    },
+    "effects": [
+      {
+        "type": "confabulation",
+        "owner": "white",
+        "card": {
+          "id": "white-hand-4-confabulation",
+          "cardId": "confabulation"
+        },
+        "pieceIds": [
+          "white-knight-g1",
+          "white-rook-h1"
+        ]
+      },
+      {
+        "type": "vendetta",
+        "owner": "black",
+        "card": {
+          "id": "black-hand-3-vendetta",
+          "cardId": "vendetta"
+        }
+      },
+      {
+        "type": "fortification",
+        "owner": "white",
+        "card": {
+          "id": "white-hand-2-fortification",
+          "cardId": "fortification"
+        },
+        "from": "c2",
+        "to": "c3"
+      }
+    ],
+    "history": [
+      {
+        "type": "move",
+        "from": "a2",
+        "to": "a4"
+      },
+      {
+        "type": "move",
+        "from": "b8",
+        "to": "c6"
+      },
+      {
+        "type": "move",
+        "from": "h2",
+        "to": "h4"
+      },
+      {
+        "type": "move",
+        "from": "b7",
+        "to": "b6"
+      },
+      {
+        "type": "cardPlayed",
+        "cardId": "confabulation",
+        "target": [
+          {
+            "from": "h1",
+            "to": "g1"
+          }
+        ],
+        "movement": [
+          {
+            "from": "h1",
+            "to": "g1"
+          }
+        ],
+        "preservePreviousMove": false
+      },
+      {
+        "type": "move",
+        "from": "f7",
+        "to": "f6"
+      },
+      {
+        "type": "move",
+        "from": "g1",
+        "to": "h1"
+      },
+      {
+        "type": "move",
+        "from": "c8",
+        "to": "b7"
+      },
+      {
+        "type": "move",
+        "from": "h4",
+        "to": "h5"
+      },
+      {
+        "type": "move",
+        "from": "e7",
+        "to": "e6"
+      },
+      {
+        "type": "move",
+        "from": "e2",
+        "to": "e3"
+      },
+      {
+        "type": "cardPlayed",
+        "cardId": "forced-march",
+        "target": [
+          {
+            "from": "b6",
+            "to": "a6"
+          },
+          {
+            "from": "f6",
+            "to": "g6"
+          }
+        ],
+        "movement": [
+          {
+            "from": "b6",
+            "to": "a6"
+          },
+          {
+            "from": "f6",
+            "to": "g6"
+          }
+        ],
+        "preservePreviousMove": false
+      },
+      {
+        "type": "move",
+        "from": "h1",
+        "to": "g1"
+      },
+      {
+        "type": "move",
+        "from": "f8",
+        "to": "d6"
+      },
+      {
+        "type": "move",
+        "from": "g1",
+        "to": "f3"
+      },
+      {
+        "type": "move",
+        "from": "h7",
+        "to": "h6"
+      },
+      {
+        "type": "move",
+        "from": "f3",
+        "to": "h4"
+      },
+      {
+        "type": "move",
+        "from": "d6",
+        "to": "f4"
+      },
+      {
+        "type": "cardPlayed",
+        "cardId": "vendetta",
+        "movement": [],
+        "preservePreviousMove": true
+      },
+      {
+        "type": "move",
+        "from": "f1",
+        "to": "a6",
+        "capturedId": "black-pawn-b7"
+      },
+      {
+        "type": "cardPlayed",
+        "cardId": "fortification",
+        "target": {
+          "from": "c2",
+          "to": "c3"
+        }
+      },
+      {
+        "type": "move",
+        "from": "b7",
+        "to": "a6",
+        "capturedId": "white-bishop-f1"
+      },
+      {
+        "type": "cardPlayed",
+        "cardId": "chaos",
+        "player": "black",
+        "movement": [
+          {
+            "from": "g6",
+            "to": "h5"
+          }
+        ],
+        "preservePreviousMove": true
+      }
+    ],
+    "orientation": 0,
+    "enPassant": [],
+    "pendingRescue": null,
+    "pendingDoomsayer": null,
+    "outcome": null,
+    "playedCards": [
+      {
+        "player": "white",
+        "cardInstanceId": "white-hand-4-confabulation"
+      },
+      {
+        "player": "black",
+        "cardInstanceId": "black-hand-2-forced-march"
+      },
+      {
+        "player": "black",
+        "cardInstanceId": "black-hand-3-vendetta"
+      },
+      {
+        "player": "white",
+        "cardInstanceId": "white-hand-2-fortification"
+      },
+      {
+        "player": "black",
+        "cardInstanceId": "black-hand-0-chaos"
+      }
+    ],
+    "plotsAllowances": [],
+    "chaosForbidden": {
+      "player": "white",
+      "movement": "black-pawn-f7:g6:captured|white-pawn-h2:h5:g6"
+    },
+    "cardResponse": {
+      "player": "black",
+      "historyLength": 23
+    },
+    "fogCheckpoint": {
+      "before": {
+        "fen": "r2qk1nr/p1pp2p1/b1n1p1Pp/8/P4b1N/4P3/1PPP1PP1/RNBQK3 b Qkq - 0 11",
+        "pieces": [
+          {
+            "id": "white-rook-a1",
+            "owner": "white",
+            "role": "rook",
+            "originalRole": "rook",
+            "square": "a1",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-knight-b1",
+            "owner": "white",
+            "role": "knight",
+            "originalRole": "knight",
+            "square": "b1",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-bishop-c1",
+            "owner": "white",
+            "role": "bishop",
+            "originalRole": "bishop",
+            "square": "c1",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-queen-d1",
+            "owner": "white",
+            "role": "queen",
+            "originalRole": "queen",
+            "square": "d1",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-king-e1",
+            "owner": "white",
+            "role": "king",
+            "originalRole": "king",
+            "square": "e1",
+            "zone": "board",
+            "promoted": false,
+            "royal": true,
+            "neutral": false
+          },
+          {
+            "id": "white-bishop-f1",
+            "owner": "white",
+            "role": "bishop",
+            "originalRole": "bishop",
+            "square": null,
+            "zone": "captured",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-knight-g1",
+            "owner": "white",
+            "role": "knight",
+            "originalRole": "knight",
+            "square": "h4",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-rook-h1",
+            "owner": "white",
+            "role": "rook",
+            "originalRole": "rook",
+            "square": null,
+            "zone": "away",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-a2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "a4",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-b2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "b2",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-c2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "c2",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-d2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "d2",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-e2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "e3",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-f2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "f2",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-g2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "g2",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "white-pawn-h2",
+            "owner": "white",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "g6",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-a7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "a7",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-b7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": null,
+            "zone": "captured",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-c7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "c7",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-d7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "d7",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-e7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "e6",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-f7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": null,
+            "zone": "captured",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-g7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "g7",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-pawn-h7",
+            "owner": "black",
+            "role": "pawn",
+            "originalRole": "pawn",
+            "square": "h6",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-rook-a8",
+            "owner": "black",
+            "role": "rook",
+            "originalRole": "rook",
+            "square": "a8",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-knight-b8",
+            "owner": "black",
+            "role": "knight",
+            "originalRole": "knight",
+            "square": "c6",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-bishop-c8",
+            "owner": "black",
+            "role": "bishop",
+            "originalRole": "bishop",
+            "square": "a6",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-queen-d8",
+            "owner": "black",
+            "role": "queen",
+            "originalRole": "queen",
+            "square": "d8",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-king-e8",
+            "owner": "black",
+            "role": "king",
+            "originalRole": "king",
+            "square": "e8",
+            "zone": "board",
+            "promoted": false,
+            "royal": true,
+            "neutral": false
+          },
+          {
+            "id": "black-bishop-f8",
+            "owner": "black",
+            "role": "bishop",
+            "originalRole": "bishop",
+            "square": "f4",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-knight-g8",
+            "owner": "black",
+            "role": "knight",
+            "originalRole": "knight",
+            "square": "g8",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          },
+          {
+            "id": "black-rook-h8",
+            "owner": "black",
+            "role": "rook",
+            "originalRole": "rook",
+            "square": "h8",
+            "zone": "board",
+            "promoted": false,
+            "royal": false,
+            "neutral": false
+          }
+        ],
+        "players": {
+          "white": {
+            "hand": [
+              {
+                "id": "white-hand-0-dungeon",
+                "cardId": "dungeon"
+              },
+              {
+                "id": "white-hand-1-resurrection",
+                "cardId": "resurrection"
+              },
+              {
+                "id": "white-hand-3-passing-in-the-night",
+                "cardId": "passing-in-the-night"
+              },
+              {
+                "id": "white-deck-0-anathema",
+                "cardId": "anathema"
+              },
+              {
+                "id": "white-deck-1-fanatic",
+                "cardId": "fanatic"
+              }
+            ],
+            "deck": [
+              {
+                "id": "white-deck-2-under-elf-hill",
+                "cardId": "under-elf-hill"
+              },
+              {
+                "id": "white-deck-3-cathedral",
+                "cardId": "cathedral"
+              },
+              {
+                "id": "white-deck-4-forced-march",
+                "cardId": "forced-march"
+              },
+              {
+                "id": "white-deck-5-haunting-memories",
+                "cardId": "haunting-memories"
+              },
+              {
+                "id": "white-deck-6-think-again",
+                "cardId": "think-again"
+              },
+              {
+                "id": "white-deck-7-hidden-passage",
+                "cardId": "hidden-passage"
+              },
+              {
+                "id": "white-deck-8-figure-dance",
+                "cardId": "figure-dance"
+              },
+              {
+                "id": "white-deck-9-abduction",
+                "cardId": "abduction"
+              },
+              {
+                "id": "white-deck-10-tournament",
+                "cardId": "tournament"
+              },
+              {
+                "id": "white-deck-11-chaos",
+                "cardId": "chaos"
+              },
+              {
+                "id": "white-deck-12-dubbing",
+                "cardId": "dubbing"
+              },
+              {
+                "id": "white-deck-13-neutrality",
+                "cardId": "neutrality"
+              },
+              {
+                "id": "white-deck-14-onslaught",
+                "cardId": "onslaught"
+              },
+              {
+                "id": "white-deck-15-crab",
+                "cardId": "crab"
+              },
+              {
+                "id": "white-deck-16-fatal-attraction",
+                "cardId": "fatal-attraction"
+              },
+              {
+                "id": "white-deck-17-assassin",
+                "cardId": "assassin"
+              },
+              {
+                "id": "white-deck-18-annexation",
+                "cardId": "annexation"
+              },
+              {
+                "id": "white-deck-19-blessing",
+                "cardId": "blessing"
+              },
+              {
+                "id": "white-deck-20-revenge",
+                "cardId": "revenge"
+              },
+              {
+                "id": "white-deck-21-legacy",
+                "cardId": "legacy"
+              },
+              {
+                "id": "white-deck-22-rebirth",
+                "cardId": "rebirth"
+              },
+              {
+                "id": "white-deck-23-winged-victory",
+                "cardId": "winged-victory"
+              },
+              {
+                "id": "white-deck-24-toll",
+                "cardId": "toll"
+              },
+              {
+                "id": "white-deck-25-truce",
+                "cardId": "truce"
+              },
+              {
+                "id": "white-deck-26-breakthrough",
+                "cardId": "breakthrough"
+              },
+              {
+                "id": "white-deck-27-no-quarter",
+                "cardId": "no-quarter"
+              },
+              {
+                "id": "white-deck-28-doomsayer",
+                "cardId": "doomsayer"
+              },
+              {
+                "id": "white-deck-29-betrayal",
+                "cardId": "betrayal"
+              },
+              {
+                "id": "white-deck-30-man-of-straw",
+                "cardId": "man-of-straw"
+              },
+              {
+                "id": "white-deck-31-knightmare",
+                "cardId": "knightmare"
+              },
+              {
+                "id": "white-deck-32-evil-eye",
+                "cardId": "evil-eye"
+              },
+              {
+                "id": "white-deck-33-bog",
+                "cardId": "bog"
+              },
+              {
+                "id": "white-deck-34-doppelganger",
+                "cardId": "doppelganger"
+              },
+              {
+                "id": "white-deck-35-long-jump",
+                "cardId": "long-jump"
+              },
+              {
+                "id": "white-deck-36-plots-within-plots",
+                "cardId": "plots-within-plots"
+              },
+              {
+                "id": "white-deck-37-lost-castle",
+                "cardId": "lost-castle"
+              },
+              {
+                "id": "white-deck-38-masquerade",
+                "cardId": "masquerade"
+              },
+              {
+                "id": "white-deck-39-disintegration",
+                "cardId": "disintegration"
+              },
+              {
+                "id": "white-deck-40-siege",
+                "cardId": "siege"
+              },
+              {
+                "id": "white-deck-41-coup",
+                "cardId": "coup"
+              },
+              {
+                "id": "white-deck-42-dark-mirror",
+                "cardId": "dark-mirror"
+              },
+              {
+                "id": "white-deck-43-bombard",
+                "cardId": "bombard"
+              },
+              {
+                "id": "white-deck-44-riposte",
+                "cardId": "riposte"
+              },
+              {
+                "id": "white-deck-45-man-trap",
+                "cardId": "man-trap"
+              },
+              {
+                "id": "white-deck-46-holy-war",
+                "cardId": "holy-war"
+              },
+              {
+                "id": "white-deck-47-sanctuary",
+                "cardId": "sanctuary"
+              },
+              {
+                "id": "white-deck-48-peace-talks",
+                "cardId": "peace-talks"
+              },
+              {
+                "id": "white-deck-49-earthquake",
+                "cardId": "earthquake"
+              },
+              {
+                "id": "white-deck-50-forbidden-city",
+                "cardId": "forbidden-city"
+              },
+              {
+                "id": "white-deck-51-curse",
+                "cardId": "curse"
+              },
+              {
+                "id": "white-deck-52-crusade",
+                "cardId": "crusade"
+              },
+              {
+                "id": "white-deck-53-squaring-the-circle",
+                "cardId": "squaring-the-circle"
+              },
+              {
+                "id": "white-deck-54-charge",
+                "cardId": "charge"
+              },
+              {
+                "id": "white-deck-55-cowardice",
+                "cardId": "cowardice"
+              },
+              {
+                "id": "white-deck-56-vulture",
+                "cardId": "vulture"
+              },
+              {
+                "id": "white-deck-57-irresistible-force",
+                "cardId": "irresistible-force"
+              },
+              {
+                "id": "white-deck-58-challenge",
+                "cardId": "challenge"
+              },
+              {
+                "id": "white-deck-59-madman",
+                "cardId": "madman"
+              },
+              {
+                "id": "white-deck-60-evangelists",
+                "cardId": "evangelists"
+              },
+              {
+                "id": "white-deck-61-holy-quest",
+                "cardId": "holy-quest"
+              },
+              {
+                "id": "white-deck-62-treason",
+                "cardId": "treason"
+              },
+              {
+                "id": "white-deck-63-pacifism",
+                "cardId": "pacifism"
+              },
+              {
+                "id": "white-deck-64-mystic-shield",
+                "cardId": "mystic-shield"
+              },
+              {
+                "id": "white-deck-65-guardian",
+                "cardId": "guardian"
+              },
+              {
+                "id": "white-deck-66-ghostwalk",
+                "cardId": "ghostwalk"
+              },
+              {
+                "id": "white-deck-67-fireball",
+                "cardId": "fireball"
+              },
+              {
+                "id": "white-deck-68-fog-of-war",
+                "cardId": "fog-of-war"
+              },
+              {
+                "id": "white-deck-69-heresy",
+                "cardId": "heresy"
+              },
+              {
+                "id": "white-deck-70-panic",
+                "cardId": "panic"
+              },
+              {
+                "id": "white-deck-71-split-knight",
+                "cardId": "split-knight"
+              },
+              {
+                "id": "white-deck-72-vendetta",
+                "cardId": "vendetta"
+              },
+              {
+                "id": "white-deck-73-hostage",
+                "cardId": "hostage"
+              },
+              {
+                "id": "white-deck-74-merciless",
+                "cardId": "merciless"
+              }
+            ],
+            "discard": []
+          },
+          "black": {
+            "hand": [
+              {
+                "id": "black-hand-0-chaos",
+                "cardId": "chaos"
+              },
+              {
+                "id": "black-hand-1-riposte",
+                "cardId": "riposte"
+              },
+              {
+                "id": "black-hand-4-doomsayer",
+                "cardId": "doomsayer"
+              },
+              {
+                "id": "black-deck-0-under-elf-hill",
+                "cardId": "under-elf-hill"
+              },
+              {
+                "id": "black-deck-1-tournament",
+                "cardId": "tournament"
+              }
+            ],
+            "deck": [
+              {
+                "id": "black-deck-2-heresy",
+                "cardId": "heresy"
+              },
+              {
+                "id": "black-deck-3-legacy",
+                "cardId": "legacy"
+              },
+              {
+                "id": "black-deck-4-plots-within-plots",
+                "cardId": "plots-within-plots"
+              },
+              {
+                "id": "black-deck-5-crab",
+                "cardId": "crab"
+              },
+              {
+                "id": "black-deck-6-charge",
+                "cardId": "charge"
+              },
+              {
+                "id": "black-deck-7-fortification",
+                "cardId": "fortification"
+              },
+              {
+                "id": "black-deck-8-fanatic",
+                "cardId": "fanatic"
+              },
+              {
+                "id": "black-deck-9-dark-mirror",
+                "cardId": "dark-mirror"
+              },
+              {
+                "id": "black-deck-10-bog",
+                "cardId": "bog"
+              },
+              {
+                "id": "black-deck-11-toll",
+                "cardId": "toll"
+              },
+              {
+                "id": "black-deck-12-long-jump",
+                "cardId": "long-jump"
+              },
+              {
+                "id": "black-deck-13-split-knight",
+                "cardId": "split-knight"
+              },
+              {
+                "id": "black-deck-14-evangelists",
+                "cardId": "evangelists"
+              },
+              {
+                "id": "black-deck-15-man-trap",
+                "cardId": "man-trap"
+              },
+              {
+                "id": "black-deck-16-panic",
+                "cardId": "panic"
+              },
+              {
+                "id": "black-deck-17-revenge",
+                "cardId": "revenge"
+              },
+              {
+                "id": "black-deck-18-fireball",
+                "cardId": "fireball"
+              },
+              {
+                "id": "black-deck-19-vulture",
+                "cardId": "vulture"
+              },
+              {
+                "id": "black-deck-20-ghostwalk",
+                "cardId": "ghostwalk"
+              },
+              {
+                "id": "black-deck-21-think-again",
+                "cardId": "think-again"
+              },
+              {
+                "id": "black-deck-22-man-of-straw",
+                "cardId": "man-of-straw"
+              },
+              {
+                "id": "black-deck-23-haunting-memories",
+                "cardId": "haunting-memories"
+              },
+              {
+                "id": "black-deck-24-passing-in-the-night",
+                "cardId": "passing-in-the-night"
+              },
+              {
+                "id": "black-deck-25-dungeon",
+                "cardId": "dungeon"
+              },
+              {
+                "id": "black-deck-26-neutrality",
+                "cardId": "neutrality"
+              },
+              {
+                "id": "black-deck-27-cowardice",
+                "cardId": "cowardice"
+              },
+              {
+                "id": "black-deck-28-curse",
+                "cardId": "curse"
+              },
+              {
+                "id": "black-deck-29-holy-quest",
+                "cardId": "holy-quest"
+              },
+              {
+                "id": "black-deck-30-winged-victory",
+                "cardId": "winged-victory"
+              },
+              {
+                "id": "black-deck-31-resurrection",
+                "cardId": "resurrection"
+              },
+              {
+                "id": "black-deck-32-figure-dance",
+                "cardId": "figure-dance"
+              },
+              {
+                "id": "black-deck-33-challenge",
+                "cardId": "challenge"
+              },
+              {
+                "id": "black-deck-34-forbidden-city",
+                "cardId": "forbidden-city"
+              },
+              {
+                "id": "black-deck-35-bombard",
+                "cardId": "bombard"
+              },
+              {
+                "id": "black-deck-36-breakthrough",
+                "cardId": "breakthrough"
+              },
+              {
+                "id": "black-deck-37-confabulation",
+                "cardId": "confabulation"
+              },
+              {
+                "id": "black-deck-38-guardian",
+                "cardId": "guardian"
+              },
+              {
+                "id": "black-deck-39-irresistible-force",
+                "cardId": "irresistible-force"
+              },
+              {
+                "id": "black-deck-40-abduction",
+                "cardId": "abduction"
+              },
+              {
+                "id": "black-deck-41-fatal-attraction",
+                "cardId": "fatal-attraction"
+              },
+              {
+                "id": "black-deck-42-evil-eye",
+                "cardId": "evil-eye"
+              },
+              {
+                "id": "black-deck-43-merciless",
+                "cardId": "merciless"
+              },
+              {
+                "id": "black-deck-44-no-quarter",
+                "cardId": "no-quarter"
+              },
+              {
+                "id": "black-deck-45-squaring-the-circle",
+                "cardId": "squaring-the-circle"
+              },
+              {
+                "id": "black-deck-46-truce",
+                "cardId": "truce"
+              },
+              {
+                "id": "black-deck-47-dubbing",
+                "cardId": "dubbing"
+              },
+              {
+                "id": "black-deck-48-cathedral",
+                "cardId": "cathedral"
+              },
+              {
+                "id": "black-deck-49-blessing",
+                "cardId": "blessing"
+              },
+              {
+                "id": "black-deck-50-doppelganger",
+                "cardId": "doppelganger"
+              },
+              {
+                "id": "black-deck-51-holy-war",
+                "cardId": "holy-war"
+              },
+              {
+                "id": "black-deck-52-mystic-shield",
+                "cardId": "mystic-shield"
+              },
+              {
+                "id": "black-deck-53-annexation",
+                "cardId": "annexation"
+              },
+              {
+                "id": "black-deck-54-onslaught",
+                "cardId": "onslaught"
+              },
+              {
+                "id": "black-deck-55-anathema",
+                "cardId": "anathema"
+              },
+              {
+                "id": "black-deck-56-betrayal",
+                "cardId": "betrayal"
+              },
+              {
+                "id": "black-deck-57-disintegration",
+                "cardId": "disintegration"
+              },
+              {
+                "id": "black-deck-58-sanctuary",
+                "cardId": "sanctuary"
+              },
+              {
+                "id": "black-deck-59-earthquake",
+                "cardId": "earthquake"
+              },
+              {
+                "id": "black-deck-60-treason",
+                "cardId": "treason"
+              },
+              {
+                "id": "black-deck-61-lost-castle",
+                "cardId": "lost-castle"
+              },
+              {
+                "id": "black-deck-62-rebirth",
+                "cardId": "rebirth"
+              },
+              {
+                "id": "black-deck-63-masquerade",
+                "cardId": "masquerade"
+              },
+              {
+                "id": "black-deck-64-siege",
+                "cardId": "siege"
+              },
+              {
+                "id": "black-deck-65-fog-of-war",
+                "cardId": "fog-of-war"
+              },
+              {
+                "id": "black-deck-66-assassin",
+                "cardId": "assassin"
+              },
+              {
+                "id": "black-deck-67-hidden-passage",
+                "cardId": "hidden-passage"
+              },
+              {
+                "id": "black-deck-68-peace-talks",
+                "cardId": "peace-talks"
+              },
+              {
+                "id": "black-deck-69-pacifism",
+                "cardId": "pacifism"
+              },
+              {
+                "id": "black-deck-70-madman",
+                "cardId": "madman"
+              },
+              {
+                "id": "black-deck-71-hostage",
+                "cardId": "hostage"
+              },
+              {
+                "id": "black-deck-72-coup",
+                "cardId": "coup"
+              },
+              {
+                "id": "black-deck-73-knightmare",
+                "cardId": "knightmare"
+              },
+              {
+                "id": "black-deck-74-crusade",
+                "cardId": "crusade"
+              }
+            ],
+            "discard": [
+              {
+                "id": "black-hand-2-forced-march",
+                "cardId": "forced-march"
+              }
+            ]
+          }
+        },
+        "turn": {
+          "color": "white",
+          "phase": "afterMove",
+          "moveMade": true,
+          "cardPlays": {
+            "white": 0,
+            "black": 0
+          }
+        },
+        "effects": [
+          {
+            "type": "confabulation",
+            "owner": "white",
+            "card": {
+              "id": "white-hand-4-confabulation",
+              "cardId": "confabulation"
+            },
+            "pieceIds": [
+              "white-knight-g1",
+              "white-rook-h1"
+            ]
+          },
+          {
+            "type": "vendetta",
+            "owner": "black",
+            "card": {
+              "id": "black-hand-3-vendetta",
+              "cardId": "vendetta"
+            }
+          },
+          {
+            "type": "fortification",
+            "owner": "white",
+            "card": {
+              "id": "white-hand-2-fortification",
+              "cardId": "fortification"
+            },
+            "from": "c2",
+            "to": "c3"
+          }
+        ],
+        "history": [
+          {
+            "type": "move",
+            "from": "a2",
+            "to": "a4"
+          },
+          {
+            "type": "move",
+            "from": "b8",
+            "to": "c6"
+          },
+          {
+            "type": "move",
+            "from": "h2",
+            "to": "h4"
+          },
+          {
+            "type": "move",
+            "from": "b7",
+            "to": "b6"
+          },
+          {
+            "type": "cardPlayed",
+            "cardId": "confabulation",
+            "target": [
+              {
+                "from": "h1",
+                "to": "g1"
+              }
+            ],
+            "movement": [
+              {
+                "from": "h1",
+                "to": "g1"
+              }
+            ],
+            "preservePreviousMove": false
+          },
+          {
+            "type": "move",
+            "from": "f7",
+            "to": "f6"
+          },
+          {
+            "type": "move",
+            "from": "g1",
+            "to": "h1"
+          },
+          {
+            "type": "move",
+            "from": "c8",
+            "to": "b7"
+          },
+          {
+            "type": "move",
+            "from": "h4",
+            "to": "h5"
+          },
+          {
+            "type": "move",
+            "from": "e7",
+            "to": "e6"
+          },
+          {
+            "type": "move",
+            "from": "e2",
+            "to": "e3"
+          },
+          {
+            "type": "cardPlayed",
+            "cardId": "forced-march",
+            "target": [
+              {
+                "from": "b6",
+                "to": "a6"
+              },
+              {
+                "from": "f6",
+                "to": "g6"
+              }
+            ],
+            "movement": [
+              {
+                "from": "b6",
+                "to": "a6"
+              },
+              {
+                "from": "f6",
+                "to": "g6"
+              }
+            ],
+            "preservePreviousMove": false
+          },
+          {
+            "type": "move",
+            "from": "h1",
+            "to": "g1"
+          },
+          {
+            "type": "move",
+            "from": "f8",
+            "to": "d6"
+          },
+          {
+            "type": "move",
+            "from": "g1",
+            "to": "f3"
+          },
+          {
+            "type": "move",
+            "from": "h7",
+            "to": "h6"
+          },
+          {
+            "type": "move",
+            "from": "f3",
+            "to": "h4"
+          },
+          {
+            "type": "move",
+            "from": "d6",
+            "to": "f4"
+          },
+          {
+            "type": "cardPlayed",
+            "cardId": "vendetta",
+            "movement": [],
+            "preservePreviousMove": true
+          },
+          {
+            "type": "move",
+            "from": "f1",
+            "to": "a6",
+            "capturedId": "black-pawn-b7"
+          },
+          {
+            "type": "cardPlayed",
+            "cardId": "fortification",
+            "target": {
+              "from": "c2",
+              "to": "c3"
+            }
+          },
+          {
+            "type": "move",
+            "from": "b7",
+            "to": "a6",
+            "capturedId": "white-bishop-f1"
+          },
+          {
+            "type": "move",
+            "from": "h5",
+            "to": "g6",
+            "capturedId": "black-pawn-f7"
+          }
+        ],
+        "orientation": 0,
+        "enPassant": [],
+        "pendingRescue": null,
+        "pendingDoomsayer": null,
+        "outcome": null,
+        "playedCards": [
+          {
+            "player": "white",
+            "cardInstanceId": "white-hand-4-confabulation"
+          },
+          {
+            "player": "black",
+            "cardInstanceId": "black-hand-2-forced-march"
+          },
+          {
+            "player": "black",
+            "cardInstanceId": "black-hand-3-vendetta"
+          },
+          {
+            "player": "white",
+            "cardInstanceId": "white-hand-2-fortification"
+          }
+        ],
+        "shieldMove": {
+          "player": "white",
+          "pieceIds": [
+            "white-pawn-h2"
+          ],
+          "capturedOpponent": true
+        },
+        "legacyCapture": {
+          "historyLength": 23,
+          "pieceIds": [
+            "black-pawn-f7"
+          ]
+        },
+        "chaosCheckpoint": {
+          "before": {
+            "fen": "r2qk1nr/p1pp2p1/b1n1p1pp/7P/P4b1N/4P3/1PPP1PP1/RNBQK3 w Qkq - 0 11",
+            "pieces": [
+              {
+                "id": "white-rook-a1",
+                "owner": "white",
+                "role": "rook",
+                "originalRole": "rook",
+                "square": "a1",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-knight-b1",
+                "owner": "white",
+                "role": "knight",
+                "originalRole": "knight",
+                "square": "b1",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-bishop-c1",
+                "owner": "white",
+                "role": "bishop",
+                "originalRole": "bishop",
+                "square": "c1",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-queen-d1",
+                "owner": "white",
+                "role": "queen",
+                "originalRole": "queen",
+                "square": "d1",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-king-e1",
+                "owner": "white",
+                "role": "king",
+                "originalRole": "king",
+                "square": "e1",
+                "zone": "board",
+                "promoted": false,
+                "royal": true,
+                "neutral": false
+              },
+              {
+                "id": "white-bishop-f1",
+                "owner": "white",
+                "role": "bishop",
+                "originalRole": "bishop",
+                "square": null,
+                "zone": "captured",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-knight-g1",
+                "owner": "white",
+                "role": "knight",
+                "originalRole": "knight",
+                "square": "h4",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-rook-h1",
+                "owner": "white",
+                "role": "rook",
+                "originalRole": "rook",
+                "square": null,
+                "zone": "away",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-a2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "a4",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-b2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "b2",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-c2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "c2",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-d2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "d2",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-e2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "e3",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-f2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "f2",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-g2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "g2",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "white-pawn-h2",
+                "owner": "white",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "h5",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-a7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "a7",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-b7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": null,
+                "zone": "captured",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-c7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "c7",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-d7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "d7",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-e7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "e6",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-f7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "g6",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-g7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "g7",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-pawn-h7",
+                "owner": "black",
+                "role": "pawn",
+                "originalRole": "pawn",
+                "square": "h6",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-rook-a8",
+                "owner": "black",
+                "role": "rook",
+                "originalRole": "rook",
+                "square": "a8",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-knight-b8",
+                "owner": "black",
+                "role": "knight",
+                "originalRole": "knight",
+                "square": "c6",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-bishop-c8",
+                "owner": "black",
+                "role": "bishop",
+                "originalRole": "bishop",
+                "square": "a6",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-queen-d8",
+                "owner": "black",
+                "role": "queen",
+                "originalRole": "queen",
+                "square": "d8",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-king-e8",
+                "owner": "black",
+                "role": "king",
+                "originalRole": "king",
+                "square": "e8",
+                "zone": "board",
+                "promoted": false,
+                "royal": true,
+                "neutral": false
+              },
+              {
+                "id": "black-bishop-f8",
+                "owner": "black",
+                "role": "bishop",
+                "originalRole": "bishop",
+                "square": "f4",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-knight-g8",
+                "owner": "black",
+                "role": "knight",
+                "originalRole": "knight",
+                "square": "g8",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              },
+              {
+                "id": "black-rook-h8",
+                "owner": "black",
+                "role": "rook",
+                "originalRole": "rook",
+                "square": "h8",
+                "zone": "board",
+                "promoted": false,
+                "royal": false,
+                "neutral": false
+              }
+            ],
+            "players": {
+              "white": {
+                "hand": [
+                  {
+                    "id": "white-hand-0-dungeon",
+                    "cardId": "dungeon"
+                  },
+                  {
+                    "id": "white-hand-1-resurrection",
+                    "cardId": "resurrection"
+                  },
+                  {
+                    "id": "white-hand-3-passing-in-the-night",
+                    "cardId": "passing-in-the-night"
+                  },
+                  {
+                    "id": "white-deck-0-anathema",
+                    "cardId": "anathema"
+                  },
+                  {
+                    "id": "white-deck-1-fanatic",
+                    "cardId": "fanatic"
+                  }
+                ],
+                "deck": [
+                  {
+                    "id": "white-deck-2-under-elf-hill",
+                    "cardId": "under-elf-hill"
+                  },
+                  {
+                    "id": "white-deck-3-cathedral",
+                    "cardId": "cathedral"
+                  },
+                  {
+                    "id": "white-deck-4-forced-march",
+                    "cardId": "forced-march"
+                  },
+                  {
+                    "id": "white-deck-5-haunting-memories",
+                    "cardId": "haunting-memories"
+                  },
+                  {
+                    "id": "white-deck-6-think-again",
+                    "cardId": "think-again"
+                  },
+                  {
+                    "id": "white-deck-7-hidden-passage",
+                    "cardId": "hidden-passage"
+                  },
+                  {
+                    "id": "white-deck-8-figure-dance",
+                    "cardId": "figure-dance"
+                  },
+                  {
+                    "id": "white-deck-9-abduction",
+                    "cardId": "abduction"
+                  },
+                  {
+                    "id": "white-deck-10-tournament",
+                    "cardId": "tournament"
+                  },
+                  {
+                    "id": "white-deck-11-chaos",
+                    "cardId": "chaos"
+                  },
+                  {
+                    "id": "white-deck-12-dubbing",
+                    "cardId": "dubbing"
+                  },
+                  {
+                    "id": "white-deck-13-neutrality",
+                    "cardId": "neutrality"
+                  },
+                  {
+                    "id": "white-deck-14-onslaught",
+                    "cardId": "onslaught"
+                  },
+                  {
+                    "id": "white-deck-15-crab",
+                    "cardId": "crab"
+                  },
+                  {
+                    "id": "white-deck-16-fatal-attraction",
+                    "cardId": "fatal-attraction"
+                  },
+                  {
+                    "id": "white-deck-17-assassin",
+                    "cardId": "assassin"
+                  },
+                  {
+                    "id": "white-deck-18-annexation",
+                    "cardId": "annexation"
+                  },
+                  {
+                    "id": "white-deck-19-blessing",
+                    "cardId": "blessing"
+                  },
+                  {
+                    "id": "white-deck-20-revenge",
+                    "cardId": "revenge"
+                  },
+                  {
+                    "id": "white-deck-21-legacy",
+                    "cardId": "legacy"
+                  },
+                  {
+                    "id": "white-deck-22-rebirth",
+                    "cardId": "rebirth"
+                  },
+                  {
+                    "id": "white-deck-23-winged-victory",
+                    "cardId": "winged-victory"
+                  },
+                  {
+                    "id": "white-deck-24-toll",
+                    "cardId": "toll"
+                  },
+                  {
+                    "id": "white-deck-25-truce",
+                    "cardId": "truce"
+                  },
+                  {
+                    "id": "white-deck-26-breakthrough",
+                    "cardId": "breakthrough"
+                  },
+                  {
+                    "id": "white-deck-27-no-quarter",
+                    "cardId": "no-quarter"
+                  },
+                  {
+                    "id": "white-deck-28-doomsayer",
+                    "cardId": "doomsayer"
+                  },
+                  {
+                    "id": "white-deck-29-betrayal",
+                    "cardId": "betrayal"
+                  },
+                  {
+                    "id": "white-deck-30-man-of-straw",
+                    "cardId": "man-of-straw"
+                  },
+                  {
+                    "id": "white-deck-31-knightmare",
+                    "cardId": "knightmare"
+                  },
+                  {
+                    "id": "white-deck-32-evil-eye",
+                    "cardId": "evil-eye"
+                  },
+                  {
+                    "id": "white-deck-33-bog",
+                    "cardId": "bog"
+                  },
+                  {
+                    "id": "white-deck-34-doppelganger",
+                    "cardId": "doppelganger"
+                  },
+                  {
+                    "id": "white-deck-35-long-jump",
+                    "cardId": "long-jump"
+                  },
+                  {
+                    "id": "white-deck-36-plots-within-plots",
+                    "cardId": "plots-within-plots"
+                  },
+                  {
+                    "id": "white-deck-37-lost-castle",
+                    "cardId": "lost-castle"
+                  },
+                  {
+                    "id": "white-deck-38-masquerade",
+                    "cardId": "masquerade"
+                  },
+                  {
+                    "id": "white-deck-39-disintegration",
+                    "cardId": "disintegration"
+                  },
+                  {
+                    "id": "white-deck-40-siege",
+                    "cardId": "siege"
+                  },
+                  {
+                    "id": "white-deck-41-coup",
+                    "cardId": "coup"
+                  },
+                  {
+                    "id": "white-deck-42-dark-mirror",
+                    "cardId": "dark-mirror"
+                  },
+                  {
+                    "id": "white-deck-43-bombard",
+                    "cardId": "bombard"
+                  },
+                  {
+                    "id": "white-deck-44-riposte",
+                    "cardId": "riposte"
+                  },
+                  {
+                    "id": "white-deck-45-man-trap",
+                    "cardId": "man-trap"
+                  },
+                  {
+                    "id": "white-deck-46-holy-war",
+                    "cardId": "holy-war"
+                  },
+                  {
+                    "id": "white-deck-47-sanctuary",
+                    "cardId": "sanctuary"
+                  },
+                  {
+                    "id": "white-deck-48-peace-talks",
+                    "cardId": "peace-talks"
+                  },
+                  {
+                    "id": "white-deck-49-earthquake",
+                    "cardId": "earthquake"
+                  },
+                  {
+                    "id": "white-deck-50-forbidden-city",
+                    "cardId": "forbidden-city"
+                  },
+                  {
+                    "id": "white-deck-51-curse",
+                    "cardId": "curse"
+                  },
+                  {
+                    "id": "white-deck-52-crusade",
+                    "cardId": "crusade"
+                  },
+                  {
+                    "id": "white-deck-53-squaring-the-circle",
+                    "cardId": "squaring-the-circle"
+                  },
+                  {
+                    "id": "white-deck-54-charge",
+                    "cardId": "charge"
+                  },
+                  {
+                    "id": "white-deck-55-cowardice",
+                    "cardId": "cowardice"
+                  },
+                  {
+                    "id": "white-deck-56-vulture",
+                    "cardId": "vulture"
+                  },
+                  {
+                    "id": "white-deck-57-irresistible-force",
+                    "cardId": "irresistible-force"
+                  },
+                  {
+                    "id": "white-deck-58-challenge",
+                    "cardId": "challenge"
+                  },
+                  {
+                    "id": "white-deck-59-madman",
+                    "cardId": "madman"
+                  },
+                  {
+                    "id": "white-deck-60-evangelists",
+                    "cardId": "evangelists"
+                  },
+                  {
+                    "id": "white-deck-61-holy-quest",
+                    "cardId": "holy-quest"
+                  },
+                  {
+                    "id": "white-deck-62-treason",
+                    "cardId": "treason"
+                  },
+                  {
+                    "id": "white-deck-63-pacifism",
+                    "cardId": "pacifism"
+                  },
+                  {
+                    "id": "white-deck-64-mystic-shield",
+                    "cardId": "mystic-shield"
+                  },
+                  {
+                    "id": "white-deck-65-guardian",
+                    "cardId": "guardian"
+                  },
+                  {
+                    "id": "white-deck-66-ghostwalk",
+                    "cardId": "ghostwalk"
+                  },
+                  {
+                    "id": "white-deck-67-fireball",
+                    "cardId": "fireball"
+                  },
+                  {
+                    "id": "white-deck-68-fog-of-war",
+                    "cardId": "fog-of-war"
+                  },
+                  {
+                    "id": "white-deck-69-heresy",
+                    "cardId": "heresy"
+                  },
+                  {
+                    "id": "white-deck-70-panic",
+                    "cardId": "panic"
+                  },
+                  {
+                    "id": "white-deck-71-split-knight",
+                    "cardId": "split-knight"
+                  },
+                  {
+                    "id": "white-deck-72-vendetta",
+                    "cardId": "vendetta"
+                  },
+                  {
+                    "id": "white-deck-73-hostage",
+                    "cardId": "hostage"
+                  },
+                  {
+                    "id": "white-deck-74-merciless",
+                    "cardId": "merciless"
+                  }
+                ],
+                "discard": []
+              },
+              "black": {
+                "hand": [
+                  {
+                    "id": "black-hand-0-chaos",
+                    "cardId": "chaos"
+                  },
+                  {
+                    "id": "black-hand-1-riposte",
+                    "cardId": "riposte"
+                  },
+                  {
+                    "id": "black-hand-4-doomsayer",
+                    "cardId": "doomsayer"
+                  },
+                  {
+                    "id": "black-deck-0-under-elf-hill",
+                    "cardId": "under-elf-hill"
+                  },
+                  {
+                    "id": "black-deck-1-tournament",
+                    "cardId": "tournament"
+                  }
+                ],
+                "deck": [
+                  {
+                    "id": "black-deck-2-heresy",
+                    "cardId": "heresy"
+                  },
+                  {
+                    "id": "black-deck-3-legacy",
+                    "cardId": "legacy"
+                  },
+                  {
+                    "id": "black-deck-4-plots-within-plots",
+                    "cardId": "plots-within-plots"
+                  },
+                  {
+                    "id": "black-deck-5-crab",
+                    "cardId": "crab"
+                  },
+                  {
+                    "id": "black-deck-6-charge",
+                    "cardId": "charge"
+                  },
+                  {
+                    "id": "black-deck-7-fortification",
+                    "cardId": "fortification"
+                  },
+                  {
+                    "id": "black-deck-8-fanatic",
+                    "cardId": "fanatic"
+                  },
+                  {
+                    "id": "black-deck-9-dark-mirror",
+                    "cardId": "dark-mirror"
+                  },
+                  {
+                    "id": "black-deck-10-bog",
+                    "cardId": "bog"
+                  },
+                  {
+                    "id": "black-deck-11-toll",
+                    "cardId": "toll"
+                  },
+                  {
+                    "id": "black-deck-12-long-jump",
+                    "cardId": "long-jump"
+                  },
+                  {
+                    "id": "black-deck-13-split-knight",
+                    "cardId": "split-knight"
+                  },
+                  {
+                    "id": "black-deck-14-evangelists",
+                    "cardId": "evangelists"
+                  },
+                  {
+                    "id": "black-deck-15-man-trap",
+                    "cardId": "man-trap"
+                  },
+                  {
+                    "id": "black-deck-16-panic",
+                    "cardId": "panic"
+                  },
+                  {
+                    "id": "black-deck-17-revenge",
+                    "cardId": "revenge"
+                  },
+                  {
+                    "id": "black-deck-18-fireball",
+                    "cardId": "fireball"
+                  },
+                  {
+                    "id": "black-deck-19-vulture",
+                    "cardId": "vulture"
+                  },
+                  {
+                    "id": "black-deck-20-ghostwalk",
+                    "cardId": "ghostwalk"
+                  },
+                  {
+                    "id": "black-deck-21-think-again",
+                    "cardId": "think-again"
+                  },
+                  {
+                    "id": "black-deck-22-man-of-straw",
+                    "cardId": "man-of-straw"
+                  },
+                  {
+                    "id": "black-deck-23-haunting-memories",
+                    "cardId": "haunting-memories"
+                  },
+                  {
+                    "id": "black-deck-24-passing-in-the-night",
+                    "cardId": "passing-in-the-night"
+                  },
+                  {
+                    "id": "black-deck-25-dungeon",
+                    "cardId": "dungeon"
+                  },
+                  {
+                    "id": "black-deck-26-neutrality",
+                    "cardId": "neutrality"
+                  },
+                  {
+                    "id": "black-deck-27-cowardice",
+                    "cardId": "cowardice"
+                  },
+                  {
+                    "id": "black-deck-28-curse",
+                    "cardId": "curse"
+                  },
+                  {
+                    "id": "black-deck-29-holy-quest",
+                    "cardId": "holy-quest"
+                  },
+                  {
+                    "id": "black-deck-30-winged-victory",
+                    "cardId": "winged-victory"
+                  },
+                  {
+                    "id": "black-deck-31-resurrection",
+                    "cardId": "resurrection"
+                  },
+                  {
+                    "id": "black-deck-32-figure-dance",
+                    "cardId": "figure-dance"
+                  },
+                  {
+                    "id": "black-deck-33-challenge",
+                    "cardId": "challenge"
+                  },
+                  {
+                    "id": "black-deck-34-forbidden-city",
+                    "cardId": "forbidden-city"
+                  },
+                  {
+                    "id": "black-deck-35-bombard",
+                    "cardId": "bombard"
+                  },
+                  {
+                    "id": "black-deck-36-breakthrough",
+                    "cardId": "breakthrough"
+                  },
+                  {
+                    "id": "black-deck-37-confabulation",
+                    "cardId": "confabulation"
+                  },
+                  {
+                    "id": "black-deck-38-guardian",
+                    "cardId": "guardian"
+                  },
+                  {
+                    "id": "black-deck-39-irresistible-force",
+                    "cardId": "irresistible-force"
+                  },
+                  {
+                    "id": "black-deck-40-abduction",
+                    "cardId": "abduction"
+                  },
+                  {
+                    "id": "black-deck-41-fatal-attraction",
+                    "cardId": "fatal-attraction"
+                  },
+                  {
+                    "id": "black-deck-42-evil-eye",
+                    "cardId": "evil-eye"
+                  },
+                  {
+                    "id": "black-deck-43-merciless",
+                    "cardId": "merciless"
+                  },
+                  {
+                    "id": "black-deck-44-no-quarter",
+                    "cardId": "no-quarter"
+                  },
+                  {
+                    "id": "black-deck-45-squaring-the-circle",
+                    "cardId": "squaring-the-circle"
+                  },
+                  {
+                    "id": "black-deck-46-truce",
+                    "cardId": "truce"
+                  },
+                  {
+                    "id": "black-deck-47-dubbing",
+                    "cardId": "dubbing"
+                  },
+                  {
+                    "id": "black-deck-48-cathedral",
+                    "cardId": "cathedral"
+                  },
+                  {
+                    "id": "black-deck-49-blessing",
+                    "cardId": "blessing"
+                  },
+                  {
+                    "id": "black-deck-50-doppelganger",
+                    "cardId": "doppelganger"
+                  },
+                  {
+                    "id": "black-deck-51-holy-war",
+                    "cardId": "holy-war"
+                  },
+                  {
+                    "id": "black-deck-52-mystic-shield",
+                    "cardId": "mystic-shield"
+                  },
+                  {
+                    "id": "black-deck-53-annexation",
+                    "cardId": "annexation"
+                  },
+                  {
+                    "id": "black-deck-54-onslaught",
+                    "cardId": "onslaught"
+                  },
+                  {
+                    "id": "black-deck-55-anathema",
+                    "cardId": "anathema"
+                  },
+                  {
+                    "id": "black-deck-56-betrayal",
+                    "cardId": "betrayal"
+                  },
+                  {
+                    "id": "black-deck-57-disintegration",
+                    "cardId": "disintegration"
+                  },
+                  {
+                    "id": "black-deck-58-sanctuary",
+                    "cardId": "sanctuary"
+                  },
+                  {
+                    "id": "black-deck-59-earthquake",
+                    "cardId": "earthquake"
+                  },
+                  {
+                    "id": "black-deck-60-treason",
+                    "cardId": "treason"
+                  },
+                  {
+                    "id": "black-deck-61-lost-castle",
+                    "cardId": "lost-castle"
+                  },
+                  {
+                    "id": "black-deck-62-rebirth",
+                    "cardId": "rebirth"
+                  },
+                  {
+                    "id": "black-deck-63-masquerade",
+                    "cardId": "masquerade"
+                  },
+                  {
+                    "id": "black-deck-64-siege",
+                    "cardId": "siege"
+                  },
+                  {
+                    "id": "black-deck-65-fog-of-war",
+                    "cardId": "fog-of-war"
+                  },
+                  {
+                    "id": "black-deck-66-assassin",
+                    "cardId": "assassin"
+                  },
+                  {
+                    "id": "black-deck-67-hidden-passage",
+                    "cardId": "hidden-passage"
+                  },
+                  {
+                    "id": "black-deck-68-peace-talks",
+                    "cardId": "peace-talks"
+                  },
+                  {
+                    "id": "black-deck-69-pacifism",
+                    "cardId": "pacifism"
+                  },
+                  {
+                    "id": "black-deck-70-madman",
+                    "cardId": "madman"
+                  },
+                  {
+                    "id": "black-deck-71-hostage",
+                    "cardId": "hostage"
+                  },
+                  {
+                    "id": "black-deck-72-coup",
+                    "cardId": "coup"
+                  },
+                  {
+                    "id": "black-deck-73-knightmare",
+                    "cardId": "knightmare"
+                  },
+                  {
+                    "id": "black-deck-74-crusade",
+                    "cardId": "crusade"
+                  }
+                ],
+                "discard": [
+                  {
+                    "id": "black-hand-2-forced-march",
+                    "cardId": "forced-march"
+                  }
+                ]
+              }
+            },
+            "turn": {
+              "color": "white",
+              "phase": "beforeMove",
+              "moveMade": false,
+              "cardPlays": {
+                "white": 0,
+                "black": 0
+              }
+            },
+            "effects": [
+              {
+                "type": "confabulation",
+                "owner": "white",
+                "card": {
+                  "id": "white-hand-4-confabulation",
+                  "cardId": "confabulation"
+                },
+                "pieceIds": [
+                  "white-knight-g1",
+                  "white-rook-h1"
+                ]
+              },
+              {
+                "type": "vendetta",
+                "owner": "black",
+                "card": {
+                  "id": "black-hand-3-vendetta",
+                  "cardId": "vendetta"
+                }
+              },
+              {
+                "type": "fortification",
+                "owner": "white",
+                "card": {
+                  "id": "white-hand-2-fortification",
+                  "cardId": "fortification"
+                },
+                "from": "c2",
+                "to": "c3"
+              }
+            ],
+            "history": [
+              {
+                "type": "move",
+                "from": "a2",
+                "to": "a4"
+              },
+              {
+                "type": "move",
+                "from": "b8",
+                "to": "c6"
+              },
+              {
+                "type": "move",
+                "from": "h2",
+                "to": "h4"
+              },
+              {
+                "type": "move",
+                "from": "b7",
+                "to": "b6"
+              },
+              {
+                "type": "cardPlayed",
+                "cardId": "confabulation",
+                "target": [
+                  {
+                    "from": "h1",
+                    "to": "g1"
+                  }
+                ],
+                "movement": [
+                  {
+                    "from": "h1",
+                    "to": "g1"
+                  }
+                ],
+                "preservePreviousMove": false
+              },
+              {
+                "type": "move",
+                "from": "f7",
+                "to": "f6"
+              },
+              {
+                "type": "move",
+                "from": "g1",
+                "to": "h1"
+              },
+              {
+                "type": "move",
+                "from": "c8",
+                "to": "b7"
+              },
+              {
+                "type": "move",
+                "from": "h4",
+                "to": "h5"
+              },
+              {
+                "type": "move",
+                "from": "e7",
+                "to": "e6"
+              },
+              {
+                "type": "move",
+                "from": "e2",
+                "to": "e3"
+              },
+              {
+                "type": "cardPlayed",
+                "cardId": "forced-march",
+                "target": [
+                  {
+                    "from": "b6",
+                    "to": "a6"
+                  },
+                  {
+                    "from": "f6",
+                    "to": "g6"
+                  }
+                ],
+                "movement": [
+                  {
+                    "from": "b6",
+                    "to": "a6"
+                  },
+                  {
+                    "from": "f6",
+                    "to": "g6"
+                  }
+                ],
+                "preservePreviousMove": false
+              },
+              {
+                "type": "move",
+                "from": "h1",
+                "to": "g1"
+              },
+              {
+                "type": "move",
+                "from": "f8",
+                "to": "d6"
+              },
+              {
+                "type": "move",
+                "from": "g1",
+                "to": "f3"
+              },
+              {
+                "type": "move",
+                "from": "h7",
+                "to": "h6"
+              },
+              {
+                "type": "move",
+                "from": "f3",
+                "to": "h4"
+              },
+              {
+                "type": "move",
+                "from": "d6",
+                "to": "f4"
+              },
+              {
+                "type": "cardPlayed",
+                "cardId": "vendetta",
+                "movement": [],
+                "preservePreviousMove": true
+              },
+              {
+                "type": "move",
+                "from": "f1",
+                "to": "a6",
+                "capturedId": "black-pawn-b7"
+              },
+              {
+                "type": "cardPlayed",
+                "cardId": "fortification",
+                "target": {
+                  "from": "c2",
+                  "to": "c3"
+                }
+              },
+              {
+                "type": "move",
+                "from": "b7",
+                "to": "a6",
+                "capturedId": "white-bishop-f1"
+              }
+            ],
+            "orientation": 0,
+            "enPassant": [],
+            "pendingRescue": null,
+            "pendingDoomsayer": null,
+            "outcome": null,
+            "playedCards": [
+              {
+                "player": "white",
+                "cardInstanceId": "white-hand-4-confabulation"
+              },
+              {
+                "player": "black",
+                "cardInstanceId": "black-hand-2-forced-march"
+              },
+              {
+                "player": "black",
+                "cardInstanceId": "black-hand-3-vendetta"
+              },
+              {
+                "player": "white",
+                "cardInstanceId": "white-hand-2-fortification"
+              }
+            ]
+          },
+          "movement": "black-pawn-f7:g6:captured|white-pawn-h2:h5:g6",
+          "historyLength": 23
+        }
+      },
+      "player": "black",
+      "card": {
+        "id": "black-hand-0-chaos",
+        "cardId": "chaos"
+      },
+      "historyLength": 23
+    }
+  },
+  "cardId": "passing-in-the-night"
+}
