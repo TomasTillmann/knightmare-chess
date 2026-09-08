@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 150,
+  "nextIteration": 151,
   "coverageAuditsCompleted": 14,
   "iterations": [
     {
@@ -1530,6 +1530,38 @@
       "status": "passed",
       "finalFen": "rNb3kr/ppp5/8/2P2PBp/P1P1ppqP/5n2/2RP1K2/3Q1BNR w - - 1 29",
       "testCommit": "770c52d"
+    },
+    {
+      "id": 147,
+      "agent": "iteration_147",
+      "seed": 860147,
+      "reviewedActions": 116,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "7r/2p1q2b/3rp1kp/p2p1Bp1/p4p1P/1P3P2/2PK2P1/3bRR1N b - - 2 26",
+      "testCommit": "f16371c"
+    },
+    {
+      "id": 148,
+      "agent": "iteration_148",
+      "seed": 860148,
+      "status": "finding",
+      "reviewedActions": 50,
+      "reviewedMoves": 20,
+      "finding": "Plots Within Plots prematurely rewinds a pending self-check move instead of preserving its immediate eligible Dungeon rescue allowance",
+      "testCommit": "eecc7c5",
+      "verificationCommit": "c221c51",
+      "expectedFinalFen": "r1bk2R1/2p1pppn/R3p3/4p2b/8/1P1P1N2/n1P2P1P/2BQKBr1 w - - 1 12"
+    },
+    {
+      "id": 149,
+      "agent": "iteration_149",
+      "seed": 860149,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1nbk2r1/3qb2p/1p4p1/p1rnp3/5pP1/1PP1pP1R/3KP1BP/1NQ5 w - - 5 28",
+      "testCommit": "68544b2"
     }
   ],
   "coverageAudits": [
