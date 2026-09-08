@@ -1603,14 +1603,31 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   }
 
   const resolved = structuredClone(state);
-  resolved.pieces.find(candidate => candidate.id === piece.id)!.square = first;
+  const before = captured ? state.chaosCheckpoint?.before : undefined;
   if (captured) {
-    const restored = resolved.pieces.find(candidate => candidate.id === captured.id)!;
-    restored.square = move.to;
-    restored.zone = 'board';
-    delete restored.capturedBy;
+    const victim = before?.pieces.find(candidate => candidate.id === captured.id);
+    const components = before && victim ? physicalPieces(before, victim) : [];
+    if (before && components.length) {
+      resolved.pieces = structuredClone(before.pieces);
+      resolved.effects = structuredClone(before.effects);
+      // Retained cards return with their effects when the distant capture is undone.
+      for (const effect of resolved.effects) {
+        const card = effectRecord(effectRecord(effect)?.card);
+        if (typeof card?.id !== 'string') continue;
+        for (const player of ['white', 'black'] as const) {
+          resolved.players[player].discard = resolved.players[player].discard.filter(entry => entry.id !== card.id);
+        }
+      }
+    } else {
+      const restored = resolved.pieces.find(candidate => candidate.id === captured.id)!;
+      restored.square = move.to;
+      restored.zone = 'board';
+      delete restored.capturedBy;
+    }
   }
-  if (move.previousFen) resolved.fen = move.previousFen;
+  resolved.pieces.find(candidate => candidate.id === piece.id)!.square = first;
+  if (before) resolved.fen = before.fen;
+  else if (move.previousFen) resolved.fen = move.previousFen;
   else {
     const setup = setupFor(resolved, mover);
     setup.turn = mover;
@@ -1619,6 +1636,12 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     resolved.fen = makeFen(setup);
   }
   completeReplacementMove(resolved, mover, resetsHalfmoveClock(piece), [], [piece]);
+  if (before) {
+    springManTraps(before, resolved);
+    if (resolved.shieldMove) resolved.shieldMove.capturedOpponent = resolved.pieces.some(candidate =>
+      candidate.zone === 'captured' && boardCarrier(before, candidate.id)
+      && (candidate.owner !== mover || candidate.neutral));
+  }
   if (
     (!isOrdinaryCheckmate(state, mover) && isOrdinaryCheckmate(resolved, mover))
     || (!isOrdinaryCheckmate(state, reactor) && isOrdinaryCheckmate(resolved, reactor))
