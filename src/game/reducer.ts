@@ -6117,7 +6117,7 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
   if (result.ok && result.state.history.at(-1)?.type === 'cardPlayed'
     && (result.state.effects !== effectsBeforeExpiry
       || state.effects.some(isFatalAttractionEffect))
-    && CARD_CATALOG[cardId]?.continuing === false && cardId !== 'hostage') {
+    && CARD_CATALOG[cardId]?.continuing === false && cardId !== 'hostage' && cardId !== 'plots-within-plots') {
     const actor = result.state.playedCards?.at(-1)?.player ?? state.turn.color;
     const reaction = actor !== state.turn.color;
     const defender = opposite(actor);
@@ -6870,14 +6870,17 @@ function declineDoomsayer(
 
 function hasAfterMoveRescue(state: GameState, movedPieces: readonly PieceState[]): boolean {
   const color = state.turn.color;
-  if (cardAllowanceUsed(state, color)) return false;
+  if (cardAllowanceUsed(state, color)
+    && !state.plotsAllowances?.some(allowance => allowance.player === color && allowance.remaining > 0)) return false;
   return state.players[color].hand.some(card =>
     cardPlayTargets(state, card.cardId).some(target => {
       const result = playCard(state, card.cardId, target, card.id);
       return result.ok
         && result.state.history.at(-1)?.type === 'cardPlayed'
         && (!moveLeavesRoyalInCheck(result.state, color, movedPieces)
-          || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state, new Set(), movedPieces));
+          || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state, new Set(), movedPieces)
+          || (result.state.history.at(-1)?.copiedCardId ?? card.cardId) === 'plots-within-plots'
+            && hasAfterMoveRescue(result.state, movedPieces));
     }),
   );
 }
@@ -7362,7 +7365,8 @@ function settlePendingRescue(
     result.state.pendingRescue = null;
     return result;
   }
-  if (result.state.playedCards?.at(-1)?.player !== beforeCard.turn.color
+  if ((result.state.playedCards?.at(-1)?.player !== beforeCard.turn.color
+      || (result.state.history.at(-1)?.copiedCardId ?? cardId) === 'plots-within-plots')
     && hasAfterMoveRescue(result.state, movedPieces)) return result;
 
   const recorded = result.state.history.at(-1);
