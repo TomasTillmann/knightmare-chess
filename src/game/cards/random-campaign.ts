@@ -24,6 +24,8 @@ export function maySampleCard(state: GameState, card: { id: string; cardId: stri
   const extra = state.plotsAllowances?.some(item => item.player === owner && item.remaining > 0 && item.eligibleCards.includes(card.id));
   if (state.turn.cardPlays[owner] && !extra) return false;
   if (extra) return true;
+  // Legacy also reacts to captures during its owner's move (for example Man-Trap).
+  if (card.cardId === 'legacy' && state.legacyCapture?.historyLength === state.history.length) return true;
   const timing = CARD_CATALOG[card.cardId]!.timing;
   return owner === state.turn.color && timing.includes(state.turn.phase)
     || owner !== state.turn.color && state.turn.moveMade && timing.includes('afterOpponentMove')

@@ -28,6 +28,12 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    Public `effects` entries are `unknown`: compare complete expected records or
    narrow them explicitly before field access. For `GameAction` unions, narrow
    `action.type` before reading card-only fields (a `flatMap` or loop is enough).
+   Movement payload fields remain `unknown` even inside `action.type === 'move'`:
+   start that branch with `assert.ok(typeof action.from === 'string' && typeof action.to === 'string')`
+   before `parseSquare`, indexing, or string operations. This is a recurring
+   compile failure; use this exact narrowing before adding movement assertions.
+   Apply §11.7 legal-capture restrictions when assessing check: a neutral piece's
+   hypothetical capture must also preserve its controller's King safety (§15.1).
    If shared typecheck flags another active agent's file, report its path to the
    parent and leave that file untouched; this is not a finding in your iteration.
 6. Return `ITERATION_NNN_PASS` or `ITERATION_NNN_FINDING`, action/move/card counts,
