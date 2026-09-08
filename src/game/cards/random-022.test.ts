@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { applyAction } from '../reducer.js';
+import { applyAction, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { checkState, digest, type RandomTrace } from './random-campaign.js';
 
 // Rules §§8–11 govern every turn boundary, draw and temporary self-check below.
 // Unmentioned piece identities, hands, effects and clocks stay unchanged.
-// Review stops at the first invalid transition; generated actions 99–129 are unreviewed.
+// Action 98 was independently verified in campaign/verify-022.md before review resumed.
 const rationale = [
   '1. White h2-h3 advances to an empty square; pawn clock resets and King e1 stays screened.',
   '2. Close White turn; Black receives its move and both card allowances reset.',
@@ -106,34 +106,103 @@ const rationale = [
   '95. Black Ra8xa3 traverses empty a7/a6/a5/a4 and captures the White a-pawn; fullmove becomes 22.',
   '96. Close Black turn; White King e2 is safe and both black rooks remain on a3/c3.',
   '97. White Ke2-d3 enters the adjacent Rc3 attack; the move is provisional and requires a legal saving card.',
-  '98. FINDING: Neutrality c3 cannot remove Rc3-d3 check because neutral pieces check either King (§15.1). It must fizzle/spend/draw and rewind Ke2-d3 (§11.6); engine instead keeps Kd3 and the neutral rook with no pending rescue.',
+  '98. Neutrality legally rescues Kd3: a hypothetical neutral Rc3xd3 attacks Black Kd8 on the empty d4-d7 file, making that capture illegal under §§11.7/15.1. Retain Neutrality, draw Holy Quest, preserve Kd3 and clear pending rescue.',
+  '99. Close White turn with both Kings safe under legal neutral-capture threats; Neutrality persists.',
+  '100. Black Ra3-a5 crosses empty a4; neither King is exposed and the open d-file still prevents neutral Rc3xd3.',
+  '101. Close Black turn with neutral rook c3 and both card allowances reset.',
+  '102. Passing in the Night swaps White b2/e6 Black and White f4/e5 Black pairs simultaneously, preserving all four pawn identities; consume White move, reset pawn clock and draw Guardian.',
+  '103. Close White replacement turn with pawns e6/e5 now White and b2/f4 Black; no capture or en passant was created.',
+  '104. Black moves neutral Rc3xc1 through empty c2, capturing White original c1 Bishop; both Kings remain safe and the neutral marker follows the rook.',
+  '105. Black Curse marks opposing Rb1 after moving; retain the card, draw Irresistible Force and preserve clocks and Neutrality.',
+  '106. Close Black turn with Curse tied to White original a1 rook and Neutrality tied to Black original h8 rook.',
+  '107. White controls neutral Rc1-c3 through clear c2; the hypothetical c3-d3 capture would still attack Black Kd8, so both Kings remain safe.',
+  '108. Close White turn without changing the neutral rook ownership or either retained effect.',
+  '109. Black controls that same neutral Rc3-c1 through clear c2 without capturing; both Kings remain safe and quiet clock becomes 2.',
+  '110. Close Black turn with the neutral physical rook on c1.',
+  '111. Guardian advances White e6-e7 with the immediately trailing e5 pawn following to e6; no capture/en passant, draw Squaring the Circle, and Pe7 checks Kd8 without mating because Bf8 can capture it.',
+  '112. Close White replacement turn with Black in answerable Pe7 check.',
+  '113. Black Bf8xe7 captures White original b2 pawn, answering its check; reset capture clock and increment fullmove to 26.',
+  '114. Close Black turn with Bishop e7, White original f2 pawn e6, and both effects retained.',
+  '115. White Rf2-f1 moves one square to empty f1; this is the unmarked rook and King d3 stays safe.',
+  '116. Close White turn without spending cards or changing the Curse target.',
+  '117. Black neutral Rc1xf1 crosses empty d1/e1 and captures White original h1 rook; marker persists because the neutral rook itself was not captured.',
+  '118. Close Black turn with neutral rook f1 and White marked rook b1 still present.',
+  '119. White cursed Rb1-d1 crosses empty c1; exactly two squares satisfies Curse and preserves its marker.',
+  '120. Close White turn with Curse following the same physical rook to d1.',
+  '121. Black Ra5-c5 crosses empty b5 without capture; this ordinary rook has no Curse restriction.',
+  '122. Close Black turn with rook c5 and no changes to card zones.',
+  '123. White g5-g6 advances to an empty square, retains pawn identity and resets the halfmove clock.',
+  '124. Close White turn without creating en passant from the one-square advance.',
+  '125. Black neutral Rf1-e1 moves to empty e1; neither King lies on its attack file/rank and fullmove becomes 29.',
+  '126. Cathedral swaps Black Rc5 and Be7 after the move without capture/path traversal; retain identities and effects, preserve clocks and draw Onslaught.',
+  '127. Close Black turn with original a8 rook e7 and original f8 Bishop c5.',
+  '128. White Nc4-d2 makes its ordinary Knight jump to empty d2; both Kings remain safe and quiet clock becomes 2.',
+  '129. Close the fiftieth regular-move command: Black receives a fresh turn, no unresolved choices remain, and Neutrality/Curse persist.',
 ];
 
-test('iteration 022: Neutrality cannot rescue a King from the selected rook', () => {
+test('iteration 022: fifty moves preserve neutral threat legality and card identities', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/022.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(trace.seed, 860022);
-  assert.equal(rationale.length, 98);
-  assert.equal(trace.steps.slice(0, 98).filter(step => step.action.type === 'move').length, 38);
-  assert.equal(trace.steps.slice(0, 98).filter(step => step.action.type === 'playCard').length, 14);
+  assert.equal(rationale.length, 129);
+  assert.equal(rationale.length, trace.steps.length);
+  assert.equal(trace.moves, 50);
+  assert.equal(trace.steps.filter(step => step.action.type === 'move').length, 50);
+  assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 18);
+  assert.ok(!trace.failure);
   let state = createGameState(trace.initial);
-  for (const [index, step] of trace.steps.slice(0, 98).entries()) {
+  for (const [index, step] of trace.steps.entries()) {
     const before = digest(state);
     const result = applyAction(state, step.action);
     assert.equal(digest(state), before, `action ${index + 1}: input state must not mutate`);
     assert.ok(result.ok, rationale[index]);
     checkState(result.state);
-    // Historical hashes reproduce the finding; only the reviewed valid prefix is approved.
-    if (index < 97) assert.equal(digest(result.state), step.expected, rationale[index]);
+    assert.equal(digest(result.state), step.expected, rationale[index]);
     state = result.state;
+    if (index === 96) {
+      assert.ok(state.pendingRescue);
+      assert.equal(isKingInCheck(state, 'white'), true);
+    }
+    if (index === 97) {
+      assert.equal(state.players.white.deck.length, 68);
+      assert.deepEqual(state.players.white.hand.map(card => card.cardId),
+        ['passing-in-the-night', 'under-elf-hill', 'man-trap', 'vendetta', 'holy-quest']);
+      assert.deepEqual(state.effects, [{ type: 'neutrality', owner: 'white',
+        card: { id: 'white-deck-5-neutrality', cardId: 'neutrality' }, pieceId: 'black-rook-h8' }]);
+      assert.equal(state.pieces.find(piece => piece.id === 'white-king-e1')?.square, 'd3');
+      assert.equal(state.pieces.find(piece => piece.id === 'black-rook-h8')?.neutral, true);
+      assert.equal(state.players.white.discard.some(card => card.cardId === 'neutrality'), false);
+      assert.equal(isKingInCheck(state, 'white'), false, 'neutral Rc3xd3 would illegally check its controller King d8');
+      assert.equal(isKingInCheck(state, 'black'), false);
+      assert.ok(!state.pendingRescue);
+      assert.deepEqual(state.turn, { color: 'white', phase: 'afterMove', moveMade: true, cardPlays: { white: 1, black: 0 } });
+    }
   }
-  assert.equal(state.players.white.deck.length, 68, 'Neutrality draws one replacement even when ineffective');
+  assert.equal(state.fen, '1nbk2n1/1pp1rpp1/4P1P1/2b4p/5p1P/3K4/1p1N4/3Rr3 b - - 2 29');
+  assert.equal(state.fen, trace.finalFen);
+  assert.deepEqual(state.turn, { color: 'black', phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } });
+  assert.deepEqual(state.effects, [
+    { type: 'neutrality', owner: 'white', card: { id: 'white-deck-5-neutrality', cardId: 'neutrality' }, pieceId: 'black-rook-h8' },
+    { type: 'curse', owner: 'black', card: { id: 'black-deck-6-curse', cardId: 'curse' }, pieceId: 'white-rook-a1' },
+  ]);
+  for (const [id, square] of Object.entries({ 'black-rook-h8': 'e1', 'white-rook-a1': 'd1',
+    'black-rook-a8': 'e7', 'black-bishop-f8': 'c5', 'white-pawn-f2': 'e6', 'black-pawn-a7': 'f7',
+    'black-pawn-f7': 'b2', 'black-pawn-e7': 'f4', 'white-knight-g1': 'd2' })) {
+    assert.equal(state.pieces.find(piece => piece.id === id)?.square, square, id);
+  }
+  assert.equal(state.pieces.find(piece => piece.id === 'black-rook-h8')?.neutral, true);
+  assert.equal(state.pieces.filter(piece => piece.zone === 'board').length, 20);
+  assert.equal(state.pieces.filter(piece => piece.zone === 'captured').length, 12);
+  assert.equal(state.pieces.filter(piece => piece.zone === 'dead' || piece.promoted).length, 0);
   assert.deepEqual(state.players.white.hand.map(card => card.cardId),
-    ['passing-in-the-night', 'under-elf-hill', 'man-trap', 'vendetta', 'holy-quest']);
-  assert.deepEqual(state.effects, [], '§15.1: neutral Rc3 still checks Kd3, so the attempted rescue must not retain Neutrality');
-  assert.equal(state.pieces.find(piece => piece.id === 'white-king-e1')?.square, 'e2');
-  assert.equal(state.pieces.find(piece => piece.id === 'black-rook-h8')?.neutral, false);
-  assert.equal(state.players.white.discard.at(-1)?.cardId, 'neutrality');
-  assert.equal(state.fen, '1nbk1bn1/1pp2pp1/4p3/4p1Pp/2N2P1P/r1r5/1P2KR2/1RB5 w - - 0 22');
-  assert.deepEqual(state.turn, { color: 'white', phase: 'beforeMove', moveMade: false, cardPlays: { white: 1, black: 0 } });
+    ['under-elf-hill', 'man-trap', 'vendetta', 'holy-quest', 'squaring-the-circle']);
+  assert.deepEqual(state.players.black.hand.map(card => card.cardId),
+    ['charge', 'heresy', 'peace-talks', 'irresistible-force', 'onslaught']);
+  for (const color of ['white', 'black'] as const) {
+    assert.equal(state.players[color].deck.length, 66);
+    assert.equal(state.players[color].discard.length, 8);
+    assert.equal(isKingInCheck(state, color), false);
+  }
+  assert.deepEqual(state.enPassant, []);
   assert.ok(!state.pendingRescue);
+  assert.ok(!state.pendingAbduction && !state.pendingDoomsayer && !state.outcome);
 });
