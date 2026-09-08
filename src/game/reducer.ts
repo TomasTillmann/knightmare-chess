@@ -4217,10 +4217,6 @@ function playEarthquake(state: GameState, target: unknown, cardInstanceId?: unkn
   resolved.enPassant = [];
   syncFen(resolved);
 
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'earthquake', 'DIRECT_MATE', cardInstanceId);
-  }
   if (moveLeavesRoyalInCheck(resolved, color, required)) {
     return fizzleCard(state, 'earthquake', 'SELF_CHECK', cardInstanceId);
   }
