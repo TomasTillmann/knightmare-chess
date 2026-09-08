@@ -2043,6 +2043,18 @@
       "status": "passed",
       "finalFen": "2rk2Nn/1pp3b1/1pp3n1/6r1/3P4/r3PK1N/1PP1PPR1/1RB2B1R b - - 2 26",
       "testCommit": "30162a9"
+    },
+    {
+      "id": 195,
+      "agent": "iteration_195_retry",
+      "seed": 860195,
+      "reviewedActions": 125,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1r2Rr2/p4kp1/1pp1N1n1/p2nppPp/P1P2P2/2q5/1B1PK1P1/4BQ2 w - - 0 30",
+      "testCommit": "cf8a378",
+      "generationAgent": "iteration_195",
+      "reviewNote": "First agent generated the preserved trace but missed its initial patch deadline; a fresh replacement independently reviewed all 125 actions."
     }
   ],
   "coverageAudits": [
