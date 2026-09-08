@@ -7391,6 +7391,7 @@ function settlePendingRescue(
   result.state.fen = pending.fen;
   result.state.pieces = structuredClone(pending.pieces);
   result.state.enPassant = structuredClone(pending.enPassant);
+  result.state.chaosForbidden = structuredClone(pending.before?.chaosForbidden);
   result.state.history = pending.history
     ? structuredClone(pending.history)
     : result.state.history.slice(0, pending.historyLength);
