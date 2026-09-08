@@ -129,7 +129,7 @@ const rationale = [
 
 const xy = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1] as const;
 const opposite = (color: Color): Color => color === 'white' ? 'black' : 'white';
-const projection = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _captured, ...piece }) => piece);
+const projection = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _captured, capturedBy: _actor, ...piece }) => piece);
 
 // Ordinary geometry with the sole active power: Earthquake changes Pawn direction.
 function reaches(piece: PieceState, to: string, pieces: PieceState[], rotated: boolean, capture: boolean): boolean {

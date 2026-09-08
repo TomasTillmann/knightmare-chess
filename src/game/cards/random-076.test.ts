@@ -177,7 +177,7 @@ test('iteration 076: 116 reviewed actions, independent movement and card semanti
         const actual = after.pieces.find(item => item.id === piece.id)!;
         if (piece === mover) assert.deepEqual(actual, { ...piece, square: action.to });
         else if (piece === victim) {
-          const { capturedAtPly: _ply, ...identity } = actual;
+          const { capturedAtPly: _ply, capturedBy: _actor, ...identity } = actual;
           assert.deepEqual(identity, { ...piece, square: null, zone: 'captured' });
         } else assert.deepEqual(actual, piece);
       }

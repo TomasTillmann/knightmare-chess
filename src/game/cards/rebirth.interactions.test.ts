@@ -143,7 +143,7 @@ describe('Rebirth interactions', () => {
       assert.equal(result.state.pieces.find(piece => piece.id === source.id)?.square, 'a8');
       assert.deepEqual(
         result.state.pieces.find(piece => piece.id === occupant.id),
-        { ...occupant, square: null, zone: 'captured' },
+        { ...occupant, square: null, zone: 'captured', capturedBy: 'white' },
       );
     }
   });

@@ -213,7 +213,7 @@ test('iteration 059 deterministic trace', () => {
     const result = applyAction(before, action);
     assert.ok(result.ok, why);
     state = result.state;
-    const identities = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _, ...piece }) => piece);
+    const identities = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _, capturedBy: _actor, ...piece }) => piece);
     assert.deepEqual(identities(state.pieces), identities(expected), why);
     assert.equal(state.orientation, step >= 54 ? 90 : 0, why);
     const ep = step >= 3 && step <= 5 ? { target: 'g6', pawnId: 'black-pawn-g7' }

@@ -191,7 +191,7 @@ test("Rebirth captures a white occupant on a8 while returning the black rook", (
   assert.equal(pieceAt(next, "a8").owner, "black");
   assert.deepEqual(
     next.pieces.find(piece => piece.id === occupant.id),
-    { ...occupant, square: null, zone: "captured" },
+    { ...occupant, square: null, zone: "captured", capturedBy: "white" },
   );
   assert.equal(next.history.at(-1)?.capturedId, occupant.id);
 });

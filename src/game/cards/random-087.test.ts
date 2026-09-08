@@ -163,7 +163,7 @@ test('iteration 087 independently models every identity, move, card, clock and r
     if (square) assert.match(square, /^[a-h][1-8]$/);
     Object.assign(piece(id), { square: square as SquareName | null, zone });
   };
-  const projection = (list: PieceState[]) => list.map(({ capturedAtPly: _ply, ...p }) => p);
+  const projection = (list: PieceState[]) => list.map(({ capturedAtPly: _ply, capturedBy: _actor, ...p }) => p);
   const blocks = (from: string, to: string) => {
     const [x,y] = xy(from), [tx,ty] = xy(to);
     const dx = tx-x, dy = ty-y;

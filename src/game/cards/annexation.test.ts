@@ -408,7 +408,7 @@ describe('Annexation en-passant rights and FEN state', () => {
     assert.deepEqual(reply, snapshot);
     assert.deepEqual(
       captured.pieces.find(piece => piece.id === annexedPawnId),
-      { ...pieceAt(reply, 'e5'), square: null, zone: 'captured' },
+      { ...pieceAt(reply, 'e5'), square: null, zone: 'captured', capturedBy: reply.turn.color },
     );
     assert.equal(pieceAt(captured, 'e6')?.id, capturerId);
     assert.deepEqual(captured.enPassant, []);

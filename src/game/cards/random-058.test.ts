@@ -200,7 +200,7 @@ test('random campaign iteration 058 independent semantic review', () => {
         const change = changes[step]
         if (!change || !(piece.id in change)) return piece
         const square = change[piece.id]!
-        return { ...piece, square, zone: square === null ? 'captured' : 'board' }
+        return { ...piece, square, zone: square === null ? 'captured' : 'board', ...(square === null ? { capturedBy: owner } : {}) }
       })
       assert.deepEqual(after.pieces, expectedPieces, rationales[index])
       if (step === 48 || step === 103) {

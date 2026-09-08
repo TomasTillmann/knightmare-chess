@@ -173,7 +173,7 @@ test('iteration 030 deterministic campaign replay', () => {
       for (const prior of before.pieces) {
         const piece = state.pieces.find(p => p.id === prior.id)!;
         assert.deepEqual(piece, prior.id === mover.id ? { ...prior, square: action.to }
-          : prior.id === victim?.id ? { ...prior, square: null, zone: 'captured' } : prior);
+          : prior.id === victim?.id ? { ...prior, square: null, zone: 'captured', capturedBy: before.turn.color } : prior);
       }
       assert.deepEqual(state.players, before.players);
       const double = mover.role === 'pawn' && Math.abs(to - from) === 16;
@@ -196,7 +196,7 @@ test('iteration 030 deterministic campaign replay', () => {
         cardPlays: { ...before.turn.cardPlays, [actor]: 1 } });
       for (const prior of before.pieces) {
         const square = cardDeltas[n]![prior.id];
-        const expected = square === undefined ? prior : { ...prior, square, zone: square === null ? 'captured' : 'board' };
+        const expected = square === undefined ? prior : { ...prior, square, zone: square === null ? 'captured' : 'board', ...(square === null ? { capturedBy: actor } : {}) };
         assert.deepEqual(state.pieces.find(p => p.id === prior.id), expected, `card ${n}: ${prior.id}`);
       }
       assert.deepEqual(state.enPassant, []);

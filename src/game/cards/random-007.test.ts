@@ -134,6 +134,7 @@ test('random iteration 007 independent semantic review', () => {
   const state = replayTrace(trace);
   assert.equal(state.fen, 'rn3kr1/p1Pp1b1P/Q1N1P1p1/p7/7P/1RN1bP2/2P2pK1/2q3R1 w - - 1 29');
   assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-a2')?.zone, 'dead');
+  assert.equal(state.pieces.find(piece => piece.id === 'black-pawn-e7')?.capturedBy, 'white');
   assert.equal(state.pieces.find(piece => piece.id === 'black-pawn-f7')?.square, 'a7');
   assert.equal(state.pieces.find(piece => piece.id === 'black-knight-b8')?.square, 'b8');
   assert.deepEqual([state.players.white.deck.length, state.players.black.deck.length], [72, 67]);

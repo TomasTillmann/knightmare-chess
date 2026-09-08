@@ -128,7 +128,7 @@ const rationales = [
 ]
 
 const coordinates = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1] as const
-const stablePiece = ({ capturedAtPly: _, ...piece }: PieceState) => piece
+const stablePiece = ({ capturedAtPly: _, capturedBy: _actor, ...piece }: PieceState) => piece
 
 test('iteration 063 deterministic replay', () => {
   const trace: RandomTrace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/063.json', import.meta.url), 'utf8'))

@@ -179,7 +179,7 @@ test('iteration 084 independent semantic review', () => {
       assert.equal(Number(newFen[5]), Number(oldFen[5]) + (before.turn.color === 'black' ? 1 : 0), rationale);
       assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === mover.id
         ? { ...piece, square: action.to }
-        : piece.id === victim?.id ? { ...piece, square: null, zone: 'captured' } : piece), rationale);
+        : piece.id === victim?.id ? { ...piece, square: null, zone: 'captured', capturedBy: before.turn.color } : piece), rationale);
       assert.equal(!!state.pendingRescue, [61, 99].includes(step), rationale);
       assert.deepEqual(state.effects, before.effects, rationale);
     } else if (action.type === 'endTurn') {
@@ -209,7 +209,7 @@ test('iteration 084 independent semantic review', () => {
       } else {
         const changes = relocations[step] ?? {};
         assert.deepEqual(state.pieces, before.pieces.map(piece => Object.hasOwn(changes, piece.id)
-          ? { ...piece, square: changes[piece.id], zone: changes[piece.id] === null ? 'captured' : 'board' } : piece), rationale);
+          ? { ...piece, square: changes[piece.id], zone: changes[piece.id] === null ? 'captured' : 'board', ...(changes[piece.id] === null ? { capturedBy: owner } : {}) } : piece), rationale);
         assert.equal(state.turn.moveMade, step !== 88, rationale);
         if (before.turn.phase === 'beforeMove' && step !== 88) {
           assert.equal(Number(state.fen.split(' ')[4]), [1, 44, 52, 73].includes(step) ? 0 : Number(before.fen.split(' ')[4]) + 1, rationale);

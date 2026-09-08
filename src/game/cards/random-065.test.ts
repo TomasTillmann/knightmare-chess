@@ -167,7 +167,7 @@ test('iteration 065 independently reviewed deterministic campaign', () => {
       if (n > 38) assert.ok(!['g1', 'g2', 'h2'].includes(action.from), why);
       assert.deepEqual(after.pieces, before.pieces.map(piece => piece.id === mover.id
         ? { ...piece, square: action.to as SquareName }
-        : piece.id === victim?.id ? { ...piece, square: null, zone: 'captured' } : piece), why);
+        : piece.id === victim?.id ? { ...piece, square: null, zone: 'captured', capturedBy: before.turn.color } : piece), why);
       const oldFen = before.fen.split(' ');
       const newFen = after.fen.split(' ');
       assert.equal(Number(newFen[4]), mover.role === 'pawn' || victim ? 0 : Number(oldFen[4]) + 1, why);
@@ -212,8 +212,11 @@ test('iteration 065 independently reviewed deterministic campaign', () => {
         assert.equal(after.turn.moveMade, false, why);
         assert.equal(after.turn.phase, 'beforeMove', why);
       } else {
-        assert.deepEqual(after.pieces, before.pieces.map(piece => relocations[n]?.[piece.id]
-          ? { ...piece, square: relocations[n]![piece.id], zone: 'board' } : piece), why);
+        assert.deepEqual(after.pieces, before.pieces.map(piece => {
+          if (!relocations[n]?.[piece.id]) return piece;
+          const { capturedBy: _actor, ...returned } = piece;
+          return { ...returned, square: relocations[n]![piece.id], zone: 'board' };
+        }), why);
         if ([3, 61, 88].includes(n)) {
           assert.equal(after.turn.moveMade, true, why);
           assert.equal(after.turn.phase, 'afterMove', why);

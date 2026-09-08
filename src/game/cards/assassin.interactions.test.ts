@@ -224,7 +224,7 @@ test('capturing a transformed victim preserves its identity in the captured zone
   const state = assassinate(before, 'b1', 'b2');
   const captured = state.pieces.find(piece => piece.id === victim.id)!;
 
-  assert.deepEqual({ ...captured, square: 'b2', zone: 'board' }, identity);
+  assert.deepEqual(captured, { ...identity, square: null, zone: 'captured', capturedBy: before.turn.color });
 });
 
 test('Assassin expires a pre-existing en-passant opportunity', () => {

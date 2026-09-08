@@ -186,7 +186,7 @@ test('iteration 051: each reviewed action preserves independent movement and car
       assert.ok(!victim || victim.owner !== mover.owner && !victim.royal, reason)
       assert.ok(reaches(state, mover, action.to, !!victim), reason)
       assert.deepEqual(after.pieces, state.pieces.map(p => p.id === mover.id ? { ...p, square: action.to } :
-        p.id === victim?.id ? { ...p, square: null, zone: 'captured' } : p), reason)
+        p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: state.turn.color } : p), reason)
       assert.deepEqual(after.players, state.players, reason)
       const old = state.fen.split(' '), next = after.fen.split(' ')
       assert.equal(next[1], mover.owner === 'white' ? 'b' : 'w', reason)
@@ -222,7 +222,8 @@ test('iteration 051: each reviewed action preserves independent movement and car
         if (n === 16 && p.id === 'black-pawn-a7') return { ...p, royal: true }
         if (n === 16 && p.id === 'black-king-e8') return { ...p, royal: false }
         if (!(p.id in changes)) return p
-        return { ...p, square: changes[p.id], zone: changes[p.id] === null ? 'captured' : 'board' }
+        const { capturedBy: _actor, ...physicalPiece } = p
+        return { ...physicalPiece, square: changes[p.id], zone: changes[p.id] === null ? 'captured' : 'board', ...(changes[p.id] === null ? { capturedBy: owner } : {}) }
       })
       assert.deepEqual(after.pieces, expected, reason)
       if (n === 16) assert.deepEqual(after.effects, [{ type: 'coup', owner: 'black', card: physical,

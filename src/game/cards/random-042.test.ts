@@ -183,6 +183,8 @@ test('iteration 042 independently reviewed random campaign', () => {
       const p = expectedPieces.find(p => p.id === id)!
       if (square !== null) assert.match(square, /^[a-h][1-8]$/)
       p.square = square as PieceState['square']; p.zone = square === null ? 'captured' : 'board'
+      if (square === null) p.capturedBy = step === 87 ? 'white' : before.turn.color
+      else delete p.capturedBy
     }
     let half = Number(before.fen.split(' ')[4]), full = Number(before.fen.split(' ')[5])
     let fenColor = before.fen.split(' ')[1], rights = before.fen.split(' ')[2]

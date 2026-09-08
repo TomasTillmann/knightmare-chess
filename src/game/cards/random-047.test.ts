@@ -198,7 +198,7 @@ test('iteration 047 independently reviewed deterministic game', () => {
       const mover = before.pieces.find(p => p.square === action.from)!;
       assert.deepEqual(after.pieces.find(p => p.id === mover.id), { ...mover, square: action.to });
       const victim = before.pieces.find(p => p.square === action.to);
-      if (victim) assert.deepEqual(after.pieces.find(p => p.id === victim.id), { ...victim, square: null, zone: 'captured' });
+      if (victim) assert.deepEqual(after.pieces.find(p => p.id === victim.id), { ...victim, square: null, zone: 'captured', capturedBy: before.turn.color });
       assert.equal(parseFen(after.fen).unwrap().halfmoves, position.halfmoves);
       assert.equal(parseFen(after.fen).unwrap().fullmoves, position.fullmoves);
       assert.equal(after.turn.moveMade, true);
@@ -221,7 +221,9 @@ test('iteration 047 independently reviewed deterministic game', () => {
       assert.ok(changes);
       assert.deepEqual(after.pieces, before.pieces.map(piece => {
         const change = changes.find(([id]) => id === piece.id);
-        return change ? { ...piece, square: change[1], zone: change[2] } : piece;
+        if (!change) return piece;
+        const { capturedBy: _actor, ...physicalPiece } = piece;
+        return { ...physicalPiece, square: change[1], zone: change[2], ...(change[2] === 'captured' ? { capturedBy: before.turn.color } : {}) };
       }), rationales[index]);
       const owner = before.players.white.hand.some(c => c.id === action.cardInstanceId) ? 'white' : 'black';
       const previous = before.players[owner];

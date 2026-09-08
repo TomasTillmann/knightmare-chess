@@ -176,7 +176,7 @@ test('iteration 081 independently reviewed trace', () => {
       const mover = before.pieces.find(p => p.square === action.from)!;
       const victim = before.pieces.find(p => p.square === action.to);
       assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id ? { ...p, square: action.to }
-        : p.id === victim?.id ? { ...p, square: null, zone: 'captured' } : p), `${step}: physical identities`);
+        : p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: before.turn.color } : p), `${step}: physical identities`);
       assert.notEqual(action.to, 'd1');
       if (mover.role !== 'knight') {
         const dx = Math.sign((to % 8) - (from % 8));
@@ -215,7 +215,13 @@ test('iteration 081 independently reviewed trace', () => {
       const other = owner === 'white' ? 'black' : 'white';
       assert.deepEqual(state.players[other], before.players[other]);
       let expected = before.pieces;
-      const relocate = (id: string, square: SquareName) => { expected = expected.map(p => p.id === id ? { ...p, square, zone: 'board' } : p); };
+      const relocate = (id: string, square: SquareName) => {
+        expected = expected.map(p => {
+          if (p.id !== id) return p;
+          const { capturedBy: _actor, ...returned } = p;
+          return { ...returned, square, zone: 'board' };
+        });
+      };
       if (step === 17) {
         assert.deepEqual(['a1', 'a8', 'h1', 'h8'].filter(sq => before.pieces.some(p => p.square === sq)), ['a8', 'h1', 'h8']);
         relocate('white-knight-b1', 'a1');
@@ -225,7 +231,11 @@ test('iteration 081 independently reviewed trace', () => {
         relocate('white-pawn-b2', 'b4');
       }
       if (step === 40) expected = states[38]!.pieces;
-      if (step === 44) expected = expected.map(p => p.id === 'white-queen-d1' ? { ...p, zone: 'dead' } : p);
+      if (step === 44) expected = expected.map(p => {
+        if (p.id !== 'white-queen-d1') return p;
+        const { capturedBy: _actor, ...dead } = p;
+        return { ...dead, zone: 'dead' };
+      });
       if (step === 47) {
         const pos = Chess.fromSetup(parseFen(before.fen).unwrap()).unwrap();
         pos.turn = 'black';

@@ -157,7 +157,7 @@ test('iteration 056 deterministic trace', () => {
           assert.ok(!state.pieces.some(piece => piece.square === square), `blocked path ${square}`);
         }
       }
-      assert.deepEqual(after.pieces, state.pieces.map(piece => piece.id === mover.id ? { ...piece, square: action.to } : victim && piece.id === victim.id ? { ...piece, square: null, zone: 'captured' } : piece));
+      assert.deepEqual(after.pieces, state.pieces.map(piece => piece.id === mover.id ? { ...piece, square: action.to } : victim && piece.id === victim.id ? { ...piece, square: null, zone: 'captured', capturedBy: state.turn.color } : piece));
       assert.deepEqual(after.players, index === 52 ? { ...state.players, white: { ...state.players.white, discard: [...state.players.white.discard, { id: 'white-deck-1-truce', cardId: 'truce' }] } } : state.players);
       assert.equal(after.fen.split(' ')[4], String(mover.role === 'pawn' || victim ? 0 : Number(state.fen.split(' ')[4]) + 1));
       assert.equal(after.fen.split(' ')[5], String(Number(state.fen.split(' ')[5]) + (mover.owner === 'black' ? 1 : 0)));

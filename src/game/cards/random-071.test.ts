@@ -183,7 +183,7 @@ test('iteration 071 deterministic review', () => {
       assert.ok(mover, `${n}: occupied origin ${from}`);
       const victim = at(to);
       assert.equal(!!victim, capture, `${n}: expected destination occupancy`);
-      if (victim) { assert.equal(victim.royal, false); victim.square = null; victim.zone = 'captured'; }
+      if (victim) { assert.equal(victim.royal, false); victim.square = null; victim.zone = 'captured'; victim.capturedBy = before.turn.color; }
       assert.match(to, /^[a-h][1-8]$/);
       mover.square = to as SquareName;
     };
@@ -236,7 +236,7 @@ test('iteration 071 deterministic review', () => {
     if (n === 48) { relocate('d1', 'd4'); finishMove(false); }
     if (n === 52) { relocate('f2', 'g3', true); finishMove(true); }
     if (n === 68 || n === 75) {
-      const piece = at(n === 68 ? 'h1' : 'g2'); piece.square = null; piece.zone = 'captured'; halfmove = 0;
+      const piece = at(n === 68 ? 'h1' : 'g2'); piece.square = null; piece.zone = 'captured'; piece.capturedBy = before.turn.color; halfmove = 0;
       assert.ok(state.players.white.discard.some(c => c.cardId === (n === 68 ? 'doomsayer' : 'haunting-memories')));
     }
     if (n === 77) { relocate('g4', 'd1'); finishMove(false); }

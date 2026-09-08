@@ -157,7 +157,7 @@ test('iteration 044 deterministic trace is replayable', () => {
       assert.equal(makeBoardFen(oracle.board), state.fen.split(' ')[0], reason);
       assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === mover.id
         ? { ...piece, square: action.to } : piece.id === victim?.id
-          ? { ...piece, square: null, zone: 'captured' } : piece), reason);
+          ? { ...piece, square: null, zone: 'captured', capturedBy: before.turn.color } : piece), reason);
       assert.equal(parseFen(state.fen).unwrap().halfmoves, oracle.halfmoves, reason);
       assert.equal(parseFen(state.fen).unwrap().fullmoves, oracle.fullmoves, reason);
       assert.deepEqual(state.players, before.players, reason);

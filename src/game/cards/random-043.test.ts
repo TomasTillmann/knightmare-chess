@@ -165,7 +165,7 @@ test('iteration 043 deterministic engine trace', () => {
   rationales.forEach((text, i) => assert.ok(text.startsWith(`${i + 1}. `)));
   let state = createGameState(trace.initial);
   const states = [state];
-  const shape = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _ply, ...piece }) => piece);
+  const shape = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _ply, capturedBy: _actor, ...piece }) => piece);
   for (const [index, { action }] of trace.steps.entries()) {
     const step = index + 1, before = state, reason = rationales[index];
     const result = applyAction(before, action);

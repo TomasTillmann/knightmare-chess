@@ -148,6 +148,8 @@ test('iteration 077 independently reviewed campaign', () => {
     const piece = (id: string) => expectedPieces.find(p => p.id === id)!;
     const relocate = (id: string, square: string | null, zone: 'board' | 'captured' | 'dead' = 'board') => {
       Object.assign(piece(id), { square, zone });
+      if (zone === 'captured') piece(id).capturedBy = n === 93 ? 'black' : before.turn.color;
+      else delete piece(id).capturedBy;
     };
     if (action.type === 'move') {
       assert.ok(typeof action.from === 'string' && typeof action.to === 'string');

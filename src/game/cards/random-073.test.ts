@@ -158,7 +158,7 @@ test('iteration 073 independent semantic review', () => {
       assert.equal(state.turn.color, before.turn.color, reason)
       assert.equal(state.turn.phase, 'afterMove', reason)
       assert.equal(state.turn.moveMade, true, reason)
-      if (victim) { victim.zone = 'captured'; victim.square = null }
+      if (victim) { victim.zone = 'captured'; victim.square = null; victim.capturedBy = before.turn.color }
       relocate(action.from, action.to)
       const two = source.role === 'pawn' && Math.abs(Number(action.to[1]) - Number(action.from[1])) === 2
       assert.deepEqual(state.enPassant, two ? [{ target: `${action.from[0]}${(Number(action.from[1]) + Number(action.to[1])) / 2}`, pawnId: source.id }] : [], reason)

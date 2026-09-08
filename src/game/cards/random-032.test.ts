@@ -152,7 +152,7 @@ test('iteration 032: independently reviewed 50 moves and every intervening actio
       const expectedPieces = before.pieces.map(p => p.id === mover.id
         ? { ...p, square: n === 101 ? null : action.to, zone: n === 101 ? 'captured' : 'board' }
         : p.id === victim?.id ? { ...p, square: null, zone: 'captured' } : p)
-      const physical = (pieces: typeof expectedPieces) => pieces.map(({ capturedAtPly: _at, ...p }) => p)
+      const physical = (pieces: typeof expectedPieces) => pieces.map(({ capturedAtPly: _at, capturedBy: _actor, ...p }) => p)
       assert.deepEqual(physical(state.pieces), physical(expectedPieces), rationales[index])
       if (n !== 111) {
         const chess = Chess.fromSetup(parseFen(before.fen).unwrap()).unwrap()

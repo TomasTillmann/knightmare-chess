@@ -175,7 +175,7 @@ test('iteration 045 independently checks movement, bookkeeping and card semantic
       if (victim) {
         assert.notEqual(victim.owner, mover.owner)
         assert.equal(victim.royal, false)
-        assert.deepEqual(state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: 'captured' })
+        assert.deepEqual(state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: 'captured', capturedBy: before.turn.color })
       }
       assert.deepEqual(state.players, before.players)
       assert.equal(state.turn.moveMade, true)

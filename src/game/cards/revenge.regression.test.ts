@@ -146,7 +146,7 @@ test("Revenge captures the selected physical piece without rewriting its identit
   const captured = state.pieces.find(({ id }) => id === targetSnapshot.id);
   assert.equal(captured?.zone, "captured");
   assert.equal(captured?.square, null);
-  assert.deepEqual(captured, { ...targetSnapshot, zone: "captured", square: null });
+  assert.deepEqual(captured, { ...targetSnapshot, zone: "captured", square: null, capturedBy: "black" });
   assert.equal(state.pieces.find(({ id }) => id === trigger.id)?.zone, "captured");
   assert.equal(state.pieces.find(({ id }) => id === trigger.id)?.square, null);
   assert.equal(state.players.black.hand.length, handBefore - 1);
@@ -258,7 +258,7 @@ test("Revenge preserves a Vendetta-triggering move while resolving its seeded vi
   assert.equal(event?.preservePreviousMove, true);
 
   const expectedPieces = structuredClone(cardInput.pieces);
-  Object.assign(expectedPieces.find(({ id }) => id === victim.id)!, { zone: "captured", square: null });
+  Object.assign(expectedPieces.find(({ id }) => id === victim.id)!, { zone: "captured", square: null, capturedBy: "black" });
   assert.deepEqual(state.pieces, expectedPieces);
   const expectedBlack = structuredClone(cardInput.players.black);
   expectedBlack.hand.splice(

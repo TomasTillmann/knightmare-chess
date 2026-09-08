@@ -86,7 +86,7 @@ test('iteration 011: Toll capture resets the halfmove clock at first invalid act
   }
   assert.deepEqual(state.pieces.find(piece => piece.id === 'white-pawn-a2'), {
     id: 'white-pawn-a2', owner: 'white', role: 'pawn', originalRole: 'pawn',
-    square: null, zone: 'captured', promoted: false, royal: false, neutral: false,
+    square: null, zone: 'captured', capturedBy: 'black', promoted: false, royal: false, neutral: false,
   });
   assert.equal(state.pieces.find(piece => piece.id === 'white-knight-b1')?.square, 'b5');
   assert.deepEqual(state.turn, { color: 'white', phase: 'afterMove', moveMade: true, cardPlays: { white: 0, black: 1 } });

@@ -164,7 +164,7 @@ test('iteration 080 deterministic semantic review', () => {
       assert.equal(makeBoardFen(position.board), after.fen.split(' ')[0], rationale[index]);
       const mover = expectedPieces.find(piece => piece.square === action.from)!;
       const victim = expectedPieces.find(piece => piece.square === action.to);
-      if (victim) { victim.square = null; victim.zone = 'captured'; }
+      if (victim) { victim.square = null; victim.zone = 'captured'; victim.capturedBy = before.turn.color; }
       assert.match(action.to, /^[a-h][1-8]$/);
       mover.square = action.to as SquareName;
       const oldFen = before.fen.split(' ');
@@ -194,6 +194,7 @@ test('iteration 080 deterministic semantic review', () => {
         assert.equal(piece.zone, 'captured');
         piece.square = step === 58 ? 'd7' : 'e5';
         piece.zone = 'board';
+        delete piece.capturedBy;
       }
       if (step === 81 || step === 88) {
         expectedPieces.find(piece => piece.id === 'black-king-e8')!.royal = step === 88;

@@ -43,7 +43,8 @@ test('Resurrection regression: either Knight home preserves the captured physica
     assert.equal(before.zone, 'captured');
     assert.deepEqual(squares(state), ['b1', 'g1']);
     const next = resurrect(state, to);
-    assert.deepEqual(next.pieces.filter(piece => piece.id === pieceId), [{ ...before, square: to, zone: 'board' }]);
+    const { capturedBy: _capturedBy, ...identity } = before;
+    assert.deepEqual(next.pieces.filter(piece => piece.id === pieceId), [{ ...identity, square: to, zone: 'board' }]);
     assert.equal(next.turn.moveMade, true);
   }
 });

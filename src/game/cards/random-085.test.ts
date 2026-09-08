@@ -121,7 +121,7 @@ const rationale = `
 111. White ends the fiftieth regular command; Black to move, both royals safe, three continuing effects retained.
 `.trim().split('\n');
 
-const physical = (state: GameState) => state.pieces.map(({ capturedAtPly: _ply, ...piece }) => piece);
+const physical = (state: GameState) => state.pieces.map(({ capturedAtPly: _ply, capturedBy: _actor, ...piece }) => piece);
 const xy = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1] as const;
 
 // Independent geometry for this trace's ordinary roles, one fixed wall and Curse.

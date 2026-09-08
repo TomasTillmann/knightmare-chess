@@ -56,7 +56,8 @@ for (const to of ['d4', 'd5', 'e5'] as const) test(`real capture returns to empt
   const state = captured();
   const pawn = state.pieces.find(piece => piece.zone === 'captured')!;
   const next = restore(state, to);
-  assert.deepEqual(next.pieces.find(piece => piece.id === pawn.id), { ...pawn, zone: 'board', square: to });
+  const { capturedBy: _capturedBy, ...identity } = pawn;
+  assert.deepEqual(next.pieces.find(piece => piece.id === pawn.id), { ...identity, zone: 'board', square: to });
 });
 
 test('real capture can return to e4 after its captor departs', () => {

@@ -193,7 +193,7 @@ test('iteration 029 deterministic semantic review', () => {
         if (Math.abs(ty-y) === 2) assert.ok(!pieceAt(before, `${action.from[0]}${y+forward+1}`))
       } else assert.ok(reaches(mover, action.to, before), rationales[index])
       assert.ok(!victim || victim.owner !== actor && !victim.royal)
-      assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === mover.id ? { ...piece, square: action.to } : piece.id === victim?.id ? { ...piece, square: null, zone: 'captured' } : piece))
+      assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === mover.id ? { ...piece, square: action.to } : piece.id === victim?.id ? { ...piece, square: null, zone: 'captured', capturedBy: before.turn.color } : piece))
       assert.deepEqual(state.effects, before.effects)
       assert.deepEqual(state.players, before.players)
       assert.equal(state.turn.phase, 'afterMove')
@@ -246,7 +246,7 @@ test('iteration 029 deterministic semantic review', () => {
       assert.equal(state.fen, snapshots[14]!.fen)
       assert.deepEqual(state.turn.cardPlays, { white: 1, black: 1 })
     }
-    if (n === 39) assert.deepEqual(state.pieces, before.pieces.map(piece => ['white-pawn-d2','black-pawn-e7','black-bishop-f8'].includes(piece.id) ? { ...piece, square: null, zone: 'captured' } : piece))
+    if (n === 39) assert.deepEqual(state.pieces, before.pieces.map(piece => ['white-pawn-d2','black-pawn-e7','black-bishop-f8'].includes(piece.id) ? { ...piece, square: null, zone: 'captured', capturedBy: before.turn.color } : piece))
     if (n === 42) {
       assert.deepEqual(state.pieces, snapshots[40]!.pieces)
       assert.equal(state.fen, snapshots[40]!.fen)

@@ -122,7 +122,7 @@ const rationales = `
 `.trim().split('\n')
 
 const other = (color: 'white' | 'black') => color === 'white' ? 'black' : 'white'
-const pieces = (state: GameState) => state.pieces.map(({ capturedAtPly: _, ...piece }) => piece)
+const pieces = (state: GameState) => state.pieces.map(({ capturedAtPly: _, capturedBy: _actor, ...piece }) => piece)
 function attackers(state: GameState, color: 'white' | 'black') {
   const position = Chess.default()
   position.board = parseFen(state.fen).unwrap().board

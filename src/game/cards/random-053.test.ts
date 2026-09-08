@@ -185,7 +185,7 @@ test('iteration 053 independently reviewed deterministic campaign', () => {
       const mover = expectedPieces.find(p => p.zone === 'board' && p.square === action.from)!;
       if (n >= 36 && n <= 47) assert.ok(victim, 'Vendetta requires capture');
       if (n >= 84 && n <= 95) assert.equal(victim, undefined, 'Truce forbids captures');
-      if (victim) { victim.square = null; victim.zone = 'captured'; }
+      if (victim) { victim.square = null; victim.zone = 'captured'; victim.capturedBy = before.turn.color; }
       mover.square = action.to as typeof mover.square;
       position.play(move);
       assert.equal(makeBoardFen(position.board), nextFen.board && makeBoardFen(nextFen.board), why);
@@ -204,6 +204,8 @@ test('iteration 053 independently reviewed deterministic campaign', () => {
         const piece = expectedPieces.find(p => p.id === id)!;
         piece.square = square as typeof piece.square;
         piece.zone = zone;
+        if (zone === 'captured') piece.capturedBy = before.turn.color;
+        else delete piece.capturedBy;
       }
       if (replacements.has(n)) {
         assert.equal(state.turn.phase, 'afterMove', why);

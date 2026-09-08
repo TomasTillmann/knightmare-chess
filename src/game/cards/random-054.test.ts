@@ -167,7 +167,7 @@ test('iteration 054 deterministic campaign trace', () => {
           previous = square
         }
       }
-      assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id ? {...p,square:to} : p.id === victim?.id ? {...p,square:null,zone:'captured'} : p), rationales[index])
+      assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id ? {...p,square:to} : p.id === victim?.id ? {...p,square:null,zone: 'captured', capturedBy: before.turn.color} : p), rationales[index])
       assert.equal(state.fen.split(' ')[4], mover.role === 'pawn' || victim ? '0' : String(Number(before.fen.split(' ')[4]) + 1))
       assert.deepEqual(state.enPassant, mover.role === 'pawn' && ay === 2 ? [{target:`${from[0]}${(Number(from[1])+Number(to[1]))/2}`,pawnId:mover.id}] : [])
       assert.deepEqual(state.players, before.players)

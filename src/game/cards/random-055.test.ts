@@ -128,7 +128,7 @@ const rationales = `
 115. White closes the final move; Black has the next turn, no effects or pending choices remain.
 `.trim().split('\n');
 
-const physical = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _ply, ...piece }) => piece);
+const physical = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _ply, capturedBy: _actor, ...piece }) => piece);
 const at = (state: GameState, square: string) => state.pieces.find(p => p.zone === 'board' && p.square === square);
 
 test('iteration 055: 115 independently reasoned actions and 50 move commands', () => {

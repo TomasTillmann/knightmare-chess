@@ -48,7 +48,7 @@ describe('round-two No Quarter after neutral en passant', () => {
     assert.deepEqual(captured.history.at(-1), {
       type: 'move', from: 'd5', to: 'e6', capturedId: victim.id,
     });
-    assert.deepEqual(capturedVictim, { ...victim, square: null, zone: 'captured' });
+    assert.deepEqual(capturedVictim, { ...victim, square: null, zone: 'captured', capturedBy: reply.turn.color });
     assert.equal(pieceAt(captured, 'e6')?.id, capturer.id);
     assert.deepEqual(captured.enPassant, []);
 
@@ -58,7 +58,7 @@ describe('round-two No Quarter after neutral en passant', () => {
     assert.deepEqual(captured, snapshot, 'No Quarter must not mutate its input');
     assert.deepEqual(
       after.pieces.find(piece => piece.id === victim.id),
-      { ...capturedVictim, zone: 'dead' },
+      { ...victim, square: null, zone: 'dead' },
     );
     assert.deepEqual(after.history.at(-1), {
       type: 'cardPlayed',

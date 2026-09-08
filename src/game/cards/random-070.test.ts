@@ -197,7 +197,7 @@ test('iteration 070 independently reviewed board, capture, royalty, cards, effec
     if (n === 88) relocate('b5', 'h8');
     if (n === 104) { const victim = at('c5'); victim.zone = 'captured'; victim.square = null; relocate('d4', 'c5'); resets = true; enPassant = []; }
     if (n === 106) { swap('e1', 'e6'); enPassant = []; }
-    const physical = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _ply, ...p }) => p);
+    const physical = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _ply, capturedBy: _actor, ...p }) => p);
     assert.deepEqual(physical(state.pieces), physical(expected), why);
     assert.deepEqual(state.enPassant, enPassant, why);
     assert.equal(!!state.pendingRescue, n === 87, why);

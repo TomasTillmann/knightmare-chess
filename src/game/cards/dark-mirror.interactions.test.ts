@@ -102,8 +102,8 @@ test("Revenge can remove the Pawn that captured through Dark Mirror", () => {
   const revenge = play(mirrored.state, "revenge", "d3");
   assert.equal(revenge.ok, true);
   assert.equal(boardFen(revenge.state), "4k3/8/8/8/8/8/8/4K3");
-  assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: null, zone: "captured" });
-  assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured" });
+  assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: null, zone: "captured", capturedBy: "black" });
+  assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(revenge.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard] });
   assert.deepEqual(revenge.state.players.black, { hand: [], deck: [], discard: [revengeCard] });
 });
@@ -157,7 +157,7 @@ test("Fanatic moves the same Pawn after its Dark Mirror capture", () => {
   assert.equal(fanatic.ok, true);
   assert.equal(boardFen(fanatic.state), "5k2/8/3P4/8/8/8/8/4K3");
   assert.deepEqual(fanatic.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: "d6" });
-  assert.deepEqual(fanatic.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured" });
+  assert.deepEqual(fanatic.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(fanatic.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard, fanaticCard] });
 });
 
@@ -181,7 +181,7 @@ test("Forced March moves the same Pawn after its Dark Mirror capture", () => {
   assert.equal(forcedMarch.ok, true);
   assert.equal(boardFen(forcedMarch.state), "5k2/8/8/8/8/4P3/8/4K3");
   assert.deepEqual(forcedMarch.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: "e3" });
-  assert.deepEqual(forcedMarch.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured" });
+  assert.deepEqual(forcedMarch.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(forcedMarch.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard, forcedMarchCard] });
 });
 
@@ -202,7 +202,7 @@ test("Dark Mirror uses the same Pawn identity after Rebirth relocates it", () =>
   assert.equal(mirrored.ok, true);
   assert.equal(boardFen(mirrored.state), "4k3/8/8/8/8/8/8/3PK3");
   assert.deepEqual(mirrored.state.pieces.find(piece => piece.id === pawn.id), { ...pawn, square: "d1" });
-  assert.deepEqual(mirrored.state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: "captured" });
+  assert.deepEqual(mirrored.state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(mirrored.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard] });
 });
 
@@ -223,7 +223,7 @@ test("Dark Mirror uses the same Pawn identity after Cowardice relocates it", () 
   assert.equal(mirrored.ok, true);
   assert.equal(boardFen(mirrored.state), "4k3/8/8/8/8/3P4/8/4K3");
   assert.deepEqual(mirrored.state.pieces.find(piece => piece.id === pawn.id), { ...pawn, square: "d3" });
-  assert.deepEqual(mirrored.state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: "captured" });
+  assert.deepEqual(mirrored.state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(mirrored.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard] });
 });
 
@@ -247,7 +247,7 @@ test("Annexation moves the same Pawn after its Dark Mirror capture", () => {
   assert.equal(annexation.ok, true);
   assert.equal(boardFen(annexation.state), "5k2/8/8/3P4/8/8/8/4K3");
   assert.deepEqual(annexation.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: "d5" });
-  assert.deepEqual(annexation.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured" });
+  assert.deepEqual(annexation.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(annexation.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard, annexationCard] });
 });
 
@@ -271,7 +271,7 @@ test("Onslaught moves the same Pawn after its Dark Mirror capture", () => {
   assert.equal(onslaught.ok, true);
   assert.equal(boardFen(onslaught.state), "5k2/8/8/8/3P4/8/8/4K3");
   assert.deepEqual(onslaught.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: "d4" });
-  assert.deepEqual(onslaught.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured" });
+  assert.deepEqual(onslaught.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(onslaught.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard, onslaughtCard] });
 });
 

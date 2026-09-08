@@ -180,7 +180,7 @@ test('iteration 066 independently reviewed deterministic campaign', () => {
       assert.deepEqual(after.castlingRights, position.toSetup().castlingRights);
       const mover = before.pieces.find(p => p.zone === 'board' && p.square === action.from)!;
       const victim = before.pieces.find(p => p.zone === 'board' && p.square === action.to);
-      assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id ? { ...p, square: action.to } : p.id === victim?.id ? { ...p, square: null, zone: 'captured' } : p));
+      assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id ? { ...p, square: action.to } : p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: before.turn.color } : p));
       assert.deepEqual(state.turn, { ...before.turn, phase: 'afterMove', moveMade: true });
     } else if (action.type === 'endTurn') {
       assert.equal(state.fen, before.fen, rationale[index]);

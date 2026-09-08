@@ -118,7 +118,8 @@ describe('No Quarter contract', () => {
     assert.ok(victim);
     const after = ok(play(before));
 
-    assert.deepEqual(pieceById(after, victim.id), { ...victim, zone: 'dead' });
+    const { capturedBy: _capturedBy, ...identity } = victim;
+    assert.deepEqual(pieceById(after, victim.id), { ...identity, zone: 'dead' });
     assert.deepEqual(after.history, [
       ...before.history,
       { type: 'cardPlayed', cardId: CARD, movement: [], preservePreviousMove: true },
@@ -136,7 +137,7 @@ describe('No Quarter contract', () => {
 
     const captured = move(before, 'e2', 'e8');
     assert.deepEqual(before, initialSnapshot, 'capture must not mutate its input');
-    assert.deepEqual(pieceById(captured, prince.id), { ...prince, square: null, zone: 'captured' });
+    assert.deepEqual(pieceById(captured, prince.id), { ...prince, square: null, zone: 'captured', capturedBy: before.turn.color });
     assert.deepEqual(captured.history, [{
       type: 'move',
       from: 'e2',
@@ -198,7 +199,8 @@ describe('No Quarter contract', () => {
     const transformed = pieceById(before, victim.id);
     assert.ok(transformed);
     const after = ok(play(before));
-    assert.deepEqual(pieceById(after, victim.id), { ...transformed, zone: 'dead' });
+    const { capturedBy: _capturedBy, ...identity } = transformed;
+    assert.deepEqual(pieceById(after, victim.id), { ...identity, zone: 'dead' });
   });
 
   it('spends the exact selected duplicate, discards and replaces it exactly once', () => {

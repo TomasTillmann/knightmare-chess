@@ -135,7 +135,7 @@ test('iteration 033 sequential rules review', () => {
   const forbidden: string[] = [];
   const effects: unknown[] = [];
   const xy = (s: string) => [s.charCodeAt(0) - 97, Number(s[1]) - 1] as const;
-  const fields = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _, ...piece }) => piece);
+  const fields = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _, capturedBy: _actor, ...piece }) => piece);
   // Independent geometry oracle for precisely the movement modes in this trace.
   const geometrical = (piece: PieceState, to: string, position: GameState, capture: boolean): boolean => {
     assert.ok(piece.square);

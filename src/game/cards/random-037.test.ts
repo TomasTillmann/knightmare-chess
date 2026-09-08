@@ -131,11 +131,11 @@ const rationales = [
 
 const pacifism = { type: 'pacifism', owner: 'black', card: { id: 'black-hand-2-pacifism', cardId: 'pacifism' }, pieceId: 'black-knight-g8' }
 const neutrality = { type: 'neutrality', owner: 'black', card: { id: 'black-hand-4-neutrality', cardId: 'neutrality' }, pieceId: 'white-knight-b1' }
-const relocate = (pieces: PieceState[], from: string, to: string) => {
+const relocate = (pieces: PieceState[], from: string, to: string, actor: 'white' | 'black') => {
   const piece = pieces.find(p => p.square === from && p.zone === 'board')!
   assert.ok(piece)
   const victim = pieces.find(p => p.square === to && p.zone === 'board')
-  if (victim) { victim.square = null; victim.zone = 'captured' }
+  if (victim) { victim.square = null; victim.zone = 'captured'; victim.capturedBy = actor }
   piece.square = to as SquareName
 }
 const cardMoves: Record<number, [string, string][]> = {
@@ -198,7 +198,7 @@ test('iteration 037 deterministic trace', () => {
           assert.ok(!before.pieces.some(p => p.square && parseSquare(p.square) === square), 'sliding path is empty')
         }
       }
-      relocate(expectedPieces, action.from, action.to)
+      relocate(expectedPieces, action.from, action.to, actor)
       halfmove = piece.role === 'pawn' || victim ? 0 : halfmove + 1
       fullmove += actor === 'black' ? 1 : 0
       expectedEp = piece.role === 'pawn' && Math.abs(dy) === 2 ? [{ target: `${action.from[0]}${(Number(action.from[1]) + Number(action.to[1])) / 2}` as SquareName, pawnId: piece.id }] : []
@@ -229,7 +229,7 @@ test('iteration 037 deterministic trace', () => {
         if (moves) {
           if ([13, 32, 56].includes(step)) {
             for (const [from, to] of moves) expectedPieces.find(p => p.id === before.pieces.find(q => q.square === from)!.id)!.square = to as SquareName
-          } else for (const [from, to] of moves) relocate(expectedPieces, from, to)
+          } else for (const [from, to] of moves) relocate(expectedPieces, from, to, owner)
         }
         if (step === 47) Object.assign(expectedPieces.find(p => p.id === neutrality.pieceId)!, { neutral: true, neutralBeforeEffects: false })
         if ([13, 32, 69].includes(step)) {

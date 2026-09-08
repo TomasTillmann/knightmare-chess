@@ -155,10 +155,10 @@ function seedActive(options: Options = {}, ...effects: DoomsayerEffect[]): State
   return withDoomsayers(seeded, ...(effects.length ? effects : [continuingCard('white', 'white-effect-doomsayer')]));
 }
 
-function expectCaptured(before: State, after: State, square: string): PieceState {
+function expectCaptured(before: State, after: State, square: string, capturedBy: Color = 'white'): PieceState {
   const victim = pieceAt(before, square);
   assert.ok(victim, `Expected a victim on ${square}`);
-  assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured' });
+  assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured', capturedBy });
   return victim;
 }
 
@@ -517,7 +517,7 @@ describe('Doomsayer multiple effects', () => {
     const before = withDoomsayers(game(), continuingCard('black', 'older-black-effect'));
     const played = ok(play(before));
     const after = ok(name(played, 'black', 'rook', ['a8', 'h8']));
-    expectCaptured(before, after, 'a8');
+    expectCaptured(before, after, 'a8', 'black');
     expectCaptured(before, after, 'h8');
     assert.deepEqual(doomsayers(after), []);
   });
@@ -534,7 +534,7 @@ describe('Doomsayer board, chess, and audit state', () => {
     });
     const after = ok(name(before, 'black', 'rook', ['b2']));
     const victim = expectCaptured(before, after, 'b2');
-    assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured' });
+    assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured', capturedBy: 'white' });
   });
 
   it('uses fixed square coordinates regardless of board orientation', () => {

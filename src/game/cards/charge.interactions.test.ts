@@ -150,7 +150,7 @@ for (let seed = 1; seed <= 20; seed++) {
     let random = seed;
     const pick = (count: number) => { random = (Math.imul(random, 1664525) + 1013904223) >>> 0; return random % count; };
     let state = createGameState({ fen: 'r3k2r/ppp2ppp/8/8/8/8/PPP2PPP/RN2K2R w - - 0 1', hands: { white: ['charge'] } });
-    const identities = state.pieces.map(({ square: _square, zone: _zone, ...piece }) => piece);
+    const identities = state.pieces.map(({ square: _square, zone: _zone, capturedBy: _capturedBy, ...piece }) => piece);
     const cardIds = Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard].map(card => card.id)).sort();
     const destinations: SquareName[] = ['a4', 'b5', 'd5', 'e4'];
     state = move(state, 'b1', 'c3');
@@ -164,11 +164,14 @@ for (let seed = 1; seed <= 20; seed++) {
       assert.ok(candidates.length > 0);
       const selected = candidates[pick(candidates.length)];
       const mover = state.pieces.find(piece => piece.square === selected.from)!;
+      const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === selected.to);
+      const capturer = state.turn.color;
       state = act(state, { type: 'move', ...selected });
+      if (victim) assert.equal(state.pieces.find(piece => piece.id === victim.id)?.capturedBy, capturer);
       moves++;
       assert.equal(state.pieces.find(piece => piece.id === mover.id)?.square, selected.to);
       assert.equal(isKingInCheck(state, state.turn.color), false);
-      assert.deepEqual(state.pieces.map(({ square: _square, zone: _zone, ...piece }) => piece), identities);
+      assert.deepEqual(state.pieces.map(({ square: _square, zone: _zone, capturedBy: _capturedBy, ...piece }) => piece), identities);
       assert.deepEqual(Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard].map(card => card.id)).sort(), cardIds);
       const board = state.pieces.filter(piece => piece.zone === 'board');
       assert.equal(new Set(board.map(piece => piece.square)).size, board.length);

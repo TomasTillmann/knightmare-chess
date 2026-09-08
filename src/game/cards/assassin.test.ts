@@ -84,7 +84,7 @@ function expectCapture(before: State, target = move()): State {
   const after = ok(play(before, target));
 
   assert.deepEqual(pieceById(after, mover.id), { ...mover, square: to });
-  assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured' });
+  assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured', capturedBy: before.turn.color });
   assert.equal(pieceAt(after, from), undefined);
   assert.equal(pieceAt(after, to)?.id, mover.id);
   return after;
@@ -400,7 +400,7 @@ describe('Assassin lifecycle and consequences', () => {
 
     const after = expectCapture(before, [{ from: 'g7', to: 'h8' }]);
     assert.deepEqual(pieceAt(after, 'h8'), { ...pawn, square: 'h8' });
-    assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured' });
+    assert.deepEqual(pieceById(after, victim.id), { ...victim, square: null, zone: 'captured', capturedBy: before.turn.color });
     assert.equal(pieceAt(after, 'h8')?.role, 'pawn');
     assert.equal(pieceAt(after, 'h8')?.originalRole, 'pawn');
     assert.equal(pieceAt(after, 'h8')?.promoted, false);

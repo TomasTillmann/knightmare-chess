@@ -57,6 +57,7 @@ test('reacts to an ordinary pawn capture and captures one opposing pawn', () => 
     ...targetBefore,
     square: null,
     zone: 'captured',
+    capturedBy: 'black',
   });
   assert.deepEqual(findPiece(played.state, 'black-pawn-a7'), findPiece(before, 'black-pawn-a7'));
   assert.deepEqual(played.state.turn, {
@@ -197,6 +198,7 @@ test('current, unpromoted original, and neutral Pawns are valid targets', async 
         ...findPiece(state, 'white-pawn-b2'),
         square: null,
         zone: 'captured',
+        capturedBy: 'black',
       });
     });
   }

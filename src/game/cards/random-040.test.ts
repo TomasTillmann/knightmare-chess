@@ -144,7 +144,7 @@ const rationales = [
 const pacifism = { type: 'pacifism', owner: 'white', card: { id: 'white-hand-3-pacifism', cardId: 'pacifism' }, pieceId: 'white-pawn-h2' };
 const confabulation = { type: 'confabulation', owner: 'black', card: { id: 'black-deck-3-confabulation', cardId: 'confabulation' }, pieceIds: ['black-pawn-d7', 'black-queen-d8'] };
 const shield = { type: 'mystic-shield', owner: 'black', player: 'black', pieceId: 'black-pawn-b7' };
-const pieceProjection = (state: GameState) => state.pieces.map(({ capturedAtPly: _, ...piece }) => piece);
+const pieceProjection = (state: GameState) => state.pieces.map(({ capturedAtPly: _, capturedBy: _actor, ...piece }) => piece);
 
 test('iteration 040 deterministic review', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/040.json', import.meta.url), 'utf8')) as RandomTrace;

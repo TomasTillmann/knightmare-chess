@@ -262,7 +262,7 @@ test('iteration 057 independently reviews its deterministic campaign trace', () 
       assert.deepEqual(after.players, before.players);
       halfmove++;
     }
-    const physical = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _capture, ...piece }) => piece);
+    const physical = (pieces: PieceState[]) => pieces.map(({ capturedAtPly: _capture, capturedBy: _actor, ...piece }) => piece);
     if (number === 44 || number === 117) {
       const checkpoint = states[number === 44 ? 42 : 115]!;
       assert.deepEqual(after.pieces, checkpoint.pieces);

@@ -157,7 +157,7 @@ test('iteration 052 deterministic trace', () => {
       const victim = before.pieces.find(p => p.square === action.to);
       assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id
         ? { ...p, square: action.to }
-        : p.id === victim?.id ? { ...p, square: null, zone: 'captured' } : p), rationales[i]);
+        : p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: before.turn.color } : p), rationales[i]);
       assert.deepEqual(state.players.white.hand, before.players.white.hand);
       assert.deepEqual(state.players.black.hand, before.players.black.hand);
       if (n < 106) {

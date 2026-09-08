@@ -150,7 +150,7 @@ test('iteration 067 independently reviewed campaign', () => {
       const victim = before.pieces.find(p => p.square === to);
       assert.ok(mover && mover.owner === before.turn.color);
       assert.deepEqual(after.pieces, before.pieces.map(p => p.id === mover.id ? { ...p, square: to }
-        : p.id === victim?.id ? { ...p, square: null, zone: 'captured' } : p), rationale[i]);
+        : p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: before.turn.color } : p), rationale[i]);
       const position = Chess.fromSetup(parseFen(before.fen).unwrap()).unwrap();
       const legal = position.isLegal({ from: parseSquare(from)!, to: parseSquare(to)! });
       assert.equal(legal, ![78, 108].includes(n), rationale[i]);

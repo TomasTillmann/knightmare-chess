@@ -131,7 +131,7 @@ test('iteration 049: independently reviewed 111 actions and 50 Regular Moves', (
   assert.equal(rationales.length, trace.steps.length);
   assert.equal(trace.steps.filter(s => s.action.type === 'playCard').length, 7);
   let state = createGameState(trace.initial);
-  const project = (s: GameState) => s.pieces.map(({ capturedAtPly: _ply, ...p }) => p);
+  const project = (s: GameState) => s.pieces.map(({ capturedAtPly: _ply, capturedBy: _actor, ...p }) => p);
   for (const [index, { action }] of trace.steps.entries()) {
     const n = index + 1;
     assert.ok(rationales[index]!.startsWith(`${n}. `));

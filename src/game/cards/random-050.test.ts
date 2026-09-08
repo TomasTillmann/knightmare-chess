@@ -188,7 +188,7 @@ test('iteration 050 independently reviewed campaign', () => {
       for (const piece of before.pieces) {
         const after = state.pieces.find(item => item.id === piece.id)!
         assert.deepEqual(after, { ...piece, ...(piece.id === mover.id ? { square: action.to } : {}),
-          ...(piece.id === victim?.id ? { square: null, zone: 'captured' } : {}) }, why)
+          ...(piece.id === victim?.id ? { square: null, zone: 'captured', capturedBy: before.turn.color } : {}) }, why)
       }
     }
     if (action.type === 'endTurn') {

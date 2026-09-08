@@ -195,7 +195,7 @@ test('iteration 028 deterministic replay', () => {
       };
       const expectedPieces = before.pieces.map(p => {
         const square = shifts[step]?.[p.id];
-        return square === undefined ? p : { ...p, square, zone: square === null ? 'captured' : 'board' };
+        return square === undefined ? p : { ...p, square, zone: square === null ? 'captured' : 'board', ...(square === null ? { capturedBy: actor } : {}) };
       });
       assert.deepEqual(state.pieces, expectedPieces, why);
       assert.deepEqual(state.enPassant, before.enPassant, why);

@@ -230,7 +230,7 @@ test('iteration 031: 125 independently reviewed actions and 50 regular moves', (
     const expectedPieces = before.pieces.map(piece => {
       if (!(piece.id in changes)) return piece;
       const square = changes[piece.id] as PieceState['square'];
-      return { ...piece, square, zone: square ? 'board' : step === 27 ? 'away' : 'captured' };
+      return { ...piece, square, zone: square ? 'board' : step === 27 ? 'away' : 'captured', ...(!square && step !== 27 ? { capturedBy: before.turn.color } : {}) };
     });
     assert.deepEqual(state.pieces, expectedPieces, why);
     assert.equal(state.orientation, 0, why);

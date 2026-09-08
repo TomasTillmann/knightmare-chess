@@ -408,7 +408,7 @@ test('declining Toll restores every pushed piece and the terminal capture', () =
   assert.deepEqual(state, original)
   assert.equal(pushed.ok, true)
   if (!pushed.ok) return
-  assert.deepEqual(pushed.state.pieces.find((piece) => piece.id === queen.id), { ...queen, square: null, zone: 'captured' })
+  assert.deepEqual(pushed.state.pieces.find((piece) => piece.id === queen.id), { ...queen, square: null, zone: 'captured', capturedBy: 'white' })
   const beforeToll = structuredClone(pushed.state)
 
   const declined = applyAction(pushed.state, {
@@ -455,7 +455,7 @@ test('a card push capture never qualifies for No Quarter', () => {
   if (!pushed.ok) return
   assert.equal(pushed.state.history.at(-1)?.type, 'cardPlayed')
   assert.equal(pushed.state.history.at(-1)?.capturedId, rook.id)
-  assert.deepEqual(pushed.state.pieces.find((piece) => piece.id === rook.id), { ...rook, square: null, zone: 'captured' })
+  assert.deepEqual(pushed.state.pieces.find((piece) => piece.id === rook.id), { ...rook, square: null, zone: 'captured', capturedBy: 'white' })
   const probe = structuredClone(pushed.state)
   probe.turn.cardPlays.white = 0
   const beforeProbe = structuredClone(probe)
@@ -472,7 +472,7 @@ test('a card push capture never qualifies for No Quarter', () => {
   if (result.ok) return
   assert.equal(result.error.code, 'INVALID_TIMING')
   assert.deepEqual(result.state, beforeProbe)
-  assert.deepEqual(result.state.pieces.find((piece) => piece.id === rook.id), { ...rook, square: null, zone: 'captured' })
+  assert.deepEqual(result.state.pieces.find((piece) => piece.id === rook.id), { ...rook, square: null, zone: 'captured', capturedBy: 'white' })
   assert.deepEqual(result.state.players.white.hand.find((card) => card.id === noQuarter.id), noQuarter)
 })
 
@@ -499,7 +499,7 @@ test('a card push capture cannot trigger Revenge', () => {
   assert.equal(pushed.state.history.at(-1)?.type, 'cardPlayed')
   assert.equal(pushed.state.history.at(-1)?.cardId, CARD)
   assert.equal(pushed.state.history.at(-1)?.capturedId, terminal.id)
-  assert.deepEqual(pushed.state.pieces.find((piece) => piece.id === terminal.id), { ...terminal, square: null, zone: 'captured' })
+  assert.deepEqual(pushed.state.pieces.find((piece) => piece.id === terminal.id), { ...terminal, square: null, zone: 'captured', capturedBy: 'white' })
   assert.equal(pushed.state.pieces.find((piece) => piece.id === mover.id)?.square, 'e7')
   const beforeRevenge = structuredClone(pushed.state)
 

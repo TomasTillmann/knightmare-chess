@@ -216,7 +216,10 @@ test('deterministic iteration 025 independently reviewed semantics', () => {
       assert.deepEqual(state.players[owner].discard, [...before.players[owner].discard, ...CARD_CATALOG[action.cardId]!.continuing ? [] : [played]])
       assert.deepEqual(state.players[opponent].discard, [...before.players[opponent].discard, ...n === 99 ? [{ id: 'black-hand-1-neutrality', cardId: 'neutrality' }] : []])
       const expected = before.pieces.map(piece => {
-        if (relocations[n]?.[piece.id]) return { ...piece, square: relocations[n]![piece.id], zone: 'board' }
+        if (relocations[n]?.[piece.id]) {
+          const { capturedBy: _actor, ...returned } = piece
+          return { ...returned, square: relocations[n]![piece.id], zone: 'board' }
+        }
         if (n === 98 && piece.id === 'white-knight-b1') return { ...piece, neutral: true, neutralBeforeEffects: false }
         if (n === 99 && piece.id === 'white-knight-b1') {
           const { neutralBeforeEffects: _prior, ...rest } = piece

@@ -166,6 +166,8 @@ test('iteration 088 independently reviewed campaign', () => {
       const piece = expected.find(p => p.id === id)!;
       assert.ok(piece, `${n}: physical identity ${id}`);
       piece.square = square; piece.zone = zone;
+      if (zone === 'captured') piece.capturedBy = before.turn.color;
+      else delete piece.capturedBy;
     };
     let halfmoves = Number(before.fen.split(' ')[4]);
     let fullmoves = Number(before.fen.split(' ')[5]);

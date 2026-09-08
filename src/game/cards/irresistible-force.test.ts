@@ -85,7 +85,7 @@ test('captures the last piece when a chain pushes it off-board', () => {
   assert.equal(result.state.pieces.find(piece => piece.id === 'black-bishop-e7')?.square, 'e8');
   assert.deepEqual(
     result.state.pieces.find(piece => piece.id === 'black-rook-e8'),
-    { ...state.pieces.find(piece => piece.id === 'black-rook-e8'), square: null, zone: 'captured' },
+    { ...state.pieces.find(piece => piece.id === 'black-rook-e8'), square: null, zone: 'captured', capturedBy: 'white' },
   );
 });
 

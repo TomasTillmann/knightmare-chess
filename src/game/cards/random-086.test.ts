@@ -160,6 +160,8 @@ test('iteration 086 independent semantic review', () => {
   const relocate = (id: string, square: string | null, zone: PieceState['zone'] = 'board') => {
     if (square !== null) assert.match(square, /^[a-h][1-8]$/);
     Object.assign(piece(id), { square: square as SquareName | null, zone });
+    if (zone === 'captured') piece(id).capturedBy = state.turn.color;
+    else delete piece(id).capturedBy;
   };
   const xy = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1] as const;
   const occupant = (square: string) => expectedPieces.find(p => p.zone === 'board' && p.square === square);
@@ -228,7 +230,10 @@ test('iteration 086 independent semantic review', () => {
       case 66: relocate('black-knight-g8', 'h1'); break;
       case 75: relocate('white-rook-a1', 'c1'); relocate('white-bishop-c1', 'a1'); break;
       case 85: relocate('white-pawn-e2', 'd3'); break;
-      case 86: relocate('white-knight-g1', null, 'captured'); relocate('white-rook-h1', null, 'captured'); break;
+      case 86:
+        relocate('white-knight-g1', null, 'captured'); relocate('white-rook-h1', null, 'captured');
+        piece('white-knight-g1').capturedBy = 'black'; piece('white-rook-h1').capturedBy = 'black';
+        break;
       case 97: relocate('black-bishop-c8', 'b6'); break;
       case 99: relocate('white-bishop-c1', 'f1'); break;
       case 101: relocate('black-king-e8', null, 'away'); break;
