@@ -15,6 +15,12 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    actual movement paths, captures, identity, promotion, King safety, card timing,
    targets, spending/drawing/discard, effects/rewinds, turn/clock/en-passant state.
    Reducer acceptance and state hashes are not independent semantic proof.
+   Assert regular-move geometry and both royal threat states using the expected
+   physical board and the applicable variant rules, rather than relying solely
+   on reducer destination/check helpers. Retain exact cancellation restrictions,
+   mandatory choices, card allowances, and all six FEN fields in the oracle.
+   A raw FEN en-passant target may survive a non-move card even when uncapturable;
+   independently distinguish that serialization from legal capture availability.
 4. Preserve one explicit numbered rationale per action in the test, and assert
    rationale count equals the reviewed action count. Do not auto-label passes.
    Stop at the FIRST suspicious invalid state, document precise expected state
