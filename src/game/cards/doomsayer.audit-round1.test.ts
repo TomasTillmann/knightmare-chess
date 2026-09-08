@@ -120,7 +120,10 @@ test('SELF_CHECK fizzle restores the provisional move and removes every Doomsaye
   const spent = staged.players.white.hand.find(card => card.cardId === DOOMSAYER)!;
   assert.ok(staged.pendingRescue);
 
-  const after = playDoomsayer(staged, spent.id);
+  const offered = playDoomsayer(staged, spent.id);
+  assert.ok(offered.pendingDoomsayer);
+  assert.ok(offered.pendingRescue);
+  const after = applied(offered, { type: 'declineDoomsayer', player: 'black' });
 
   assertCleanFizzle(before, after, spent.id);
   assert.equal(pieceId(after, 'a2'), 'white-pawn-a2');
@@ -133,7 +136,10 @@ test('SELF_CHECK fizzle spends the selected duplicate identity only', () => {
   const copies = staged.players.white.hand.filter(card => card.cardId === DOOMSAYER);
   const selected = copies[1]!;
 
-  const after = playDoomsayer(staged, selected.id);
+  const offered = playDoomsayer(staged, selected.id);
+  assert.ok(offered.pendingDoomsayer);
+  assert.ok(offered.pendingRescue);
+  const after = applied(offered, { type: 'declineDoomsayer', player: 'black' });
 
   assertCleanFizzle(before, after, selected.id);
   assert.deepEqual(after.players.white.hand.map(card => card.id), [copies[0]!.id, 'white-hand-1-anathema']);
@@ -149,7 +155,10 @@ test('SELF_CHECK fizzle draws one replacement while conserving the exact cards',
   const spentId = staged.players.white.hand.find(card => card.cardId === DOOMSAYER)!.id;
   const drawnId = staged.players.white.deck[0]!.id;
 
-  const after = playDoomsayer(staged, spentId);
+  const offered = playDoomsayer(staged, spentId);
+  assert.ok(offered.pendingDoomsayer);
+  assert.ok(offered.pendingRescue);
+  const after = applied(offered, { type: 'declineDoomsayer', player: 'black' });
 
   assertCleanFizzle(before, after, spentId);
   assert.equal(after.players.white.hand.some(card => card.id === drawnId), true);
@@ -162,7 +171,10 @@ test('SELF_CHECK fizzle is color-symmetric', () => {
   }, { white: [], black: [] });
   const spentId = staged.players.black.hand.find(card => card.cardId === DOOMSAYER)!.id;
 
-  const after = playDoomsayer(staged, spentId);
+  const offered = playDoomsayer(staged, spentId);
+  assert.ok(offered.pendingDoomsayer);
+  assert.ok(offered.pendingRescue);
+  const after = applied(offered, { type: 'declineDoomsayer', player: 'white' });
 
   assertCleanFizzle(before, after, spentId);
   assert.equal(pieceId(after, 'a7'), 'black-pawn-a7');
@@ -183,7 +195,15 @@ test('SELF_CHECK fizzle accepts frozen input and is deterministic without mutati
   if (!first.ok || !second.ok) return;
   assert.deepEqual(first.state, second.state);
   assert.deepEqual(staged, snapshot);
-  assertCleanFizzle(before, first.state, spentId);
+  assert.ok(first.state.pendingDoomsayer);
+  assert.ok(first.state.pendingRescue);
+  assert.ok(second.state.pendingDoomsayer);
+  assert.ok(second.state.pendingRescue);
+  const firstDeclined = applied(first.state, { type: 'declineDoomsayer', player: 'black' });
+  const secondDeclined = applied(second.state, { type: 'declineDoomsayer', player: 'black' });
+  assert.deepEqual(firstDeclined, secondDeclined);
+  assert.deepEqual(staged, snapshot);
+  assertCleanFizzle(before, firstDeclined, spentId);
 });
 
 function immediateLock(color: Color): { beforeSpeech: GameState; afterSpeech: GameState; victimId: string; effectId: string } {

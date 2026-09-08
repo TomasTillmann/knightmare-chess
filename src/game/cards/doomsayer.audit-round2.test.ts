@@ -233,7 +233,10 @@ function stagedSpeechWithRook(): { state: GameState; oldId: string; rookId: stri
 test('a later non-rescuing Doomsayer fizzle rolls back only the staged move', () => {
   const { state: afterSpeech, oldId, rookId, newId } = stagedSpeechWithRook();
 
-  const state = playDoomsayer(afterSpeech, newId);
+  let state = playDoomsayer(afterSpeech, newId);
+  assert.deepEqual(state.pendingDoomsayer, { player: 'black', cardInstanceId: newId });
+  assert.ok(state.pendingRescue);
+  state = applied(state, { type: 'declineDoomsayer', player: 'black' });
 
   assert.equal(state.fen, '4k3/8/8/8/8/8/P2p4/4K3 w - - 0 1');
   assert.deepEqual(state.enPassant, []);
