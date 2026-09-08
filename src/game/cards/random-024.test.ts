@@ -164,9 +164,9 @@ test('iteration 024 deterministic semantic review', () => {
       const victim = before.pieces.find(piece => piece.square === action.to)
       const { neutralBeforeEffects: _expiredNeutrality, ...unmarkedMover } = mover
       assert.deepEqual(state.pieces.find(piece => piece.id === mover.id), step === 58
-        ? { ...unmarkedMover, square: null, zone: 'captured', neutral: false }
+        ? { ...unmarkedMover, square: null, zone: 'captured', capturedBy: 'white', neutral: false }
         : { ...mover, square: action.to }, reason)
-      if (victim) assert.deepEqual(state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: 'captured' }, reason)
+      if (victim) assert.deepEqual(state.pieces.find(piece => piece.id === victim.id), { ...victim, square: null, zone: 'captured', capturedBy: before.turn.color }, reason)
       const clocks = before.fen.split(' ').slice(4).map(Number)
       assert.deepEqual(state.fen.split(' ').slice(4).map(Number), [mover.role === 'pawn' || victim || step === 58 ? 0 : clocks[0]! + 1, clocks[1]! + (before.turn.color === 'black' ? 1 : 0)], reason)
       assert.equal(state.turn.color, before.turn.color, reason)
@@ -198,7 +198,11 @@ test('iteration 024 deterministic semantic review', () => {
       if (step === 26) assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === 'black-knight-g8' ? { ...piece, neutral: true, neutralBeforeEffects: false } : piece), reason)
       if ([52, 102].includes(step)) assert.deepEqual(state.pieces, before.pieces, reason)
       if (step === 37) assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === 'white-pawn-g2' ? { ...piece, square: 'a2' } : piece), reason)
-      if (step === 59) assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === 'white-pawn-f2' ? { ...piece, zone: 'dead' } : piece), reason)
+      if (step === 59) assert.deepEqual(state.pieces, before.pieces.map(piece => {
+        if (piece.id !== 'white-pawn-f2') return piece
+        const { capturedBy: _actor, ...dead } = piece
+        return { ...dead, zone: 'dead' }
+      }), reason)
       if (step === 77) {
         assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === 'white-bishop-f1' ? { ...piece, square: 'c4' } : piece), reason)
         assert.equal(state.fen, 'r2qk1r1/7p/n4p2/PNpp1bR1/P1BPp3/2Q1P2N/P1P4P/R1B1K3 b Qq - 2 19')
@@ -213,7 +217,13 @@ test('iteration 024 deterministic semantic review', () => {
         assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === 'white-queen-d1' ? { ...piece, square: null, zone: 'away' } : piece), reason)
         assert.equal(state.fen, 'r5r1/3k3p/bq6/PNpp2NB/P2np3/4P3/P1P4P/R1B1K3 b Q - 3 23')
       }
-      if (step === 105) assert.deepEqual(state.pieces, before.pieces.map(piece => piece.id === 'black-pawn-e7' ? { ...piece, square: 'h7', zone: 'board' } : piece.id === 'black-pawn-h7' ? { ...piece, square: null, zone: 'captured' } : piece), reason)
+      if (step === 105) assert.deepEqual(state.pieces, before.pieces.map(piece => {
+        if (piece.id === 'black-pawn-e7') {
+          const { capturedBy: _actor, ...returned } = piece
+          return { ...returned, square: 'h7', zone: 'board' }
+        }
+        return piece.id === 'black-pawn-h7' ? { ...piece, square: null, zone: 'captured', capturedBy: 'white' } : piece
+      }), reason)
     }
     if (step === 58) {
       assert.deepEqual(state.players.white.discard.map(card => card.cardId), ['neutrality', 'man-trap'], reason)
