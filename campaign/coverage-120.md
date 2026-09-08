@@ -1,0 +1,11 @@
+# Coverage audit through iteration 120
+
+COVERAGE_120_AUDIT_DONE — 325 probes, 2 groups, 0 findings. The fresh auditor reran the validated scaffold (124 probes, 270 ms), added exactly one independent accounting group, and reran once (325 probes, 387 ms). Execution journal timestamps span 25.601 seconds from baseline completion to final completion. Final scaffold SHA256: `60830e0dc98dc93bdbed25731583a5f7c6e5e34c85db13e21e1465c37bda3b7b`.
+
+The independent group joined every raw JSON action to its numbered TXT row across 120 iterations, verified row counts and action identity, and excluded the fixed offending action and all unreviewed suffix rows before tallying. It independently matched valid action-type counts and played/applied/fizzled counts for all 80 cards against the coverage output, checking that each accepted card action had a matching terminal outcome event and that applied plus fizzled equalled played.
+
+The accepted prefixes contain 13,397 valid actions, 5,739 moves and 1,414 card plays. All 80 card types were sampled; 79 were played and applied. Split Knight remains unplayed. Iteration 091's raw historical failure is intentionally retained; its offending action 132 and subsequent rows are excluded, with production fix `940be36` and the recorded clean audit checked by the scaffold.
+
+Fairness is limited to full-catalog availability and random proposal mechanics: rejection-bounded Fisher–Yates shuffling and physical-hand sampling avoid modulo bias. Accepted actions and positions are conditioned by legal availability, terminal-candidate exclusion, and mandatory rescue searches; neither equal realized card frequency nor uniformly distributed accepted positions is established. Sampling counts include generated proposals, whereas played/applied/fizzled counts cover accepted reviewed prefixes only. No cards were reweighted or removed, and no engine or test source was modified.
+
+The parent verified the complete added group, hash and journal before authorizing scaffold deletion. The parent also reported the engine gate: 5,051 passing tests, zero failures, 29.183 seconds, and passing typecheck. Iteration 120 was reviewed by fresh replacement agent `iteration_120_retry`. This report and the full execution journal, including the iteration-119 preparation entry, are retained.
