@@ -1,0 +1,784 @@
+{
+  "seed": 860069,
+  "initial": {
+    "hands": {
+      "white": [
+        "masquerade",
+        "figure-dance",
+        "haunting-memories",
+        "man-trap",
+        "long-jump"
+      ],
+      "black": [
+        "cowardice",
+        "toll",
+        "guardian",
+        "vendetta",
+        "man-trap"
+      ]
+    },
+    "decks": {
+      "white": [
+        "vulture",
+        "mystic-shield",
+        "abduction",
+        "toll",
+        "ghostwalk",
+        "knightmare",
+        "holy-quest",
+        "doppelganger",
+        "peace-talks",
+        "riposte",
+        "heresy",
+        "irresistible-force",
+        "coup",
+        "guardian",
+        "treason",
+        "breakthrough",
+        "evangelists",
+        "man-of-straw",
+        "bombard",
+        "merciless",
+        "pacifism",
+        "hostage",
+        "challenge",
+        "tournament",
+        "fanatic",
+        "assassin",
+        "blessing",
+        "fireball",
+        "crusade",
+        "confabulation",
+        "split-knight",
+        "cowardice",
+        "annexation",
+        "under-elf-hill",
+        "disintegration",
+        "neutrality",
+        "lost-castle",
+        "evil-eye",
+        "truce",
+        "chaos",
+        "crab",
+        "earthquake",
+        "think-again",
+        "winged-victory",
+        "curse",
+        "fatal-attraction",
+        "hidden-passage",
+        "revenge",
+        "rebirth",
+        "sanctuary",
+        "dark-mirror",
+        "panic",
+        "cathedral",
+        "fortification",
+        "fog-of-war",
+        "siege",
+        "doomsayer",
+        "bog",
+        "forbidden-city",
+        "betrayal",
+        "dubbing",
+        "vendetta",
+        "resurrection",
+        "legacy",
+        "forced-march",
+        "dungeon",
+        "holy-war",
+        "anathema",
+        "madman",
+        "charge",
+        "no-quarter",
+        "plots-within-plots",
+        "onslaught",
+        "squaring-the-circle",
+        "passing-in-the-night"
+      ],
+      "black": [
+        "irresistible-force",
+        "cathedral",
+        "fanatic",
+        "madman",
+        "evil-eye",
+        "hostage",
+        "anathema",
+        "betrayal",
+        "lost-castle",
+        "man-of-straw",
+        "fatal-attraction",
+        "annexation",
+        "squaring-the-circle",
+        "heresy",
+        "disintegration",
+        "figure-dance",
+        "forbidden-city",
+        "evangelists",
+        "chaos",
+        "fortification",
+        "tournament",
+        "winged-victory",
+        "merciless",
+        "hidden-passage",
+        "siege",
+        "rebirth",
+        "earthquake",
+        "treason",
+        "bog",
+        "truce",
+        "no-quarter",
+        "holy-war",
+        "assassin",
+        "panic",
+        "crusade",
+        "confabulation",
+        "challenge",
+        "peace-talks",
+        "doppelganger",
+        "legacy",
+        "dungeon",
+        "holy-quest",
+        "pacifism",
+        "charge",
+        "revenge",
+        "dubbing",
+        "curse",
+        "sanctuary",
+        "masquerade",
+        "split-knight",
+        "haunting-memories",
+        "onslaught",
+        "abduction",
+        "forced-march",
+        "riposte",
+        "resurrection",
+        "blessing",
+        "dark-mirror",
+        "crab",
+        "breakthrough",
+        "fog-of-war",
+        "think-again",
+        "plots-within-plots",
+        "fireball",
+        "doomsayer",
+        "knightmare",
+        "ghostwalk",
+        "vulture",
+        "bombard",
+        "neutrality",
+        "passing-in-the-night",
+        "mystic-shield",
+        "coup",
+        "long-jump",
+        "under-elf-hill"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "long-jump",
+        "cardInstanceId": "white-hand-4-long-jump",
+        "target": [
+          {
+            "from": "b1",
+            "to": "h6"
+          }
+        ]
+      },
+      "expected": "d12d0b6a91c16c729d1cef15fc7c853e3ec87848d27f0eaba061b4af36acbae1"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "290b4c88b9a0b2e09ae85c1a247a361fa553978253cd7a29dc00d4e320574f0e"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d7",
+        "to": "d6"
+      },
+      "expected": "c65e28d3283059b30302b9d9a1d115399ef27db81f74ebbe2035d2bbb993c60d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "cf6aeb585b1cf4530eb1b29cea4c93d2da834f47828c536cf24572b0f304c2e4"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h2",
+        "to": "h4"
+      },
+      "expected": "e9fffc1d88460ddd4b150076fb7825fddd026429c64fcd8be1d03decfdbbbf2b"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "d643574bf7e3de9d13bc5e464c4d6ab1fc48f78b4a13c276b0db87cd6a0582b6"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e7",
+        "to": "e6"
+      },
+      "expected": "fa7fded716b899550f13e39402cbc111b7cc451fec7e444fd4235aaca5d1871c"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "man-trap",
+        "cardInstanceId": "black-hand-4-man-trap",
+        "target": "e6"
+      },
+      "expected": "2d70b2413d21f5b97db57b4ee61fd3c22267f22dd3b5dc583ec8d9f5f895cec5"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "b9d26cbc83e7d6935e26efc9f68d2a10a41db428560b980dc95be27f3267f87f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c2",
+        "to": "c3"
+      },
+      "expected": "7bdb069e6fc4abc3803fa2444fc1b734d6381e5980419281b44f152cb0d59080"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "figure-dance",
+        "cardInstanceId": "white-hand-1-figure-dance",
+        "target": []
+      },
+      "expected": "58498319a797ab7b122563d44a5bd91c3b451c7a97e1fb60bab0a3ce6bbedbf3"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "a2f3818e20e0642ee9c9cddf074f5867ee088b572591a4b45376a3cd32d87a33"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a7",
+        "to": "a6"
+      },
+      "expected": "7aed861ee64989e94ddcd21650d3ae7b9d184dafd8b5774986bddcfdb10b0214"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "e8034fd984157e690bc2304e1c1012e3c2c90bcc44f2ca88c88b5e0e6aaf29b2"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h1",
+        "to": "h2"
+      },
+      "expected": "90572bc895562314718ace56cbf09ffd63b8866a6430e550e8fb9101a6111c63"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "18da5a4e32e8b264dc56a732fa281777fc900944cd1784481e8dd5f56f49bbff"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d8",
+        "to": "f6"
+      },
+      "expected": "62f113c964a9a2c7cfe2774f4a899322088305c53ae76a22ec091c32742e343f"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "530a6951b18d3040f9421bd4343f87200d1b81ed807e6a767ebc826910da008a"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h4",
+        "to": "h5"
+      },
+      "expected": "3cf350ec4d5a21076a56b83135c889fa219bce584714901069691d2924a71279"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "man-trap",
+        "cardInstanceId": "white-hand-3-man-trap",
+        "target": "g1"
+      },
+      "expected": "96927c0fe5319e68b2b07719a2576c78809bfedb4b34fae664fd45bb6f3eeafe"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "0443014b7db8eff2ee2f36eeec6a60fabccb17ca46333e82e4d344cd42ef3787"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "f6",
+        "to": "g6"
+      },
+      "expected": "b9ae94a4d959d478817dbd0e70dfa0a9187e9c82c20596ecf5e1be6c663992a2"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "8db5ef4f6c91e4a9a998d7756b7f9ab676b197766ea5171d30728487402add55"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b2",
+        "to": "b3"
+      },
+      "expected": "63670890278da0c560c7cd4e0f3da1d5c92cbb434257c0e21e7658406efef42b"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "0ead97a9de3f3acee7c240fc59ebf77c2997c71c229c6717c050a8d46204283f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a8",
+        "to": "a7"
+      },
+      "expected": "1cdf3a2cdc8f93c982013559832bed090c8a375f05efe1bf331c9b738741dee8"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "4334dbd3208d9bcf91540168b61970c565855a63763e5396eaa462a9e4bf842d"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h8",
+        "to": "g8"
+      },
+      "expected": "971ab226993b307933b7b98d5833a36093f8fcba7dbf0006f0bcea4effff8629"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "4e9bfd996f7040044d83a5ad2af08107d292938aec651fe2fd483d3f93d39b6f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c8",
+        "to": "d7"
+      },
+      "expected": "3e68174a57a72ab9da987490f96b53e35f6f61cb850a54dfe581ca27b2c62e2a"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "0caf3e5025ddb98fd8e86f597e054fffb6e9ff0e122e52172117b51691da8bd9"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g8",
+        "to": "h8"
+      },
+      "expected": "cc4873f31708ebab16e9d43190f114efad1d4a288379d2aacca3c22eddaa72f9"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "haunting-memories",
+        "cardInstanceId": "white-hand-2-haunting-memories",
+        "target": "e2"
+      },
+      "expected": "aeb498d6c15aca9f55dc2fab2876e2f009d77baf98918fda088fb0223f563445"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "fa540f938151d6ea8c28b5311ca2492693c9eea18d2866073eec3853d429ef8f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g6",
+        "to": "f6"
+      },
+      "expected": "1b4f2f677a7b68cdde78f2ce2d9b1aaabd5281787578cc9eb2c3f9e04a07665d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "91a20e45ff8a3603e07b3a07ca5851267b551d7cba8511c652d497766b1ffef1"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h2",
+        "to": "h1"
+      },
+      "expected": "b6c74256ea67f4028834fa2a1c0f49b7deff0a18359bd1aa1e2506e660ba2dc6"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "10bdf6709eed0ffe6937a419ec5f2daaa1990c91d8ac4003050cde97a8e7748d"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b7",
+        "to": "b6"
+      },
+      "expected": "42d234048f1e3a6c03d38c3d3b8c2db1076bf20a8b5c06f35a39f2bf20d4d8a4"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "vendetta",
+        "cardInstanceId": "black-hand-3-vendetta"
+      },
+      "expected": "34b8980a52392a6d40a62cb596f7bb25e690eb38baf80cf59f04207dc3a8efd7"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "bedc5ca945dd788a02349eb8b4abe99a62c77fd221fc369c05013208ac207335"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h8",
+        "to": "f8"
+      },
+      "expected": "33e367db5eb8c4f123f04b95f6240f7d5a9a7f3b38e10dda49e10977230d3c3f"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "db33446efa89c473d49deed5c48d222ef06f5420753a17bf3b033241559aa86d"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e8",
+        "to": "f8"
+      },
+      "expected": "1753cea3dbed9b51b59ad6069c1e42338825fd195c3d2084637d0de4e0be881f"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "cathedral",
+        "cardInstanceId": "black-deck-1-cathedral",
+        "target": {
+          "rook": "a7",
+          "bishop": "d7"
+        }
+      },
+      "expected": "f33d97029aa2b468e20c94dd43b9b0bbfc097852b353f52b83c8e4f88b73a88a"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "beacdf46993e32a55699da951e01b4dde234daf6cda0b1eb74ec1f4170835843"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h6",
+        "to": "f7"
+      },
+      "expected": "e9c011ff407ac3958af161f02c17ab2951578d289902e9885366e8bcdcdcb515"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "7dcd0bd59c3574db84f2236023799aa95785fa80de05d2ec9610cd6173d34bae"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a1",
+        "to": "c1"
+      },
+      "expected": "a68f173778b4652683e375e6df1abba7929f906c61e539e74240d990346a1795"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "3d70675b40003b52d1fb4cd2cf8bff41bc10be7ccfd2e13dc4c18a3cd8ff81b1"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "f7",
+        "to": "d6"
+      },
+      "expected": "4c4e056aaac2be9f8e4fde2313687c4201b46f45dc9951d66423261aabfec43c"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "d868689a9a4c23771072a3e9d5b7d91ec695bdc0ab3351b1929be017ab3fec3e"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c1",
+        "to": "d1"
+      },
+      "expected": "a0cc5ca96694d9719e6deb862ff49b0467ee8b14d514c2e8ab6eebe074d23630"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "60d107068b9603d3b6cb5eae03fe7d24604764a33070142b39b20ecbf0319a2a"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e1",
+        "to": "d1"
+      },
+      "expected": "6838a9cb2610d008593e70d032838e0c64bac035288b83376df47eab8ee05651"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "f35cf7ed92a8223352bbd04ce9c5890f46ec5e5e8f276e9c0f0ea65d17f853d8"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "f6",
+        "to": "c3"
+      },
+      "expected": "4b48f6a172f80daaff37c201b30469dd377913afc34a9a8428dea6cd414948c6"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "36c5d9611eba5b77cba5f06e00922b1118c9bbf72be35bb9ebedfc28a03cfcc6"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d2",
+        "to": "c3"
+      },
+      "expected": "76bcec5c808da943594e9bac71218b08099c15f394b3fc55e4eda60625478cf9"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "46cc24f42dbfc7a9ac503b7d2c23f7c1efaec723bf667b41a2c80963f6e1cc51"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d7",
+        "to": "d6"
+      },
+      "expected": "6d3a2ba152bb9ff7c9aceaeb49bb2a5b28c15c5f68e51a61f86c357b2629afbb"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "8b9ceea43477f46ba79ab0a212362444fa645fa02a9e6e114c65b80c32dae9e1"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a2",
+        "to": "a4"
+      },
+      "expected": "fd22a37e2f8fbf5812ce869fdbb895837e2027777f255db4befb6a4fa34f986c"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "mystic-shield",
+        "cardInstanceId": "white-deck-1-mystic-shield",
+        "target": "a4"
+      },
+      "expected": "5df10de5e4e3e4f08b1846af14e217172b9d6a1eb384690edf73bc86d347c19b"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d1",
+        "to": "c2"
+      },
+      "expected": "25ead0d2b0ecca165ecc9c7d85c194a1a193ef815e2ed447720512ddcc81483c"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "e77fbc60b8f42f356a957880117b3586e059a385899d0dab5a66abedcc2ec73c"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "guardian",
+        "cardInstanceId": "black-hand-2-guardian",
+        "target": [
+          {
+            "from": "h7",
+            "to": "h6"
+          }
+        ]
+      },
+      "expected": "cbb1e1c0ac3dea6a6a505e853395913f9db4bccc8d906112c627b63abd32d511"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "b41c3aecca39e867851c5fdafb0c224185972e6153a1efc5813b599d3ad6ab3d"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "ghostwalk",
+        "cardInstanceId": "white-deck-4-ghostwalk",
+        "target": [
+          {
+            "from": "f2",
+            "to": "f3"
+          }
+        ]
+      },
+      "expected": "cccf6e7caa4954dbbb95bb38cc18ffe66de7f81734aa3a40b439a7c9fc3aadcd"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "666629379411b75ebd6a1864b7dc9002f09e1d1dc2bd796e16fe1f19554eee12"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "f8",
+        "to": "f7"
+      },
+      "expected": "c3e26fa613ac6e2b92c568e99c30a446afaf5422b89b46dfb588f5ac5520ccc2"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "5d10c2639d15d489b737de6a96be49de84d2d8ddd957683b3dff2f08a219cf5b"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g1",
+        "to": "h3"
+      },
+      "expected": "72c7070d21be23d712011d49fdc97e42f602ff8987da898231ccf06b80df62e8"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "18010844536d6c371e8fbcd232b9413a9e7bdef7cccad9c9034b7b32d88521fe"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "irresistible-force",
+        "cardInstanceId": "black-deck-0-irresistible-force",
+        "target": [
+          {
+            "from": "h6",
+            "to": "h5"
+          }
+        ]
+      },
+      "expected": "a37c88d92d4857b9d5b041ae89531beab1c1b8e3355598f38f19c2a866d22b0d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "193dd8df5a2bc23fab610173cb49ed06a76947e5c420ec6e16b7af097cd73ca2"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c2",
+        "to": "d3"
+      },
+      "expected": "a355e1f3bf26f50a672b2a574fa9470cd89092adfdf7fa3450df50e7afe99e23"
+    }
+  ],
+  "moves": 32,
+  "finalFen": "1n6/b1p2kp1/pp1rp3/7p/7P/1PPK1P1N/P3P1P1/5B1R b - - 1 18",
+  "sampledCards": {
+    "long-jump": 1,
+    "vendetta": 3,
+    "masquerade": 5,
+    "toll": 11,
+    "vulture": 5,
+    "haunting-memories": 2,
+    "man-trap": 2,
+    "guardian": 5,
+    "figure-dance": 1,
+    "irresistible-force": 9,
+    "mystic-shield": 3,
+    "cowardice": 7,
+    "abduction": 8,
+    "cathedral": 1,
+    "fanatic": 7,
+    "ghostwalk": 1,
+    "madman": 2,
+    "evil-eye": 1,
+    "knightmare": 1
+  },
+  "failure": "No continuing action at step 78; outcome=null"
+}
