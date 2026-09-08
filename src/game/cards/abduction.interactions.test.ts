@@ -108,12 +108,22 @@ test('Abduction correct recall preserves an actual Crab and its marker', () => {
 
 test('Abduction requires the marked Crab physical identity', () => {
   let state = prepared('crab');
+  state.players.black.hand.push({ id: 'abduction-crab-resurrection', cardId: 'resurrection' });
   const victim = state.pieces.find(piece => piece.square === 'g6')!;
+  const marksVictim = (effect: unknown) => (effect as { pieceId?: string }).pieceId === victim.id;
+  const crab = structuredClone(state.effects.find(marksVictim));
+  assert.ok(crab);
+  assert.equal((crab as { type?: string }).type, 'crab');
   state = act(state, { type: 'playCard', cardId: 'abduction', target: 'g6' });
   state = act(state, { type: 'revealAbduction' });
   state = act(state, { type: 'answerAbduction', player: 'black', role: victim.role, owner: victim.owner, square: 'g6', pieceId: 'black-rook-b6' });
   assert.equal(state.pieces.find(piece => piece.id === victim.id)?.zone, 'captured');
-  assert.ok(!state.effects.some(effect => (effect as { pieceId?: string }).pieceId === victim.id));
+  assert.deepEqual(state.effects.find(marksVictim), crab);
+  state = act(state, { type: 'endTurn' });
+  state = act(state, { type: 'playCard', cardId: 'resurrection', target: { pieceId: victim.id, to: 'a7' } });
+  assert.equal(state.pieces.find(piece => piece.id === victim.id)?.zone, 'board');
+  assert.equal(state.pieces.find(piece => piece.id === victim.id)?.square, 'a7');
+  assert.deepEqual(state.effects.find(marksVictim), crab);
 });
 
 test('Abduction can restore the non-royal Prince created by actual Coup', () => {

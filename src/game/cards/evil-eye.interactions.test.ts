@@ -26,11 +26,18 @@ for (const [kind, square] of [['pacifism', 'a4'], ['pacifism', 'd4'], ['curse', 
 }
 
 for (const kind of ['crab', 'fatal-attraction'] as const) {
-  test(`Evil Eye expires captured victim's ${kind}`, () => {
+  test(`Evil Eye ${kind === 'crab' ? 'retains' : 'expires'} captured victim's ${kind}`, () => {
     const s = kind === 'crab' ? createGameState({ fen: '7k/6n1/8/8/R2p4/8/1P4P1/4K3 w - - 7 3', hands: { white: ['evil-eye'] } }) : base();
     s.effects.push({ type: kind, owner: 'black', card: { id: `effect-${kind}`, cardId: kind }, pieceId: at(s, 'd4').id });
     const next = played(s);
-    assert.equal(next.effects.some(e => (e as { type: string }).type === kind), false);
+    if (kind === 'crab') {
+      assert.deepEqual(next.effects, s.effects);
+      assert.equal(next.pieces.find(p => p.id === at(s, 'd4').id)?.zone, 'captured');
+      assert.equal(next.pieces.find(p => p.id === at(s, 'd4').id)?.square, null);
+      assert.equal(next.players.black.discard.some(c => c.id === 'effect-crab'), false);
+    } else {
+      assert.equal(next.effects.some(e => (e as { type: string }).type === kind), false);
+    }
     assert.equal(at(next, 'a4').id, at(s, 'a4').id);
 });
 }

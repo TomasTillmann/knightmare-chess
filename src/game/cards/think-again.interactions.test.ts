@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createGameState } from '../state.js';
 import { applyAction, legalDests, isKingInCheck, isPromotionSquare } from '../reducer.js';
 import { parseFen } from 'chessops/fen';
-import type { GameAction, GameState, SquareName } from '../types.js';
+import type { CrabEffect, GameAction, GameState, SquareName } from '../types.js';
 
 function act(state: GameState, action: GameAction): GameState {
   const result = applyAction(state, action);
@@ -106,15 +106,22 @@ describe('Think Again! interactions', () => {
 
   it('restores a captured Crab and its retained physical card', () => {
     let s = setup(['crab', 'think-again'], [], 'r6k/8/8/8/8/8/P7/7K w - - 0 1');
+    const crabCard = s.players.white.hand.find(c => c.cardId === 'crab')!;
     s = play(move(s, 'a2', 'a3'), 'crab', 'a3');
     s = end(s);
     const before = s;
+    const crab = before.effects.find((e): e is CrabEffect => (e as CrabEffect).type === 'crab');
+    assert.ok(crab?.type === 'crab');
+    assert.deepEqual(crab.card, crabCard);
+    assert.equal(physicalCards(before).filter(id => id === crabCard.id).length, 1);
     s = move(s, 'a8', 'a3');
-    assert.equal(s.effects.length, 0);
+    assert.deepEqual(s.effects, before.effects);
+    assert.equal(physicalCards(s).filter(id => id === crabCard.id).length, 1);
     s = play(s, 'think-again');
     assert.equal(s.fen, before.fen);
     assert.deepEqual(s.effects, before.effects);
     assert.deepEqual(s.pieces, before.pieces);
+    assert.equal(physicalCards(s).filter(id => id === crabCard.id).length, 1);
     invariant(s, before);
   });
 

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState } from '../state.js';
 import { applyAction, boardFen, isKingInCheck, isPromotionSquare, legalDests } from '../reducer.js';
-import type { GameAction, GameState, SquareName } from '../types.js';
+import type { CardInstance, GameAction, GameState, SquareName } from '../types.js';
 
 function act(state: GameState, action: GameAction): GameState {
   const before = structuredClone(state);
@@ -113,15 +113,23 @@ test('Chaos preserves an independent Continuing Effect played before the cancele
 
 test('Chaos restores a captured Crab and its physical Continuing Effect card', () => {
   const initial = createGameState({ fen: '7k/p7/8/8/8/8/8/R6K b - - 0 1', hands: { black: ['crab', 'chaos'] } });
+  const crab = initial.players.black.hand.find(card => card.cardId === 'crab')!;
   const movedKing = act(initial, { type: 'move', from: 'h8', to: 'g8' });
   const marked = play(movedKing, 'crab', 'a7');
   const beforeCapture = act(marked, { type: 'endTurn' });
   const captured = act(beforeCapture, { type: 'move', from: 'a1', to: 'a7' });
-  assert.equal(captured.effects.length, 0);
+  assert.equal(captured.effects.length, 1);
+  assert.deepEqual(captured.effects, beforeCapture.effects);
+  assert.equal(captured.players.black.discard.some(card => card.cardId === 'crab'), false);
   const restored = play(captured, 'chaos');
   assert.deepEqual(restored.pieces, beforeCapture.pieces);
   assert.deepEqual(restored.effects, beforeCapture.effects);
   assert.equal(restored.players.black.discard.some(card => card.cardId === 'crab'), false);
+  for (const state of [captured, restored]) {
+    const cards = Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard]);
+    cards.push(...(state.effects as Array<{ card?: CardInstance }>).flatMap(effect => effect.card ? [effect.card] : []));
+    assert.deepEqual(cards.filter(card => card.id === crab.id), [crab]);
+  }
 });
 
 test('Chaos returns only the latest replacement under Plots Within Plots', () => {

@@ -67,8 +67,9 @@ test('Fireball respects Mystic Shield on the immediately opposing turn', () => {
   assert.equal(state.pieces.find(p => p.id === 'black-pawn-e5')?.zone, 'board');
 });
 
-test('Fireball captures an actual Crab and expires its piece-bound effect', () => {
+test('Fireball captures an actual Crab and retains its effect through the following-move rescue window', () => {
   let state = createGameState({ fen: '7k/8/8/8/8/8/P7/K7 w - - 0 1', hands: { white: ['crab', 'fireball'] } });
+  const crab = state.players.white.hand.find(card => card.cardId === 'crab')!;
   state = act(state, { type: 'move', from: 'a2', to: 'a3' });
   state = act(state, { type: 'playCard', cardId: 'crab', target: 'a3' });
   state = nextTurn(state);
@@ -76,8 +77,14 @@ test('Fireball captures an actual Crab and expires its piece-bound effect', () =
   state = nextTurn(state);
   state = act(state, { type: 'move', from: 'a3', to: 'b4' });
   state = fire(state, 'b4');
-  assert.equal(state.pieces.find(p => p.id === 'white-pawn-a2')?.zone, 'captured');
-  assert.equal(state.effects.length, 0);
+  const captured = state;
+  state = nextTurn(state);
+  state = act(state, { type: 'move', from: 'g8', to: 'h8' });
+  for (const window of [captured, state]) {
+    assert.equal(window.pieces.find(p => p.id === 'white-pawn-a2')?.zone, 'captured');
+    assert.deepEqual(window.effects, [{ type: 'crab', owner: 'white', card: crab, pieceId: 'white-pawn-a2' }]);
+    assert.deepEqual(Object.values(window.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard]).filter(card => card.id === crab.id), []);
+  }
 });
 
 test('Fireball captures both physical components of an actual Confabulation', () => {
