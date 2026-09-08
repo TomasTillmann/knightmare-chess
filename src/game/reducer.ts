@@ -3794,6 +3794,11 @@ function playRebirth(state: GameState, target: unknown, cardInstanceId?: unknown
     losePiece(resolved, resolved.pieces.find(entry => entry.id === victim.id)!, 'captured');
   }
   syncFen(resolved, [piece, ...(victim ? [victim] : [])]);
+  if (victim) {
+    const setup = setupFor(resolved);
+    setup.halfmoves = 0;
+    resolved.fen = makeFen(setup);
+  }
   expireFatalAttractions(state, resolved);
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
