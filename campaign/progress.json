@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 99,
-  "coverageAuditsCompleted": 9,
+  "nextIteration": 103,
+  "coverageAuditsCompleted": 10,
   "iterations": [
     {
       "id": 1,
@@ -1014,6 +1014,56 @@
       "status": "passed",
       "finalFen": "r1b5/3p3p/p2P1Bkp/p2Qpp2/1P2NPB1/2r2n2/q3P2P/P1RK2Nn b - - 2 28",
       "testCommit": "31fb95e"
+    },
+    {
+      "id": 97,
+      "agent": "iteration_097",
+      "seed": 860097,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1pqk1r1/P3p1b1/b6p/1P2p1p1/1PPB2B1/4PN1R/8/1N4KR b q - 1 29",
+      "testCommit": "5df58cf"
+    },
+    {
+      "id": 98,
+      "agent": "iteration_098",
+      "seed": 860098,
+      "reviewedActions": 116,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "Q2r2nr/N2bkp1p/4pq2/P1p3p1/3b2Pp/1PP1P2P/5P1B/1R3KR1 b - - 0 28",
+      "testCommit": "6dd31c7"
+    },
+    {
+      "id": 99,
+      "agent": "iteration_099",
+      "seed": 860099,
+      "reviewedActions": 122,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1Qr2bnr/3k2p1/p4pbp/Pp1P2Pp/1RpN3q/8/1P3K2/Rn3B1N b - - 0 29",
+      "testCommit": "06cac43"
+    },
+    {
+      "id": 100,
+      "agent": "iteration_100",
+      "seed": 860100,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rn1r1b2/2pPpk1p/7n/1pPp4/p2b1P1p/2R1K1p1/1PQ1P3/1NB2BNR b - - 1 26",
+      "testCommit": "d941966"
+    },
+    {
+      "id": 101,
+      "agent": "iteration_101",
+      "seed": 860101,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1nb1kb2/p1p1n3/4Q3/rp6/1n1P1Q1P/r2P3p/4P3/R4KNR b - - 0 28",
+      "testCommit": "c19e2b4"
     }
   ],
   "coverageAudits": [
@@ -1070,15 +1120,21 @@
       "report": "coverage-090.md",
       "playedTypes": 79,
       "appliedTypes": 79
+    },
+    {
+      "throughIteration": 100,
+      "report": "coverage-100.md",
+      "playedTypes": 79,
+      "appliedTypes": 79
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 95,
-    "tests": 4997,
-    "passed": 4997,
+    "afterIteration": 100,
+    "tests": 5005,
+    "passed": 5005,
     "failed": 0,
-    "seconds": 30.636,
-    "scope": "All engine tests and numbered iterations through095"
+    "seconds": 31.754,
+    "scope": "All engine tests and numbered iterations through100"
   },
   "performanceFixes": [
     {
