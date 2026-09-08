@@ -21,6 +21,8 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    spending/drawing/discard or retained effect, history, FEN/en-passant and turn
    allowance, then successfully end the turn with input immutability checked.
    Reset consumed card allowance when probing an inert rollback token's timing.
+   Use an actually held card for that timing probe and assert INVALID_TIMING;
+   reusing an already-spent card only tests card possession, not timing.
    Reducer acceptance and state hashes are not independent semantic proof.
    Assert regular-move geometry and both royal threat states using the expected
    physical board and the applicable variant rules, rather than relying solely
