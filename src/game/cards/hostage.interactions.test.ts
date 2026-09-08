@@ -61,6 +61,30 @@ for (const cardId of ['crab', 'fatal-attraction', 'man-trap']) {
     assert.equal(before.effects.length, 1, 'existing card was actually established');
     const after = exchange(before, 'black', 'a7');
     if (cardId === 'man-trap') assert.deepEqual(after.effects, before.effects, 'square marker persists');
+    else if (cardId === 'crab') {
+      const physicalCard = (before.effects[0] as { card: { id: string; cardId: string } }).card;
+      assert.ok(physicalCard, 'Crab retains a physical card');
+      assert.deepEqual([after.turn.color, after.turn.phase], ['white', 'afterMove']);
+      const following = act(after, { type: 'endTurn' });
+      assert.deepEqual([following.turn.color, following.turn.phase], ['black', 'beforeMove']);
+      assert.ok(legalDests(following, false).get('g8')?.includes('h8'), 'Black King continuation is legal');
+      const moved = act(following, { type: 'move', from: 'g8', to: 'h8' });
+      for (const state of [after, following, moved]) {
+        assert.deepEqual(state.effects, before.effects, 'same Crab card and piece identity persist through the rescue window');
+      }
+      const expired = act(moved, { type: 'endTurn' });
+      assert.deepEqual([expired.turn.color, expired.turn.phase], ['white', 'beforeMove']);
+      assert.equal(expired.effects.length, 0, 'captured Crab expires after the rescue window');
+      assert.deepEqual(expired.players.black.discard.filter(card => card.id === physicalCard.id), [physicalCard]);
+      for (const state of [after, following, moved, expired]) {
+        assert.equal(state.pieces.find(piece => piece.id === 'black-pawn-a7')?.zone, 'captured');
+        const cards = [
+          ...state.effects.map(effect => (effect as { card?: { id: string } }).card),
+          ...Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard]),
+        ];
+        assert.equal(cards.filter(card => card?.id === physicalCard.id).length, 1, 'physical Crab card exists exactly once');
+      }
+    }
     else assert.equal(after.effects.length, 0, 'capture expires the pawn-bound effect');
   });
 }
