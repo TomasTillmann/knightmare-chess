@@ -1,5 +1,15 @@
 # 300-iteration engine regression campaign
 
+Stopped at the user's request on 2026-09-08 after 208 parent-verified iterations.
+The 300-iteration target was not completed. Twenty coverage audits were completed,
+through iteration 200. Fourteen distinct engine rules defects were fixed; 17
+iterations exposed them, including retrospective findings in 034 and 079.
+All 80 cards were sampled, played, and applied in reviewed sequences.
+
+Generated traces 209 and 210 are preserved. Their interrupted test sources are in
+`drafts/`, excluded from the runnable suite and not counted as accepted iterations.
+Do not resume the campaign without a new user instruction.
+
 Requested scope: 300 fresh iteration agents, each checking 50 deterministic random
 regular moves plus all intervening card/reaction/turn actions. Every successful
 action is checked immediately for structural consistency; fresh agents then review

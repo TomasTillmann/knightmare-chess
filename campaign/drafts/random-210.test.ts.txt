@@ -1,0 +1,8 @@
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+import { replayTrace, type RandomTrace } from './random-campaign.js';
+
+test('random campaign iteration 210', () => {
+  const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/210.json', import.meta.url), 'utf8')) as RandomTrace;
+  replayTrace(trace);
+});

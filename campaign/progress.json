@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 212,
+  "nextIteration": 209,
   "coverageAuditsCompleted": 20,
   "iterations": [
     {
@@ -2366,5 +2366,26 @@
     "audit": "audit-terminal.md",
     "originalTrace": "iterations/171.stalled.json",
     "historicalRegressionCommit": "31f3026"
-  }
+  },
+  "status": "stopped_by_user",
+  "stoppedAt": "2026-09-08T08:42:32.743Z",
+  "completedIterations": 208,
+  "stopReason": "User requested: okay stop please everything cleanly, commit and push",
+  "unfinishedIterations": [
+    {
+      "id": 209,
+      "status": "awaiting_parent_review",
+      "draft": "drafts/random-209.test.ts.txt",
+      "agentReportedActions": 122,
+      "agentReportedMoves": 50,
+      "agentReportedTargetTests": 2
+    },
+    {
+      "id": 210,
+      "status": "independent_review_unfinished",
+      "draft": "drafts/random-210.test.ts.txt",
+      "generatedActions": 120,
+      "generatedMoves": 50
+    }
+  ]
 }

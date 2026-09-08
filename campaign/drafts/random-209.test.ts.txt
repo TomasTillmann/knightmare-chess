@@ -1,0 +1,396 @@
+import test from 'node:test'
+import { readFileSync } from 'node:fs'
+import { replayTrace, type RandomTrace } from './random-campaign.js'
+import assert from 'node:assert/strict'
+import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js'
+import { createGameState } from '../state.js'
+import type { Color, GameAction, GameEvent, GameState, PieceState, SquareName } from '../types.js'
+import { CARD_CATALOG } from './catalog.js'
+
+// Explicit chronological review, not labels generated from reducer acceptance.
+const rationales = `
+1 Under Elf Hill removes White e1 royal without capture, consumes move and revokes KQ.
+2 Black begins while White King remains away; no board or card change.
+3 f7-f6 is one empty forward Pawn step; Black King remains safe.
+4 White begins with mandatory edge return due, before any optional action.
+5 e1 is empty, safe and on the edge; return restores identity but no castling or movement permission.
+6 a2-a4 crosses empty a3; only a3 en-passant token arises and no Black Pawn can use it.
+7 Black begins; returned White royal movement restriction expires.
+8 b7-b6 is one forward step, clearing expired a3 opportunity.
+9 Black Curse marks the opposing physical Queen on d1; retain card beside board and draw Forbidden City.
+10 White begins with Curse attached to d1 Queen.
+11 g2-g3 is one forward Pawn step into empty g3.
+12 Black begins; no obligation or card disposition changes.
+13 a7-a5 crosses empty a6; adjacent White a4 Pawn cannot capture en passant from that file.
+14 White begins with a6 historical en-passant opportunity but no qualifying captor.
+15 a1-a2 is a one-square clear Rook move, expiring a6.
+16 Black begins; both Kings remain safe.
+17 h7-h5 crosses empty h6; g4 is empty so no White en-passant capture exists.
+18 White begins with h6 opportunity preserved.
+19 f2-f3 is a legal empty forward move, provisionally completed before cancellation.
+20 Black Think Again rewinds f2-f3, clocks and h6 opportunity; f2-f3 physical token is forbidden.
+21 g3-g4 is a different physical move, clears cancellation prohibition and h6 opportunity.
+22 Black begins with both card allowances reset.
+23 h5-h4 is an empty forward Pawn move.
+24 Black Panic imposes White next-move timer, spends card and draws Bombard.
+25 White starts subject to Panic; no timer timeout has occurred.
+26 White Plots opens two immediate slots; Think Again and Legacy lack triggers, Vendetta and Treason lack timing.
+27 b1-c3 is a Knight jump; completing move clears Panic and unused Plots slots.
+28 Black begins with Curse as the sole effect.
+29 d7-d5 crosses empty d6; neither c5 nor e5 holds a White captor.
+30 Black Forbidden City marks empty b5; retains d6 opportunity and draw Figure Dance.
+31 White begins; b5 cannot be entered or traversed by sliding pieces.
+32 g1-h3 is an unobstructed Knight jump avoiding b5.
+33 Black begins with no compulsory choice.
+34 Black Bombard moves h8 Rook to h6 through empty h7; optional jump unused, kingside rights lost.
+35 White Think Again restores h8 Rook, k right, clocks, Bombard and its allowance; reverses its draw.
+36 b8-c6 is a different Knight move from canceled h8-h6; clears prohibition.
+37 White begins; no capture or pending rescue occurred.
+38 White Confabulation moves cursed d1 Queen one diagonal step onto friendly c2 Pawn; merge preserves both identities.
+39 Black begins with Queen component away and c2 Pawn representing composite.
+40 d8-d7 is an empty one-square Queen move.
+41 Black Figure Dance simultaneously sends h1-h8, a8-a1, h8-a8; empty a1 supplies no fourth mover.
+42 White begins; corner moves revoked all remaining castling rights.
+43 h8-h5 Rook path h7,h6 is empty.
+44 Black begins; no check or card response remains active.
+45 c6-a7 is a Knight jump into vacated a7.
+46 White begins with the merged Pawn still c2.
+47 h5-h6 is one clear Rook step.
+48 Black begins; no royalty is attacked.
+49 e8-f7 is a safe adjacent King move; h6 Rook is not aligned with f7.
+50 White begins with Black King f7.
+51 c2-b1 uses merged Queen diagonal power within Curse limit; both physical components moved, no promotion.
+52 Black begins; b1 composite blocks a1 Rook along first rank.
+53 d5-d4 is one empty forward Pawn step.
+54 White begins with no pending requirement.
+55 h3-g1 is a legal Knight jump.
+56 White Truce retains its physical card, bans capture and draws Madman; neither raw royal attack exists.
+57 Black begins under Truce with no raw check.
+58 d7-c6 is an empty Queen diagonal step; no raw royal attack ends Truce.
+59 White begins with capture prohibition retained.
+60 g4-g5 is an empty Pawn push; f6 Pawn blocks Rook h6 from Black King lines.
+61 Black begins under unchanged Truce.
+62 c6-c4 is a Queen file move through empty c5, not Forbidden City b5.
+63 White begins without raw check.
+64 g1-f3 is a Knight jump; no capture during Truce.
+65 Black begins with both raw royal threat sets empty.
+66 f7-e6 is safe adjacent King move; f6 blocks h6 Rook, f3 Knight does not attack e6.
+67 Black Holy War swaps own f8 Bishop and g8 Knight atomically, preserving identities and clocks.
+68 White begins with Bishop g8 and Knight f8.
+69 h6-h8 is clear through h7; g8 Bishop blocks Rook horizontal attacks.
+70 White Treason swaps opposing a1 Rook and f8 Knight; does not capture or move the regular-move token.
+71 Black begins; neutral status and ownership remain unchanged.
+72 c8-d7 is an empty Bishop diagonal step.
+73 White begins; neither raw King attack ends Truce.
+74 f1-g2 is an empty Bishop diagonal step.
+75 Black begins with full Truce capture protection.
+76 c4-d5 is a one-square Queen diagonal move.
+77 White begins; board and effects persist.
+78 c3-d1 is a Knight jump to vacated d1, still no raw check.
+79 Black begins without pending obligation.
+80 a7-c8 is a legal Knight jump to empty c8.
+81 White begins, no draw without a played card.
+82 b2-b3 is a single empty forward Pawn move.
+83 Black begins; no en-passant opportunity follows single step.
+84 a8-b8 is one clear Rook step.
+85 White begins under the same Truce.
+86 h8-h6 is a Rook move through empty h7.
+87 Black begins with f6 still blocking h6-e6 attack ray.
+88 d5-c5 is one clear Queen horizontal step.
+89 Black plays second physical Truce; both cards remain active and Dark Mirror is drawn.
+90 White begins under two independent Truce cards.
+91 e1-f1 is a safe adjacent King move, f2 Pawn blocks file threats.
+92 Black begins with White royal on f1.
+93 d4-d3 is a forward Pawn step; its attacks c2,e2 do not attack f1 King.
+94 White begins; raw check still absent.
+95 g2-h3 Bishop opens h3-g4-f5-e6 check; BOTH Truces expire and enter their owners discards.
+96 Black begins in check from h3 Bishop; legal ordinary Qc5-f5 escape exists.
+97 c5-f5 Queen crosses empty d5,e5 and interposes on Bishop h3-e6 diagonal, curing check.
+98 White begins after Black check cure.
+99 a2-c2 Rook crosses vacated b2 to empty c2.
+100 Black begins; no capture occurred.
+101 b8-a8 is one empty horizontal Rook step.
+102 White begins before replacement-card move.
+103 White Madman jumps e2-g4 over own f3 Knight; jumped piece survives, Pawn identity retained.
+104 Black begins; Madman consumed White Regular Move and reset Pawn clock.
+105 g7-h6 is a forward diagonal capture of White h1 physical Rook, capturedBy Black.
+106 White begins after declining immediate Legacy opportunity.
+107 h3-g2 is an empty Bishop diagonal move.
+108 Black begins with both Kings safe.
+109 f5-e5 is one empty Queen horizontal move.
+110 White begins with no mandatory action.
+111 f3-e1 is a Knight jump to the King's vacated square.
+112 Black begins with White Knight on e1 and King f1.
+113 a8-a7 is one empty Rook step.
+114 White begins; no piece or card changes on endTurn.
+115 h2-h3 is one empty forward Pawn step, h4 remains occupied by Black Pawn.
+116 Black begins with no en-passant opportunity.
+117 Black Dark Mirror moves h4-g5 backward diagonally, capturing white-g2 physical Pawn.
+118 White begins; Dark Mirror consumed Black move and reset capture clock.
+119 White Winged Victory returns just-captured white-g2 Pawn to empty central d4; clears capturedBy, consumes move.
+120 Black begins; returned Pawn has no en-passant vulnerability.
+121 e5-e3 Queen travels through empty e4; f2 Pawn blocks diagonal toward g1 and f1 royal is unthreatened.
+122 White begins after the fiftieth move command; no mandatory choice, check or terminal result.
+`.trim().split('\n')
+
+const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/209.json', import.meta.url), 'utf8')) as RandomTrace
+const other = (color: Color): Color => color === 'white' ? 'black' : 'white'
+const square = (value: string): SquareName => { assert.match(value, /^[a-h][1-8]$/); return value as SquareName }
+const xy = (value: string) => [value.charCodeAt(0) - 97, Number(value[1]) - 1] as const
+const effectType = (effect: unknown) => (effect as { type: string }).type
+
+// These fixtures name physical cards, owners, exact target payloads and metadata independently of the trace.
+const cards: Record<number, [Color, string, string, unknown?]> = {
+  1: ['white', 'under-elf-hill', 'white-hand-2-under-elf-hill'],
+  9: ['black', 'curse', 'black-hand-3-curse', 'd1'],
+  20: ['black', 'think-again', 'black-hand-0-think-again'],
+  24: ['black', 'panic', 'black-hand-1-panic'],
+  26: ['white', 'plots-within-plots', 'white-hand-0-plots-within-plots', { player: 'white' }],
+  30: ['black', 'forbidden-city', 'black-deck-0-forbidden-city', 'b5'],
+  34: ['black', 'bombard', 'black-deck-2-bombard', [{ from: 'h8', to: 'h6' }]],
+  35: ['white', 'think-again', 'white-hand-1-think-again'],
+  38: ['white', 'confabulation', 'white-deck-1-confabulation', [{ from: 'd1', to: 'c2' }]],
+  41: ['black', 'figure-dance', 'black-deck-3-figure-dance', []],
+  56: ['white', 'truce', 'white-deck-2-truce'],
+  67: ['black', 'holy-war', 'black-deck-1-holy-war', { knight: 'g8', bishop: 'f8' }],
+  70: ['white', 'treason', 'white-hand-4-treason', { rook: 'a1', knight: 'f8' }],
+  89: ['black', 'truce', 'black-deck-5-truce'],
+  103: ['white', 'madman', 'white-deck-4-madman', [{ from: 'e2', to: 'g4' }]],
+  117: ['black', 'dark-mirror', 'black-deck-6-dark-mirror', [{ from: 'h4', to: 'g5' }]],
+  119: ['white', 'winged-victory', 'white-deck-3-winged-victory', { pieceId: 'white-pawn-g2', to: 'd4' }],
+}
+
+// The only variant movement powers here are the cursed Queen and its Pawn composite.
+function geometry(model: GameState, piece: PieceState, to: string, capture: boolean): boolean {
+  if (!piece.square || to === piece.square) return false
+  const [x, y] = xy(piece.square), [tx, ty] = xy(to), dx = tx - x, dy = ty - y
+  if (model.effects.some(effect => effectType(effect) === 'forbidden-city') && to === 'b5') return false
+  if (model.underElfHill?.some(entry => entry.returned && entry.pieceId === piece.id)) return false
+  const composite = model.effects.some(effect => effectType(effect) === 'confabulation') && piece.id === 'white-pawn-c2'
+  const cursed = piece.id === 'white-queen-d1' && model.effects.some(effect => effectType(effect) === 'curse') || composite
+  if (cursed && Math.max(Math.abs(dx), Math.abs(dy)) > 2) return false
+  const roles = composite ? ['pawn', 'queen'] : [piece.role]
+  return roles.some(role => {
+    if (role === 'knight') return Math.abs(dx) * Math.abs(dy) === 2
+    if (role === 'king') return Math.max(Math.abs(dx), Math.abs(dy)) === 1
+    if (role === 'pawn') {
+      const forward = piece.owner === 'white' ? 1 : -1
+      if (capture) return Math.abs(dx) === 1 && dy === forward
+      if (dx) return false
+      if (dy === forward) return true
+      return dy === 2 * forward && (piece.owner === 'white' ? y <= 1 : y >= 6)
+        && !model.pieces.some(p => p.square === String.fromCharCode(x + 97) + (y + forward + 1))
+    }
+    const aligned = role === 'bishop' ? Math.abs(dx) === Math.abs(dy)
+      : role === 'rook' ? dx === 0 || dy === 0 : dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy)
+    if (!aligned) return false
+    for (let n = 1; n < Math.max(Math.abs(dx), Math.abs(dy)); n++) {
+      const intermediate: string = String.fromCharCode(x + n * Math.sign(dx) + 97) + (y + n * Math.sign(dy) + 1)
+      if (model.pieces.some(p => p.square === intermediate) || intermediate === 'b5' && model.effects.some(e => effectType(e) === 'forbidden-city')) return false
+    }
+    return true
+  })
+}
+
+function rawCheck(model: GameState, color: Color): boolean {
+  const king = model.pieces.find(piece => piece.owner === color && piece.royal && piece.zone === 'board')
+  return !!king && model.pieces.some(piece => piece.zone === 'board' && piece.owner !== color && geometry(model, piece, king.square!, true))
+}
+
+function board(model: GameState): string {
+  const letters = { pawn: 'p', knight: 'n', bishop: 'b', rook: 'r', queen: 'q', king: 'k' }
+  return Array.from({ length: 8 }, (_, i) => {
+    let rank = '', empty = 0
+    for (let file = 0; file < 8; file++) {
+      const piece = model.pieces.find(p => p.square === String.fromCharCode(97 + file) + (8 - i))
+      if (!piece) { empty++; continue }
+      if (empty) rank += empty
+      empty = 0
+      const letter = letters[piece.role]
+      rank += piece.owner === 'white' ? letter.toUpperCase() : letter
+    }
+    return rank + (empty || '')
+  }).join('/')
+}
+
+test('iteration 209: all 122 actions independently accounted for', () => {
+  assert.equal(trace.seed, 860209)
+  assert.equal(trace.steps.length, 122)
+  assert.equal(rationales.length, trace.steps.length)
+  let actual = createGameState(trace.initial), expected = structuredClone(actual)
+  let fenTurn: Color = 'white', rights = 'KQkq', half = 0, full = 1
+  let checkpoint: { state: GameState; fenTurn: Color; rights: string; half: number; full: number } | undefined
+  let moves = 0, cardCount = 0
+  const at = (s: string) => { const piece = expected.pieces.find(p => p.square === s); assert.ok(piece, `piece at ${s}`); return piece }
+  const byId = (id: string) => { const piece = expected.pieces.find(p => p.id === id); assert.ok(piece); return piece }
+  const advance = (pawn = false, capture = false) => {
+    half = pawn || capture ? 0 : half + 1
+    if (expected.turn.color === 'black') full++
+    fenTurn = other(expected.turn.color)
+    expected.turn.phase = 'afterMove'; expected.turn.moveMade = true; expected.enPassant = []
+    delete expected.chaosForbidden; delete expected.plotsAllowances
+  }
+  const save = () => { checkpoint = { state: structuredClone(expected), fenTurn, rights, half, full } }
+  for (const [index, step] of trace.steps.entries()) {
+    const n = index + 1, action = structuredClone(step.action), actionBefore = structuredClone(action)
+    assert.ok(rationales[index]!.startsWith(`${n} `))
+    const before = structuredClone(actual)
+    const actor = expected.turn.color
+    const oldHistoryLength = expected.history.length
+    if (action.type === 'move') {
+      assert.ok(typeof action.from === 'string' && typeof action.to === 'string')
+      const from = action.from, to = action.to
+      assert.ok(rationales[index]!.includes(`${from}-${to}`), 'reviewed exact move command')
+      assert.equal(expected.turn.moveMade, false)
+      const piece = at(from), victim = expected.pieces.find(p => p.square === to)
+      assert.equal(piece.owner, actor); assert.ok(!victim || victim.owner !== actor)
+      assert.ok(geometry(expected, piece, to, !!victim), `${n}: independent movement geometry`)
+      assert.ok(!victim || !expected.effects.some(e => effectType(e) === 'truce'), 'no capture under Truce')
+      assert.equal(action.promotion, undefined)
+      save()
+      if (victim) { assert.equal(victim.royal, false); victim.zone = 'captured'; victim.square = null; victim.capturedBy = actor }
+      piece.square = square(to)
+      const event: GameEvent = { type: 'move', from: square(from), to: square(to), ...(victim ? { capturedId: victim.id } : {}) }
+      expected.history.push(event)
+      const composite = piece.id === 'white-pawn-c2' && expected.effects.some(e => effectType(e) === 'confabulation')
+      expected.shieldMove = { player: actor, pieceIds: composite ? [piece.id, 'white-queen-d1'] : [piece.id], capturedOpponent: !!victim }
+      advance(piece.originalRole === 'pawn', !!victim)
+      if (piece.role === 'pawn' && from[0] === to[0] && Math.abs(Number(from[1]) - Number(to[1])) === 2) {
+        expected.enPassant = [{ target: square(from[0] + String((Number(from[1]) + Number(to[1])) / 2)), pawnId: piece.id }]
+      }
+      if (piece.royal) rights = rights.replace(actor === 'white' ? /[KQ]/g : /[kq]/g, '')
+      expected.effects = expected.effects.filter(effect => effectType(effect) !== 'panic')
+      if (n === 95) {
+        assert.equal(rawCheck(expected, 'black'), true)
+        for (const effect of expected.effects.filter(e => effectType(e) === 'truce') as Array<{ owner: Color; card: { id: string; cardId: string } }>) expected.players[effect.owner].discard.push(effect.card)
+        expected.effects = expected.effects.filter(e => effectType(e) !== 'truce')
+      }
+      moves++
+    } else if (action.type === 'endTurn') {
+      assert.equal(expected.turn.moveMade, true)
+      assert.equal(rawCheck(expected, actor), false, `${n}: ending actor safe`)
+      expected.turn = { color: other(actor), phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } }
+      delete expected.shieldMove; delete expected.chaosForbidden; delete expected.plotsAllowances
+      if (n === 4) expected.underElfHill = [{ pieceId: 'white-king-e1', player: 'white', returning: true }]
+      if (n === 7) expected.underElfHill = []
+    } else if (action.type === 'returnKing') {
+      assert.equal(n, 5); assert.equal(action.to, 'e1'); assert.equal(expected.turn.color, 'white')
+      assert.equal(expected.pieces.some(p => p.square === 'e1'), false)
+      Object.assign(byId('white-king-e1'), { zone: 'board', square: 'e1' })
+      expected.underElfHill = [{ pieceId: 'white-king-e1', player: 'white', returning: true, returned: true }]
+    } else if (action.type === 'playCard') {
+      const fixture = cards[n]; assert.ok(fixture)
+      const [owner, cardId, id, target] = fixture
+      assert.deepEqual(action, { type: 'playCard', cardId, cardInstanceId: id, ...(target === undefined ? {} : { target }) })
+      const definition = CARD_CATALOG[cardId]!
+      assert.equal(expected.turn.cardPlays[owner], 0)
+      assert.ok(definition.timing.includes(owner === actor ? expected.turn.phase : 'afterOpponentMove'))
+      assert.ok(expected.players[owner].hand.some(card => card.id === id && card.cardId === cardId))
+      if (n === 20 || n === 35) {
+        assert.ok(checkpoint)
+        expected = structuredClone(checkpoint.state)
+        ;({ fenTurn, rights, half, full } = checkpoint)
+        expected.chaosForbidden = { player: actor, movement: n === 20 ? 'white-pawn-f2:f2:f3' : 'black-rook-h8:h8:h6' }
+      }
+      const player = expected.players[owner], physicalCard = player.hand.find(card => card.id === id)!
+      player.hand = player.hand.filter(card => card.id !== id)
+      const drawn = player.deck.shift(); if (drawn) player.hand.push(drawn)
+      if (!definition.continuing) player.discard.push(physicalCard)
+      expected.turn.cardPlays[owner]++
+      let event: GameEvent = { type: 'cardPlayed', cardId, ...(target === undefined ? {} : { target: target as GameEvent['target'] }), movement: [], preservePreviousMove: true }
+      if ([1,34,38,103,117,119].includes(n)) {
+        if (n === 34) { // Save before the card, so cancellation reverses expenditure and replacement draw too.
+          checkpoint = { state: structuredClone(before), fenTurn, rights, half, full }
+        }
+        event.preservePreviousMove = false
+      }
+      if (n === 1) {
+        const king = at('e1'); king.square = null; king.zone = 'away'; rights = 'kq'
+        expected.underElfHill = [{ pieceId: king.id, player: 'white', returning: false }]
+        expected.shieldMove = { player: owner, pieceIds: [], capturedOpponent: false }; advance()
+      } else if (n === 9) expected.effects.push({ type: 'curse', owner, card: physicalCard, pieceId: at('d1').id })
+      else if (n === 20 || n === 35) {
+        event = { type: 'cardPlayed', cardId, player: owner, movement: n === 20 ? [{ from: 'f3', to: 'f2' }] : [{ from: 'h6', to: 'h8' }], preservePreviousMove: true }
+      } else if (n === 24) expected.effects.push({ type: 'panic', owner, player: 'white', durationMs: 15000 })
+      else if (n === 26) {
+        event = { type: 'cardPlayed', cardId, player: owner, preservePreviousMove: true, movement: [] }
+        expected.plotsAllowances = [{ player: owner, remaining: 2, eligibleCards: [], window: { phase: 'beforeMove', moveMade: false, reaction: { type: 'move', from: 'h5', to: 'h4' }, shieldMove: undefined, capture: undefined, cardResponse: undefined, fogCheckpoint: undefined, legacyCapture: undefined } }]
+      } else if (n === 30) {
+        assert.equal(expected.pieces.some(p => p.square === 'b5'), false)
+        expected.effects.push({ type: 'forbidden-city', owner, card: physicalCard, square: 'b5' })
+        event = { type: 'cardPlayed', cardId, target: 'b5' }
+      } else if (n === 34) {
+        at('h8').square = 'h6'; rights = rights.replace('k', '')
+        event.movement = [{ from: 'h8', to: 'h6' }]
+        expected.shieldMove = { player: owner, pieceIds: ['black-rook-h8'], capturedOpponent: false }; advance()
+      } else if (n === 38) {
+        const queen = at('d1'), pawn = at('c2'); assert.ok(geometry(expected, queen, 'c2', true))
+        queen.square = null; queen.zone = 'away'
+        expected.effects.push({ type: 'confabulation', owner, card: physicalCard, pieceIds: [pawn.id, queen.id] })
+        event.movement = [{ from: 'd1', to: 'c2' }]
+        expected.shieldMove = { player: owner, pieceIds: [queen.id], capturedOpponent: false }; advance()
+      } else if (n === 41) {
+        const sources = ['h1','a8','h8'].map(at)
+        sources[0]!.square = 'h8'; sources[1]!.square = 'a1'; sources[2]!.square = 'a8'; rights = ''
+        event.movement = [{ from: 'h1', to: 'h8' }, { from: 'a8', to: 'a1' }, { from: 'h8', to: 'a8' }]
+      } else if (n === 56 || n === 89) expected.effects.push({ type: 'truce', owner, card: physicalCard })
+      else if (n === 67) {
+        const bishop = at('f8'), knight = at('g8'); bishop.square = 'g8'; knight.square = 'f8'
+        event.movement = [{ from: 'f8', to: 'g8' }, { from: 'g8', to: 'f8' }]
+      } else if (n === 70) {
+        const rook = at('a1'), knight = at('f8'); rook.square = 'f8'; knight.square = 'a1'
+        event.movement = [{ from: 'a1', to: 'f8' }, { from: 'f8', to: 'a1' }]
+      } else if (n === 103) {
+        assert.equal(at('f3').id, 'white-knight-g1'); at('e2').square = 'g4'
+        event.movement = [{ from: 'e2', to: 'g4' }]
+        expected.shieldMove = { player: owner, pieceIds: ['white-pawn-e2'], capturedOpponent: false }; advance(true)
+      } else if (n === 117) {
+        const pawn = at('h4'), victim = at('g5'); assert.equal(victim.id, 'white-pawn-g2')
+        victim.square = null; victim.zone = 'captured'; victim.capturedBy = owner; pawn.square = 'g5'
+        event.capturedId = victim.id; event.movement = [{ from: 'h4', to: 'g5' }]
+        expected.shieldMove = { player: owner, pieceIds: [pawn.id], capturedOpponent: true }; advance(true, true)
+      } else if (n === 119) {
+        const pawn = byId('white-pawn-g2'); assert.equal(pawn.zone, 'captured'); assert.equal(pawn.capturedBy, 'black')
+        assert.equal(expected.pieces.some(p => p.square === 'd4'), false)
+        pawn.zone = 'board'; pawn.square = 'd4'; delete pawn.capturedBy
+        expected.shieldMove = { player: owner, pieceIds: [], capturedOpponent: false }; advance(true)
+      }
+      expected.history.push(event)
+      cardCount++
+    } else assert.fail(`Unexpected action ${action.type}`)
+
+    // All generated double-step opportunities have no adjacent opponent Pawn;
+    // raw FEN therefore uses '-', although the full physical opportunity survives.
+    for (const ep of expected.enPassant) {
+      const victim = byId(ep.pawnId), [vx, vy] = xy(victim.square!)
+      assert.equal(expected.pieces.some(p => p.zone === 'board' && p.owner !== victim.owner && p.role === 'pawn' && p.square
+        && xy(p.square)[1] === vy && Math.abs(xy(p.square)[0] - vx) === 1), false)
+    }
+    expected.fen = `${board(expected)} ${fenTurn[0]} ${rights || '-'} - ${half} ${full}`
+    const result = applyAction(actual, action)
+    assert.deepEqual(actual, before, `${n}: input state immutable`)
+    assert.deepEqual(action, actionBefore, `${n}: command immutable`)
+    assert.ok(result.ok, `${n}: ${rationales[index]}`)
+    actual = result.state
+    for (const key of ['pieces','players','turn','effects','history','fen','enPassant','orientation','outcome'] as const) assert.deepEqual(actual[key], expected[key], `${n}: ${key}`)
+    for (const key of ['chaosForbidden','plotsExecution','shieldMove','riposteSkipped','riposteCheckDeferred'] as const) assert.deepEqual(actual[key], expected[key], `${n}: ${key}`)
+    for (const key of ['plotsAllowances','fogLocked','riposteLostMoves','underElfHill'] as const) assert.deepEqual(actual[key] ?? [], expected[key] ?? [], `${n}: ${key}`)
+    assert.equal(actual.pendingRescue ?? null, null, `${n}: no provisional self-check`)
+    assert.equal(actual.pendingAbduction ?? null, null); assert.equal(actual.pendingDoomsayer ?? null, null)
+    assert.equal(rawCheck(expected, 'white'), false, `${n}: independent White royal threat`)
+    assert.equal(rawCheck(expected, 'black'), n === 95 || n === 96, `${n}: independent Black royal threat`)
+    const queried = structuredClone(actual)
+    assert.equal(isKingInCheck(actual, 'white'), false)
+    assert.equal(isKingInCheck(actual, 'black'), n === 95 || n === 96)
+    legalDests(actual)
+    if (action.type === 'playCard') cardPlayTargets(actual, action.cardId)
+    assert.deepEqual(actual, queried, `${n}: queries immutable`)
+    if (action.type === 'endTurn' || action.type === 'returnKing') assert.equal(actual.history.length, oldHistoryLength)
+  }
+  assert.equal(moves, 50); assert.equal(cardCount, 17)
+  assert.equal(actual.fen, '2n2rb1/r1pbp3/1p2kp1p/p5p1/P2P2P1/1P1pq2P/2RP1PB1/nPBNNK2 w - - 1 28')
+})
+
+test('random campaign iteration 209', () => {
+  replayTrace(trace)
+})
