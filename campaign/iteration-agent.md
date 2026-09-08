@@ -38,6 +38,9 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    start that branch with `assert.ok(typeof action.from === 'string' && typeof action.to === 'string')`
    before `parseSquare`, indexing, or string operations. This is a recurring
    compile failure; use this exact narrowing before adding movement assertions.
+   Immediately copy those narrowed properties into local constants if a callback
+   uses them (`const from = action.from, to = action.to`); TypeScript does not
+   retain mutable property narrowing inside callbacks.
    A narrowed string is still not the `SquareName` union: when assigning a
    validated board square to a typed piece or en-passant record, import
    `SquareName` and cast only after confirming canonical square syntax. Give
@@ -56,6 +59,12 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    captor, including reaction/effect owners and Hostage's original attacker.
    Returning a piece or making it dead clears this field. Replay digests omit
    only this additive field to preserve historical traces; hashes do not test it.
+   For every row assert the exact active value or absence of `chaosForbidden`,
+   `plotsExecution`, `plotsAllowances`, `fogLocked`, `riposteLostMoves`,
+   `riposteSkipped`, and `riposteCheckDeferred`. Nullish empty-list normalization
+   is fine where those representations have identical semantics. A cancellation
+   assertion includes its full movement token; a pending rescue assertion includes
+   its pre-move board, FEN, en-passant, history position, and moved identities.
 6. Return `ITERATION_NNN_PASS` or `ITERATION_NNN_FINDING`, action/move/card counts,
    final FEN, exact gate results, and elapsed time. Parent verifies and commits.
 
