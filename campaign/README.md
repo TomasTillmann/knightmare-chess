@@ -65,3 +65,11 @@ check its valid color and captured-zone lifecycle; semantic capture assertions
 and dedicated eligibility regressions check the actual captor. Legacy physical
 projections retain their original fields. New iterations explicitly check the
 captor, including reaction owners and Hostage's original attacker.
+
+Iteration 152 exposed a cancellation restriction lost during failed-rescue rollback.
+The same metadata defect existed at 034 action 91 and 079 action 80. Their original
+traces remain intact; explicit corrected fingerprints cover each affected state
+and the following checkpoint copy. Every subsequent command remains legal, and
+the later states and final boards are unchanged. Both complete regressions remain
+active, with additional assertions that fail against the pre-fix engine. The
+152 audit records the paired-state comparison and separate red/green gates.
