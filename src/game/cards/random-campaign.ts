@@ -10,6 +10,8 @@ import { CARD_CATALOG } from './catalog.js';
 
 export interface RandomTrace {
   seed: number;
+  maxMoves?: number;
+  digestVersion?: 1 | 2;
   initial: CreateGameOptions;
   steps: Array<{ action: GameAction; expected: string }>;
   moves: number;
@@ -18,8 +20,17 @@ export interface RandomTrace {
   failure?: string;
 }
 
-export const digest = (state: GameState): string => createHash('sha256')
-  .update(JSON.stringify(state, (key, value) => key === 'capturedBy' ? undefined : value)).digest('hex');
+// Version 1 is only for comparing historical reviewed snapshots.
+export const digest = (state: GameState, version: 1 | 2 = 2): string => createHash('sha256')
+  .update(JSON.stringify(state, (key, value) => version === 1 && key === 'capturedBy' ? undefined : value)).digest('hex');
+
+const unresolved = (state: GameState): boolean => !state.outcome && !!(state.turn.moveMade
+  || state.pendingRescue || state.pendingAbduction || state.pendingDoomsayer
+  || state.underElfHill?.some(entry => entry.returning && !entry.returned));
+
+function checkMoveBound(maxMoves: number): void {
+  assert.ok(Number.isSafeInteger(maxMoves) && maxMoves >= 0, 'move bound must be a nonnegative safe integer');
+}
 
 export function maySampleCard(state: GameState, card: { id: string; cardId: string }, owner: 'white' | 'black'): boolean {
   const extra = state.plotsAllowances?.some(item => item.player === owner && item.remaining > 0 && item.eligibleCards.includes(card.id));
@@ -88,6 +99,11 @@ function checkTransition(before: GameState, action: GameAction, after: GameState
 }
 
 export function replayTrace(trace: RandomTrace): GameState {
+  assert.equal(trace.failure, undefined, trace.failure ?? 'trace generation failed');
+  const maxMoves = trace.maxMoves ?? 50;
+  checkMoveBound(maxMoves);
+  const version = trace.digestVersion ?? 1;
+  assert.ok(version === 1 || version === 2, 'unsupported trace digest version');
   let state = createGameState(trace.initial);
   checkState(state);
   for (const [index, step] of trace.steps.entries()) {
@@ -96,16 +112,24 @@ export function replayTrace(trace: RandomTrace): GameState {
     assert.equal(digest(state), original, `step ${index + 1}: input mutation`);
     assert.ok(result.ok, `step ${index + 1}: ${JSON.stringify(step.action)}`);
     checkTransition(state, step.action, result.state);
-    assert.equal(digest(result.state), step.expected, `step ${index + 1}: reviewed state changed`);
+    assert.equal(digest(result.state, version), step.expected, `step ${index + 1}: reviewed state changed`);
     state = result.state;
   }
   assert.equal(state.fen, trace.finalFen);
   assert.equal(trace.moves, trace.steps.filter(step => step.action.type === 'move').length);
-  assert.equal(trace.moves, 50, trace.failure ?? 'each iteration requires 50 regular moves, plus card actions');
+  assert.ok(trace.moves <= maxMoves, 'trace exceeds move bound');
+  assert.ok(!unresolved(state), 'trace ends with unresolved turn or pending choice');
   return state;
 }
 
-export function generateTrace(seed: number, progress?: (step: number, moves: number, state: GameState) => void): { trace: RandomTrace; review: string } {
+export function generateTrace(
+  seed: number,
+  maxMovesOrProgress: number | ((step: number, moves: number, state: GameState) => void) = 50,
+  progress?: (step: number, moves: number, state: GameState) => void,
+): { trace: RandomTrace; review: string } {
+  const maxMoves = typeof maxMovesOrProgress === 'number' ? maxMovesOrProgress : 50;
+  if (typeof maxMovesOrProgress === 'function') progress = maxMovesOrProgress;
+  checkMoveBound(maxMoves);
   let randomState = seed >>> 0;
   const random = () => {
     randomState += 0x6d2b79f5;
@@ -132,24 +156,17 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
   const initial = { hands: { white: white.slice(0, 5), black: black.slice(0, 5) },
     decks: { white: white.slice(5), black: black.slice(5) } };
   let state = createGameState(initial);
-  const trace: RandomTrace = { seed, initial, steps: [], moves: 0, finalFen: state.fen, sampledCards: {} };
+  const trace: RandomTrace = { seed, maxMoves, digestVersion: 2, initial, steps: [], moves: 0, finalFen: state.fen, sampledCards: {} };
   const lines = [`Seed ${seed}; standard starting board; shuffled catalog house-variant decks (rules §4.3).`,
     'Each row must be independently reviewed against rules.md/cards.md; hashes alone are not an oracle.'];
-  const unresolved = () => !state.outcome && (state.turn.moveMade || state.pendingRescue || state.pendingAbduction
-    || state.pendingDoomsayer || state.underElfHill?.some(entry => entry.returning && !entry.returned));
-  for (let index = 0; (trace.moves < 50 || unresolved()) && index < 400; index++) {
+  for (let index = 0; !state.outcome && (trace.moves < maxMoves || unresolved(state)); index++) {
     progress?.(index, trace.moves, state);
     const original = digest(state);
     let chosen: { action: GameAction; state: GameState } | undefined;
     const attempt = (action: GameAction): boolean => {
       const result = applyAction(state, action);
       assert.equal(digest(state), original, 'candidate evaluation mutated its input');
-      if (!result.ok || result.state.outcome && trace.moves < 50) return false;
-      // Mate and stalemate can become terminal only when the reaction window closes.
-      if (trace.moves < 50 && result.state.turn.moveMade) {
-        const closed = applyAction(result.state, { type: 'endTurn' });
-        if (closed.ok && closed.state.outcome) return false;
-      }
+      if (!result.ok) return false;
       chosen = { action, state: result.state };
       return true;
     };
@@ -201,7 +218,7 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
       for (const to of shuffle(underElfHillReturnSquares(state))) if (attempt({ type: 'returnKing', to })) break;
     } else if (state.pendingRescue) {
       cards(true);
-    } else if (trace.moves >= 50) {
+    } else if (trace.moves >= maxMoves) {
       attempt({ type: 'endTurn' });
     } else {
       if (!state.turn.moveMade && state.effects.some(effect => {
@@ -262,7 +279,6 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
     if (trace.failure) break;
   }
   trace.finalFen = state.fen;
-  if ((trace.moves < 50 || unresolved()) && !trace.failure) trace.failure = '400-action bound exhausted';
   lines.push(`FINAL ${JSON.stringify({ moves: trace.moves, fen: trace.finalFen, failure: trace.failure })}`);
   return { trace, review: lines.join('\n') + '\n' };
 }
