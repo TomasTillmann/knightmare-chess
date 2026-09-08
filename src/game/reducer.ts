@@ -5227,6 +5227,7 @@ function playCoup(state: GameState, target: unknown, cardInstanceId?: unknown): 
   if (moveLeavesRoyalInCheck(resolved, color, [king])) {
     return fizzleCard(state, 'coup', 'SELF_CHECK', cardInstanceId);
   }
+  resolved.fen = [boardFen(resolved), ...state.fen.split(' ').slice(1)].join(' ');
   const card = spendCard(resolved, 'coup', cardInstanceId, false);
   resolved.effects.push({ type: 'coup', owner: color, card, princeId: prince.id, kingId: king.id, princeRole: prince.role });
   resolved.history.push({ type: 'cardPlayed', cardId: 'coup', target: target as SquareName });
