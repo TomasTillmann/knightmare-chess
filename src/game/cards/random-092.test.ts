@@ -89,11 +89,11 @@ const rationales = [
   '76. d3xe4 captures physical Black pawn f7 and removes that check.',
   '77. White ends the completed turn.',
   '78. Before-move Pacifism marks own g5 pawn, retains its card and draws Long Jump.',
-  '79. Be6xg4 traverses f5 and captures the Crab; artwork expires Crab upon capture, bishop now checks Kf3.',
+  '79. Be6xg4 traverses f5 and captures the Crab at ply 35; rules §10 retains its transformation/card through the following move; bishop now checks Kf3.',
   '80. Black ends while checking the opponent.',
   '81. Qb1-e1 traverses c1/d1 but leaves Kf3 checked: provisional rescue only.',
   '82. Challenge names mobile Pe7; forced next mover suppresses Bg4 capture of Kf3 under 11.7, rescuing the move.',
-  '83. White ends with Black constrained to Pe7.',
+  '83. White ends with Black constrained to Pe7; Crab rescue window closes and its card is discarded.',
   '84. e7-e5 obeys Challenge through empty e6, expires it and creates e6 opportunity; bishop check resumes.',
   '85. Black ends while checking the opponent.',
   '86. Kf3-f2 steps out of the bishop diagonal.',
@@ -235,7 +235,12 @@ test('iteration 092: 112 independently reviewed actions and 50 regular commands'
     }
     if (number === 72) { relocate('black-bishop-f8', null, 'captured'); halfmove = 0; }
     if (number === 79) {
-      // KC7_card1 artwork explicitly expires Crab when captured or promoted.
+      const capturedAtPly = 2 * (Number(before.fen.split(' ')[5]) - 1) + (before.turn.color === 'black' ? 1 : 0);
+      assert.equal(capturedAtPly, 35, 'Crab capture age comes from the pre-action clock and mover');
+      expectedPieces.find(p => p.id === 'white-pawn-g2')!.capturedAtPly = capturedAtPly;
+    }
+    if (number === 83) {
+      // Rules §10 preserves the transformation through the immediately following move.
       expectedEffects = expectedEffects.filter(e => (e as Effect).type !== 'crab');
       expectedPlayers.white.discard.push({ id: 'white-hand-3-crab', cardId: 'crab' });
     }

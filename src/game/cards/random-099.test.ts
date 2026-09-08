@@ -132,8 +132,8 @@ const rationale = `
 118. Black Bf5-h7 crosses empty g6 diagonally, leaving the physical bishop on h7 for the reaction window.
 119. White's immediate Bog response truncates that two-square bishop move to g6; h7 becomes empty and no extra move clock advances.
 120. Black ends its shortened bishop move; White's reaction allowance does not consume its next allowance.
-121. White Ne2xd4 captures Black's Crab; White is its captor and the attached Crab card expires to Black's discard.
-122. White ends its fiftieth Regular Move; Black receives a fresh turn and both surviving continuing effects persist.
+121. White Ne2xd4 captures Black's Crab; White is its captor and the attached Crab card remains suspended for immediate return.
+122. White ends its fiftieth Regular Move; Black receives a fresh turn and the captured Crab remains within its following-move return window alongside the other continuing effects.
 `.trim().split('\n')
 
 const cardMoves: Record<number, string[]> = {
@@ -221,9 +221,9 @@ test('iteration 099 independently verifies every physical transition and full in
         revoke(victim, action.to)
         victim.square = null; victim.zone = 'captured'; victim.capturedBy = actor
         if (victim.id === 'black-pawn-c7') {
-          const crab = { id: 'black-hand-3-crab', cardId: 'crab' }
-          expected.effects = expected.effects.filter(e => (e as { type: string }).type !== 'crab')
-          expected.players.black.discard.push(crab)
+          // Independent pre-action move clocks place this capture at ply 56.
+          victim.capturedAtPly = (full - 1) * 2 + (fenTurn === 'black' ? 1 : 0)
+          assert.equal(victim.capturedAtPly, 56, why)
         }
       }
       reset = mover.role === 'pawn' || !!victim

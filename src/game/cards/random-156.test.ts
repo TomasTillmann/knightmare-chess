@@ -76,10 +76,10 @@ const review = `
 65 end | Black finishes the safe King move.
 66 c5-d6 | White Crab moves one forward diagonal into empty d6; King c6 remains safe.
 67 end | White completes the Crab move.
-68 e7-d6 | Black e7 Pawn captures the Crab diagonally; capture discards Crab and credits Black.
-69 end | Black finishes; there are no Continuing Effects left.
-70 a4-b3 | White Queen moves one diagonal step into empty b3.
-71 end | White completes the quiet Queen move.
+68 e7-d6 | Black e7 Pawn captures the Crab diagonally; credit Black and retain Crab through this move and the following move.
+69 end | Black finishes; captured Crab retains its transformation during White's following move.
+70 a4-b3 | White Queen moves one diagonal step into empty b3; the captured Crab's rescue window remains open.
+71 end | White completes the following move; the unrescued Crab transformation expires and its card is discarded.
 72 d8-e8 | Black Queen moves horizontally to the vacated royal starting square.
 73 end | Black completes the quiet Queen move.
 74 b3-b1 | White Queen crosses empty b2 down the file into empty b1.
@@ -200,12 +200,19 @@ test('iteration 156 independently reviewed physical board and complete obligatio
   type Snapshot = { pieces: PieceState[]; effects: Effect[]; ep: GameState['enPassant']; active: Color; actor: Color;
     moved: boolean; half: number; full: number; rights: string; allowances: typeof allowances };
   let previous: Snapshot | undefined;
+  // FEN advances after movement; the after-move window still belongs to that move.
+  const currentPly = () => 2 * (full - 1) + Number(active === 'black') - Number(moved);
   const capture = (victim: PieceState, captor: Color) => {
     assert.equal(victim.royal, false);
     assert.ok(!effects.some(e => e.type === 'pacifism' && e.pieceId === victim.id));
     victim.zone = 'captured'; victim.square = null; victim.capturedBy = captor;
-    for (const e of effects.filter(e => e.pieceId === victim.id)) players[e.owner].discard.push(e.card);
-    effects = effects.filter(e => e.pieceId !== victim.id);
+    for (const e of effects.filter(e => e.pieceId === victim.id)) {
+      if (e.type === 'crab') {
+        victim.capturedAtPly = currentPly();
+        assert.equal(victim.capturedAtPly, 31, 'Crab capture ply independently derived from pre-action FEN and turn');
+      } else players[e.owner].discard.push(e.card);
+    }
+    effects = effects.filter(e => e.pieceId !== victim.id || e.type === 'crab');
   };
   const move = (from: string, to: string, special = false) => {
     const piece = at(pieces, from)!; assert.ok(piece); assert.equal(piece.owner, actor);
@@ -290,6 +297,12 @@ test('iteration 156 independently reviewed physical board and complete obligatio
       if (!['pacifism', 'crab', 'peace-talks'].includes(command!)) player.discard.push(card);
       player.hand.push(player.deck.shift()!); allowances[owner]++;
     }
+    effects = effects.filter(effect => {
+      const piece = pieces.find(p => p.id === effect.pieceId)!;
+      if (effect.type !== 'crab' || piece.capturedAtPly === undefined || currentPly() <= piece.capturedAtPly + 1) return true;
+      players[effect.owner].discard.push(effect.card);
+      return false;
+    });
     const result = applyAction(state, action);
     assert.deepEqual(state, original, `row ${n}: input-state immutability including capturedBy`);
     assert.ok(result.ok, `row ${n}: ${rationale}`); state = result.state;

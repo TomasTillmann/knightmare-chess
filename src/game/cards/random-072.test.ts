@@ -10,7 +10,7 @@ import { CARD_CATALOG } from './catalog.js'
 import { replayTrace, type RandomTrace } from './random-campaign.js'
 
 // Independently reviewed in order using rules §§8–11, 13–14, 19.2 and cards.md.
-// Crab artwork KC7_card1 explicitly expires its effect on capture or promotion.
+// Rules §10 retain a captured transformation through the following move's end.
 const rationales = [
   '1. f2-f4 crosses empty f3; pawn double-step creates f3 en passant and leaves e1 safe.',
   '2. White ends its completed move; Black receives the f3 reply opportunity.',
@@ -122,10 +122,10 @@ const rationales = [
   '108. d5-b7 Queen crosses c6 and reaches empty b7.',
   '109. Challenge names the opposing a2 Rook, which can legally capture b2; Black must use that physical Rook next.',
   '110. White ends; Challenge carries into Black’s turn.',
-  '111. a2-b2 uses the challenged Rook and captures the Crab; Challenge is fulfilled and Crab expires on capture per artwork.',
-  '112. Black ends; Rook b2 threatens rank two, not White King d1.',
-  '113. f5-g4 Bishop moves one diagonal square within Curse.',
-  '114. White ends after its quiet Bishop move.',
+  '111. a2-b2 uses the challenged Rook and captures the Crab; Challenge is fulfilled, while Crab and its card remain retained.',
+  '112. Black ends the captured ply; Crab remains retained and Rook b2 threatens rank two, not White King d1.',
+  '113. f5-g4 Bishop moves one diagonal square within Curse; the captured Crab remains transformed through this following move.',
+  '114. White ends after its quiet Bishop move; the captured Crab transformation expires and its card is discarded.',
   '115. Resurrection returns captured Black original f7 Pawn to empty g7, a legal initial pawn square; move consumed and pawn clock reset.',
   '116. Black ends after Resurrection; White receives its ordinary turn.',
   '117. d1-c2 King move enters Rb2 check; it is provisional pending a same-turn rescue, never a legal completed turn.',
@@ -176,7 +176,10 @@ test('iteration 072 independently reviewed deterministic campaign', () => {
       assert.equal(!!before.pendingRescue, false)
       assert.equal(state.fen, before.fen)
       assert.deepEqual(state.pieces, before.pieces)
-      assert.deepEqual(state.players, before.players)
+      assert.deepEqual(state.players, n === 114 ? {
+        ...before.players,
+        white: { ...before.players.white, discard: [...before.players.white.discard, { id: 'white-deck-3-crab', cardId: 'crab' }] },
+      } : before.players)
       assert.deepEqual(state.turn, { color: before.turn.color === 'white' ? 'black' : 'white', phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } })
     } else if (action.type === 'playCard') {
       const owner = before.players.white.hand.some(c => c.id === action.cardInstanceId) ? 'white' : 'black'
@@ -233,7 +236,30 @@ test('iteration 072 independently reviewed deterministic campaign', () => {
   assert.equal(at(88, 'black-pawn-a7').zone, 'captured')
   assert.equal(at(111, 'black-rook-a8').square, 'b2')
   assert.equal(at(111, 'white-pawn-b2').zone, 'captured')
-  assert.deepEqual(states[111]!.effects, [states[12]!.effects[0], states[69]!.effects[2]])
+  const preCaptureFen = states[110]!.fen.split(' ')
+  const capturePly = (Number(preCaptureFen[5]) - 1) * 2 + (preCaptureFen[1] === 'b' ? 1 : 0)
+  assert.equal(at(110, 'white-pawn-b2').capturedAtPly, undefined)
+  for (const [n, age] of [[111, 1], [112, 1], [113, 2], [114, 2]] as const) {
+    assert.deepEqual(at(n, 'white-pawn-b2'), {
+      ...at(110, 'white-pawn-b2'), square: null, zone: 'captured', capturedAtPly: capturePly, capturedBy: 'black',
+    })
+    const fen = states[n]!.fen.split(' ')
+    assert.equal((Number(fen[5]) - 1) * 2 + (fen[1] === 'b' ? 1 : 0) - at(n, 'white-pawn-b2').capturedAtPly!, age)
+  }
+  for (const n of [111, 112, 113]) {
+    assert.deepEqual(states[n]!.effects, [states[12]!.effects[0], states[34]!.effects[1], states[69]!.effects[2]])
+    assert.deepEqual(states[n]!.players, states[110]!.players)
+  }
+  assert.deepEqual(states[114]!.effects, [states[12]!.effects[0], states[69]!.effects[2]])
+  const crabCard = { id: 'white-deck-3-crab', cardId: 'crab' }
+  for (const n of [110, 111, 112, 113, 114]) {
+    for (const owner of ['white', 'black'] as const) {
+      for (const pile of ['hand', 'deck', 'discard'] as const) {
+        assert.deepEqual(states[n]!.players[owner][pile].filter(c => c.id === crabCard.id),
+          n === 114 && owner === 'white' && pile === 'discard' ? [crabCard] : [])
+      }
+    }
+  }
   assert.equal(at(115, 'black-pawn-f7').square, 'g7')
   assert.equal(at(115, 'black-pawn-f7').zone, 'board')
   assert.equal(at(118, 'black-pawn-c7').zone, 'away')
