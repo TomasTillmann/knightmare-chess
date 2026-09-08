@@ -68,7 +68,8 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    only this additive field to preserve historical traces; hashes do not test it.
    For every row assert the exact active value or absence of `chaosForbidden`,
    `plotsExecution`, `plotsAllowances`, `fogLocked`, `riposteLostMoves`,
-   `riposteSkipped`, and `riposteCheckDeferred`. Nullish empty-list normalization
+   `riposteSkipped`, `riposteCheckDeferred`, and `shieldMove` (full moved identities
+   and capture flag, including multi-piece moves). Nullish empty-list normalization
    is fine where those representations have identical semantics. A cancellation
    assertion includes its full movement token; a pending rescue assertion includes
    its pre-move board, FEN, en-passant, history position, and moved identities.
