@@ -36,6 +36,57 @@ const at = (state: State, square: string) =>
   state.pieces.find(piece => piece.zone === 'board' && piece.square === square);
 const card = (id: string, cardId: string) => ({ id, cardId });
 
+const blockedExtraMoveBogs = [
+  ['white castling king', '4k3/8/8/8/8/8/8/4K2R w K - 0 1', 'e1', 'g1', 'f1', 'a1'],
+  ['black castling king', '4k2r/8/8/8/8/8/8/4K3 b k - 0 1', 'e8', 'g8', 'f8', 'a8'],
+  ['white pawn', '7k/8/8/8/8/8/1P6/R6K w - - 0 1', 'a1', 'a3', 'a3', 'c3'],
+  ['black pawn', 'r6k/1p6/8/8/8/8/8/7K b - - 0 1', 'a8', 'a6', 'a6', 'c6'],
+  ['white rook', '7k/8/8/8/8/8/1R6/R6K w - - 0 1', 'a1', 'a3', 'a3', 'c3'],
+] as const;
+
+for (const [name, fen, from, to, extraFrom, extraTo] of blockedExtraMoveBogs) {
+  function blockedBog() {
+    const owner: Color = fen.includes(' b ') ? 'black' : 'white';
+    const reactor = other(owner);
+    const before = game({ fen, hands: { [owner]: ['merciless'], [reactor]: [BOG] } });
+    assert.equal(isKingInCheck(before, owner), false, 'initial fixture is legal');
+    assert.equal(isKingInCheck(before, reactor), false, 'initial opponent is not in check');
+    const actor = at(before, from)!;
+    const first = move(before, from, to);
+    assert.equal(at(first, to)?.id, actor.id, 'first move fixture is valid');
+    const extraActor = at(first, extraFrom)!;
+    const moved = applied(first, {
+      type: 'playCard', cardId: 'merciless', target: [{ from: extraFrom, to: extraTo }],
+    });
+    assert.equal(at(moved, extraTo)?.id, extraActor.id, 'extra move fixture is valid');
+    const input = structuredClone(moved);
+    const result = applyAction(moved, {
+      type: 'playCard', cardId: BOG, cardInstanceId: moved.players[reactor].hand[0]!.id,
+    } as Action);
+    return { input, moved, resolved: result.ok ? result.state : moved };
+  }
+
+  test(`Bog after Merciless cannot overlap ${name}: board identities stay unchanged`, () => {
+    const { input, resolved } = blockedBog();
+    assert.deepEqual(resolved.pieces, input.pieces);
+    assert.equal(resolved.fen.split(' ')[0], input.fen.split(' ')[0]);
+  });
+
+  test(`Bog after Merciless cannot overlap ${name}: occupied squares remain unique and royals survive`, () => {
+    const { input, resolved } = blockedBog();
+    const board = resolved.pieces.filter(piece => piece.zone === 'board');
+    assert.equal(new Set(board.map(piece => piece.square)).size, board.length);
+    assert.deepEqual(board.filter(piece => piece.role === 'king'),
+      input.pieces.filter(piece => piece.zone === 'board' && piece.role === 'king'));
+    assert.equal((resolved.fen.split(' ')[0].match(/[kK]/g) ?? []).length, 2);
+  });
+
+  test(`Bog after Merciless cannot overlap ${name}: attempted reaction leaves its input immutable`, () => {
+    const { input, moved } = blockedBog();
+    assert.deepEqual(moved, input);
+  });
+}
+
 // Official FAQ p. 13: an extra move is part of the total turn displacement.
 const extraMoveBogs = [
   ['Merciless north', '7k/8/8/8/8/8/8/R6K w - - 7 1', 'merciless', 'a1', 'a3', 'a6', 'a2'],
