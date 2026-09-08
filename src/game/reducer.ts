@@ -7318,6 +7318,8 @@ function settlePendingRescue(
     result.state.pendingRescue = null;
     return result;
   }
+  if (result.state.playedCards?.at(-1)?.player !== beforeCard.turn.color
+    && hasAfterMoveRescue(result.state, movedPieces)) return result;
 
   const recorded = result.state.history.at(-1);
   const cardEvent = recorded?.type === 'cardFizzled'
