@@ -39,6 +39,10 @@ targets, and the board; this is not a uniform distribution over reachable positi
 Terminal candidates are avoided to pursue 50 actual regular moves. Such conditioning
 must be disclosed in coverage reports. A coverage audit is required after each 10
 completed iterations; retain tests and improve subsequent sampling for gaps.
+From iteration 173 (and regenerated 171), candidate screening also checks outcomes
+deferred until `endTurn`. Original 171 reached a valid 35-move checkmate before its
+terminal handoff was excluded by the sampler; `171.stalled.json/.txt` and its full
+historical regression remain preserved. Iteration 172 retains its earlier trace.
 
 Completion requires parent-verified traces, tests, per-action reviews, 30 coverage
 audits, resolved confirmed findings, a full engine test pass, and typecheck.

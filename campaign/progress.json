@@ -1795,6 +1795,16 @@
       "status": "passed",
       "finalFen": "1n2q1nr/1prp1k2/p3pppP/bp2PQ2/3b1P1P/2N2R2/PPP1K2P/R1B4B b - - 0 26",
       "testCommit": "437db65"
+    },
+    {
+      "id": 172,
+      "agent": "iteration_172",
+      "seed": 860172,
+      "reviewedActions": 113,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1nr1k3/6b1/3nP3/p3p1PR/2p1P3/p1P2P2/1P2Q3/R4K1N w - - 5 27",
+      "testCommit": "61cc60f"
     }
   ],
   "coverageAudits": [
@@ -1902,12 +1912,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 170,
-    "tests": 5173,
-    "passed": 5173,
+    "afterIteration": 172,
+    "tests": 5176,
+    "passed": 5176,
     "failed": 0,
-    "seconds": 40.494,
-    "scope": "All engine tests and numbered iterations through 170; unfinished sampler completion regression excluded"
+    "seconds": 39.656,
+    "scope": "All engine tests and numbered iterations through172 except unfinished171; sampler fix included"
   },
   "performanceFixes": [
     {
@@ -1949,5 +1959,14 @@
     "fixCommit": "5569a83",
     "verification": "verify-sampler-abduction.md",
     "originalTrace": "iterations/069.stalled.json"
+  },
+  "samplerTerminalFix": {
+    "fromIteration": 173,
+    "regeneratedIteration": 171,
+    "regressionCommit": "a646669",
+    "fixCommit": "3131b92",
+    "audit": "audit-terminal.md",
+    "originalTrace": "iterations/171.stalled.json",
+    "historicalRegressionCommit": "31f3026"
   }
 }
