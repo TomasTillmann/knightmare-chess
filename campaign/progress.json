@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 173,
+  "nextIteration": 178,
   "coverageAuditsCompleted": 17,
   "iterations": [
     {
@@ -1797,6 +1797,24 @@
       "testCommit": "437db65"
     },
     {
+      "id": 171,
+      "agent": "iteration_171",
+      "seed": 860171,
+      "reviewedActions": 106,
+      "reviewedMoves": 43,
+      "status": "fixed",
+      "finalFen": "4kn2/5pR1/3pp3/P3bbp1/1P2K1P1/B2PPP2/2q2N1P/1R3Q2 w - - 3 25",
+      "rejectedFinalAction": true,
+      "observedFinalFenBeforeFix": "4kn2/5pR1/3pp3/P3bbp1/1P2K1P1/B2PPP2/2q2N1P/1R3Q2 b - - 4 25",
+      "testCommit": "d3401ad",
+      "finding": "Forced March spent a card and move on immobilized targets before validating movement restrictions",
+      "fixCommit": "58e676f",
+      "focusedRegressionCommit": "a64e855",
+      "interactionRegressionCommit": "421fa47",
+      "audit": "audit-171.md",
+      "originalTerminalTrace": "iterations/171.stalled.json"
+    },
+    {
       "id": 172,
       "agent": "iteration_172",
       "seed": 860172,
@@ -1805,6 +1823,36 @@
       "status": "passed",
       "finalFen": "1nr1k3/6b1/3nP3/p3p1PR/2p1P3/p1P2P2/1P2Q3/R4K1N w - - 5 27",
       "testCommit": "61cc60f"
+    },
+    {
+      "id": 173,
+      "agent": "iteration_173",
+      "seed": 860173,
+      "reviewedActions": 108,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4rb1r/p2kppp1/2P3b1/1p1n2Pp/2P2P2/B2R4/3PPqP1/RN1QKBN1 w Q - 3 26",
+      "testCommit": "0f540d2"
+    },
+    {
+      "id": 174,
+      "agent": "iteration_174",
+      "seed": 860174,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2qk2rr/p3n2p/2pP4/4Pp1Q/Kp1P2BR/1P1bp3/p5P1/R1B5 w - - 2 27",
+      "testCommit": "17f06a1"
+    },
+    {
+      "id": 175,
+      "agent": "iteration_175",
+      "seed": 860175,
+      "reviewedActions": 125,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "3k2br/3P1Ppp/8/bp6/5rB1/2N1p1p1/p1n1PBR1/1R3K2 w - - 2 30",
+      "testCommit": "f63bee3"
     }
   ],
   "coverageAudits": [
@@ -1912,12 +1960,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 172,
-    "tests": 5176,
-    "passed": 5176,
+    "afterIteration": 174,
+    "tests": 5208,
+    "passed": 5208,
     "failed": 0,
-    "seconds": 39.656,
-    "scope": "All engine tests and numbered iterations through172 except unfinished171; sampler fix included"
+    "seconds": 39.084,
+    "scope": "All engine tests and numbered iterations through174, including Forced March fix"
   },
   "performanceFixes": [
     {
