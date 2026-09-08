@@ -79,8 +79,10 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    `plotsExecution`, `plotsAllowances`, `fogLocked`, `riposteLostMoves`,
    `riposteSkipped`, `riposteCheckDeferred`, and `shieldMove` (full moved identities
    and capture flag, including multi-piece moves). Nullish empty-list normalization
-   is fine where those representations have identical semantics. A cancellation
-   assertion includes its full movement token; a pending rescue assertion includes
+   is fine where those representations have identical semantics.
+   Non-move exchanges under §20 can legitimately have an empty moved-identity
+   list even when they replace the Regular Move; relocation alone is not movement.
+   A cancellation assertion includes its full movement token; a pending rescue assertion includes
    its pre-move board, FEN, en-passant, history position, and moved identities.
    Distinguish historical metadata from active permissions. Failed self-check
    rollbacks can retain an inert `shieldMove` while `moveMade` is false; independently
