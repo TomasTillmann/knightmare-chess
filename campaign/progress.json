@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 23,
+  "nextIteration": 26,
   "coverageAuditsCompleted": 2,
   "iterations": [
     {
@@ -237,6 +237,26 @@
       "status": "passed",
       "finalFen": "r5rb/ppB1p2p/2p1k2n/5pN1/P4PPP/NPP2P2/R1B5/4QKR1 w - - 1 26",
       "testCommit": "4fef256"
+    },
+    {
+      "id": 22,
+      "agent": "iteration_022",
+      "seed": 860022,
+      "reviewedActions": 129,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1nbk2n1/1pp1rpp1/4P1P1/2b4p/5p1P/3K4/1p1N4/3Rr3 b - - 2 29",
+      "testCommit": "625b57a"
+    },
+    {
+      "id": 23,
+      "agent": "iteration_023",
+      "seed": 860023,
+      "reviewedActions": 116,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4kb2/6p1/1rn5/2p1qp2/p3PP2/P1P4b/RBQ1P2P/4KN2 b - - 2 27",
+      "testCommit": "ae80279"
     }
   ],
   "coverageAudits": [
@@ -252,5 +272,13 @@
       "playedTypes": 66,
       "appliedTypes": 64
     }
-  ]
+  ],
+  "lastEngineGate": {
+    "afterIteration": 23,
+    "tests": 4915,
+    "passed": 4915,
+    "failed": 0,
+    "seconds": 57.77,
+    "scope": "Engine test files through iteration024; acceptance ledger remains authoritative"
+  }
 }
