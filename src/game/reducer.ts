@@ -611,15 +611,17 @@ export function legalDests(
   allowAfterMoveRescue = true,
   enforceVendetta = true,
   stopAfterFirst = false,
+  capturesOnly = false,
 ): Map<SquareName, SquareName[]> {
   if (state.turn.moveMade || state.outcome || pendingElfReturn(state)) return new Map();
   if (enforceVendetta && activeVendettas(state).length) {
-    const captures = vendettaCaptureDests(state);
+    const captures = vendettaCaptureDests(state, stopAfterFirst);
     if (captures.size) return captures;
   }
   const position = positionFor(state);
   const dests = chessgroundDests(position);
   const moveIsLegal = (piece: PieceState, to: SquareName): boolean => {
+    if (capturesOnly && !vendettaVictim(state, piece.square!, to)) return false;
     const promotions: Array<Role | undefined> = !confabulationForPiece(state, piece.id)
       && (piece.role === 'pawn' || hasCrabEffect(state, piece.id))
       && isPromotionSquare(state, piece.owner, to)
@@ -740,13 +742,8 @@ function vendettaVictim(
   })();
 }
 
-function vendettaCaptureDests(state: GameState): Map<SquareName, SquareName[]> {
-  const captures = new Map<SquareName, SquareName[]>();
-  for (const [from, dests] of legalDests(state, false, false)) {
-    const targets = dests.filter(to => vendettaVictim(state, from, to));
-    if (targets.length) captures.set(from, targets);
-  }
-  return captures;
+function vendettaCaptureDests(state: GameState, stopAfterFirst = false): Map<SquareName, SquareName[]> {
+  return legalDests(state, false, false, stopAfterFirst, true);
 }
 
 function expireVendettaIfBlocked(state: GameState): GameState {
@@ -755,7 +752,7 @@ function expireVendettaIfBlocked(state: GameState): GameState {
     state.turn.phase !== 'beforeMove'
     || pendingElfReturn(state)
     || !active.length
-    || vendettaCaptureDests(state).size
+    || vendettaCaptureDests(state, true).size
   ) return state;
 
   const next = structuredClone(state);
@@ -837,7 +834,7 @@ export function darkMirrorDests(state: GameState, from: SquareName): SquareName[
 
   const source = parseSquare(from);
   const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
-  const vendettaRequired = activeVendettas(state).length > 0 && vendettaCaptureDests(state).size > 0;
+  const vendettaRequired = activeVendettas(state).length > 0 && vendettaCaptureDests(state, true).size > 0;
   return [[forwardRank, -forwardFile], [-forwardRank, forwardFile]].flatMap(([sideFile, sideRank]) => {
     const file = squareFile(source) - forwardFile + sideFile;
     const rank = squareRank(source) - forwardRank + sideRank;
@@ -860,7 +857,7 @@ export function breakthroughDests(state: GameState, from: SquareName): SquareNam
     || captureForbidden(state, carrier) || hasCrabEffect(state, carrier.id)) return [];
   const source = parseSquare(from);
   const occupied = setupFor(state).board.occupied;
-  const required = activeVendettas(state).length > 0 && vendettaCaptureDests(state).size > 0;
+  const required = activeVendettas(state).length > 0 && vendettaCaptureDests(state, true).size > 0;
   return [...new Set(physicalPieces(state, carrier).flatMap(pawn => {
     if (pawn.originalRole !== 'pawn' || pawn.promoted) return [];
     const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
@@ -6060,7 +6057,7 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
   if (cardId === 'chaos' || cardId === 'knightmare' || cardId === 'think-again') return playChaos(state, target, cardInstanceId, cardId);
   const captureRequired = state.turn.phase === 'beforeMove'
     && activeVendettas(state).length > 0
-    && vendettaCaptureDests(state).size > 0;
+    && vendettaCaptureDests(state, true).size > 0;
   const result = playCardUnchecked(state, cardId, target, cardInstanceId);
   if (result.ok && cardId !== 'man-of-straw' && cardId !== 'passing-in-the-night' && !Object.hasOwn(SWAP_CARDS, cardId)
     && state.pieces.some(piece => {
@@ -6321,6 +6318,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
     if (state.outcome || state.turn.phase !== 'beforeMove' || state.turn.moveMade
       || cardAllowanceUsed(state, state.turn.color)
       || !state.players[state.turn.color].hand.some(card => card.cardId === cardId)) return [];
+    if (activeVendettas(state).length && vendettaCaptureDests(state, true).size) return [];
     const pawns = state.pieces.filter(piece =>
       piece.zone === 'board' && piece.square && hasUnpromotedPawn(state, piece),
     );
@@ -6927,7 +6925,7 @@ function movePiece(
   if (
     enforceVendetta
     && activeVendettas(state).length
-    && vendettaCaptureDests(state).size
+    && vendettaCaptureDests(state, true).size
     && !vendettaVictim(state, fromName, toName)
   ) return reject(state, 'ILLEGAL_MOVE', 'Vendetta requires an available capture.');
   const from = parseSquare(fromName);
