@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 71,
-  "coverageAuditsCompleted": 6,
+  "nextIteration": 73,
+  "coverageAuditsCompleted": 7,
   "iterations": [
     {
       "id": 1,
@@ -717,6 +717,19 @@
       "testCommit": "1b5b0dc"
     },
     {
+      "id": 69,
+      "agent": "iteration_069",
+      "seed": 860069,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "3n2k1/b1r4p/p4p1P/4pBp1/2p2P2/PPP1P1PR/8/2K3N1 w - - 2 27",
+      "testCommit": "5ac1153",
+      "finding": "Sampler omitted mandatory Abduction rescue; original stalled prefix retained, regenerated trace fully reviewed",
+      "samplerFixCommit": "5569a83",
+      "originalTrace": "iterations/069.stalled.json"
+    },
+    {
       "id": 70,
       "agent": "iteration_070",
       "seed": 860070,
@@ -761,6 +774,12 @@
     {
       "afterIteration": 60,
       "report": "coverage-060.md",
+      "playedTypes": 79,
+      "appliedTypes": 79
+    },
+    {
+      "afterIteration": 70,
+      "report": "coverage-070.md",
       "playedTypes": 79,
       "appliedTypes": 79
     }
