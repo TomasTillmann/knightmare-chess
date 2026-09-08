@@ -157,7 +157,9 @@ export function generateTrace(seed: number, progress?: (step: number, moves: num
           ...(target === undefined ? {} : { target }) };
         if (rescue) {
           const result = applyAction(state, action);
-          if (!result.ok || result.state.pendingRescue) continue;
+          if (!result.ok || result.state.pendingRescue && !result.state.pendingAbduction
+            && !result.state.pendingDoomsayer
+            && !result.state.underElfHill?.some(entry => entry.returning && !entry.returned)) continue;
         }
         if (attempt(action)) return true;
       }
