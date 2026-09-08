@@ -610,6 +610,7 @@ export function legalDests(
   state: GameState,
   allowAfterMoveRescue = true,
   enforceVendetta = true,
+  stopAfterFirst = false,
 ): Map<SquareName, SquareName[]> {
   if (state.turn.moveMade || state.outcome || pendingElfReturn(state)) return new Map();
   if (enforceVendetta && activeVendettas(state).length) {
@@ -642,6 +643,7 @@ export function legalDests(
       const capture = enPassantCapture(state, piece.square, opportunity.target);
       if (!capture) continue;
       if (!moveIsLegal(piece, opportunity.target)) continue;
+      if (stopAfterFirst) return new Map([[piece.square, [opportunity.target]]]);
       const targets = new Set(dests.get(piece.square) ?? []);
       targets.add(opportunity.target);
       dests.set(piece.square, [...targets]);
@@ -658,7 +660,10 @@ export function legalDests(
     const targets = new Set(dests.get(piece.square) ?? []);
     for (const square of pseudoDests(position, parseSquare(piece.square), context)) {
       const to = makeSquare(square);
-      if (moveIsLegal(piece, to)) targets.add(to);
+      if (moveIsLegal(piece, to)) {
+        if (stopAfterFirst) return new Map([[piece.square, [to]]]);
+        targets.add(to);
+      }
     }
     if (piece.royal && piece.originalRole === 'king') {
       for (const side of ['a', 'h'] as const) {
@@ -666,7 +671,10 @@ export function legalDests(
         for (const square of [kingCastlesTo(state.turn.color, side), rook]) {
           if (square === undefined) continue;
           const to = makeSquare(square);
-          if (moveIsLegal(piece, to)) targets.add(to);
+          if (moveIsLegal(piece, to)) {
+            if (stopAfterFirst) return new Map([[piece.square, [to]]]);
+            targets.add(to);
+          }
         }
       }
     }
@@ -678,7 +686,10 @@ export function legalDests(
         || !target.square
         || !pieceAttacksSquare(state, piece, target.square, position.board.occupied)
       ) continue;
-      if (moveIsLegal(piece, target.square)) targets.add(target.square);
+      if (moveIsLegal(piece, target.square)) {
+        if (stopAfterFirst) return new Map([[piece.square, [target.square]]]);
+        targets.add(target.square);
+      }
     }
     if (targets.size) dests.set(piece.square, [...targets]);
   }
@@ -698,7 +709,10 @@ export function legalDests(
     for (let square = 0; square < 64; square += 1) {
       const to = makeSquare(square);
       if (to === piece.square) continue;
-      if (moveIsLegal(piece, to)) targets.add(to);
+      if (moveIsLegal(piece, to)) {
+        if (stopAfterFirst) return new Map([[piece.square, [to]]]);
+        targets.add(to);
+      }
     }
     if (targets.size) dests.set(piece.square, [...targets]);
   }
@@ -770,7 +784,7 @@ function turnView(state: GameState, color: Color): GameState {
 }
 
 function hasLegalMove(state: GameState, color: Color): boolean {
-  return [...legalDests(turnView(state, color), false).values()].some(dests => dests.length > 0);
+  return legalDests(turnView(state, color), false, true, true).size > 0;
 }
 
 function isOrdinaryCheckmate(state: GameState, color: Color): boolean {
@@ -7466,14 +7480,14 @@ function expirePieceEffects(result: ApplyResult): ApplyResult {
 
 function hasBoardOrCardEscape(state: GameState): boolean {
   const color = state.turn.color;
-  return [...legalDests(state, isKingInCheck(state, color)).values()].some(dests => dests.length > 0)
+  return legalDests(state, isKingInCheck(state, color), true, true).size > 0
     || state.players[color].hand.some(card =>
       cardPlayTargets(state, card.cardId).some(target => {
         const result = playCard(state, card.cardId, target, card.id);
         if (!result.ok || result.state.outcome) return false;
         if (result.state.turn.moveMade) return !isKingInCheck(result.state, color);
         if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
-        return [...legalDests(result.state).values()].some(targets => targets.length > 0);
+        return legalDests(result.state, true, true, true).size > 0;
       }),
     );
 }
