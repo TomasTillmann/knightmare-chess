@@ -228,6 +228,12 @@ test('iteration 079 independently reviewed deterministic campaign', () => {
     assert.equal(states[step!]!.turn.moveMade, false);
   }
   assert.equal(piece(85, 'white-pawn-f2').square, 'b3');
+  // Iteration 152 exposed this historical §17.1 rollback: a failed rescue
+  // must retain Chaos's ban until a legal replacement move is completed.
+  const chaosBan = { player: 'white', movement: 'white-king-e1:d2:e3' };
+  assert.deepEqual(states[80]!.chaosForbidden, chaosBan);
+  assert.equal(states[81]!.chaosForbidden, undefined);
+  assert.deepEqual(states[81]!.chaosCheckpoint?.before.chaosForbidden, chaosBan);
   assert.equal(piece(85, 'white-pawn-e2').square, 'e4');
   assert.equal(piece(85, 'white-pawn-c2').square, 'c4');
   assert.deepEqual(states[88]!.effects.at(-1), { type: 'curse', owner: 'black', card: { id: 'black-deck-4-curse', cardId: 'curse' }, pieceId: 'white-bishop-f1' });
@@ -240,5 +246,10 @@ test('iteration 079 independently reviewed deterministic campaign', () => {
   assert.equal(piece(116, 'black-pawn-h7').square, 'h6');
   assert.equal(piece(116, 'black-pawn-e7').role, 'pawn');
   assert.equal(states[116]!.fen, '2b2q1Q/2rpp1br/5Pkp/1pp3p1/1nP1PN2/PPKP3N/1P5P/1B3n1R b - - 4 25');
-  assert.deepEqual(replayTrace(trace), states.at(-1));
+  // Preserve the original campaign artifact; only these two historical
+  // snapshots change when §17.1 preserves the ban across failed rescue.
+  const correctedTrace = structuredClone(trace);
+  correctedTrace.steps[79]!.expected = '8905d17320878a10ea68226563c7fece7639e171d287c5207b9c6a0727f1b8b9';
+  correctedTrace.steps[80]!.expected = '58a914708d5947ddf32b5405fdd86abb58927576fa01611ce09d8f33d45deca1';
+  assert.deepEqual(replayTrace(correctedTrace), states.at(-1));
 });

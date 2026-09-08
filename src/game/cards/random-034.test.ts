@@ -101,8 +101,8 @@ const rationales = [
   '88. King f7-e8 remains on Queen g6-f7-e8 ray: only provisional under §11.6, pending rescue prevents turn completion.',
   '89. White Think Again cancels that latest move, restores f7 and clocks, spends reaction/draws Fog of War; replacement must differ.',
   '90. Rook a8-b8 does not cure Queen g6 check on f7: provisional pending rescue, not a completed legal turn.',
-  '91. Black Cowardice d3-d1 has empty d2 path but fails to cure check; spend/draw Doppelganger and undo unsafe rook move.',
-  '92. King f7-g8 escapes: g7 blocks Queen g6 file and knight d7 does not attack g8.',
+  '91. Black Cowardice d3-d1 has empty d2 path but fails to cure check; spend/draw Doppelganger and undo unsafe rook move, retaining the Think Again ban under §17.1 (iteration 152 retrocorrection).',
+  '92. King f7-g8 escapes: g7 blocks Queen g6 file and knight d7 does not attack g8; completing the different move clears the active ban but retains it in the rollback checkpoint.',
   '93. Black ends only after this safe replacement; both turn allowances reset.',
   '94. Queen g6-f5 moves diagonally; g8 remains safe behind g7 on the f5-g6-h7 ray.',
   '95. White ends; Crab on a6 changes no relevant King attack.',
@@ -136,6 +136,11 @@ test('iteration 034 sequential semantic review', () => {
     assert.ok(result.ok, rationales[index]);
     const after = result.state;
     states.push(after);
+    if (step === 91) assert.deepEqual(after.chaosForbidden, { player: 'black', movement: 'black-king-e8:f7:e8' });
+    if (step === 92) {
+      assert.equal(after.chaosForbidden, undefined);
+      assert.deepEqual(after.chaosCheckpoint?.before.chaosForbidden, { player: 'black', movement: 'black-king-e8:f7:e8' });
+    }
     assert.equal(after.orientation, 0);
     assert.equal(after.outcome, null);
     assert.equal(!!after.pendingRescue, unsafe.has(step), rationales[index]);
@@ -228,5 +233,10 @@ test('iteration 034 sequential semantic review', () => {
   assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 9);
   assert.equal(final.pieces.filter(piece => piece.zone === 'captured').length, 6);
   assert.equal(final.fen, '6kr/1b1Nqrp1/p6n/1p1PBQ2/PpB1PP1b/3PR3/5P2/n3KRN1 w A - 3 25');
-  assert.deepEqual(replayTrace(trace), final);
+  // Iteration 152 corrected §17.1 rollback bookkeeping; preserve the original artifact
+  // and every command, changing only the two affected state hashes for replay.
+  const correctedTrace = structuredClone(trace);
+  correctedTrace.steps[90]!.expected = '6c57740c1398e0f05f5421653e365fe2ed1b551e1ca85c25733d53be5ca3cd1a';
+  correctedTrace.steps[91]!.expected = 'e6595e8a1dd13f950555700de93a42e1cf368e11b92265f81c20adc837e053dc';
+  assert.deepEqual(replayTrace(correctedTrace), final);
 });
