@@ -1,0 +1,977 @@
+{
+  "seed": 860156,
+  "initial": {
+    "hands": {
+      "white": [
+        "crab",
+        "breakthrough",
+        "think-again",
+        "chaos",
+        "winged-victory"
+      ],
+      "black": [
+        "peace-talks",
+        "pacifism",
+        "riposte",
+        "fireball",
+        "legacy"
+      ]
+    },
+    "decks": {
+      "white": [
+        "anathema",
+        "sanctuary",
+        "fireball",
+        "charge",
+        "lost-castle",
+        "resurrection",
+        "hostage",
+        "plots-within-plots",
+        "haunting-memories",
+        "pacifism",
+        "neutrality",
+        "blessing",
+        "fanatic",
+        "long-jump",
+        "crusade",
+        "squaring-the-circle",
+        "doppelganger",
+        "man-trap",
+        "treason",
+        "earthquake",
+        "assassin",
+        "doomsayer",
+        "masquerade",
+        "under-elf-hill",
+        "man-of-straw",
+        "forced-march",
+        "vendetta",
+        "holy-war",
+        "tournament",
+        "bog",
+        "revenge",
+        "evil-eye",
+        "heresy",
+        "dungeon",
+        "vulture",
+        "evangelists",
+        "holy-quest",
+        "curse",
+        "abduction",
+        "hidden-passage",
+        "irresistible-force",
+        "panic",
+        "merciless",
+        "split-knight",
+        "onslaught",
+        "challenge",
+        "toll",
+        "forbidden-city",
+        "disintegration",
+        "cowardice",
+        "siege",
+        "guardian",
+        "passing-in-the-night",
+        "cathedral",
+        "riposte",
+        "confabulation",
+        "peace-talks",
+        "figure-dance",
+        "bombard",
+        "mystic-shield",
+        "dubbing",
+        "fortification",
+        "knightmare",
+        "legacy",
+        "fog-of-war",
+        "betrayal",
+        "madman",
+        "fatal-attraction",
+        "truce",
+        "ghostwalk",
+        "dark-mirror",
+        "rebirth",
+        "no-quarter",
+        "annexation",
+        "coup"
+      ],
+      "black": [
+        "split-knight",
+        "chaos",
+        "winged-victory",
+        "haunting-memories",
+        "siege",
+        "masquerade",
+        "resurrection",
+        "merciless",
+        "guardian",
+        "anathema",
+        "breakthrough",
+        "revenge",
+        "crab",
+        "disintegration",
+        "doomsayer",
+        "betrayal",
+        "truce",
+        "holy-quest",
+        "squaring-the-circle",
+        "evil-eye",
+        "hostage",
+        "knightmare",
+        "vulture",
+        "assassin",
+        "bog",
+        "cathedral",
+        "man-of-straw",
+        "toll",
+        "holy-war",
+        "dubbing",
+        "fatal-attraction",
+        "ghostwalk",
+        "abduction",
+        "dungeon",
+        "think-again",
+        "rebirth",
+        "onslaught",
+        "confabulation",
+        "coup",
+        "madman",
+        "under-elf-hill",
+        "panic",
+        "curse",
+        "forced-march",
+        "cowardice",
+        "hidden-passage",
+        "fanatic",
+        "no-quarter",
+        "crusade",
+        "passing-in-the-night",
+        "vendetta",
+        "bombard",
+        "heresy",
+        "treason",
+        "dark-mirror",
+        "fortification",
+        "sanctuary",
+        "irresistible-force",
+        "man-trap",
+        "charge",
+        "challenge",
+        "earthquake",
+        "doppelganger",
+        "figure-dance",
+        "forbidden-city",
+        "mystic-shield",
+        "plots-within-plots",
+        "neutrality",
+        "annexation",
+        "fog-of-war",
+        "long-jump",
+        "blessing",
+        "evangelists",
+        "tournament",
+        "lost-castle"
+      ]
+    }
+  },
+  "steps": [
+    {
+      "action": {
+        "type": "move",
+        "from": "b2",
+        "to": "b4"
+      },
+      "expected": "c8525ac73e51b7e5fcbb0beb72821d01c231504bb2ab659f45a2fe60462e2819"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "bbfbc9f35c1d78d3ef31d91a5be743412ce87c4eb6eff2dd14ae6b771979a07a"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c7",
+        "to": "c6"
+      },
+      "expected": "533d1043d4ee19e09c4cf4ea588ea2f7f93d0e8645cc19140f12acdfe0474879"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "37abb152bc56a62390362b99cd04b81ff4b30a3fed4e46d014a53219b18cc58b"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b1",
+        "to": "a3"
+      },
+      "expected": "d5aad52b24568d4cfcf6dd17f2d9c5cbc2205f2f4d7e65ac54a3c8ea6d5d88b7"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "83c600008783a7845795c436d0bcd2f08617115f68b7f7a32b469d1ed28f67fa"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g7",
+        "to": "g5"
+      },
+      "expected": "2b14c112e595158e0492e65ff03ebe0e24baa2699d41b4acf2260877e5e62c9e"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "db9c9a416fc790a715dc65118db1aecdad7c98452e500054a1a3e606ffdb7942"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h2",
+        "to": "h4"
+      },
+      "expected": "063dcf3370f7197cdb65343880bf9db18003e40c08c78f1d3cec7fc63e0bde63"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "8ed5356e8abcd368a7edd206c9e5d58cdf948f7a5d5f734ecee75706dd0a5e8a"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d7",
+        "to": "d5"
+      },
+      "expected": "574b82549bc0102a6de47d001147b2e6b25fc715d220efe20b88906cbba33f8f"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "6480dccf3820a0f6363544e2678c5e75de1457c34f0e55c63071881f3d479de9"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a3",
+        "to": "b5"
+      },
+      "expected": "d1fdddf24177abe5b16c247cbe3c73f89dd9ece6a96441b1a52d682183e6f689"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "c0c4cbc169098364dd46aab46f6cbd1de5f076375010ceea294f544a6942c40c"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "pacifism",
+        "cardInstanceId": "black-hand-1-pacifism",
+        "target": "h7"
+      },
+      "expected": "5306be41a73842f5776ee904e5ba3eaf4d303da9d38830bdf89d6bab2a281696"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h7",
+        "to": "h6"
+      },
+      "expected": "06ef0b305a7cf0c339e3b3595887606f7914b715520304ef83532c22bc464234"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "c07fab631362257387c6b98c22f2caa8111ef979378cc95b6497d53239298e1f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c2",
+        "to": "c3"
+      },
+      "expected": "8f2b50eb949a9c7e02b7a011c62cbf5e3e953866e2ad9caabb12d62928f6f616"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "adf23db6f7754af4b0acbd7f6c0844a6a6a70f5ab42a62912da41fc2940ae9eb"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b8",
+        "to": "a6"
+      },
+      "expected": "05f3b11512f0a048352578b619ff57bea5f805259a7e4df848c2ca9f73ed24e5"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "think-again",
+        "cardInstanceId": "white-hand-2-think-again"
+      },
+      "expected": "e8e62fb30aee369debf752240b004933e939b8b3f6c5f09c16dfc067baf24a56"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c6",
+        "to": "b5"
+      },
+      "expected": "e37e31023ece5009252b525f541fc6d2201138b93bdad72fbbd9a81bf8bc5f74"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "a16c329da5003e403be25c82f36a246848682fa2ff5646cd8ceb00266322a92e"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a2",
+        "to": "a3"
+      },
+      "expected": "2d22c0de70b8535c3fb2c1a7aaf97a8e0e904b6987b9b19b2c97e80ad275cc8b"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "3b3338573b91d89a999f7a8ac5a1712a3bcb5e54e5b907bedb117110cd51a47a"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c8",
+        "to": "e6"
+      },
+      "expected": "773944a82114a633de939e5e8ca7b8fd0b1c052f9c7344f77542ea8cdaab31b4"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "3360811cf7e893850d05c98aa34e3de089682c1621b7aad3de99abd06c13a8c3"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h4",
+        "to": "h5"
+      },
+      "expected": "d59b1fed95e7b3426aa33fb31c174b1c843f867662c96d489ddaca769a5e269b"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "1fa578caa9d9cbb250efd1954953606b406c9bcd9ba329c9e2a5d20a976432af"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e6",
+        "to": "c8"
+      },
+      "expected": "44adccfed7d1a047d9e41a76a8152ed1de276b816149954d321bd53894a0101d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "53e847637c7ce0174fd6842320d7215a7de636b4d210d242b3cca3fde45c3edd"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c1",
+        "to": "b2"
+      },
+      "expected": "30038524a8cafeba547cca81d271d8632c9a686c489cb6c38c4b18f3fd2fc373"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "crab",
+        "cardInstanceId": "white-hand-0-crab",
+        "target": "b4"
+      },
+      "expected": "515be3b9fe99ef2cfc66b6d4e525a78e8d7675e3f89dda72f66b22489ead8d7f"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "3254c93bedfba2152de107b6755ad7bd8b0c14d9e0d0f3c907005a40d0469997"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e8",
+        "to": "d7"
+      },
+      "expected": "15577962caca052eb8810f0e786ad4891566720bfb62e875894b1a60eea68201"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "7a40fc7becde750a6e45063152fd43fd1042c538f51fbfd24255475f3f6c8b94"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a1",
+        "to": "b1"
+      },
+      "expected": "be163ff90cfc5c4f2c73c65a0798dc2828e553898feb79c8b4264bd4a006f8f0"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "e447d6fc76a593bb7474bd4bcb0516d2cb6c334d8c98ab06690046eef86fac0d"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a7",
+        "to": "a5"
+      },
+      "expected": "83394b42fe6c62a0ceb87a26a3b8d7253276cb31743f955a326160d97fc8d555"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "b9e770526b6563258ccb92e71c09dcaad21426be888e53451a8efc3299241307"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b2",
+        "to": "c1"
+      },
+      "expected": "3b40442831daca25992858bb337464de2276d29e1b4f271c7a5f098a65edfcc6"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "cf5c9c1f3cff2e1d1003bc4285f0f0c1eb8a54af85152af389f3f5c27859ec69"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a5",
+        "to": "a4"
+      },
+      "expected": "459d031d1e76319e00da82655b3f9a2debe20f25b76b138481c314b16f239f2d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "810d514eb159c22c1005341d1b236e833ed6ec982984d8202986a36a5b66bdc8"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h1",
+        "to": "h3"
+      },
+      "expected": "521c3234d4721dd2abff81984a210154deab5d02be3568b13c45fdae3dab05f2"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "41db81d2254bc83f683807105aa05564c0f89294e3a91c62eaa2328f3e9515b6"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d7",
+        "to": "d6"
+      },
+      "expected": "ae2764eb3314f124b79129eb1f74e9c4acadb0cab7637ea6984f0cce7c3879c5"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "a28d75fb18a851f6bda7acfc7d22481fe4f080f7412f167b7d02df98f5d13574"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h3",
+        "to": "h4"
+      },
+      "expected": "95f357d244ba0a0c0cc5dbd9edd3bb01643faf25ae3b7d132ed55f8d7602ac4f"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "25d266372ba08d6d4c5e8a9d25ee703fa94857dcb121c9775cafd1edff8016ac"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g5",
+        "to": "h4"
+      },
+      "expected": "f2537c9c60b8d65b6715cea2f9a2d6d11bddf2bdee4485dbfbcaab44bdc00800"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "58863bac6a52b07e2da5d4101f36a7a20d45d59e65515aaa7ad838ef50c45083"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b1",
+        "to": "a1"
+      },
+      "expected": "39cd3e0afaaf727c98cc36f0a996b0938d6b6651725bebf6c034ef3fa056eb55"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "359a498f247c04f1b58b93a823bd5c3ffc99798c820c3880a62e4738d810e578"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b8",
+        "to": "a6"
+      },
+      "expected": "38a6aec2b5bcc30383e563de37e7e2ed816d8fb63714c5dbc1058983edee25b9"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "peace-talks",
+        "cardInstanceId": "black-hand-0-peace-talks",
+        "target": "black-hand-1-pacifism"
+      },
+      "expected": "a918eb703405f5f0bd8e9973b41eccfd13cda9ce83b2b4a9c41a738575847464"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "cc1c2267df565f775c6de96793626365a654fed35540abd3a4b60b2414a2e7bd"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b4",
+        "to": "c5"
+      },
+      "expected": "8a7c559cde41cba052d9b5109484e7b8c0e606712454e495f6c6874803786c70"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "0f5ff6a6b3c368eda33a31919fe6640f453f2ca8e811a89ccedd3cff2826ca32"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d6",
+        "to": "c7"
+      },
+      "expected": "58d3276814d3479c640941c52beea2fe304248e3b48aea32a202664fb40bb1fb"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "7ffabf54c732710e549f68d5955bc9833a2108e6ceca44a962dd04168b5e2cc3"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d1",
+        "to": "a4"
+      },
+      "expected": "91db5c1961ce9f0acc82301020560ba6c1da8a8c4bbbd306258e386664674072"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "2810735577b3ed030eb9f3a60bd3c9769b8177b9a736592672af933e8d7709f3"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c7",
+        "to": "c6"
+      },
+      "expected": "c85d358c28de4008142eb9200cb9cd2227220ef96bffaf6b5e01ddc248e4c53d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "c97c40307b5a6085ebdf45166a17e8ac17e4bb76de6d576cd916bec48daaad5f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c5",
+        "to": "d6"
+      },
+      "expected": "373451e1596b5670c9f82dc203f8bbc8ce764ff20f69d52b9ff875669d9413d4"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "431f32d5d2eb9a265044efd82e34ee60075a027bf0bccfc5d325ec00043c18c6"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e7",
+        "to": "d6"
+      },
+      "expected": "caeb5e774f8d7a96b4a72aece0f11aeb9542d7d8f34a0af6178daf695dd7cb9b"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "942560445d579d9b71049359a58e218414dae967710814e257cfc95caa537065"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a4",
+        "to": "b3"
+      },
+      "expected": "f0341cfbea1d09c2c5c5c5b0a6479bf77e74ee2c501d995ad3cd11f924efa3bd"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "14a50117c0c580f4f2386aac24676f076a2595098ae6c9a2b4dcb8c2e64259c8"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "d8",
+        "to": "e8"
+      },
+      "expected": "18f414a082603d01f7c2aeffbb213c3ddb0e16482283797259499762a2cd3b0d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "c2dd2bd950474f526d0925ec6c114cd98289898aec57a12f9d36a01fd9428994"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b3",
+        "to": "b1"
+      },
+      "expected": "fe923794cb57ed3f1f9099d8521692f184ae6404926c45b8e42ba1f706af701c"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "1461000264d0bba4a85493ac50e3b7a0fb4d1055c32b467e74f2eda77a16211e"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a6",
+        "to": "c7"
+      },
+      "expected": "1d48a3c030e518fef95ad8a455d0ac377244f46f4131390fcad43e021cc086a7"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "d98350243a111aa72b53cd0bfa741647acfb7428984e221c6442cc33f33aaf9c"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a3",
+        "to": "a4"
+      },
+      "expected": "0ce0eb6e7ddf27b7defcdb6a3e5af6ce63f29a70532343309efef6241643984d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "93a3135332cdddc472c96094eb4907cbaf9966917a98f88d20f88f921140d380"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a8",
+        "to": "a6"
+      },
+      "expected": "8d1ce58ea2955742a6f60e31236f3da8679d6b65701dad4778693d5614cf5ffb"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "f6b3e4c426b4e79053a9f76c870e0956552d23c7244b0db0a72af8b5eb21e22c"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "breakthrough",
+        "cardInstanceId": "white-hand-1-breakthrough",
+        "target": [
+          {
+            "from": "h5",
+            "to": "h6"
+          }
+        ]
+      },
+      "expected": "dc0b983498725b9ad9446448e59ee1f5afd8f8e5ed99ada7894a1e27b0db39c4"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "99ff5fa95076ecc8dacf6f80bc700339a726c2e7682f77a6b87b97cf2fab888d"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a6",
+        "to": "a4"
+      },
+      "expected": "8ec0848c85c3f8fd84db2e810a50c9e0239b01e884b32b725b59d25a8d3646e4"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "7b3fae5c10f4fb490e5d70d68f25cbf58c15d1ec3b308b5e502e9b60942f6732"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b1",
+        "to": "b2"
+      },
+      "expected": "2f44e82db92d792d384697c100564cc3efe32bf7b2c19150e3e92bd04e4d6786"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "167bc14683ac9d00c95e4b3f977dbee01320063e93ecbe1ccfee7f700bbb798c"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "c6",
+        "to": "c5"
+      },
+      "expected": "5c2d63376ca3641546b9f82f38ea593f3e7d7c27b6db51cd58801e2f40e60960"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "6f9c5aca84855dfa7e0cdb7421a745e78f4f320e623b10e7f40c21a67c8875ca"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "winged-victory",
+        "cardInstanceId": "white-hand-4-winged-victory",
+        "target": {
+          "pieceId": "white-pawn-a2",
+          "to": "e4"
+        }
+      },
+      "expected": "efdce3861f8e3dc2a59ccb8ca775f0ced673f198d0157ddb2cdbf90a76846dd2"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "f0c9747d0d9a132a356fec0ee9c36e217a7942d69d16f00212e404f5433c327c"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e8",
+        "to": "c6"
+      },
+      "expected": "240f1bb4f17deef527b220654ced7c19234f4020f8ba76acf6c182654ee95bcf"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "chaos",
+        "cardInstanceId": "white-hand-3-chaos"
+      },
+      "expected": "d907a61824fc23a9932d6c51d951a1316787adbcd9aa7b4ba6a345e2ad10dfcc"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g8",
+        "to": "e7"
+      },
+      "expected": "80bd672bfa0832c94fe6a7d9722f0da0a547cb081e623f9a60aa8f6ec6fea6be"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "391817244a3170f1b29079cdd139bc992b8deaa5a751a69091e84a275d1e1a18"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "g1",
+        "to": "h3"
+      },
+      "expected": "859917ffacc1848afe7fe606bfa7aaa8472d6460969a4cf094bcaaebd2066c00"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "67765035c6babf1ebf5e4afbca1b5a4900b61219671efda77aa6c11ea3ce3427"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "a4",
+        "to": "a8"
+      },
+      "expected": "9dcd47a77f81f5b0a94110569c9e8f3c4c046ee36020f778c6d8e7fe1c4f7923"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "fireball",
+        "cardInstanceId": "black-hand-3-fireball",
+        "target": "a8"
+      },
+      "expected": "121e0d7cf6f754e644ab194a2c52bf904f1de39af04120a5dbef369b4a1d8412"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "dc1e40fcf3fd2b267a9de6736beaffeac0701c7f38d1ea1bf6982964d54a4d4f"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "h3",
+        "to": "g1"
+      },
+      "expected": "1f9f94234bf5668f5aca56ad8b64506db53e521d656bbbe6de6a410e8f2d897d"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "4ed97044786538938daedeef2a5dfb28b3d993d2c1865fb3c6f469090fd01f9d"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "f8",
+        "to": "h6"
+      },
+      "expected": "939d9d07ca92f9fe9ef5b77981b7e6e3f8b9f6aafe4e9d98be6a45147f08f282"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "380aac68b56cc915a6acf11ba42023e46140096ec25e0808726ea0cd43149a9c"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "b2",
+        "to": "a3"
+      },
+      "expected": "af38ae0f5a66627ef3a317afe960863c158845ece377e8473128943c35f9d50d"
+    },
+    {
+      "action": {
+        "type": "playCard",
+        "cardId": "chaos",
+        "cardInstanceId": "black-deck-1-chaos"
+      },
+      "expected": "b0424d8f149626498d2f482605fbaa55d195f93796823ec9dcd5ece9ca31ba11"
+    },
+    {
+      "action": {
+        "type": "move",
+        "from": "e2",
+        "to": "e3"
+      },
+      "expected": "42519e30dcfe423ba708ff461f2140b0c71130d8c54bf4b02855267d6887f20e"
+    },
+    {
+      "action": {
+        "type": "endTurn"
+      },
+      "expected": "bde634cca826fb0e694807d28e1697a7335d0572b21ec9d35928815e4d36061d"
+    }
+  ],
+  "moves": 50,
+  "finalFen": "2b1q2r/2n1np2/3p3b/1pkp4/4P2p/2P1P3/1Q1P1PP1/R1B1KBN1 b - - 0 25",
+  "sampledCards": {
+    "chaos": 10,
+    "fireball": 9,
+    "crab": 2,
+    "legacy": 7,
+    "breakthrough": 4,
+    "pacifism": 3,
+    "think-again": 2,
+    "riposte": 5,
+    "peace-talks": 3,
+    "winged-victory": 10,
+    "split-knight": 4,
+    "anathema": 2,
+    "sanctuary": 3,
+    "lost-castle": 1
+  }
+}
