@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 85,
+  "nextIteration": 91,
   "coverageAuditsCompleted": 8,
   "iterations": [
     {
@@ -858,6 +858,76 @@
       "status": "passed",
       "finalFen": "r7/1k3bPr/np2n3/p2PpB2/N2P4/4P2P/B3RP2/2pKb1NR w - - 5 29",
       "testCommit": "03062be"
+    },
+    {
+      "id": 83,
+      "agent": "iteration_083",
+      "seed": 860083,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1nr5/bppnN1p1/6p1/p3q3/2N5/3n1K2/k1PP1P1P/1NB2R2 w - - 1 29",
+      "testCommit": "a12069e"
+    },
+    {
+      "id": 84,
+      "agent": "iteration_084",
+      "seed": 860084,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "6r1/pP1k1n2/N1p5/3npppp/P3q1PP/4P3/1BQP1PB1/R1K5 w - - 0 29",
+      "testCommit": "9d2e7cd"
+    },
+    {
+      "id": 85,
+      "agent": "iteration_085",
+      "seed": 860085,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4q2r/r4p2/2ppbn1p/p1R3P1/3b2n1/1pPK4/1P3BP1/BN2R1N1 b - - 3 26",
+      "testCommit": "ad40295"
+    },
+    {
+      "id": 86,
+      "agent": "iteration_086",
+      "seed": 860086,
+      "reviewedActions": 129,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1r6/p5Pr/1bp1p2p/3P3K/P3Q3/8/k1PP1qp1/rN1R1B1n b - - 0 29",
+      "testCommit": "029b5b2"
+    },
+    {
+      "id": 87,
+      "agent": "iteration_087",
+      "seed": 860087,
+      "reviewedActions": 124,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1n3bk1/1bp5/r1p2p2/2p1Pp1p/3NP2P/1pP5/3B2Br/qN2QK2 w - - 0 30",
+      "testCommit": "74993df"
+    },
+    {
+      "id": 88,
+      "agent": "iteration_088",
+      "seed": 860088,
+      "reviewedActions": 122,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2b2k2/2R2q1p/3pp3/1p2pp2/1P4P1/3P4/1N1KP2P/B7 w - - 0 30",
+      "testCommit": "67b7b16"
+    },
+    {
+      "id": 89,
+      "agent": "iteration_089",
+      "seed": 860089,
+      "reviewedActions": 108,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1rb2r2/1pkp1n1p/p1pb4/2P2p2/8/PP2pP1P/1B2B1PR/R2K4 b - - 4 26",
+      "testCommit": "dd93937"
     }
   ],
   "coverageAudits": [
@@ -911,12 +981,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 68,
-    "tests": 4965,
-    "passed": 4965,
+    "afterIteration": 89,
+    "tests": 4991,
+    "passed": 4991,
     "failed": 0,
-    "seconds": 27.862,
-    "scope": "All engine tests and numbered iterations through068;069 continuation pending"
+    "seconds": 28.453,
+    "scope": "All engine tests and numbered iterations through089;090 finding pending"
   },
   "performanceFixes": [
     {
@@ -925,6 +995,13 @@
       "fixCommit": "ba9884e",
       "audit": "audit-rescue-performance.md",
       "finding": "Existential legality checks unnecessarily enumerated every move and card rescue"
+    },
+    {
+      "iteration": 86,
+      "regressionCommit": "e5fcc2b",
+      "fixCommit": "dd9fc26",
+      "audit": "audit-passing-performance.md",
+      "finding": "Vendetta target discovery simulated noncaptures and fully enumerated impossible Passing swaps"
     }
   ],
   "samplerTargetFix": {
