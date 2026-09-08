@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 128,
+  "nextIteration": 131,
   "coverageAuditsCompleted": 12,
   "iterations": [
     {
@@ -1300,6 +1300,36 @@
       "status": "passed",
       "finalFen": "1k1n2b1/8/1p3p1n/5b2/1P1PP2p/6rN/1BP2KPP/3B1R2 b - - 1 28",
       "testCommit": "495b9bf"
+    },
+    {
+      "id": 125,
+      "agent": "iteration_125",
+      "seed": 860125,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2q2k2/1pp1pp1B/4p2n/1n2R3/R2q3Q/2N3r1/1QPP1P2/b2Q1KNr w - - 8 28",
+      "testCommit": "e096eda"
+    },
+    {
+      "id": 126,
+      "agent": "iteration_126",
+      "seed": 860126,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4r1r1/p4p1p/4B2b/1P2P1pk/n6P/2PP4/1P2pNB1/p1R2QK1 w - - 1 29",
+      "testCommit": "8da2acb"
+    },
+    {
+      "id": 127,
+      "agent": "iteration_127",
+      "seed": 860127,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2k5/1p1pb1rb/5p2/p1p1pp1p/5R2/N5PN/nBP2K1P/r2q1B2 w - - 2 28",
+      "testCommit": "6d8d907"
     }
   ],
   "coverageAudits": [
