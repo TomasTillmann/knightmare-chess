@@ -26,6 +26,9 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    physical board and the applicable variant rules, rather than relying solely
    on reducer destination/check helpers. Retain exact cancellation restrictions,
    mandatory choices, card allowances, and all six FEN fields in the oracle.
+   For every regular card that newly gives check, independently prove a concrete
+   ordinary board escape. The direct-card mate rule ignores the defender's hidden
+   hand: a held-card rescue witness does not establish that the card avoided mate.
    A raw FEN en-passant target may survive a non-move card even when uncapturable;
    independently distinguish that serialization from legal capture availability.
    Evaluate en-passant availability for the prospective capturing player in a
