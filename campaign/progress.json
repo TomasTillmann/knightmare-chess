@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 161,
-  "coverageAuditsCompleted": 15,
+  "nextIteration": 164,
+  "coverageAuditsCompleted": 16,
   "iterations": [
     {
       "id": 1,
@@ -1675,6 +1675,26 @@
       "status": "passed",
       "finalFen": "1n2k2r/2r3b1/p3bn1p/1Pp3B1/2P1N1q1/NR2P3/2K3PP/5B1R b - - 3 27",
       "testCommit": "3ae4598"
+    },
+    {
+      "id": 159,
+      "agent": "iteration_159",
+      "seed": 860159,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1bqk2r/5pp1/p2nR3/1p1p3P/4Q1b1/BN3p2/PP1K2p1/6NR w - - 2 29",
+      "testCommit": "ff52397"
+    },
+    {
+      "id": 160,
+      "agent": "iteration_160",
+      "seed": 860160,
+      "reviewedActions": 117,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rN2kbn1/1b1R1p2/2p1p3/3r3p/bB6/P1q5/nPPPPP1R/1r1QKB2 w - - 12 27",
+      "testCommit": "256e061"
     }
   ],
   "coverageAudits": [
@@ -1770,12 +1790,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 153,
-    "tests": 5148,
-    "passed": 5148,
+    "afterIteration": 160,
+    "tests": 5158,
+    "passed": 5158,
     "failed": 0,
-    "seconds": 37.181,
-    "scope": "All engine tests and numbered iterations through 153"
+    "seconds": 37.364,
+    "scope": "All engine tests and numbered iterations through 160"
   },
   "performanceFixes": [
     {
