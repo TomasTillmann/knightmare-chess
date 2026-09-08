@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 94,
+  "nextIteration": 96,
   "coverageAuditsCompleted": 8,
   "iterations": [
     {
@@ -194,7 +194,12 @@
       "finalFen": "rnb2bnr/p3ppp1/1q2k2p/1Ppp4/5B2/1P6/2P1PPPP/RNQ1KNBR w KQ - 3 7",
       "testCommit": "832ab1e",
       "rejectedFinalAction": true,
-      "observedFinalFenBeforeFix": "rnb2bnr/p3ppp1/1q2k2p/1Ppp4/4PB2/1P6/2P1PPPP/RNQ1KNBR b KQ - 0 7"
+      "observedFinalFenBeforeFix": "rnb2bnr/p3ppp1/1q2k2p/1Ppp4/4PB2/1P6/2P1PPPP/RNQ1KNBR b KQ - 0 7",
+      "finding": "Winged Victory accepted an own Pawn captured by the same player with Assassin",
+      "fixCommit": "b5f0ab1",
+      "audit": "audit-090.md",
+      "retrospectiveCorrection": true,
+      "duplicateOf": 90
     },
     {
       "id": 18,
@@ -932,6 +937,21 @@
       "testCommit": "dd93937"
     },
     {
+      "id": 90,
+      "agent": "iteration_090",
+      "seed": 860090,
+      "reviewedActions": 81,
+      "reviewedMoves": 35,
+      "status": "fixed",
+      "finalFen": "3q1b2/1ppkp2r/p2p1pp1/5n2/P3Pp2/5bPP/1PPK4/r3PRNB w - - 0 20",
+      "rejectedFinalAction": true,
+      "observedFinalFenBeforeFix": "3q1b2/1ppkp2r/p2p1pp1/4Pn2/P3Pp2/5bPP/1PPK4/r3PRNB b - - 0 20",
+      "testCommit": "398650a",
+      "finding": "Winged Victory accepted an own Pawn captured by the same player with Assassin",
+      "fixCommit": "b5f0ab1",
+      "audit": "audit-090.md"
+    },
+    {
       "id": 92,
       "agent": "iteration_092",
       "seed": 860092,
@@ -1003,12 +1023,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 89,
-    "tests": 4991,
-    "passed": 4991,
+    "afterIteration": 90,
+    "tests": 4994,
+    "passed": 4994,
     "failed": 0,
-    "seconds": 28.453,
-    "scope": "All engine tests and numbered iterations through089;090 finding pending"
+    "seconds": 29.511,
+    "scope": "All engine tests through090 plus092/093;091 independent finding pending"
   },
   "performanceFixes": [
     {
