@@ -17,6 +17,10 @@ commits, UI tests, or full engine suite. Parent records the initial target hash.
    For each provisional self-check move, independently identify a concrete held
    card and legal target sequence that can cure it; assert that witness from the
    checkpoint, since a pendingRescue flag alone does not prove the move is valid.
+   For each cure witness independently assert its full physical board, card
+   spending/drawing/discard or retained effect, history, FEN/en-passant and turn
+   allowance, then successfully end the turn with input immutability checked.
+   Reset consumed card allowance when probing an inert rollback token's timing.
    Reducer acceptance and state hashes are not independent semantic proof.
    Assert regular-move geometry and both royal threat states using the expected
    physical board and the applicable variant rules, rather than relying solely
