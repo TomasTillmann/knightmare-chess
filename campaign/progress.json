@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
   "nextIteration": 45,
-  "coverageAuditsCompleted": 3,
+  "coverageAuditsCompleted": 4,
   "iterations": [
     {
       "id": 1,
@@ -461,6 +461,12 @@
       "report": "coverage-030.md",
       "playedTypes": 74,
       "appliedTypes": 73
+    },
+    {
+      "afterIteration": 40,
+      "report": "coverage-040.md",
+      "playedTypes": 78,
+      "appliedTypes": 77
     }
   ],
   "lastEngineGate": {
