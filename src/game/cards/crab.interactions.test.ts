@@ -3,9 +3,180 @@ import test from 'node:test';
 
 import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { BoardOrientation, Color, GameState, SquareName } from '../types.js';
+import type { BoardOrientation, Color, GameAction, GameState, SquareName } from '../types.js';
 
 const kings = '7k/8/8/8/8/8/8/K7';
+
+function returnAction(state: GameState, action: GameAction): GameState {
+  const result = applyAction(state, action);
+  if (!result.ok) assert.fail(`${JSON.stringify(action)}: ${result.error.message}`);
+  return result.state;
+}
+
+function returnCardIds(state: GameState): string[] {
+  return [
+    ...Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard].map(card => card.id)),
+    ...state.effects.flatMap(effect => {
+      const card = (effect as { card?: { id: string } } | null)?.card;
+      return card ? [card.id] : [];
+    }),
+  ].sort();
+}
+
+function capturedReturnCrab(cardId: 'winged-victory' | 'betrayal', delayed = false) {
+  let state = createGameState({
+    fen: '7k/8/8/8/1p6/2P5/8/K7 w - - 0 1',
+    hands: { white: ['crab', cardId], black: [] },
+  });
+  const cardIds = returnCardIds(state);
+  const crabCardId = state.players.white.hand.find(card => card.cardId === 'crab')!.id;
+  const returnCardId = state.players.white.hand.find(card => card.cardId === cardId)!.id;
+  const actions: GameAction[] = [
+    { type: 'move', from: 'a1', to: 'a2' },
+    { type: 'playCard', cardId: 'crab', target: 'c3' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'b4', to: 'c3' },
+    { type: 'endTurn' },
+  ];
+  if (delayed) actions.push(
+    { type: 'move', from: 'a2', to: 'a1' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'h8', to: 'h7' },
+    { type: 'endTurn' },
+  );
+  for (const action of actions) state = returnAction(state, action);
+  assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-c3')?.zone, 'captured');
+  return { state, cardIds, crabCardId, returnCardId };
+}
+
+for (const delayed of [false, true]) {
+  for (const [to, allowed] of [['d5', !delayed], ['f5', !delayed], ['e5', delayed]] as const) {
+    test(`Winged Victory ${delayed ? 'late' : 'immediate'} Crab return: e4-${to} is ${allowed ? 'legal' : 'illegal'}`, () => {
+      let { state } = capturedReturnCrab('winged-victory', delayed);
+      state = returnAction(state, {
+        type: 'playCard', cardId: 'winged-victory', target: { pieceId: 'white-pawn-c3', to: 'e4' },
+      });
+      state = returnAction(state, { type: 'endTurn' });
+      state = returnAction(state, { type: 'move', from: delayed ? 'h7' : 'h8', to: delayed ? 'h8' : 'h7' });
+      state = returnAction(state, { type: 'endTurn' });
+      assert.equal(legalDests(state).get('e4')?.includes(to) ?? false, allowed);
+      const before = structuredClone(state);
+      const result = applyAction(state, { type: 'move', from: 'e4', to });
+      assert.equal(result.ok, allowed);
+      if (result.ok) assert.equal(result.state.pieces.find(piece => piece.id === 'white-pawn-c3')?.square, to);
+      else assert.deepEqual(result.state, before);
+      assert.deepEqual(state, before);
+    });
+  }
+}
+
+for (const delayed of [false, true]) {
+  const timing = delayed ? 'late' : 'immediate';
+
+  test(`Winged Victory ${timing} return offers every empty central square for the captured Crab`, () => {
+    const { state } = capturedReturnCrab('winged-victory', delayed);
+    const targets = cardPlayTargets(state, 'winged-victory');
+    for (const to of ['d4', 'e4', 'd5', 'e5']) {
+      assert.ok(targets.some(target => {
+        const value = target as { pieceId?: string; to?: string };
+        return value.pieceId === 'white-pawn-c3' && value.to === to;
+      }), `missing return to ${to}`);
+    }
+  });
+
+  test(`Winged Victory ${timing} return preserves the physical Pawn and leaves its captor on board`, () => {
+    const { state } = capturedReturnCrab('winged-victory', delayed);
+    const before = structuredClone(state);
+    const returned = returnAction(state, {
+      type: 'playCard', cardId: 'winged-victory', target: { pieceId: 'white-pawn-c3', to: 'e4' },
+    });
+    assert.equal(returned.pieces.length, state.pieces.length);
+    const matches = returned.pieces.filter(piece => piece.id === 'white-pawn-c3');
+    assert.equal(matches.length, 1);
+    assert.equal(matches[0].zone, 'board');
+    assert.equal(matches[0].square, 'e4');
+    assert.equal(matches[0].originalRole, 'pawn');
+    assert.equal(matches[0].promoted, false);
+    assert.equal(matches[0].owner, 'white');
+    assert.deepEqual(returned.pieces.find(piece => piece.id === 'black-pawn-b4'),
+      state.pieces.find(piece => piece.id === 'black-pawn-b4'));
+    assert.deepEqual(state, before);
+  });
+
+  test(`Winged Victory ${timing} return conserves the original Crab and spends the return card once`, () => {
+    const fixture = capturedReturnCrab('winged-victory', delayed);
+    const before = fixture.state;
+    const returned = returnAction(before, {
+      type: 'playCard', cardId: 'winged-victory', target: { pieceId: 'white-pawn-c3', to: 'e4' },
+    });
+    assert.deepEqual(returnCardIds(returned), fixture.cardIds);
+    assert.equal(returnCardIds(returned).filter(id => id === fixture.crabCardId).length, 1);
+    assert.equal(returned.players.white.discard.filter(card => card.id === fixture.returnCardId).length, 1);
+    assert.equal(returned.players.white.hand.some(card => card.id === fixture.returnCardId), false);
+    const drawn = Math.min(1, before.players.white.deck.length);
+    assert.equal(returned.players.white.deck.length, before.players.white.deck.length - drawn);
+    assert.equal(returned.players.white.hand.length, before.players.white.hand.length - 1 + drawn);
+    assert.equal(returned.history.filter(event => event.type === 'cardPlayed' && event.cardId === 'winged-victory').length, 1);
+  });
+
+  test(`Winged Victory ${timing} return consumes the Regular Move and allows a normal endTurn`, () => {
+    const { state } = capturedReturnCrab('winged-victory', delayed);
+    const returned = returnAction(state, {
+      type: 'playCard', cardId: 'winged-victory', target: { pieceId: 'white-pawn-c3', to: 'e4' },
+    });
+    assert.equal(returned.turn.color, 'white');
+    assert.equal(returned.turn.phase, 'afterMove');
+    assert.equal(returned.turn.moveMade, true);
+    assert.equal(returned.turn.cardPlays.white, 1);
+    const rejected = applyAction(returned, { type: 'move', from: delayed ? 'a1' : 'a2', to: delayed ? 'a2' : 'a1' });
+    assert.equal(rejected.ok, false);
+    assert.deepEqual(rejected.state, returned);
+    const ended = returnAction(returned, { type: 'endTurn' });
+    assert.equal(ended.turn.color, 'black');
+    assert.equal(ended.turn.phase, 'beforeMove');
+  });
+}
+
+for (const [to, allowed] of [['b4', true], ['d4', true], ['c4', false]] as const) {
+  test(`Betrayal immediately rescues the Crab: c3-${to} is ${allowed ? 'legal' : 'illegal'}`, () => {
+    const { state } = capturedReturnCrab('betrayal');
+    const returned = returnAction(state, {
+      type: 'playCard', cardId: 'betrayal', target: { pieceId: 'white-pawn-c3', to: 'c3' },
+    });
+    assert.equal(returned.turn.phase, 'beforeMove');
+    assert.equal(returned.turn.moveMade, false);
+    assert.equal(legalDests(returned).get('c3')?.includes(to) ?? false, allowed);
+    const before = structuredClone(returned);
+    const moved = applyAction(returned, { type: 'move', from: 'c3', to });
+    assert.equal(moved.ok, allowed);
+    if (moved.ok) assert.equal(moved.state.pieces.find(piece => piece.id === 'white-pawn-c3')?.square, to);
+    else assert.deepEqual(moved.state, before);
+    assert.deepEqual(returned, before);
+  });
+}
+
+test('Betrayal returns the same Crab, makes its captor dead, and conserves both card identities', () => {
+  const fixture = capturedReturnCrab('betrayal');
+  const before = structuredClone(fixture.state);
+  const returned = returnAction(fixture.state, {
+    type: 'playCard', cardId: 'betrayal', target: { pieceId: 'white-pawn-c3', to: 'c3' },
+  });
+  assert.equal(returned.pieces.length, before.pieces.length);
+  assert.equal(returned.pieces.filter(piece => piece.square === 'c3' && piece.zone === 'board').length, 1);
+  const pawn = returned.pieces.find(piece => piece.id === 'white-pawn-c3')!;
+  assert.equal(pawn.square, 'c3');
+  assert.equal(pawn.zone, 'board');
+  assert.equal(pawn.owner, 'white');
+  assert.equal(pawn.originalRole, 'pawn');
+  assert.equal(pawn.promoted, false);
+  assert.equal(returned.pieces.find(piece => piece.id === 'black-pawn-b4')?.zone, 'dead');
+  assert.deepEqual(returnCardIds(returned), fixture.cardIds);
+  assert.equal(returnCardIds(returned).filter(id => id === fixture.crabCardId).length, 1);
+  assert.equal(returned.players.white.discard.filter(card => card.id === fixture.returnCardId).length, 1);
+  assert.equal(returned.turn.cardPlays.white, 1);
+  assert.deepEqual(returned.fen.split(' ').slice(4), before.fen.split(' ').slice(4));
+  assert.deepEqual(fixture.state, before);
+});
 
 function transformedCrabIn(
   fen: string,
@@ -257,7 +428,7 @@ test('Revenge cannot capture a Pacifist Crab and leaves state untouched', () => 
   assert.deepEqual(whiteMove.state, before);
 });
 
-test('capture removes a Crab from play and expires its active transformation', () => {
+test('capture removes the physical Crab from the board', () => {
   const { state, pieceId } = transformedCrabIn(
     '7k/8/8/3b4/4P3/8/8/K7 w - - 0 1',
     'e4',
@@ -267,8 +438,5 @@ test('capture removes a Crab from play and expires its active transformation', (
   assert.equal(result.ok, true);
   if (!result.ok) return;
   assert.equal(result.state.pieces.find(piece => piece.id === pieceId)?.zone, 'captured');
-  assert.equal(result.state.effects.some(effect => {
-    const value = effect as { type?: unknown; pieceId?: unknown };
-    return value.type === 'crab' && value.pieceId === pieceId;
-  }), false);
+  assert.equal(result.state.pieces.filter(piece => piece.id === pieceId).length, 1);
 });

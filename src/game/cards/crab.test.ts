@@ -107,6 +107,116 @@ function crabEffect(state: GameState) {
   };
 }
 
+function physicalCardCount(state: GameState, id: string): number {
+  const heldCards = Object.values(state.players).flatMap(player => [
+    ...player.hand, ...player.deck, ...player.discard,
+  ]);
+  const effectCards = state.effects.flatMap(effect => (
+    typeof effect === 'object' && effect !== null && 'card' in effect ? [effect.card] : []
+  ));
+  return [...heldCards, ...effectCards].filter(instance => (
+    typeof instance === 'object' && instance !== null && 'id' in instance && instance.id === id
+  )).length;
+}
+
+const HOSTAGE_CRAB_CASES: Array<{
+  color: Color;
+  fen: string;
+  king: [SquareName, SquareName];
+  capture: [SquareName, SquareName];
+  substitute: SquareName;
+  diagonals: SquareName[];
+  straight: SquareName[];
+  wrongGeometry: SquareName[];
+}> = [
+  {
+    color: 'white', fen: '7k/8/8/8/1p6/2P5/5P2/K7 w - - 0 1',
+    king: ['a1', 'a2'], capture: ['b4', 'c3'], substitute: 'f2',
+    diagonals: ['e3', 'g3'], straight: ['f3', 'f4'],
+    wrongGeometry: ['e2', 'g2', 'e1', 'g1', 'd4', 'h4'],
+  },
+  {
+    color: 'black', fen: 'k7/5p2/2p5/1P6/8/8/8/7K b - - 0 1',
+    king: ['a8', 'a7'], capture: ['b5', 'c6'], substitute: 'f7',
+    diagonals: ['e6', 'g6'], straight: ['f6', 'f5'],
+    wrongGeometry: ['e7', 'g7', 'e8', 'g8', 'd5', 'h5'],
+  },
+];
+
+function hostageReturnedCrab(fixture: typeof HOSTAGE_CRAB_CASES[number]) {
+  const { color, fen, king, capture, substitute } = fixture;
+  const before = createGameState({ fen, turn: color, hands: { [color]: ['crab', 'hostage'] } });
+  const pawn = pieceAt(before, capture[1])!;
+  const substitutePawn = pieceAt(before, substitute)!;
+  const captor = pieceAt(before, capture[0])!;
+  const card = before.players[color].hand.find(instance => instance.cardId === 'crab')!;
+  let state = expectOk(before, { type: 'move', from: king[0], to: king[1] });
+  state = expectOk(state, { type: 'playCard', cardId: 'crab', target: capture[1] });
+  state = expectOk(state, { type: 'endTurn' });
+  state = expectOk(state, { type: 'move', from: capture[0], to: capture[1] });
+  assert.equal(state.pieces.find(piece => piece.id === pawn.id)?.zone, 'captured');
+  state = expectOk(state, {
+    type: 'playCard', cardId: 'hostage', target: { pieceId: pawn.id, pawn: substitute },
+  });
+  state = expectOk(state, { type: 'endTurn' });
+  assert.equal(state.turn.color, color);
+  return { state, pawn, substitutePawn, captor, card };
+}
+
+for (const fixture of HOSTAGE_CRAB_CASES) {
+  const { color, capture, substitute, diagonals, straight, wrongGeometry } = fixture;
+
+  test(`${color} Crab rescued immediately by Hostage keeps both quiet forward diagonals`, () => {
+    const { state } = hostageReturnedCrab(fixture);
+    assert.deepEqual([...(legalDests(state).get(substitute) ?? [])].sort(), diagonals);
+  });
+
+  for (const to of diagonals) {
+    test(`${color} Hostage-returned Crab can actually move quietly to ${to}`, () => {
+      const { state, pawn } = hostageReturnedCrab(fixture);
+      const moved = expectOk(state, { type: 'move', from: substitute, to });
+      assert.equal(pieceAt(moved, to)?.id, pawn.id);
+      assert.equal(crabEffect(moved)?.pieceId, pawn.id);
+    });
+  }
+
+  for (const to of straight) {
+    test(`${color} Hostage-returned Crab rejects ordinary Pawn movement to ${to}`, () => {
+      const { state } = hostageReturnedCrab(fixture);
+      expectError(state, { type: 'move', from: substitute, to }, 'ILLEGAL_MOVE');
+    });
+  }
+
+  test(`${color} Hostage-returned Crab still rejects sideways, backward, and distant diagonals`, () => {
+    const { state } = hostageReturnedCrab(fixture);
+    for (const to of wrongGeometry) {
+      expectError(state, { type: 'move', from: substitute, to }, 'ILLEGAL_MOVE');
+    }
+  });
+
+  test(`${color} Hostage rescue preserves physical Pawn identity and leaves the captor in place`, () => {
+    const { state, pawn, substitutePawn, captor } = hostageReturnedCrab(fixture);
+    const returned = pieceAt(state, substitute)!;
+    assert.equal(returned.id, pawn.id);
+    assert.equal(returned.owner, pawn.owner);
+    assert.equal(returned.role, pawn.role);
+    assert.equal(returned.originalRole, pawn.originalRole);
+    assert.equal(returned.promoted, pawn.promoted);
+    assert.equal(pieceAt(state, capture[1])?.id, captor.id);
+    assert.equal(state.pieces.find(piece => piece.id === substitutePawn.id)?.zone, 'captured');
+    assert.equal(state.pieces.filter(piece => piece.id === pawn.id).length, 1);
+  });
+
+  test(`${color} Hostage rescue restores exactly the original physical Crab card`, () => {
+    const { state, pawn, card } = hostageReturnedCrab(fixture);
+    assert.equal(physicalCardCount(state, card.id), 1);
+    assert.equal(state.players[color].discard.filter(instance => instance.cardId === 'hostage').length, 1);
+    assert.equal(crabEffect(state)?.owner, color);
+    assert.equal(crabEffect(state)?.pieceId, pawn.id);
+    assert.deepEqual(crabEffect(state)?.card, card);
+  });
+}
+
 test('Crab exposes its exact printed metadata', () => {
   assert.deepEqual(CARD_CATALOG.crab, {
     id: 'crab',
@@ -249,7 +359,7 @@ test('a Crab captures on its forward diagonal and remains transformed', () => {
   assert.equal(crabEffect(moved)?.pieceId, crab.id);
 });
 
-test('capture ends Crab and moves its Continuing Effect card to discard', () => {
+test('capture preserves the physical Crab Pawn for a possible rescue', () => {
   const played = expectOk(afterMoveState({
     fen: '7k/3r4/8/8/3P4/8/8/K7 w - - 0 1',
   }), { type: 'playCard', cardId: 'crab', target: 'd4' });
@@ -258,8 +368,6 @@ test('capture ends Crab and moves its Continuing Effect card to discard', () => 
   const captured = expectOk(blackTurn, { type: 'move', from: 'd7', to: 'd4' });
 
   assert.equal(captured.pieces.find(piece => piece.id === crab.id)?.zone, 'captured');
-  assert.equal(crabEffect(captured), undefined);
-  assert.deepEqual(captured.players.white.discard.map(card => card.cardId), ['crab']);
 });
 
 test('a Crab promotes to every ordinary Pawn promotion choice and keeps its identity', () => {
