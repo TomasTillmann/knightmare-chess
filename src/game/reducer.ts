@@ -284,7 +284,7 @@ function currentPly(state: GameState): number {
   return (setup.fullmoves - 1) * 2 + (setup.turn === 'black' ? 1 : 0) - (state.turn.moveMade ? 1 : 0);
 }
 
-function losePiece(state: GameState, piece: PieceState, zone: 'captured' | 'dead'): string[] {
+function losePiece(state: GameState, piece: PieceState, zone: 'captured' | 'dead', captor = state.turn.color): string[] {
   const effect = confabulationForPiece(state, piece.id);
   const ids = effect?.pieceIds ?? [piece.id];
   for (const id of ids) {
@@ -299,6 +299,8 @@ function losePiece(state: GameState, piece: PieceState, zone: 'captured' | 'dead
       }
       component.square = null;
       component.zone = zone;
+      if (zone === 'captured') component.capturedBy = captor;
+      else delete component.capturedBy;
     }
   }
   if (effect) {
@@ -339,7 +341,7 @@ function springManTraps(before: GameState, next: GameState): void {
       && !captureImmune({ ...next, effects: effects.filter((candidate, candidateIndex) =>
         candidateIndex > index || !['truce', 'pacifism', 'mysticshield'].includes(effectKind(candidate) ?? '')) }, piece)) {
       lost.push(...physicalPieces(next, piece));
-      losePiece(next, piece, 'captured');
+      losePiece(next, piece, 'captured', effect.owner);
     }
     next.effects = next.effects.filter(candidate => candidate !== effect);
     if (!next.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
@@ -1467,7 +1469,7 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
       }
     }
   }
-  const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === attacker.id)!, 'captured');
+  const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === attacker.id)!, 'captured', reactor);
   syncFen(resolved, components);
   const setup = setupFor(resolved);
   const completed = parseFen(state.fen).unwrap();
@@ -1529,7 +1531,7 @@ function playHostage(state: GameState, target: unknown, cardInstanceId?: unknown
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be exchanged.');
   }
   let resolved = structuredClone(state);
-  const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured');
+  const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured', captor);
   restoreCapturedPawn(resolved, resolved.pieces.find(piece => piece.id === returned.id)!, pawn.square!);
   syncFen(resolved, components);
   const setup = setupFor(resolved);
@@ -1605,6 +1607,7 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     const restored = resolved.pieces.find(candidate => candidate.id === captured.id)!;
     restored.square = move.to;
     restored.zone = 'board';
+    delete restored.capturedBy;
   }
   if (move.previousFen) resolved.fen = move.previousFen;
   else {
@@ -1717,7 +1720,7 @@ function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown
   }
 
   const resolved = structuredClone(state);
-  losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured');
+  losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured', reactor);
   syncFen(resolved);
   resolved.fen = [resolved.fen.split(' ')[0], ...state.fen.split(' ').slice(1)].join(' ');
   resolved.enPassant = structuredClone(state.enPassant);
@@ -1838,7 +1841,7 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be captured.');
   }
   const resolved = structuredClone(state);
-  losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured');
+  losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'captured', reactor);
   resolved.fen = [boardFen(resolved), ...state.fen.split(' ').slice(1)].join(' ');
   const setup = parseFen(resolved.fen).unwrap();
   setup.halfmoves = 0;
@@ -4350,6 +4353,20 @@ const SWAP_CARDS = {
 
 type SwapCardId = keyof typeof SWAP_CARDS;
 
+function capturedBy(state: GameState, piece: PieceState): Color | undefined {
+  if (piece.capturedBy) return piece.capturedBy;
+  const event = [...state.history].reverse().find(entry => entry.capturedId === piece.id || entry.capturedIds?.includes(piece.id));
+  if (event?.player) return (event.copiedCardId ?? event.cardId) === 'hostage' ? opposite(event.player) : event.player;
+  if (event?.type !== 'cardPlayed') return undefined;
+  // Older saved states did not store capture provenance. Recover an unambiguous card actor.
+  const actors = new Set(state.playedCards?.flatMap(played => {
+    const player = state.players[played.player];
+    return [...player.hand, ...player.deck, ...player.discard].some(card =>
+      card.id === played.cardInstanceId && card.cardId === event.cardId) ? [played.player] : [];
+  }));
+  return actors.size === 1 ? [...actors][0] : undefined;
+}
+
 function restoreCapturedPawn(state: GameState, pawn: PieceState, to: SquareName): void {
   if (!pawn.promoted && pawn.role !== pawn.originalRole) {
     const captureIndex = state.history.reduce((last, event, index) =>
@@ -4360,6 +4377,7 @@ function restoreCapturedPawn(state: GameState, pawn: PieceState, to: SquareName)
     if (!recent) pawn.role = pawn.originalRole;
   }
   delete pawn.capturedAtPly;
+  delete pawn.capturedBy;
   pawn.zone = 'board';
   pawn.square = to;
 }
@@ -4446,6 +4464,9 @@ function playWingedVictory(state: GameState, target: unknown, cardInstanceId?: u
   }
   if (pawn.owner !== color) return reject(state, 'WRONG_OWNER', 'Choose one of your captured Pawns.');
   if (pawn.originalRole !== 'pawn' || pawn.promoted) return reject(state, 'WRONG_ROLE', 'Choose an unpromoted original Pawn.');
+  if (capturedBy(state, pawn) === color) {
+    return reject(state, 'INVALID_TARGET', 'Choose a Pawn captured by your opponent.');
+  }
   if (state.pieces.some(piece => piece.zone === 'board' && piece.square === to) || forbiddenCitySquares(state).has(to)) {
     return reject(state, 'INVALID_TARGET', 'Choose an empty, unmarked central square.');
   }
@@ -5101,7 +5122,10 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
   const resolved = structuredClone(state);
   for (const id of move?.capturedIds ?? [captured.id]) {
     const piece = resolved.pieces.find(candidate => candidate.id === id);
-    if (piece?.zone === 'captured') piece.zone = 'dead';
+    if (piece?.zone === 'captured') {
+      piece.zone = 'dead';
+      delete piece.capturedBy;
+    }
   }
   spendCard(resolved, 'no-quarter', cardInstanceId);
   resolved.history.push({ type: 'cardPlayed', cardId: 'no-quarter' });
@@ -6737,8 +6761,8 @@ function namePiece(
   const consumed = active.slice(0, required);
   const consumedIds = new Set(consumed.map(effect => effect.card.id));
   const resolved = structuredClone(state);
-  const capturedIds = selected.flatMap(piece =>
-    losePiece(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!, 'captured'),
+  const capturedIds = selected.flatMap((piece, index) =>
+    losePiece(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!, 'captured', consumed[index].owner),
   );
   if (selected.length) {
     syncFen(resolved, selected);
@@ -6778,10 +6802,10 @@ function namePiece(
       checkpoint.enPassant = structuredClone(pending.enPassant);
       checkpoint.effects = structuredClone(pending.before?.effects ?? checkpoint.effects)
         .filter(effect => !isDoomsayerEffect(effect) || !consumedIds.has(effect.card.id));
-      const checkpointLosses = selected.flatMap(piece => {
+      const checkpointLosses = selected.flatMap((piece, index) => {
         const loss = checkpoint.pieces.find(candidate => candidate.id === piece.id);
         if (!loss) return [];
-        return losePiece(checkpoint, loss, 'captured').flatMap(id =>
+        return losePiece(checkpoint, loss, 'captured', consumed[index].owner).flatMap(id =>
           checkpoint.pieces.find(candidate => candidate.id === id) ?? [],
         );
       });
@@ -7524,8 +7548,8 @@ function hasDoomsayerEscape(state: GameState, seen = new Set<string>()): boolean
     if (!required) continue;
     for (const losses of combinations(candidates, required)) {
       const resolved = structuredClone(state);
-      for (const piece of losses) {
-        losePiece(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!, 'captured');
+      for (const [index, piece] of losses.entries()) {
+        losePiece(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!, 'captured', active[index].owner);
       }
       syncFen(resolved, losses);
       const setup = setupFor(resolved);

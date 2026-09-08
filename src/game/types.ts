@@ -19,6 +19,7 @@ export interface PieceState {
   neutral: boolean;
   neutralBeforeEffects?: boolean;
   capturedAtPly?: number;
+  capturedBy?: Color;
 }
 
 export interface CardInstance {
