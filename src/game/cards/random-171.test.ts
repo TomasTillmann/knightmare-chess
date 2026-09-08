@@ -8,6 +8,14 @@ import type { Color, GameAction, GameEvent, GameState, PieceState, SquareName } 
 import { CARD_CATALOG } from './catalog.js'
 
 const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/171.stalled.json', import.meta.url), 'utf8')) as RandomTrace
+const corrected = JSON.parse(readFileSync(new URL('../../../campaign/iterations/171.json', import.meta.url), 'utf8')) as RandomTrace
+test('iteration 171 corrected generation retains its reviewed common prefix', () => {
+  assert.equal(corrected.moves,50)
+  const divergent=corrected.steps.findIndex((step,i)=>JSON.stringify(step)!==JSON.stringify(trace.steps[i]))
+  assert.equal(divergent,86)
+  assert.deepEqual(corrected.initial,trace.initial)
+  assert.deepEqual(corrected.steps.slice(0,divergent),trace.steps.slice(0,divergent))
+})
 // Numbered, independently reviewed action rationales. The terminal sampler limitation
 // is preserved explicitly; this 35-move trace is not represented as a 50-move pass.
 const rationales = [
@@ -154,11 +162,12 @@ function boardFen(pieces:PieceState[]) {
   }).join('/')
 }
 
-test('iteration 171: independently reviewed 90-action terminal prefix', () => {
+function historicalOracle() {
   assert.equal(rationales.length,90)
   rationales.forEach((r,i)=>assert.ok(r.startsWith(`${i+1} `)))
   assert.equal(trace.steps.length,90)
   let actual=createGameState(trace.initial)
+  let verified86:GameState|undefined
   let pieces=structuredClone(actual.pieces), players=structuredClone(actual.players), turn=structuredClone(actual.turn)
   let effects:unknown[]=[], history:GameEvent[]=[], half=0,full=1,active='w',rights='KQkq'
   let shield:GameState['shieldMove'], ep:GameState['enPassant']=[]
@@ -312,6 +321,7 @@ test('iteration 171: independently reviewed 90-action terminal prefix', () => {
       assert.equal(ended.state.pendingRescue??null,null);assert.equal(ended.state.outcome,null)
       assert.equal(isInCheck(ended.state,'white'),false);assert.equal(isInCheck(ended.state,'black'),false)
     }else assert.equal(actual.pendingRescue??null,null,label)
+    if(n===86)verified86=structuredClone(actual)
   }
   assert.equal(trace.moves,35);assert.equal(Object.keys(cards).length,15)
   assert.equal(actual.fen,'4k3/1q1n1p1R/3pp3/5bpp/PP2K1P1/B1bPPP2/5N1P/R3Q2r w - - 0 21')
@@ -365,4 +375,105 @@ test('iteration 171: independently reviewed 90-action terminal prefix', () => {
   const input=structuredClone(actual),ended=applyAction(actual,{type:'endTurn'});assert.deepEqual(actual,input);assert.ok(ended.ok)
   assert.deepEqual(ended.state.outcome,{winner:'black',reason:'checkmate'})
   assert.match(trace.failure??'',/No continuing action at step 91/)
+  assert.ok(verified86)
+  return verified86
+}
+
+test('iteration 171: independently reviewed 90-action terminal prefix', () => { historicalOracle() })
+
+const correctedRationales=[...rationales.slice(0,86),
+  '87 Rh1xf1: black Rook originally a8 crosses empty g1 and captures white Bf1.',
+  '88 End Black capturing turn; White has no check.',
+  '89 Ra1-b1: white Rook moves one square horizontally into an empty square.',
+  '90 End White turn.',
+  '91 h5xg4: black Pawn captures white Pawn originally g2 diagonally forward.',
+  '92 End Black capturing turn.',
+  '93 Qe1xf1: white Queen captures black Rook originally a8 one square horizontally.',
+  '94 End White capturing turn.',
+  '95 Nd7-f8: black Knight jumps into empty f8.',
+  '96 End Black turn.',
+  '97 Betrayal returns captured white Pawn g2 to g4, makes black Pawn h7 dead; g4 is on Whites half. Regular Move remains.',
+  '98 a4-a5: white Pawn advances one square with card allowance already consumed.',
+  '99 End White turn.',
+  '100 Bc3-e5: black Bishop traverses empty d4 and becomes frozen upon arrival next to e4 magnet.',
+  '101 End Black turn.',
+  '102 Rh7-g7: white Rook moves horizontally into empty square.',
+  '103 End White turn.',
+  '104 Qc7-c2: black Queen descends through empty c6/c5/c4/c3.',
+  '105 End Black turn; Qc2-e4 diagonal is blocked by frozen white Pd3.',
+  '106 INVALID Forced March d3-c3/f3-g3 selects two Pawns frozen adjacent to royal e4; §18.6 prohibits their card movement and §24 rejects before final self-check adjudication. Preserve card, draw order, turn, clocks, history, and board.',
+]
+
+test('iteration 171 corrected: first invalid action 106 rejects immobilized Forced March atomically', () => {
+  assert.equal(correctedRationales.length,106)
+  correctedRationales.forEach((r,i)=>assert.ok(r.startsWith(`${i+1} `)))
+  assert.deepEqual(corrected.steps.slice(0,86),trace.steps.slice(0,86))
+  assert.deepEqual(corrected.initial,trace.initial)
+  // This returns the full state only AFTER independently verifying the physical
+  // board, effects, cards, histories, clocks and obligations for the common prefix.
+  let state=historicalOracle()
+  const expected=structuredClone(state)
+  const suffixMoves:Record<number,[SquareName,SquareName]>={87:['h1','f1'],89:['a1','b1'],91:['h5','g4'],93:['e1','f1'],95:['d7','f8'],98:['a4','a5'],100:['c3','e5'],102:['h7','g7'],104:['c7','c2']}
+  for(let n=87;n<=105;n++){
+    const action=corrected.steps[n-1]!.action,label=correctedRationales[n-1]!,input=structuredClone(state)
+    const pair=suffixMoves[n]
+    const declared:GameAction=pair?{type:'move',from:pair[0],to:pair[1]}:n===97?{type:'playCard',cardId:'betrayal',cardInstanceId:'white-deck-7-betrayal',target:{pieceId:'white-pawn-g2',to:'g4'}}:{type:'endTurn'}
+    assert.deepEqual(action,declared,label)
+    const fields=expected.fen.split(' ')
+    let half=Number(fields[4]),full=Number(fields[5]),active=fields[1]!
+    if(action.type==='move'){
+      assert.ok(typeof action.from === 'string' && typeof action.to === 'string')
+      const from=action.from,to=action.to,p=at(expected.pieces,from)!,victim=at(expected.pieces,to)
+      assert.equal(expected.turn.phase,'beforeMove');assert.equal(p.owner,expected.turn.color)
+      assert.equal(frozen(expected.pieces,p,true),false)
+      assert.ok(geometry(expected.pieces,p,to,!!victim),label)
+      if(victim){assert.notEqual(victim.owner,p.owner);assert.equal(victim.royal,false);victim.square=null;victim.zone='captured';victim.capturedBy=p.owner}
+      p.square=to as SquareName
+      expected.history.push({type:'move',from:from as SquareName,to:to as SquareName,...(victim?{capturedId:victim.id}:{}),...(p.owner==='white'?{movedPieceId:p.id,movedRoles:[p.role]}:{})})
+      expected.shieldMove={player:p.owner,pieceIds:[p.id],capturedOpponent:!!victim}
+      half=p.role==='pawn'||victim?0:half+1;if(p.owner==='black')full++
+      active=p.owner==='white'?'b':'w';expected.turn.phase='afterMove';expected.turn.moveMade=true
+    }else if(n===97){
+      const p=expected.pieces.find(p=>p.id==='white-pawn-g2')!,victim=at(expected.pieces,'g4')!
+      assert.equal(p.zone,'captured');assert.equal(p.owner,'white');assert.equal(p.originalRole,'pawn');assert.equal(p.promoted,false)
+      assert.equal(victim.id,'black-pawn-h7');assert.equal(victim.owner,'black');assert.equal(victim.role,'pawn');assert.equal(victim.promoted,false)
+      assert.ok(Number(victim.square![1])<=4)
+      victim.zone='dead';victim.square=null;delete victim.capturedBy
+      p.zone='board';p.square='g4';delete p.capturedBy
+      const card={id:'white-deck-7-betrayal',cardId:'betrayal'},player=expected.players.white
+      assert.ok(player.hand.some(c=>c.id===card.id));assert.equal(expected.turn.cardPlays.white,0)
+      assert.deepEqual(CARD_CATALOG.betrayal!.timing,['beforeMove'])
+      player.hand=player.hand.filter(c=>c.id!==card.id);player.discard.push(card);player.hand.push(player.deck.shift()!)
+      expected.turn.cardPlays.white=1
+      expected.history.push({type:'cardPlayed',cardId:'betrayal',target:{pieceId:'white-pawn-g2',to:'g4'},movement:[],preservePreviousMove:false})
+    }else{
+      assert.equal(expected.turn.moveMade,true)
+      assert.deepEqual(threats(expected.pieces,expected.turn.color,true,true),[])
+      expected.turn={color:expected.turn.color==='white'?'black':'white',phase:'beforeMove',moveMade:false,cardPlays:{white:0,black:0}}
+      delete expected.shieldMove
+    }
+    expected.fen=`${boardFen(expected.pieces)} ${active} - - ${half} ${full}`
+    const result=applyAction(state,action);assert.deepEqual(state,input,`${label}: immutable action`);assert.ok(result.ok,label);state=result.state
+    for(const key of ['pieces','players','effects','history','turn','enPassant','fen','orientation'] as const)assert.deepEqual(state[key],expected[key],`${label}: ${key}`)
+    assert.deepEqual(state.shieldMove??null,expected.shieldMove??null,label)
+    for(const key of ['chaosForbidden','plotsExecution','fogLocked','riposteCheckDeferred','pendingRescue','pendingDoomsayer','pendingAbduction','outcome'] as const)assert.equal(state[key]??null,null,label)
+    for(const key of ['plotsAllowances','riposteLostMoves','riposteSkipped','underElfHill'] as const)assert.deepEqual(state[key]??[],[],label)
+    assert.deepEqual(threats(expected.pieces,'white',true,true,true),['black-bishop-c8'],`${label}: raw White check`)
+    assert.deepEqual(threats(expected.pieces,'black',true,true,true),[],`${label}: raw Black check`)
+    for(const color of ['white','black'] as const){assert.deepEqual(threats(expected.pieces,color,true,true),[]);assert.equal(isInCheck(state,color),false,label)}
+  }
+  assert.equal(state.fen,'4kn2/5pR1/3pp3/P3bbp1/1P2K1P1/B2PPP2/2q2N1P/1R3Q2 w - - 3 25')
+  const checkedPrefix=corrected.steps.slice(0,105)
+  assert.equal(checkedPrefix.filter(s=>s.action.type==='move').length,43)
+  assert.equal(checkedPrefix.filter(s=>s.action.type==='playCard').length,14)
+  const bad:GameAction={type:'playCard',cardId:'forced-march',cardInstanceId:'white-deck-8-forced-march',target:[{from:'d3',to:'c3'},{from:'f3',to:'g3'}]}
+  assert.deepEqual(corrected.steps[105]!.action,bad)
+  assert.deepEqual(state.effects[0],{type:'fatal-attraction',owner:'white',card:{id:'white-hand-0-fatal-attraction',cardId:'fatal-attraction'},pieceId:'white-king-e1'})
+  assert.equal(at(state.pieces,'e4')?.id,'white-king-e1')
+  for(const s of ['d3','f3']){const p=at(state.pieces,s)!;assert.equal(p.owner,'white');assert.equal(p.role,'pawn');assert.equal(p.royal,false);assert.equal(frozen(state.pieces,p,true),true)}
+  const before=structuredClone(state),rejected=applyAction(state,bad)
+  assert.deepEqual(state,before,'106 input must be immutable')
+  assert.equal(rejected.ok,false,'106 §18.6/§24: frozen Pawns are invalid movement targets; do not spend Forced March or consume a move as SELF_CHECK fizzle')
+  assert.deepEqual(rejected.state,before,'106 rejected card leaves complete state unchanged')
+  // Generated actions107–126 remain deliberately unreviewed after this failure.
 })
