@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 118,
+  "nextIteration": 121,
   "coverageAuditsCompleted": 11,
   "iterations": [
     {
@@ -1204,6 +1204,52 @@
       "status": "passed",
       "finalFen": "5r2/1ppbpp1r/5p2/p2P1B2/2P3n1/3n2P1/1PQqPR2/RNB2KN1 w - - 0 29",
       "testCommit": "c272425"
+    },
+    {
+      "id": 116,
+      "agent": "iteration_116",
+      "seed": 860116,
+      "reviewedActions": 79,
+      "reviewedMoves": 35,
+      "status": "fixed",
+      "finalFen": "rn4b1/2prk1pR/1p1bQq1n/P2pp3/3PPp1P/P7/2P2PP1/1NBKRN1B w - - 10 19",
+      "observedFinalFenBeforeFix": "rn1r2b1/2p1k1pR/1p1bQq1n/P2pp3/3PPp1P/P7/2P2PP1/1NBKRN1B b - - 9 18",
+      "testCommit": "40ba7f5",
+      "finding": "Doomsayer immediate choice was discarded before resolving a possible same-turn rescue",
+      "fixCommit": "65998f7",
+      "audit": "audit-116.md",
+      "focusedTestCommit": "1b2a93f",
+      "legacyTimingTestCommit": "faf74c7"
+    },
+    {
+      "id": 117,
+      "agent": "iteration_117",
+      "seed": 860117,
+      "reviewedActions": 119,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "rnb1k1p1/pp1p1pp1/1q2p3/1Br5/5q2/1R6/3PN1PP/4K2R b q - 7 28",
+      "testCommit": "29f9786"
+    },
+    {
+      "id": 118,
+      "agent": "iteration_118",
+      "seed": 860118,
+      "reviewedActions": 115,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4kbn1/r1n2r2/2ppp2r/p3bp2/NPqPN1p1/2BBP1PP/2PQ1P2/RN2K1R1 b - - 6 27",
+      "testCommit": "48697c5"
+    },
+    {
+      "id": 119,
+      "agent": "iteration_119",
+      "seed": 860119,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "1rkb4/6n1/2p2qp1/pP5R/5P2/1B1P1P2/P3P1PP/R2KBN2 w - - 3 27",
+      "testCommit": "71a6589"
     }
   ],
   "coverageAudits": [
@@ -1275,12 +1321,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 110,
-    "tests": 5019,
-    "passed": 5019,
+    "afterIteration": 119,
+    "tests": 5048,
+    "passed": 5048,
     "failed": 0,
-    "seconds": 31.099,
-    "scope": "All engine tests and numbered iterations through110"
+    "seconds": 34.611,
+    "scope": "All engine tests and numbered iterations through119; Challenge performance regression added afterward"
   },
   "performanceFixes": [
     {
