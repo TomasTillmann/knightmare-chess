@@ -1231,22 +1231,33 @@ function doppelgangerCopy(state: GameState): PieceState | undefined {
 export function doppelgangerDests(state: GameState, from: SquareName): SquareName[] {
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === from);
   const copied = doppelgangerCopy(state);
-  const copiedRoles = copied
-    ? physicalPieces(state, copied).map(component => component.role)
+  const copiedComponents = copied
+    ? physicalPieces(state, copied)
     : [];
   if (
     !piece
     || (piece.owner !== state.turn.color && !piece.neutral)
     || physicalPieces(state, piece).every(component => component.role === 'pawn')
     || !copied
-    || !copiedRoles.length
+    || !copiedComponents.length
   ) return [];
 
   const board = setupFor(state).board;
   const source = parseSquare(from);
-  return [...new Set(copiedRoles.flatMap(role => {
+  return [...new Set(copiedComponents.flatMap(component => {
+    const role = component.role;
+    const crab = componentHasCrabEffect(state, component.id);
     const destinations: SquareName[] = [];
-    if (role === 'pawn') {
+    if (crab) {
+      const [fileStep, rankStep] = pawnForward(state, piece.owner);
+      for (const side of [-1, 1]) {
+        const file = squareFile(source) + fileStep + side * rankStep;
+        const rank = squareRank(source) + rankStep + side * fileStep;
+        if (file >= 0 && file <= 7 && rank >= 0 && rank <= 7 && !board.has(rank * 8 + file)) {
+          destinations.push(makeSquare(rank * 8 + file));
+        }
+      }
+    } else if (role === 'pawn') {
       const [fileStep, rankStep] = pawnForward(state, piece.owner);
       const maxDistance = onStartingSquare(state, piece.owner, from) ? 2 : 1;
       for (let distance = 1; distance <= maxDistance; distance += 1) {
@@ -1260,7 +1271,7 @@ export function doppelgangerDests(state: GameState, from: SquareName): SquareNam
         { color: piece.owner, role }, source, board.occupied,
       ).diff(board.occupied)].map(makeSquare));
     }
-    return destinations.filter(to => !forbiddenCityBlocksMove(state, from, to, role === 'knight'));
+    return destinations.filter(to => !forbiddenCityBlocksMove(state, from, to, role === 'knight' && !crab));
   }))].filter(to => curseAllowsMove(state, piece, from, to));
 }
 
