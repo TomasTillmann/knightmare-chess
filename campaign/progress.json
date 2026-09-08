@@ -1,7 +1,7 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 50,
-  "coverageAuditsCompleted": 4,
+  "nextIteration": 54,
+  "coverageAuditsCompleted": 5,
   "iterations": [
     {
       "id": 1,
@@ -491,6 +491,56 @@
       "status": "passed",
       "finalFen": "2b2k2/1r1pqp2/P6p/1PpQ2p1/P5P1/7r/1pP1B3/2B2KNR w - - 1 28",
       "testCommit": "0dcc523"
+    },
+    {
+      "id": 47,
+      "agent": "iteration_047",
+      "seed": 860047,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2q5/1k1ppp2/2p3R1/r3b3/5PNP/5P2/PPK1B3/1NbQR3 w - - 1 27",
+      "testCommit": "9e1835e"
+    },
+    {
+      "id": 48,
+      "agent": "iteration_048",
+      "seed": 860048,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r3krR1/1pb2p2/N4n2/1pBpp2p/1K1B1P2/1PP2PnP/Q1qPP3/8 b q - 1 28",
+      "testCommit": "57c87da"
+    },
+    {
+      "id": 49,
+      "agent": "iteration_049",
+      "seed": 860049,
+      "reviewedActions": 111,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "2bqk1NR/1n1p4/pr2p1pb/1p1QpR1P/8/P3P2N/2P1KP2/2B4B w - - 8 27",
+      "testCommit": "1244e3a"
+    },
+    {
+      "id": 50,
+      "agent": "iteration_050",
+      "seed": 860050,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "3np2r/p3bNp1/P4p2/P1rP3p/1k2B3/3b1KP1/1PP2P2/N1B3RR b - - 0 26",
+      "testCommit": "4b89d35"
+    },
+    {
+      "id": 51,
+      "agent": "iteration_051",
+      "seed": 860051,
+      "reviewedActions": 118,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "pnr5/1r5p/3p1p1n/3Pp1pP/2p2qP1/pbP1PPP1/1P5B/3RK1NR b - - 0 28",
+      "testCommit": "0128096"
     }
   ],
   "coverageAudits": [
@@ -517,15 +567,21 @@
       "report": "coverage-040.md",
       "playedTypes": 78,
       "appliedTypes": 77
+    },
+    {
+      "afterIteration": 50,
+      "report": "coverage-050.md",
+      "playedTypes": 79,
+      "appliedTypes": 78
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 39,
-    "tests": 4932,
-    "passed": 4932,
+    "afterIteration": 46,
+    "tests": 4941,
+    "passed": 4941,
     "failed": 0,
-    "seconds": 24.558,
-    "scope": "All engine tests and numbered iterations through039"
+    "seconds": 21.288,
+    "scope": "All engine tests and numbered iterations through046"
   },
   "performanceFixes": [
     {
@@ -535,5 +591,11 @@
       "audit": "audit-rescue-performance.md",
       "finding": "Existential legality checks unnecessarily enumerated every move and card rescue"
     }
-  ]
+  ],
+  "samplerTargetFix": {
+    "fromIteration": 47,
+    "regressionCommit": "2ff278f",
+    "fixCommit": "1ac8ec1",
+    "verification": "verify-sampler-targets.md"
+  }
 }
