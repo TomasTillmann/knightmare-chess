@@ -3,7 +3,30 @@ import test from 'node:test';
 import { applyAction, cardPlayTargets } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { GameAction, GameState } from '../types.js';
-import { maySampleCard } from './random-campaign.js';
+import { generateTrace, maySampleCard } from './random-campaign.js';
+
+test('a uniformly proposed playable card survives an invalid target candidate', () => {
+  // This seed proposes White's Fanatic first. Broad public target candidates
+  // contain non-Pawns, but all eight starting Pawns have a legal three-step move.
+  const stop = Symbol('one action');
+  let before: GameState | undefined;
+  let after: GameState | undefined;
+  try {
+    generateTrace(900582, (step, _moves, state) => {
+      if (step === 0) before = state;
+      if (step === 1) { after = state; throw stop; }
+    });
+  } catch (error) { if (error !== stop) throw error; }
+  assert.ok(before && after);
+  const candidates = cardPlayTargets(before, 'fanatic');
+  const results = candidates.map(target => applyAction(before!, { type: 'playCard', cardId: 'fanatic', target }));
+  assert.ok(results.some(result => !result.ok));
+  assert.equal(results.filter(result => result.ok && result.state.history.at(-1)?.type === 'cardPlayed').length, 8);
+  assert.equal(after.history[0]?.type, 'cardPlayed');
+  assert.equal(after.history[0]?.cardId, 'fanatic');
+  assert.equal(after.turn.cardPlays.white, 1);
+  assert.equal(after.players.white.hand.some(card => card.cardId === 'fanatic'), false);
+});
 
 const act = (state: GameState, action: GameAction) => {
   const result = applyAction(state, action);
