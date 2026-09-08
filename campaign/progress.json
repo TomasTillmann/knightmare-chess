@@ -1,6 +1,6 @@
 {
   "requestedIterations": 300,
-  "nextIteration": 96,
+  "nextIteration": 99,
   "coverageAuditsCompleted": 9,
   "iterations": [
     {
@@ -952,6 +952,20 @@
       "audit": "audit-090.md"
     },
     {
+      "id": 91,
+      "agent": "iteration_091",
+      "seed": 860091,
+      "reviewedActions": 132,
+      "reviewedMoves": 48,
+      "status": "fixed",
+      "finalFen": "rq2kR2/2n4p/3p4/1bk2b2/3N4/pP5P/P2Nb3/4KB2 w - - 10 31",
+      "observedFinalFenBeforeFix": "rq2kR2/2n4p/3p4/1bp2b2/3N4/pP5P/P2Nb3/4KB2 w - - 10 31",
+      "testCommit": "fc40e98",
+      "finding": "Repeated Coup through Haunting Memories changes physical Prince role without synchronizing the FEN board",
+      "fixCommit": "940be36",
+      "audit": "audit-091.md"
+    },
+    {
       "id": 92,
       "agent": "iteration_092",
       "seed": 860092,
@@ -980,6 +994,26 @@
       "status": "passed",
       "finalFen": "r2r4/kpPq2n1/2n3bR/pp1p1Pp1/3P2N1/K1P5/PQ2pP2/bNR5 b - - 3 31",
       "testCommit": "143b119"
+    },
+    {
+      "id": 95,
+      "agent": "iteration_095",
+      "seed": 860095,
+      "reviewedActions": 129,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "4N2R/3pn3/3r1pk1/b1b1p2p/p1p4P/2QPP2B/B2PP3/P2K2NR b - - 2 30",
+      "testCommit": "fdadb50"
+    },
+    {
+      "id": 96,
+      "agent": "iteration_096",
+      "seed": 860096,
+      "reviewedActions": 120,
+      "reviewedMoves": 50,
+      "status": "passed",
+      "finalFen": "r1b5/3p3p/p2P1Bkp/p2Qpp2/1P2NPB1/2r2n2/q3P2P/P1RK2Nn b - - 2 28",
+      "testCommit": "31fb95e"
     }
   ],
   "coverageAudits": [
@@ -1039,12 +1073,12 @@
     }
   ],
   "lastEngineGate": {
-    "afterIteration": 90,
-    "tests": 4994,
-    "passed": 4994,
+    "afterIteration": 95,
+    "tests": 4997,
+    "passed": 4997,
     "failed": 0,
-    "seconds": 29.511,
-    "scope": "All engine tests through090 plus092/093;091 independent finding pending"
+    "seconds": 30.636,
+    "scope": "All engine tests and numbered iterations through095"
   },
   "performanceFixes": [
     {
