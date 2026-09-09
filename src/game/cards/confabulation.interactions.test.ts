@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { it } from 'node:test';
-import { applyAction, cardPlayTargets, legalDests } from '../reducer.js';
+import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
@@ -34,6 +34,145 @@ const assertAway = (state: State, id: string, zone = 'away') => {
   assert.equal(piece(state, id).zone, zone);
   assert.equal(piece(state, id).square, null);
 };
+
+const mateFixtures = [
+  { owner: 'white', defender: 'black', fen: 'k6B/pp6/8/8/8/8/8/4K2R w - - 0 1', from: 'h1', to: 'h8', king: 'a8', escape: 'a7', union: ['g8', 'h7', 'g7'], queenFen: 'k6Q/pp6/8/8/8/8/8/4K3 b - - 0 1' },
+  { owner: 'black', defender: 'white', fen: '4k2r/8/8/8/8/8/PP6/K6b b - - 0 1', from: 'h8', to: 'h1', king: 'a1', escape: 'a2', union: ['g1', 'h2', 'g2'], queenFen: '4k3/8/8/8/8/8/PP6/K6q w - - 0 1' },
+] as const;
+
+for (const fixture of mateFixtures) {
+  const mateGame = (rescue = false) => createGameState({
+    fen: fixture.fen,
+    hands: { [fixture.owner]: ['confabulation'], [fixture.defender]: rescue ? ['disintegration'] : [] },
+    decks: { white: [], black: [] },
+  });
+  const merge = (state: State) => play(state, 'confabulation', [{ from: fixture.from, to: fixture.to }]);
+
+  it(`${fixture.owner} Confabulation mate retains both components and its physical continuing card`, () => {
+    const initial = mateGame();
+    const card = initial.players[fixture.owner].hand[0];
+    const carrierId = at(initial, fixture.to)[0].id;
+    const moverId = at(initial, fixture.from)[0].id;
+    const state = merge(initial);
+
+    assert.deepEqual(at(state, fixture.to).map(candidate => candidate.id), [carrierId]);
+    assertAway(state, moverId);
+    assert.deepEqual(confabulation(state), { type: 'confabulation', owner: fixture.owner, card, pieceIds: [carrierId, moverId] });
+    assert.deepEqual(state.players[fixture.owner].hand, []);
+    assert.deepEqual(state.players[fixture.owner].discard, []);
+    assert.equal(state.history.some(event => event.type === 'cardFizzled'), false);
+    uniqueBoardSquares(state);
+  });
+
+  it(`${fixture.owner} Confabulation mate ends the game only after the no-rescue escape turn`, () => {
+    const merged = merge(mateGame());
+    assert.equal(merged.outcome, null);
+    const state = end(merged);
+    assert.deepEqual(state.outcome, { winner: fixture.owner, reason: 'checkmate' });
+    assert.deepEqual(confabulation(state), confabulation(merged));
+    assert.deepEqual(state.players[fixture.owner], merged.players[fixture.owner]);
+  });
+
+  it(`${fixture.owner} mating Confabulation spends the selected copy and draws exactly once`, () => {
+    const initial = createGameState({
+      fen: fixture.fen,
+      hands: { white: [], black: [], [fixture.owner]: ['confabulation', 'confabulation'] },
+      decks: { white: [], black: [], [fixture.owner]: ['confabulation', 'confabulation'] },
+    });
+    const [spare, selected] = initial.players[fixture.owner].hand;
+    const merged = ok(applyAction(initial, action('playCard', {
+      cardId: 'confabulation', cardInstanceId: selected.id, target: [{ from: fixture.from, to: fixture.to }],
+    })));
+    const player = merged.players[fixture.owner];
+    assert.equal(player.hand.length, 2);
+    assert.deepEqual(player.hand.find(card => card.id === spare.id), spare);
+    assert.equal(player.hand.some(card => card.id === selected.id), false);
+    assert.equal(player.deck.length, 1);
+    assert.deepEqual(
+      [...player.hand.filter(card => card.id !== spare.id), ...player.deck].sort((a, b) => a.id.localeCompare(b.id)),
+      [...initial.players[fixture.owner].deck].sort((a, b) => a.id.localeCompare(b.id)),
+    );
+    assert.deepEqual(player.discard, []);
+    assert.deepEqual(confabulation(merged)?.card, selected);
+    const finished = end(merged);
+    assert.deepEqual(finished.players, merged.players);
+    assert.deepEqual(confabulation(finished), confabulation(merged));
+  });
+
+  it(`${fixture.owner} mating Confabulation leaves its input state and action unchanged`, () => {
+    const initial = mateGame();
+    const next = action('playCard', { cardId: 'confabulation', target: [{ from: fixture.from, to: fixture.to }] });
+    const snapshot = structuredClone(initial);
+    const actionSnapshot = structuredClone(next);
+    ok(applyAction(initial, next));
+    assert.deepEqual(initial, snapshot);
+    assert.deepEqual(next, actionSnapshot);
+  });
+
+  it(`${fixture.owner} mating endTurn leaves the input board, effect, and card zones unchanged`, () => {
+    const merged = merge(mateGame());
+    const snapshot = structuredClone(merged);
+    end(merged);
+    assert.deepEqual(merged, snapshot);
+  });
+
+  it(`${fixture.owner} Confabulation mate consumes the move and card allowance`, () => {
+    const merged = merge(mateGame());
+    assert.equal(merged.turn.color, fixture.owner);
+    assert.equal(merged.turn.phase, 'afterMove');
+    assert.equal(merged.turn.moveMade, true);
+    assert.equal(merged.turn.cardPlays[fixture.owner], 1);
+    assert.equal(merged.turn.cardPlays[fixture.defender], 0);
+    rejected(merged, action('move', { from: fixture.to, to: fixture.union[0] }));
+    assert.equal(merged.history.filter(event => event.type === 'cardPlayed' && event.cardId === 'confabulation').length, 1);
+    assert.equal(merged.history.some(event => event.type === 'cardFizzled'), false);
+  });
+
+  it(`${fixture.defender} Disintegration escape fixture is legal against equivalent Queen geometry`, () => {
+    let state = gameWithHands(fixture.queenFen, fixture.defender === 'white' ? ['disintegration'] : [], fixture.defender === 'black' ? ['disintegration'] : []);
+    assert.equal(isKingInCheck(state, fixture.defender), true);
+    assert.equal([...legalDests(state, false).values()].flat().length, 0);
+    assert.equal(cardPlayTargets(state, 'disintegration').includes(fixture.escape), true);
+    state = play(state, 'disintegration', fixture.escape);
+    assert.equal(legalDests(state).get(fixture.king)?.includes(fixture.escape), true);
+    state = move(state, fixture.king, fixture.escape);
+    assert.equal(isKingInCheck(state, fixture.defender), false);
+    assert.equal(end(state).outcome, null);
+  });
+
+  it(`${fixture.defender} card rescue preserves mating Confabulation and its union movement`, () => {
+    const initial = mateGame(true);
+    const carrierId = at(initial, fixture.to)[0].id;
+    const moverId = at(initial, fixture.from)[0].id;
+    const pawnId = at(initial, fixture.escape)[0].id;
+    const rescueCard = initial.players[fixture.defender].hand[0];
+    const merged = merge(initial);
+    assert.equal(isKingInCheck(merged, fixture.defender), true);
+    const effect = confabulation(merged);
+    assert.ok(effect);
+    let state = end(merged);
+    assert.equal(state.turn.color, fixture.defender);
+    assert.equal(state.outcome, null);
+    assert.equal([...legalDests(state, false).values()].flat().length, 0);
+    assert.equal(cardPlayTargets(state, 'disintegration').includes(fixture.escape), true);
+    state = play(state, 'disintegration', fixture.escape);
+    assertAway(state, pawnId, 'dead');
+    assert.deepEqual(state.players[fixture.defender].hand, []);
+    assert.deepEqual(state.players[fixture.defender].discard, [rescueCard]);
+    state = move(state, fixture.king, fixture.escape);
+    assert.equal(isKingInCheck(state, fixture.defender), false);
+    state = end(state);
+    assert.equal(state.outcome, null);
+    assert.deepEqual(confabulation(state), effect);
+    assert.deepEqual(state.players[fixture.owner], merged.players[fixture.owner]);
+    for (const square of fixture.union) assert.equal(legalDests(state).get(fixture.to)?.includes(square), true, square);
+    state = move(state, fixture.to, fixture.union[0]);
+    assert.deepEqual(at(state, fixture.union[0]).map(candidate => candidate.id), [carrierId]);
+    assertAway(state, moverId);
+    assert.deepEqual(confabulation(state), effect);
+    uniqueBoardSquares(state);
+  });
+}
 
 it('Disintegration makes both Confabulation components dead and discards its physical card', () => {
   let state = game('7k/7p/8/8/8/8/P7/R6K w - - 0 1', ['confabulation', 'disintegration']);

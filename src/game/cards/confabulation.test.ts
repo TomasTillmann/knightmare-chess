@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { Chess } from 'chessops/chess';
+import { parseFen } from 'chessops/fen';
 
 // Confabulation focused lifecycle, timing, and king-safety coverage.
 import { applyAction, cardPlayTargets, legalDests } from '../reducer.js';
@@ -10,6 +12,91 @@ const game = (options: any = {}) => createGameState(options);
 const play = (state: any, target: any) => applyAction(state, { type: 'playCard', cardId: 'confabulation', target });
 const accepted = (result: any) => { assert.equal(result.ok, true); return result.state; };
 const rejected = (state: any, target: any) => { const before = structuredClone(state); const result = play(state, target); assert.equal(result.ok, false); assert.strictEqual(result.state, state); assert.deepEqual(state, before); };
+
+describe('Confabulation continuing-effect direct mate (§11.4)', () => {
+  for (const fixture of [
+    { color: 'white', fen: 'k6B/pp6/8/8/8/8/8/4K2R w - - 0 1', queenFen: 'k6Q/pp6/8/8/8/8/8/4K3 b - - 0 1', from: 'h1', to: 'h8' },
+    { color: 'black', fen: '4k2r/8/8/8/8/8/PP6/K6b b - - 0 1', queenFen: '4k3/8/8/8/8/8/PP6/K6q w - - 0 2', from: 'h8', to: 'h1' },
+  ] as const) {
+    const prepared = () => game({ fen: fixture.fen, hands: { white: [], black: [], [fixture.color]: ['confabulation'] }, decks: { white: [], black: [] } });
+    const target = [{ from: fixture.from, to: fixture.to }];
+
+    it(`${fixture.color}: independently establishes queen-equivalent checkmate`, () => {
+      const position = Chess.fromSetup(parseFen(fixture.queenFen).unwrap()).unwrap();
+      assert.equal(position.isCheck(), true);
+      assert.equal(position.isCheckmate(), true);
+      assert.equal(position.outcome()?.winner, fixture.color);
+    });
+
+    it(`${fixture.color}: allows the mating merge and records a successful card play`, () => {
+      const state = prepared();
+      const next = accepted(play(state, target));
+      assert.equal(next.history.at(-1)?.type, 'cardPlayed');
+      assert.equal(next.history.at(-1)?.reason, undefined);
+      assert.equal(next.turn.moveMade, true);
+      assert.equal(cardPlayTargets(state, 'confabulation').some((candidate: any) => JSON.stringify(candidate) === JSON.stringify(target)), true);
+    });
+
+    it(`${fixture.color}: retains both physical identities and the continuing effect through mate`, () => {
+      const state = prepared();
+      const rook = state.pieces.find((piece: any) => piece.square === fixture.from)!;
+      const bishop = state.pieces.find((piece: any) => piece.square === fixture.to)!;
+      const card = state.players[fixture.color].hand[0];
+      const played = accepted(play(state, target));
+      const ended = accepted(applyAction(played, { type: 'endTurn' }));
+      for (const next of [played, ended]) {
+        assert.deepEqual(next.pieces.find((piece: any) => piece.id === bishop.id), bishop);
+        assert.deepEqual(next.pieces.find((piece: any) => piece.id === rook.id), { ...rook, square: null, zone: 'away' });
+        assert.deepEqual(next.effects, [{ type: 'confabulation', owner: fixture.color, card, pieceIds: [bishop.id, rook.id] }]);
+        assert.equal(next.players[fixture.color].discard.some((discarded: any) => discarded.id === card.id), false);
+        assert.equal(next.players[fixture.color].hand.some((held: any) => held.id === card.id), false);
+      }
+      assert.deepEqual(ended.outcome, { winner: fixture.color, reason: 'checkmate' });
+    });
+  }
+
+  for (const fixture of [
+    { color: 'white', fen: 'k6B/1p6/8/8/8/8/8/4K2R w - - 0 1', queenFen: 'k6Q/1p6/8/8/8/8/8/4K3 b - - 0 1', from: 'h1', to: 'h8', escapeFrom: 'a8', escapeTo: 'a7' },
+    { color: 'black', fen: '4k2r/8/8/8/8/8/1P6/K6b b - - 0 1', queenFen: '4k3/8/8/8/8/8/1P6/K6q w - - 0 2', from: 'h8', to: 'h1', escapeFrom: 'a1', escapeTo: 'a2' },
+  ] as const) {
+    it(`${fixture.color}: retains a checking merge when the opposing King has an escape`, () => {
+      const position = Chess.fromSetup(parseFen(fixture.queenFen).unwrap()).unwrap();
+      assert.equal(position.isCheck(), true);
+      assert.equal(position.isCheckmate(), false);
+      const state = game({ fen: fixture.fen, hands: { white: [], black: [], [fixture.color]: ['confabulation'] }, decks: { white: [], black: [] } });
+      const played = accepted(play(state, [{ from: fixture.from, to: fixture.to }]));
+      assert.equal(played.history.at(-1)?.type, 'cardPlayed');
+      const ended = accepted(applyAction(played, { type: 'endTurn' }));
+      assert.equal(ended.outcome, null);
+      assert.deepEqual(ended.effects, played.effects);
+      assert.equal(ended.effects.length, 1);
+      assert.equal((legalDests(ended).get(fixture.escapeFrom) ?? []).includes(fixture.escapeTo), true);
+      accepted(applyAction(ended, { type: 'move', from: fixture.escapeFrom, to: fixture.escapeTo }));
+    });
+  }
+
+  for (const fixture of [
+    { color: 'white', fen: 'k6B/pp6/8/8/8/8/2n5/4K2R w - - 0 1', from: 'h1', to: 'h8' },
+    { color: 'black', fen: '4k2r/2N5/8/8/8/8/PP6/K6b b - - 0 1', from: 'h8', to: 'h1' },
+  ] as const) {
+    it(`${fixture.color}: the mate exception does not excuse leaving its own King in check`, () => {
+      assert.equal(Chess.fromSetup(parseFen(fixture.fen).unwrap()).unwrap().isCheck(), true);
+      const state = game({ fen: fixture.fen, hands: { white: [], black: [], [fixture.color]: ['confabulation'] }, decks: { white: [], black: [] } });
+      const before = structuredClone(state);
+      const card = state.players[fixture.color].hand[0];
+      const next = accepted(play(state, [{ from: fixture.from, to: fixture.to }]));
+      assert.deepEqual(state, before);
+      assert.deepEqual(next.pieces, before.pieces);
+      assert.deepEqual(next.effects, before.effects);
+      assert.equal(next.history.at(-1)?.type, 'cardFizzled');
+      assert.equal(next.history.at(-1)?.reason, 'SELF_CHECK');
+      assert.deepEqual(next.players[fixture.color].discard, [card]);
+      assert.equal(next.players[fixture.color].hand.length, 0);
+      assert.equal(next.turn.moveMade, false);
+      assert.equal(next.outcome, null);
+    });
+  }
+});
 
 describe('Confabulation', () => {
   it('publishes the card metadata', () => {
