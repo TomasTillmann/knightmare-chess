@@ -66,10 +66,10 @@ const rationales = `
 53. Black ends; White acts safely behind c3 blocker.
 54. Rh2-f2 crosses vacant g2; no capture, Crab remains g4.
 55. White ends; Black acts with both Kings safe.
-56. Ne3xg4 captures Crab pawn; remove marker and discard Crab, preserve captured pawn identity.
-57. Black ends; White acts with no active Crab.
-58. Qb3-b5 passes vacant b4; noncapture, own King stays safe.
-59. White ends; Black acts; attacked queen need not escape.
+56. Ne3xg4 captures Crab pawn at ply 27; retain its exact marker/card through the rescue window and preserve captured pawn identity.
+57. Black ends; White acts with captured Crab transformation retained for the following move.
+58. Qb3-b5 passes vacant b4; noncapture, own King stays safe, captured Crab transformation remains through this move.
+59. White ends the following move; remove captured Crab marker and discard its card, Black acts; attacked queen need not escape.
 60. a6xb5 captures White queen diagonally; pawn identity a7 survives.
 61. Black ends; White acts, queen remains captured.
 62. Bc1-d2 enters empty adjacent diagonal; c3 still blocks black queen line.
@@ -134,6 +134,8 @@ test('iteration 052 deterministic trace', () => {
   assert.ok(replayTrace(trace));
 
   let state = createGameState(trace.initial);
+  const crabCard = { id: 'white-hand-4-crab', cardId: 'crab' } as const;
+  const crabEffect = { type: 'crab', owner: 'white', card: crabCard, pieceId: 'white-pawn-g2' } as const;
   for (const [i, { action }] of trace.steps.entries()) {
     const n = i + 1;
     assert.ok(rationales[i]!.startsWith(`${n}. `));
@@ -155,15 +157,22 @@ test('iteration 052 deterministic trace', () => {
       assert.ok(typeof action.from === 'string' && typeof action.to === 'string');
       const mover = before.pieces.find(p => p.square === action.from)!;
       const victim = before.pieces.find(p => p.square === action.to);
+      const setup = parseFen(before.fen).unwrap();
+      const capturePly = 2 * (setup.fullmoves - 1) + (setup.turn === 'black' ? 1 : 0);
+      if (n === 56) {
+        assert.equal(victim?.id, 'white-pawn-g2');
+        assert.equal(capturePly, 27);
+      }
       assert.deepEqual(state.pieces, before.pieces.map(p => p.id === mover.id
         ? { ...p, square: action.to }
-        : p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: before.turn.color } : p), rationales[i]);
+        : p.id === victim?.id ? { ...p, square: null, zone: 'captured', capturedBy: before.turn.color,
+          ...(n === 56 ? { capturedAtPly: capturePly } : {}) } : p), rationales[i]);
       assert.deepEqual(state.players.white.hand, before.players.white.hand);
       assert.deepEqual(state.players.black.hand, before.players.black.hand);
       if (n < 106) {
         // Crab never moves; its forward capture geometry is unchanged. Curse
         // affects only a1 rook, whose sole move is the one-square capture at 99.
-        const chess = Chess.fromSetup(parseFen(before.fen).unwrap()).unwrap();
+        const chess = Chess.fromSetup(setup).unwrap();
         const move = { from: parseSquare(action.from)!, to: parseSquare(action.to)! };
         assert.ok(chess.isLegal(move), rationales[i]);
         chess.play(move);
@@ -176,8 +185,9 @@ test('iteration 052 deterministic trace', () => {
     } else if (action.type === 'endTurn') {
       assert.equal(state.fen, before.fen);
       assert.deepEqual(state.pieces, before.pieces);
-      assert.deepEqual(state.players, before.players);
-      assert.deepEqual(state.effects, before.effects);
+      assert.deepEqual(state.players, n === 59 ? { ...before.players,
+        white: { ...before.players.white, discard: [...before.players.white.discard, crabCard] } } : before.players);
+      assert.deepEqual(state.effects, n === 59 ? [] : before.effects);
       assert.deepEqual(state.enPassant, before.enPassant);
       assert.deepEqual(state.turn, { color: before.turn.color === 'white' ? 'black' : 'white',
         phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } });
@@ -208,9 +218,14 @@ test('iteration 052 deterministic trace', () => {
         assert.deepEqual(state.enPassant, []);
       }
     }
-    if (n === 56) {
+    if (n === 56 || n === 57 || n === 58) {
+      // §10 keeps a captured transformation through the following move.
+      assert.deepEqual(state.effects, [crabEffect]);
+      assert.deepEqual(state.players.white.discard, []);
+    }
+    if (n === 59) {
       assert.deepEqual(state.effects, []);
-      assert.deepEqual(state.players.white.discard.map(c => c.cardId), ['crab']);
+      assert.deepEqual(state.players.white.discard, [crabCard]);
     }
     if (n === 99) assert.equal(state.pieces.find(p => p.id === 'white-rook-a1')!.square, 'a2');
     if (n === 100 || n === 101) {
