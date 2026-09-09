@@ -115,11 +115,11 @@ const rationales = [
   '103. Rf1-f4 slides through vacant f2 and f3.',
   '104. End White turn safely.',
   '105. Crab a2xb1 captures White Rook and promotes to Knight; discard Crab.',
-  '106. Riposte restores Rb1 and captures the pre-promotion Crab as a Pawn; White loses next move.',
-  '107. End Black turn; White automatically forfeits its move, advancing halfmove once.',
+  '106. Riposte keeps the completed Black move clocks, restores Rb1 and captures the pre-promotion Crab as a Pawn at ply 47; retain its transformation and card for the rescue window; White loses next move.',
+  '107. End Black turn; White automatically forfeits its move, advancing halfmove once; the Crab rescue window remains open through this following move.',
   '108. Figure Dance remains legal after forfeiture: Na1-h1 and Na8-a1 rotate simultaneously.',
-  '109. End the skipped White turn; the penalty expires.',
-  '110. Kg3xf4 captures the other White Rook on an undefended square.',
+  '109. End the skipped White turn; the penalty and immediate-following-move Crab rescue window expire, discarding its card.',
+  '110. Kg3xf4 is an ordinary capture of the other White Rook on an undefended square.',
   '111. End Black turn safely.',
   '112. c4xd5 captures Black original d7 Pawn diagonally.',
   '113. End White turn safely.',
@@ -299,6 +299,7 @@ test('iteration 191 independent physical, card, history, FEN and obligation orac
       turn = { color: opposite(actor), phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } };
       shield = undefined; forbidden = undefined; response = undefined; skipped = undefined;
       if (n === 107) { assert.deepEqual(lost, ['white']); lost = []; skipped = 'white'; advance(false); }
+      if (n === 109) dropEffect('crab');
     } else if (action.type === 'namePiece') {
       assert.equal(n, 50);
       assert.deepEqual(action, { type: 'namePiece', speaker: 'white', name: 'queen', losses: [{ effectId: 'black-deck-0-doomsayer', pieceId: 'white-queen-d1' }] });
@@ -377,8 +378,15 @@ test('iteration 191 independent physical, card, history, FEN and obligation orac
         }
         case 106: {
           assert.equal(action.target, undefined);
+          const capturedAtPly = 2 * (Number(fields[5]) - 1) + (fields[1] === 'b' ? 1 : 0) - Number(turn.moveMade);
+          assert.equal(capturedAtPly, 47);
           const rook = pieces.find(p => p.id === 'white-rook-a1')!; rook.zone = 'board'; rook.square = 'b1'; delete rook.capturedBy;
           const crab = pieces.find(p => p.id === 'black-pawn-c7')!; crab.role = 'pawn'; crab.promoted = false; capture(crab.id,'white');
+          crab.capturedAtPly = capturedAtPly;
+          const crabCard = { id: 'black-hand-1-crab', cardId: 'crab' };
+          assert.deepEqual(players.black.discard.find(c => c.id === crabCard.id), crabCard);
+          players.black.discard = players.black.discard.filter(c => c.id !== crabCard.id);
+          effects.push({ type: 'crab', owner: 'black', card: crabCard, pieceId: crab.id });
           lost = ['white']; shield = undefined; ep = []; fields[3] = '-'; fields[4] = '0';
           event = { ...event, player: 'white', capturedId: crab.id, capturedIds: [crab.id], preservePreviousMove: false, movement: [] }; break;
         }
