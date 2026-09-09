@@ -284,6 +284,13 @@ function currentPly(state: GameState): number {
   return (setup.fullmoves - 1) * 2 + (setup.turn === 'black' ? 1 : 0) - (state.turn.moveMade ? 1 : 0);
 }
 
+function recentlyCaptured(state: GameState, piece: PieceState): boolean {
+  if (piece.capturedAtPly !== undefined) return currentPly(state) - piece.capturedAtPly <= 1;
+  const captureIndex = state.history.reduce((last, event, index) =>
+    event.capturedId === piece.id || event.capturedIds?.includes(piece.id) ? index : last, -1);
+  return captureIndex >= 0 && !state.history.slice(captureIndex + 1).some(event => event.type === 'move');
+}
+
 function losePiece(state: GameState, piece: PieceState, zone: 'captured' | 'dead', captor = state.turn.color): string[] {
   const effect = confabulationForPiece(state, piece.id);
   const ids = effect?.pieceIds ?? [piece.id];
@@ -291,10 +298,12 @@ function losePiece(state: GameState, piece: PieceState, zone: 'captured' | 'dead
     const component = state.pieces.find(candidate => candidate.id === id);
     if (component) {
       if (effect && !component.promoted) component.role = component.originalRole;
-      if (zone === 'captured' && !component.promoted && component.role !== component.originalRole
-        && Object.values(state.players).some(player => [...player.hand, ...player.deck, ...player.discard]
-          .some(card => card.cardId === 'resurrection' || card.cardId === 'hostage'
-            || (component.originalRole === 'pawn' && (card.cardId === 'winged-victory' || card.cardId === 'betrayal'))))) {
+      if (zone === 'captured' && !component.promoted
+        && (state.effects.some(candidate => isCrabEffect(candidate) && candidate.pieceId === component.id)
+          || (component.role !== component.originalRole
+            && Object.values(state.players).some(player => [...player.hand, ...player.deck, ...player.discard]
+              .some(card => card.cardId === 'resurrection' || card.cardId === 'hostage'
+                || (component.originalRole === 'pawn' && (card.cardId === 'winged-victory' || card.cardId === 'betrayal'))))))) {
         component.capturedAtPly = currentPly(state);
       }
       component.square = null;
@@ -1481,7 +1490,11 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
   resolved.pieces = structuredClone(before.pieces);
   resolved.effects = structuredClone(before.effects);
   resolved.enPassant = [];
-  resolved.fen = before.fen;
+  const restored = parseFen(before.fen).unwrap();
+  const completed = parseFen(state.fen).unwrap();
+  restored.turn = completed.turn;
+  restored.fullmoves = completed.fullmoves;
+  resolved.fen = makeFen(restored);
   // Restored Continuing Effects retain their physical cards instead of their capture discards.
   for (const effect of resolved.effects) {
     const card = effectRecord(effectRecord(effect)?.card);
@@ -1494,9 +1507,6 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
   const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === attacker.id)!, 'captured', reactor);
   syncFen(resolved, components);
   const setup = setupFor(resolved);
-  const completed = parseFen(state.fen).unwrap();
-  setup.turn = completed.turn;
-  setup.fullmoves = completed.fullmoves;
   setup.halfmoves = 0;
   setup.epSquare = undefined;
   resolved.fen = makeFen(setup);
@@ -4429,13 +4439,8 @@ function capturedBy(state: GameState, piece: PieceState): Color | undefined {
 }
 
 function restoreCapturedPawn(state: GameState, pawn: PieceState, to: SquareName): void {
-  if (!pawn.promoted && pawn.role !== pawn.originalRole) {
-    const captureIndex = state.history.reduce((last, event, index) =>
-      event.capturedId === pawn.id || event.capturedIds?.includes(pawn.id) ? index : last, -1);
-    const recent = pawn.capturedAtPly !== undefined
-      ? currentPly(state) - pawn.capturedAtPly <= 1
-      : captureIndex >= 0 && !state.history.slice(captureIndex + 1).some(event => event.type === 'move');
-    if (!recent) pawn.role = pawn.originalRole;
+  if (!pawn.promoted && pawn.role !== pawn.originalRole && !recentlyCaptured(state, pawn)) {
+    pawn.role = pawn.originalRole;
   }
   delete pawn.capturedAtPly;
   delete pawn.capturedBy;
@@ -7575,7 +7580,8 @@ function expirePieceEffects(result: ApplyResult): ApplyResult {
       : false;
     const temporarilyAway = piece?.zone === 'away'
       && result.state.underElfHill?.some(entry => entry.pieceId === piece.id && !entry.returned);
-    return !piece || (!compositeOnBoard && !temporarilyAway) || (kind === 'crab' && piece.promoted);
+    const awaitingRescue = kind === 'crab' && piece?.zone === 'captured' && recentlyCaptured(result.state, piece);
+    return !piece || (!compositeOnBoard && !temporarilyAway && !awaitingRescue) || (kind === 'crab' && piece.promoted);
   });
   if (!expired.length) return result;
   const cardIds = new Set(expired.map(effect => effect.card.id));
