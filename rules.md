@@ -79,6 +79,8 @@ The period of one player's action. It normally contains one move and optionally 
 
 The displacement of one piece from one square to another. It may be a Regular Move or a move created by a regular card. Some cards produce several moves or simultaneous relocation; follow their text.
 
+The official FAQ (pp. 17–18, repeated on p. 41) explicitly permits Toll after Charge!, Crusade, or Merciless takes a piece across the frontier toward the opponent and then returns it homeward in the same turn. Both displacements count for that immediate Toll response; the final square alone does not determine eligibility. A homeward-only move or an earlier turn's crossing does not qualify. If payment is declined, Toll cancels the entire turn and returns the mover's used card, without granting another move, as printed on Toll.
+
 ### Regular Move
 
 A move legal under ordinary chess after applying all active Continuing Effects.
@@ -202,6 +204,8 @@ In the standard separate-deck game, immediately draw one replacement after playi
 
 If a player does not play a card during their own turn, they may discard one card after the turn and draw a replacement. They cannot use this ordinary discard option on the opponent's turn.
 
+The public engine action `{ type: 'endTurn', discardCardInstanceId?: string }` optionally selects one physical card ID in the ending player's hand. The exchange occurs only when that turn can legally finish, including a permitted turn without a Regular Move, and the player played no card during it; an ineffective card still counts as played. All required choices and King-safety checks still apply. The selected card goes to that player's discard pile and the next undrawn card, if any, goes to their hand. Invalid, foreign, stale, malformed, or ambiguous physical IDs reject the entire action without changing state. Omitting the selector ends the turn as before, without discarding or drawing. Ordinary discard is not a card play and does not change the last played card for Vulture or Haunting Memories. A reaction on the preceding opponent's turn does not consume this own-turn option.
+
 When a separate draw deck empties:
 
 - do not reshuffle the discard pile;
@@ -268,7 +272,9 @@ This creates two distinct tests:
 
 A player may make a move that places or leaves their King in check only if a card played on that same turn removes the check before the turn ends.
 
-Conversely, a before-move card may temporarily expose the acting King's line if the following Regular Move cures it. Once the Regular Move has been made, a regular card whose effect would leave the acting King in check has no board effect: spend, discard, and replace the card normally, then restore the position from immediately before that card.
+Castling may pass through, leave, or enter check, provided the King is safe at the end of the turn, whether or not a card is played (publisher FAQ, p. 8). Castling rights, piece eligibility, and clear paths still apply.
+
+Conversely, a before-move card may temporarily expose the acting King's line if the following Regular Move cures it. Once the Regular Move has been made, a regular card whose effect would leave the moving player's King in check, including an opponent's reaction, has no board effect: spend, discard, and replace the card normally, then restore the position from immediately before that card. This applies to either player's own turn (publisher FAQ, p. 4).
 
 For a card played **instead of the move**, test the proposed replacement move as one atomic result. If it leaves the acting King in check, its board effect fails and the card is still spent. Recommended deterministic ruling: if the King was safe before that failed attempt, the replacement move is consumed; if the turn began in check, leave the Regular Move available so the player can still answer the check. If no legal answer exists, adjudicate checkmate immediately.
 
@@ -398,7 +404,9 @@ Rotate the board 90 degrees in either direction. The physical relationships rota
 - eligible last-rank Pawns promote as directed, with the opponent promoting first when the card requires that order; and
 - reversing the rotation reverses these changes under the same rules.
 
-Recommended practice: keep coordinate labels fixed to the table and record board orientation separately. Otherwise Man-Trap coordinates and repetition records become ambiguous.
+Peace Talks reversing Earthquake must resolve all newly eligible promotions immediately, with the cancelling player's opponent declaring first, then each player's Pawns in fixed-square order. Each owner chooses Queen, Rook, Bishop, or Knight. Use `{ effectId, promotions: [{ square, role }] }`, where `effectId` identifies the retained physical Earthquake card; a string effect ID remains valid when no promotion is required. Validate the complete declaration before cancellation, preserve earlier promotions and other retained rotations, and apply promotion consequences and Peace Talks' regular-card King-safety rules to the complete result.
+
+Engine convention: coordinate labels stay attached to physical board squares; players stay seated at the table. Earthquake preserves piece and square-marker coordinates while changing owner-relative movement, starting lines, and frontier. Viewed from above, clockwise from the initial position makes White move toward decreasing files and Black toward increasing files; counterclockwise does the reverse. Numeric orientation records counterclockwise board angle (clockwise adds 270 modulo 360). See §25.9 for notation.
 
 ### 14.2 Figure Dance
 
@@ -434,7 +442,7 @@ If moving a neutral piece would leave the acting player's own King in check, the
 
 Neutrality is a Continuing Effect played after the Regular Move. Its target is one occupied square containing an opposing piece (an already-neutral piece also qualifies). Kings, royal pieces, and Queens are excluded, including the current or still-applicable original type of any component of a merged piece. A previously promoted Pawn uses its promoted type for this restriction. Becoming neutral does not change physical identity, original ownership, current type, promotion, location, or movement history; a neutral Pawn retains its original owner's forward direction. The change itself is not a move or capture and preserves the completed move, clocks, castling rights, and valid en-passant opportunities.
 
-Retain the physical Neutrality card beside the board and draw its replacement once. The marker follows the selected physical piece through movement, swaps, transformations, and temporary absence; a merged carrier is neutral while it contains that component. The printed duration ends when the marked piece is captured or made dead: discard its marker and remove that marker's neutrality, even if the piece is subsequently rescued. Peace Talks can cancel the marker with the same restoration. Multiple Neutrality markers can coexist; removing one must preserve neutrality supplied by another marker or by the piece's pre-existing state. Promotion or transformation after resolution does not itself end Neutrality. Resolve the complete effect under §11.6: leaving the acting King's position illegal fizzles and spends the card, while a Continuing Effect may participate in mate under §11.4.
+Retain the physical Neutrality card beside the board and draw its replacement once. The marker follows the selected physical piece through movement, swaps, transformations, and temporary absence; a merged carrier is neutral while it contains that component. The printed duration ends when the marked piece is captured or made dead: discard its marker and remove that marker's neutrality, even if the piece is subsequently rescued. Peace Talks can cancel the marker with the same restoration. Multiple Neutrality markers can coexist; removing one must preserve neutrality supplied by another marker or by the piece's pre-existing state. Promotion or transformation after resolution does not itself discard Neutrality, but target ineligibility suspends it under §10. A marked Pawn promoted to Queen loses neutral control; promotion to Rook, Bishop, or Knight retains it unless another exclusion applies (official FAQ, p. 44). Resolve the complete effect under §11.6: leaving the acting King's position illegal fizzles and spends the card, while a Continuing Effect may participate in mate under §11.4.
 
 ### 15.2 Betrayal
 
@@ -446,11 +454,25 @@ Betrayal is played before the Regular Move and does not replace it. Use `{ piece
 
 The original King becomes a capturable Prince. The marked replacement becomes the new King while retaining its ordinary movement. All rules protecting Kings and defining check/checkmate now apply to the marked piece.
 
+A royal Pawn promotes normally. Promotion to Queen or Rook suspends Coup and restores the previous King through any remaining active Coups. Retain the physical Coup card; it resumes if the marked piece is no longer a Queen or Rook. Bishop or Knight promotion leaves Coup active (official FAQ, pp. 20–21 and 44).
+
+Existing Neutrality and Pacifism on the replacement are suspended while it is King (official FAQ, “Can you play COUP on a NEUTRAL or PACIFIST piece?”, pp. 43–44). Retain their cards and physical markers; they resume when the piece is no longer royal and otherwise eligible. In particular, Queen promotion keeps Neutrality suspended, while Rook promotion permits it to resume. A capturable Prince remains eligible for active Pacifism.
+
+A neutral piece of the opposite color is also a legal Coup target. Suspending Neutrality restores its original owner's exclusive control, surrendering the acting player's King and immediately awarding the opponent the game. The official FAQ explicitly permits this losing choice because Coup is a Continuing Effect and is exempt from the Checkmate Rule. The normal immediate Fog of War response can still cancel the card and restore the preceding position.
+
 Peace Talks cannot cancel Coup after the Prince has been lost if doing so would leave the player with no King; the Checkmate Rule makes that cancellation illegal.
 
 ### 15.4 Confabulation
 
 Two non-King pieces merge on one square. The combined piece moves, captures, and is affected by cards as either component. Confabulated Pawns cannot promote.
+
+A named transformation such as Crab applies only to its own component (official FAQ, p. 18). The other ordinary Pawn component therefore retains its en-passant and Dark Mirror capture powers; this follows from the component scope and either-component rule. FAQ p. 21 expressly forbids a Crab itself from capturing en passant. The engine retains the interpretation that Crab's continuing forward-only movement overrides Dark Mirror on that component alone; the supplied sources do not expressly rule on that pairing.
+
+When a mixed piece can either capture en passant or move to the same empty square without capturing, both outcomes are legal subject to their own King-safety and capture restrictions. The engine move action defaults to the available en-passant capture; `enPassant: false` selects an otherwise legal move without that capture, and `enPassant: true` requires a currently available en-passant capture. Vendetta judges the selected outcome.
+
+Continuing Effects applied to the combined piece end when Peace Talks cancels Confabulation. Effects applied before the merge remain attached to their original targets (official FAQ, “If the CONFABULATED piece had PACIFISM (or NEUTRALITY... or both) on it”).
+
+Ending Confabulation also ends any Coup that made the combined piece King, restoring the Prince through the remaining Coup effects. If that Prince has been captured, both Confabulation and its dependent Coup are immune to Peace Talks (official FAQ, “Can you COUP a CONFABULATED piece?”).
 
 Recommended rulings where the preserved text is silent:
 
@@ -491,9 +513,9 @@ Pieces may still be made dead by Betrayal or Disintegration. Truce ends when a K
 
 ### 16.3 Mystic Shield
 
-Mystic Shield is a nine-point, non-unique regular card played after your move. Select one occupied square containing a nonroyal physical piece you just moved, using that square as the target. The piece must still be on the board. A controlled neutral piece qualifies regardless of its original owner, and promotion does not prevent selection. Castling permits selecting the relocated Rook; where a move moved multiple pieces, select exactly one. Merely swapping or placing a piece does not make it a moved piece. A stale turn or a piece that did not participate cannot supply the trigger. Plots Within Plots preserves its original qualifying physical identities while targets use their current squares.
+Mystic Shield is a nine-point, non-unique regular card played after your move. Select one occupied square containing a physical piece you just moved, using that square as the target. The piece must still be on the board; Kings and other royal pieces qualify. A controlled neutral piece qualifies regardless of its original owner, and promotion does not prevent selection. Castling permits selecting either the relocated King or Rook; where a move moved multiple pieces, select exactly one. Merely swapping or placing a piece does not make it a moved piece. A stale turn or a piece that did not participate cannot supply the trigger. Plots Within Plots preserves its original qualifying physical identities while targets use their current squares.
 
-The selected physical piece cannot be captured by the card player's opponent during that opponent's next turn. Protect the whole composite while it contains the selected component. Record the card player's identity separately from the piece's original owner. Protection follows that physical identity through relocation, transformation, neutrality, or allegiance changes and expires when the protected opponent turn ends, including a forfeited turn. It does not prohibit the piece's own moves or captures, and does not apply to a reaction before that opponent turn begins. A captured or dead piece cannot retain useful protection off board.
+The selected physical piece cannot be captured by the card player's opponent during that opponent's next turn. Protect the whole composite while it contains the selected component. Record the card player's identity separately from the piece's original owner. Protection follows that physical identity through relocation, transformation, neutrality, or allegiance changes and expires when the protected opponent turn ends, including a forfeited turn. It does not prohibit the piece's own moves or captures, and does not apply to a reaction before that opponent turn begins. The official FAQ (page 5) explicitly permits moving a King into check and then playing Mystic Shield: evaluating royal safety immediately accounts for the opponent's prospective forbidden capture, so the card resolves the pending check and the turn can end. Check returns on the player's next turn if the same attack remains after protection expires. A captured or dead piece cannot retain useful protection off board.
 
 This is a temporary restriction, not a Continuing Effect: spend, discard, and replace the card once when played; Peace Talks cannot cancel it. The card changes no piece positions, identities, clocks, castling rights, en-passant opportunities, or move status. It consumes only the card allowance. Ordinary captures, en passant, and card effects explicitly classified as captures obey the protection; blocking, non-capture displacement, transformation, allegiance change, and death remain possible. Any check depending on a forbidden capture is suppressed during the protected turn. Apply the regular-card Checkmate Rule to the complete effect: evaluate the opponent's prospective protected turn, so immunity cannot remove their sole check escape and thereby create direct mate. Such a play fizzles immediately, spending the card without granting protection and preserving the completed move.
 
@@ -507,13 +529,13 @@ Cards may bypass capture immunity by using the word **dead** rather than **captu
 
 These preserved effects cancel the opponent's move and require a different move, using the same or another piece. If the opponent used a card, the card may be taken back.
 
-The replacement must genuinely be different. Recommended ruling: changing only a declaration or irrelevant ordering is not different; the final board transition or chosen card action must differ.
+The replacement must genuinely be different. The official FAQ (pages 17/38/50) requires a different board move: omitting or changing an optional card, changing the route, or changing only off-board captured/dead assignments cannot justify repeating the same displacement.
 
-Chaos is a ten-point, non-unique regular card played immediately after the opponent's completed move, before that turn ends. It cancels the latest move, including a move made by a replacement or additional-move card. No target accepts the moving player's normal take-back of the card responsible for that move; `{ returnCard: false }` records that player's choice to leave that card spent. `{ returnCard: true }` is equivalent to no target. Reject any other payload. A passive card that makes no move is not a new cancellation trigger, and an unrelated intervening action closes the immediate window; Plots Within Plots preserves its original response window under §17.3.
+Chaos is a ten-point, non-unique regular card played after the opponent's completed move, including that mover's optional after-move card (official FAQ, pages 16/37), before `endTurn` advances the engine to the next player. It cancels the latest move, including a move made by a replacement or additional-move card. No target accepts the moving player's normal take-back of the card responsible for that move or its optional after-move card; `{ returnCard: false }` declines retrieval. `{ returnCard: true }` is equivalent to no target. Reject any other payload. A passive optional card is part of this turn: it preserves the existing response opportunity and the original move's identity, without creating a new move. An unrelated opponent action or ending the turn closes the window; Plots Within Plots preserves its original response window under §17.3. This corrects the former local closure clause where it was applied to the mover's optional card; that interpretation conflicted with the publisher ruling.
 
-Restore the state immediately before the canceled move: physical positions and zones, all capture and promotion consequences, movement markers, Continuing Effects and their card disposition, castling rights, en-passant, clocks, and pending movement obligations. Restore the moving player's opportunity to choose a replacement and keep that player active. A returned responsible card also refunds its play allowance and reverses its replacement draw; declining return keeps that card discarded, its replacement drawn, and its allowance spent. Preserve independent earlier cards and moves, including Plots Within Plots and its other replacement move. The Chaos card itself is discarded and replaced exactly once, consuming the reactor's allowance for this turn without consuming their following turn's allowance.
+Restore the state immediately before the canceled move: physical positions and zones, all capture and promotion consequences, movement markers, Continuing Effects and their card disposition, castling rights, en-passant, clocks, and pending movement obligations. Restore the moving player's opportunity to choose a replacement and keep that player active. Returning the involved card also undoes its effects, refunds its play allowance, and reverses its replacement draw. Declining return of a card that supplied the canceled move keeps that card discarded, its replacement drawn, and its allowance spent. Declining retrieval of an optional nonmovement card retains its effects, physical disposition (including a Continuing Effect card in play), replacement draw, and spent allowance while undoing the original move; FAQ page 37 distinguishes canceling a move from canceling a card. Its effects follow the physical pieces to their restored positions. Preserve independent earlier cards and moves, including Plots Within Plots and its other replacement move. The Chaos card itself is discarded and replaced exactly once, consuming the reactor's allowance for this turn without consuming their following turn's allowance. An ordinary end-turn discard is not a played card and never reopens an ended turn.
 
-The canceled movement cannot be repeated during the replacement opportunity: canonical physical origins and destinations must differ, so a different castling alias, promotion declaration, or order of independent move segments cannot evade the prohibition. Ordinary legal-move enumeration and card target enumeration must respect it. An invalid repeat is atomic. The prohibition ends when a genuinely different replacement move completes or the affected turn ends; it must not ban that move on a later turn. Apply §11 to cancellation itself, including the replacement prohibition: if it would directly create board checkmate, Chaos fizzles and is spent while the completed opposing move remains intact. A fabricated after-move state without a real preceding move is not eligible.
+The canceled movement cannot be repeated during the replacement opportunity: compare canonical physical origins and destinations together with any actual on-board promotion result. A different castling alias or order of independent move segments cannot evade the prohibition. A legal ordinary promotion to a different role at the same destination is a different board state; this is a derived application of FAQ page 50, not an explicit promotion example. Repeating the same promoted role remains prohibited, and invalid or inapplicable promotion declarations confer no exception. Ordinary legal-move enumeration and card target enumeration must respect it. An invalid repeat is atomic. The prohibition ends when a genuinely different replacement move completes or the affected turn ends; it must not ban that move on a later turn. Apply §11 to cancellation itself, including the replacement prohibition: if it would directly create board checkmate, Chaos fizzles and is spent while the completed opposing move remains intact. A fabricated after-move state without a real preceding move is not eligible.
 
 Knightmare! is a separate ten-point, non-unique regular card (`knightmare`) with the same printed effect, after-opponent-move timing, target contract, restoration, optional responsible-card return, replacement prohibition, and fizzle rules as Chaos above. Preserve the selected physical Knightmare! card and its own card ID in expenditure, replacement draw, history, copying, and cancellation; owning Chaos is neither required nor a substitute. It participates in Plots Within Plots and Haunting Memories under their ordinary rules. Chained move cancellations always apply to the latest actual move and retain independent earlier expenditure; Fog of War may cancel Knightmare! under §17.2.
 
@@ -525,9 +547,11 @@ Fog of War cancels another card. Both cards are discarded. If the canceled card 
 
 Cancel only the targeted card and consequences dependent on it. Preserve independent earlier actions unless they become illegal.
 
-Fog of War is a ten-point, non-unique regular card, played immediately after an opposing physical card is played. It takes no target: the latest opposing card is the one canceled. Reject other payloads, a player's own card, stale windows, and fabricated history without a real card play. Resolve the reactor from the player who played that card, not merely from the active turn color; a player can counter an opponent's reaction during their own turn. Plots Within Plots can preserve the original opposing-card window. An immediate counter may cancel a card that has just opened a mandatory choice, including Doomsayer or Abduction, before that choice is answered. An intervening unrelated action closes the response window.
+Fog of War is a ten-point, non-unique regular card, played immediately after an opposing physical card is played. With no target it cancels the latest opposing card. Within a live Plots Within Plots trio, a physical card ID may instead select Plots or either subsequent card, as expressly allowed by the official FAQ, page 52. Reject other payloads, a player's own card, stale windows, and fabricated history without a real card play. Resolve the reactor from the player who played that card, not merely from the active turn color; a player can counter an opponent's reaction during their own turn. Plots Within Plots can preserve the original opposing-card window. An immediate counter may cancel a card that has just opened a mandatory choice, including Doomsayer or Abduction, before that choice is answered. An intervening unrelated action closes the response window.
 
-Restore the position and other reversible effects from before the canceled card, including captured or dead pieces, transformations, ownership, markers, orientation, castling, en-passant, clocks, and pending choices. Reapply only the ordinary expenditure and replacement draw of the canceled physical card, and spend and replace Fog of War once. Both physical cards end in their respective players' discard piles; a canceled Continuing Effect does not remain beside the board. Do not duplicate cards or retain card-specific effects such as Vulture's extra cost or transfer. The canceled player's card allowance remains consumed, and that player cannot play another card in the affected turn, including through Plots Within Plots. Preserve the countering player's independent earlier cards and any otherwise-valid additional allowance.
+Restore the position and other reversible effects from before the canceled card, including captured or dead pieces, transformations, ownership, markers, orientation, castling, en-passant, clocks, and pending choices. Reapply only the ordinary expenditure and replacement draw of the canceled physical card, and spend and replace Fog of War once. Both physical cards end in their respective players' discard piles; a canceled Continuing Effect does not remain beside the board. Do not duplicate cards or retain card-specific effects such as Vulture's extra cost or transfer. The canceled player's ordinary card allowance remains consumed. An uncanceled Plots Within Plots retains its remaining additional play; the canceled extra still consumes its own play. Preserve the countering player's independent earlier cards and any otherwise-valid additional allowance.
+
+The official FAQ, page 52, explicitly commits the third card when Fog cancels the second card of the trio. Preserve that same physical third card and its valid consequences. If its original target becomes invalid, retain the same card for a legal target under §17.3 rather than substituting a different card; this target handling follows §17.3's current-position validation. Canceling Plots itself backs up the dependent extras and their replacement draws. The FAQ also permits opposing Plots plus two Fogs to cancel both extras: a later cancellation must not restore a card already canceled in that saved window.
 
 If the canceled card replaced the whole move, restore a Regular Move opportunity for its player. If it merely preceded or followed an independent move, preserve that move and its availability as it stood before the card. A different replacement is not required by Fog of War itself. If the canceled card was an additional move, restore the preceding completed move. An already-fizzled card may be countered; it remains spent. A cancellation does not undo an unrelated earlier card or a different replacement move under Plots Within Plots.
 
@@ -561,6 +585,8 @@ A pseudo-capture that would leave the player's King in check is not legal and do
 
 The named enemy piece must be movable when selected. On the opponent's next move, that piece must be used or the opponent loses the turn.
 
+A nonroyal Confabulated piece may be challenged through an eligible component: a Queen–Knight can be challenged as a Knight, obliging that same combined piece to move or forfeit the turn. Riposte still cannot capture a composite containing a Queen (official FAQ, p. 16).
+
 Recommended ruling: "use" means the piece must actually move or be the operative target/actor of a card that replaces the move. Merely selecting it for a passive marker does not satisfy Challenge unless the physical card's timing says otherwise.
 
 If a later effect makes the challenged piece unable to move, recommended ruling: the opponent loses the turn as written rather than the obligation disappearing.
@@ -571,7 +597,7 @@ Dungeon is a non-Continuing card played after the Regular Move. Use one relocati
 
 As with Squaring the Circle (§13.10), the arbitrary corner relocation ignores ordinary movement geometry and intervening paths; it cannot enter a forbidden destination, and an identity-based distance limit such as Curse still applies.
 
-The acting player's opponent cannot move that physical piece on their following turn, whether by a Regular Move or a card that moves it. The ban follows identity and ends when that opponent's turn ends, including a forfeited turn. It does not restrict the other player, and an exchange explicitly classified as a swap rather than movement remains possible. Forbidden captures suppress check under §11.7. The restriction is temporary, not a retained Continuing Effect, so Peace Talks cannot cancel it.
+The acting player's opponent cannot move that physical piece by a Regular Move on their following turn. A later movement card overrides this regular-card prohibition only for the movement that card authorizes; Continuing Effect restrictions and the card's own conditions still apply. This Dungeon-specific consequence is derived from the publisher's Conflicts rule (official rulebook, page 2) and the analogous False Orders/Escape ruling (official FAQ, page 27), not an explicit Dungeon ruling. The ban follows identity and ends when that opponent's turn ends, including a forfeited turn; playing or canceling the later card does not erase the remaining ban. It does not restrict the other player, and an exchange explicitly classified as a swap rather than movement remains possible. Forbidden captures suppress check under §11.7. The restriction is temporary, not a retained Continuing Effect, so Peace Talks cannot cancel it.
 
 ### 18.4 Riposte
 
@@ -597,7 +623,7 @@ Fatal Attraction is an eight-point, non-unique Continuing Effect played after th
 
 While the magnet remains on the board, every non-royal board piece in its eight adjacent squares is unable to move or capture, regardless of ownership or neutrality. The magnet does not freeze itself. A royal physical component exempts its whole composite from this restriction; a capturable Prince has no royal exemption. Use fixed square adjacency, including after Earthquake. Immobilized pieces do not threaten squares. Pieces may pass through the surrounding squares and may enter one with a legal quiet move or capture, but become immobilized once they stop there. An arrival is not rejected merely because it will leave its mover immobilized.
 
-The restriction applies to ordinary moves and cards that actually move pieces. A non-move swap remains possible under the general swap rule. The magnet's marker follows its physical identity through a swap or transformation; a swap alone does not end it. If the magnet makes an actual move, or is captured or made dead, discard this effect and release its neighbors before evaluating the final position. A temporary absence, such as Abduction's concealment or Under Elf Hill, retains the marker but projects no surrounding restriction while the magnet is away. A correctly restored magnet projects it again. Multiple magnets apply independently, including to one another when adjacent.
+The restriction applies to ordinary moves and card movement, including swaps. The publisher FAQ p.40 (Medusa) explicitly counts swapping as movement, and the rulebook's Conflicts rule prioritizes Continuing Effects over regular cards. Applying those general rules to Fatal Attraction is an inference, not a card-pair-specific FAQ ruling, and corrects this section's former swap exception. Check every exchanged piece against the original position before releasing any magnet: swapping a magnet cannot simultaneously free its frozen neighbor to participate in that swap. Swaps need not follow ordinary-move geometry and do not capture. If the magnet moves, including by a legal swap of its composite's carrier, or is captured or made dead, discard its retained physical card and release its neighbors before evaluating the final position. A transformation without displacement retains the marker on the same physical identity. A temporary absence, such as Abduction's concealment or Under Elf Hill, retains the marker but projects no surrounding restriction while the magnet is away. A correctly restored magnet projects it again. Multiple magnets apply independently, including to one another when adjacent.
 
 Peace Talks may cancel one retained Fatal Attraction effect. Apply ordinary continuing-effect priority and §11.7 threat suppression. As a Continuing Effect it may produce mate under §11.4 or provide an after-move rescue under §11.6; all final King-safety checks must use the resulting active magnets.
 
@@ -605,9 +631,9 @@ Peace Talks may cancel one retained Fatal Attraction effect. Apply ordinary cont
 
 ### 19.1 Man-Trap
 
-Write the coordinate of a currently occupied friendly square secretly. The next opposing piece ending a move there is captured after completing any capture it made. A King is unaffected.
+Write the coordinate of a currently occupied friendly square secretly. The next unprotected opposing piece ending a move there is captured after completing any capture it made. A King or Pacifist does not set off Man-Trap: retain the trap and its physical card for a later vulnerable entrant, regardless of whether Pacifism preceded or followed the trap. This includes Coup's current King and protection applying through a composite component (§§15.3–15.4). The publisher's explicit clarification (official FAQ, pp. 40 and 46) supersedes the printed wording that a King springs the trap but is unaffected. A neutral entrant remains capturable. A newly arriving Mystic Shield recipient is captured before the Shield's protection begins on the following turn.
 
-Seal or timestamp the choice so it cannot be altered. If Earthquake changes orientation, use fixed table coordinates rather than relative player coordinates.
+Seal or timestamp the choice so it cannot be altered. If Earthquake changes orientation, retain the chosen board-attached square coordinate (§25.9).
 
 ### 19.2 Abduction
 
@@ -623,9 +649,11 @@ For human play, do not use Abduction against a player unable to perform the visu
 
 ### 19.3 Doomsayer
 
-The next player who pronounces a non-King piece name loses one owned piece of that type. If they own none, the effect remains. The opponent may name a piece immediately when the card is played.
+The next player who pronounces a non-King piece name loses one eligible owned or neutral piece of that type. Either player may lose a neutral piece regardless of its original owner (official FAQ, pp. 8 and 43). If no eligible piece exists, the effect remains. The opponent may name a piece immediately when the card is played.
 
-Recommended ruling: only intentional game communication at the table counts; quoted card text, reading this rule aloud, speech outside the game, and accidental partial words do not. The affected player chooses which owned piece of that type is lost unless the physical card specifies otherwise.
+Crab and Prince are distinct names for Doomsayer (official FAQ, p. 8). A Crab may be lost for either "Crab" or "Pawn"; a Prince may be lost for "Prince". Saying "King" has no effect, and a Pawn made King by Coup cannot be lost for "Pawn". Capture immunity still applies.
+
+Recommended ruling: only intentional game communication at the table counts; quoted card text, reading this rule aloud, speech outside the game, and accidental partial words do not. The affected player chooses which eligible piece of that type is lost unless the physical card specifies otherwise.
 
 ## 20. Multi-piece and simultaneous movement
 
@@ -699,17 +727,19 @@ The additional move uses the Rook's current ordinary movement and may capture. A
 
 ### 22.1 Fireball and the King
 
-Fireball is a ten-point, non-unique regular card played after the acting player's latest completed actual move in the current turn, provided that move did not capture an opposing piece. A move granted or replacing the Regular Move may qualify if a card allowance remains. Use the current square of one physical nonroyal piece that actually moved as the target string. A castling Rook or a newly promoted Pawn may qualify; an unmoved piece, a capturable Prince that did not move, an older turn's move, a non-move swap, or fabricated move history does not. If multiple pieces moved, choose one eligible center. Normal Plots Within Plots saved-trigger rules apply.
+Fireball is a ten-point, non-unique regular card played after the acting player's latest completed actual move in the current turn, provided that move did not capture an opposing piece. A move granted or replacing the Regular Move may qualify if a card allowance remains. Use the current square of one physical nonroyal piece other than a Prince that actually moved as the target string. A castling Rook or a newly promoted Pawn may qualify; an unmoved piece, any Prince, an older turn's move, a non-move swap, or fabricated move history does not. If multiple pieces moved, choose one eligible center. Normal Plots Within Plots saved-trigger rules apply.
 
-The center and all pieces in its eight adjacent fixed-coordinate squares are captured simultaneously, whatever their color. This is an area capture, not movement: walls, intervening paths, and square geometry beyond adjacency do not stop the blast. Kings and composites containing a royal physical piece are unaffected and cannot be selected as the center. Other capture protection also applies: skip protected adjacent pieces; a protected center is ineligible. In particular, Fireball cannot remove Pacifist pieces or any piece protected by Truce, and a Pacifist piece cannot be selected to explode. Apply Mystic Shield's protection only during its specified opposing turn. Preserve physical identities in the captured zone and perform normal capture expiry for piece-bound effects and all components of a captured composite.
+The center and all pieces in its eight adjacent fixed-coordinate squares are captured simultaneously, whatever their color. This is an area capture, not movement: walls, intervening paths, and square geometry beyond adjacency do not stop the blast. Kings, Coup Princes, and composites containing either are unaffected and cannot be selected as the center (official FAQ, page 20). Other capture protection also applies: skip protected adjacent pieces; a protected center is ineligible. In particular, Fireball cannot remove Pacifist pieces or any piece protected by Truce, and a Pacifist piece cannot be selected to explode. Apply Mystic Shield's protection only during its specified opposing turn. Preserve physical identities in the captured zone and perform normal capture expiry for piece-bound effects and all components of a captured composite.
 
 Resolve the complete simultaneous result under §11.6: newly created direct mate or acting-King self-check fizzles, restoring the pre-card board while spending and replacing Fireball once and preserving the already completed move. Fireball can provide an eligible after-move rescue by removing the checking piece. Success spends and replaces the physical card once, keeps the turn after its move, grants no extra move, resets the halfmove clock for capture, and does not advance the fullmove counter again. Revoke rights of captured Rooks and retain only still-valid en-passant opportunities. A capture of an opposing piece in the triggering move, including en passant or an arrival capture, prevents the Fireball trigger.
+
+If Bog follows Fireball after a qualifying Rook, Bishop, or Queen move, shorten the move and relocate the explosion to that endpoint (official FAQ, pp. 12 and 28). Undo the original blast's captures and dependent effect expiry, then recompute all victims and protections at the shortened endpoint. Keep both physical cards spent and replaced once. Apply §11.6 to the complete shortened move and explosion; if Bog fizzles, retain the original Fireball result.
 
 ### 22.2 Irresistible Force
 
 A Pawn pushes the occupied piece ahead, potentially creating a chain. A piece pushed off the last rank is captured. A King cannot be pushed.
 
-Recommended ruling: reject the entire play before moving anything if the chain reaches a King. Check Forbidden City and walls for every push boundary. A Pacifist or Truce-protected piece cannot be pushed off-board if that result counts as capture; it may still be displaced on-board unless another rule prevents it.
+Recommended ruling: reject the entire play before moving anything if the chain reaches a King. Check Forbidden City and walls for every push boundary; Forbidden City stops all movement but still spends the card (official FAQ, p. 31), using the replacement-move fizzle policy in §11.6. A Pacifist or Truce-protected piece cannot be pushed off-board if that result counts as capture; it may still be displaced on-board unless another rule prevents it.
 
 ### 22.3 Split Knight
 
@@ -727,7 +757,7 @@ At the beginning of that owner's next turn, before any move, card, timeout, or o
 
 The returned physical piece cannot move or capture for the remainder of that owner's turn, including moves granted by cards, and consequently does not threaten squares during the restriction. Other pieces may move and the player may otherwise take a normal turn. Non-move swaps remain governed by the general swap rule. The restriction expires when that turn ends; ownership, transformation, or a later change in royal status does not transfer it to another physical piece. Piece-bound effects remain attached throughout the temporary absence and return unless their own explicit rule expires them; Peace Talks does not cancel Under Elf Hill because it is not a Continuing Effect.
 
-If no legal return square exists, the official ruling is stalemate immediately, not checkmate, because the absent King is not in check but the game cannot continue. The mandatory return is resolved before testing ordinary move availability for that turn.
+If no legal return square exists, the official ruling is stalemate immediately, not checkmate, because the absent King is not in check but the game cannot continue. The mandatory return is resolved before testing ordinary move availability for that turn. After a legal return, if no legal Regular Move is available, the player may end the turn without moving instead of being stalemated (official FAQ, page 62).
 
 ### 22.5 Hidden Passage and Man of Straw
 
@@ -737,7 +767,7 @@ Reject malformed, occupied, mistimed, or ineligible selections atomically. Apply
 
 Man of Straw is a nine-point, non-unique regular card played before the Regular Move, only while the acting King is in check, including ordinary board checkmate. Use `{ king, pawn }` to select two distinct occupied squares: an owned royal piece currently in check and a controlled, nonroyal unpromoted original Pawn. A capturable Prince is not a King. A neutral Pawn can be selected by either player; a temporarily transformed original Pawn or a composite containing one remains eligible, but a promoted Pawn does not.
 
-Exchange the two board pieces atomically, retaining their physical identities, ownership, current powers, promotion, neutrality, and attached markers. Composite components stay together. This is a non-move swap: no capture, promotion, arrival trigger, movement restriction, or intervening path applies. Square-bound effects stay on their squares. Forbidden City cannot receive either piece. The complete position must leave every acting royal piece safe, including any neutral royal involved, and must not newly create direct mate against the opponent. An unsafe or direct-mate result fizzles under §11.6, restoring the board while spending the card and leaving the Regular Move available.
+Exchange the two board pieces atomically, retaining their physical identities, ownership, current powers, promotion, neutrality, and unexpired attached markers. Composite components stay together. No capture, promotion, arrival trigger, or intervening path applies. Fatal Attraction's movement restriction and magnet expiration do apply to this swap under §18.6; this corrects the former blanket movement-restriction exception without changing other swap-trigger interpretations. Square-bound effects stay on their squares. Forbidden City cannot receive either piece. The complete position must leave every acting royal piece safe, including any neutral royal involved, and must not newly create direct mate against the opponent. An unsafe or direct-mate result fizzles under §11.6, restoring the board while spending the card and leaving the Regular Move available.
 
 Success spends and replaces the card once, preserves the before-move phase and the Regular Move, and does not advance either move clock or change the active color. Revoke the relocated King's castling rights and retain only still-valid en-passant opportunities; the swap creates no new one. A checked player holding a legal Man of Straw escape must receive that opportunity before checkmate is finalized.
 
@@ -757,17 +787,21 @@ Recommended ruling: "last card played" refers to the latest successfully declare
 
 Vulture takes the opponent's last played card into hand. With separate decks, its player also discards their top undrawn card.
 
-Recommended ruling: a Continuing Effect still in play is not in a discard pile and should not be removable by Vulture unless the physical card or official FAQ explicitly permits it. The safe interpretation of "take" is the most recent eligible card in the opponent's discard pile.
+Play Vulture immediately after the opponent plays a card, taking that exact physical card rather than an older discard. The official FAQ (p. 50) explicitly permits taking an active Continuing Effect: leave a proxy in play that remains independently active and can still be canceled by Peace Talks. The retrieved physical card may be replayed; canceling or expiring the original proxy does not discard that physical card from its new location. See [the publisher FAQ](audit/ten-hour-2026-09-08/official-faq.txt), lines 2166–2174.
 
 ### 22.9 No Quarter
 
 No Quarter binds to the exact physical enemy piece captured by the immediately preceding Regular Move, including an en-passant victim or a piece captured during promotion. A capture or removal made by a card, an older turn's capture, or a stale or missing piece identity is ineligible. The piece keeps its owner, current and original roles, promotion, royal, neutral, and attached-effect identity; only its state changes from captured to dead, so it stays off-board and can no longer be returned by another card.
+
+Plots Within Plots preserves this original ordinary-capture trigger under §17.3, including when its first extra card moves or removes the capturer. The original victim must still be captured when No Quarter executes; an extra card cannot manufacture a missing initial capture trigger. This applies the FAQ's original-move ruling for Fireball (pp. 51–52) by analogy, rather than an explicit No Quarter FAQ ruling.
 
 ### 22.10 Evil Eye
 
 Evil Eye is a nine-point, non-unique regular card played instead of the Regular Move. Use `{ attacker, victim }` to choose two distinct occupied squares: a piece controlled by the acting player and one opposing piece it currently threatens. A neutral attacker is controlled by either player, and a neutral victim may be selected by either player. A non-neutral victim must belong to the acting player's opponent even when the selected attacker is neutral. The victim cannot contain a royal component. Any type of attacker, including a King, may qualify.
 
 A threat requires a legal ordinary capture of the selected physical victim in the pre-card position, under the attacker's current powers, paths, orientation, and restrictions. Mere geometric reach is insufficient: a pinned piece cannot claim a capture that would expose its King, and capture immunity or inability to move or capture removes the threat. A valid en-passant capture also threatens its physical Pawn victim; select that Pawn's occupied square, not the empty en-passant destination.
+
+For a royal attacker, including a current Coup King, defer the hypothetical capture's King-safety check: FAQ26 expressly permits a King to capture an adjacent protected Knight while remaining safely in place. All movement and capture restrictions still apply, and the actual stationary result must satisfy King safety; this exception does not relax the pinned nonroyal attacker restriction.
 
 Capture only the selected victim, including all of its composite components, while leaving the attacker and every other piece in place. This is an indirect capture, not movement, arrival, promotion, or sacrifice of the attacker. Preserve the attacker's physical identity, attached markers, and castling rights; effects that expire on the victim's capture expire normally. Never trigger a destination trap or expire the attacker's magnet merely because it made this stationary capture.
 
@@ -890,7 +924,9 @@ Betrayal has an official Pacifism ruling, but the general rule for every marker 
 
 Physical rotation makes notation ambiguous, especially for Man-Trap and move history.
 
-**Recommended default:** coordinates remain fixed relative to the table; orientation is separate state.
+**Engine convention:** coordinates remain attached to the board, with `a1` initially at White's left; orientation is separate state. Pieces, walls, concealed Man-Trap squares, and recorded moves retain those square labels when the physical board turns. Players remain stationary. The publisher specifies physical rotation and owner-relative movement, but does not prescribe this engine representation.
+
+`orientation` is the board's counterclockwise angle viewed from above: 0, 90, 180, or 270 degrees. White's forward vectors in board coordinates are respectively increasing ranks, increasing files, decreasing ranks, and decreasing files; Black's are opposite. The public `clockwise`/`counterclockwise` directions name physical board turns, so clockwise subtracts 90 degrees modulo 360. Owner-relative starting lines and frontier follow the same geometry. Castling retains the same physical King/Rook cells and rights; the FAQ's file-versus-rank description refers to their alignment at the table after rotation, not a relabeling of engine squares.
 
 ### 25.10 Speech and real-time effects
 
@@ -906,11 +942,11 @@ Before a serious game, agree on these points:
 2. Separate decks or common deck?
 3. What point total and handicap apply?
 4. Which chess draw rules apply?
-5. Are coordinates fixed to the table through Earthquake?
+5. Use the engine's board-attached coordinates through Earthquake (§25.9), or explicitly agree on another notation for physical play.
 6. How are simultaneous multi-piece effects resolved?
 7. Does losing a move still permit a non-move card?
 8. How are Confabulated pieces captured and returned?
-9. Can Vulture take an active Continuing Effect?
+9. Use the official FAQ's proxy ruling when Vulture takes an active Continuing Effect (§22.8).
 10. What counts as pronouncing a name for Doomsayer?
 11. What exact timing procedure is used for Panic and Abduction?
 12. Who adjudicates a disagreement, and is the ruling final for that game?

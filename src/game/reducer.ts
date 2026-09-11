@@ -48,6 +48,7 @@ import type {
   PacifismEffect,
   PieceState,
   PromotionDeclaration,
+  PeaceTalksTarget,
   Role,
   SanctuaryTarget,
   SiegeTarget,
@@ -66,13 +67,15 @@ const FIGURE_DANCE_CORNERS = [
   ['a8', 'a1'],
 ] as const;
 const PROMOTIONS = new Set<Role>(['queen', 'rook', 'bishop', 'knight']);
-const DOOMSAYER_ROLES = new Set<DoomsayerRole>(['pawn', 'knight', 'bishop', 'rook', 'queen']);
+const DOOMSAYER_ROLES = new Set<DoomsayerRole>(['pawn', 'knight', 'bishop', 'rook', 'queen', 'crab', 'prince']);
 
-function chaosMovement(before: GameState, after: GameState): string {
+function chaosMovement(before: GameState, after: GameState, withPromotion = false): string {
   return before.pieces.flatMap(piece => {
     const moved = after.pieces.find(candidate => candidate.id === piece.id);
+    // FAQ p.50 compares board state: an actual on-board promotion changes it.
+    const promotion = withPromotion && moved?.zone === 'board' && moved.promoted && !piece.promoted ? `=${moved.role}` : '';
     return moved && (piece.square !== moved.square || piece.zone !== moved.zone)
-      ? [`${piece.id}:${piece.square ?? piece.zone}:${moved.square ?? moved.zone}`] : [];
+      ? [`${piece.id}:${piece.square ?? piece.zone}:${moved.square ?? moved.zone}${promotion}`] : [];
   }).sort().join('|');
 }
 
@@ -110,6 +113,12 @@ function effectKind(effect: unknown): string | undefined {
 
 function effectCardMatches(card: Record<string, unknown> | undefined, kind: string): boolean {
   return card?.cardId === kind || card?.cardId === 'haunting-memories';
+}
+
+function discardEffectCard(state: GameState, effect: { owner: Color; card: CardInstance }): void {
+  if (!effect.card.proxy && !state.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
+    state.players[effect.owner].discard.push(structuredClone(effect.card));
+  }
 }
 
 export function isDoomsayerEffect(effect: unknown): effect is DoomsayerEffect {
@@ -173,15 +182,20 @@ function isDungeonEffect(effect: unknown): effect is DungeonEffect {
     && typeof record.pieceId === 'string';
 }
 
-function dungeonAllowsMove(state: GameState, piece: PieceState, player = state.turn.color): boolean {
-  if (!hasRole(state, piece, 'king') && state.effects.some(effect => {
+function fatalAttractionAllowsMove(state: GameState, piece: PieceState): boolean {
+  return hasRole(state, piece, 'king') || !state.effects.some(effect => {
     if (!isFatalAttractionEffect(effect) || effect.active === false || effect.suspended === true) return false;
     const magnet = boardCarrier(state, effect.pieceId);
     return magnet && adjacentSquares(magnet.square, boardCarrier(state, piece.id)?.square);
-  })) return false;
+  });
+}
+
+function dungeonAllowsMove(state: GameState, piece: PieceState, player = state.turn.color, byCard = false): boolean {
+  if (!fatalAttractionAllowsMove(state, piece)) return false;
   if (state.underElfHill?.some(entry => entry.returned
     && physicalPieces(state, piece).some(component => component.id === entry.pieceId))) return false;
-  return !state.effects.some(effect => isDungeonEffect(effect) && effect.player === player
+  // A later card overrides regular Dungeon only for the movement it authorizes.
+  return byCard || !state.effects.some(effect => isDungeonEffect(effect) && effect.player === player
     && physicalPieces(state, piece).some(component => component.id === effect.pieceId));
 }
 
@@ -256,14 +270,14 @@ function refreshNeutrality(state: GameState): void {
     piece.neutral = piece.neutralBeforeEffects;
     delete piece.neutralBeforeEffects;
   }
-  const mark = (piece: PieceState) => {
+  const mark = (piece: PieceState, eligible = true) => {
     piece.neutralBeforeEffects ??= piece.neutral;
-    piece.neutral = true;
+    piece.neutral = eligible && !physicalPieces(state, piece).some(component => component.royal);
   };
   for (const effect of state.effects) {
     if (!isRetainedContinuingEffect(effect) || effect.type !== 'neutrality') continue;
     const piece = state.pieces.find(candidate => candidate.id === effect.pieceId);
-    if (piece) mark(piece);
+    if (piece) mark(piece, piece.role !== 'queen' && (piece.promoted || piece.originalRole !== 'queen'));
   }
   for (const effect of state.effects) {
     if (!isConfabulationEffect(effect)) continue;
@@ -314,16 +328,12 @@ function losePiece(state: GameState, piece: PieceState, zone: 'captured' | 'dead
   }
   if (effect) {
     state.effects = state.effects.filter(candidate => candidate !== effect);
-    if (!state.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-      state.players[effect.owner].discard.push(effect.card);
-    }
+    discardEffectCard(state, effect);
   }
   state.effects = state.effects.filter(candidate => {
     if (!isRetainedContinuingEffect(candidate) || candidate.type !== 'neutrality'
       || typeof candidate.pieceId !== 'string' || !ids.includes(candidate.pieceId)) return true;
-    if (!state.players[candidate.owner].discard.some(card => card.id === candidate.card.id)) {
-      state.players[candidate.owner].discard.push(candidate.card);
-    }
+    discardEffectCard(state, candidate);
     return false;
   });
   refreshNeutrality(state);
@@ -345,17 +355,17 @@ function springManTraps(before: GameState, next: GameState): void {
   });
   const lost: PieceState[] = [];
   for (const { effect, index, piece } of sprung) {
+    // FAQ 40/46: Kings and Pacifists never set off a trap, regardless of play order.
+    if (physicalPieces(next, piece).some(component => component.royal)
+      || captureForbidden({ ...next, effects: effects.filter(candidate => effectKind(candidate) !== 'truce') }, piece)) continue;
     if (piece.zone === 'board'
-      && !physicalPieces(next, piece).some(component => component.royal)
       && !captureImmune({ ...next, effects: effects.filter((candidate, candidateIndex) =>
         candidateIndex > index || !['truce', 'pacifism', 'mysticshield'].includes(effectKind(candidate) ?? '')) }, piece)) {
       lost.push(...physicalPieces(next, piece));
       losePiece(next, piece, 'captured', effect.owner);
     }
     next.effects = next.effects.filter(candidate => candidate !== effect);
-    if (!next.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-      next.players[effect.owner].discard.push(effect.card);
-    }
+    discardEffectCard(next, effect);
   }
   if (lost.length) {
     syncFen(next, lost);
@@ -378,12 +388,21 @@ function expireFatalAttractions(before: GameState, next: GameState): void {
     const piece = next.pieces.find(candidate => candidate.id === effect.pieceId);
     if (piece && piece.zone !== 'dead' && piece.zone !== 'captured'
       && !(previous?.square && current?.square && previous.square !== current.square)) return true;
-    if (!next.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-      next.players[effect.owner].discard.push(effect.card);
-    }
+    discardEffectCard(next, effect);
     return false;
   });
   if (effects.length !== next.effects.length) next.effects = effects;
+}
+
+function resolveFatalAttractionSwap(before: GameState, next: GameState): boolean {
+  // FAQ p.40: swaps count as movement. Check every participant before releasing any magnet.
+  if (before.pieces.some(piece => {
+    const after = boardCarrier(next, piece.id);
+    return piece.zone === 'board' && piece.square && after?.square && piece.square !== after.square
+      && !fatalAttractionAllowsMove(before, piece);
+  })) return false;
+  expireFatalAttractions(before, next);
+  return true;
 }
 
 function isCrabEffect(effect: unknown): effect is CrabEffect {
@@ -416,6 +435,22 @@ function hasCrabEffect(state: GameState, pieceId: string): boolean {
   return Boolean(piece && physicalPieces(state, piece).some(component =>
     componentHasCrabEffect(state, component.id),
   ));
+}
+
+function componentHasCrabMovement(state: GameState, pieceId: string): boolean {
+  if (!componentHasCrabEffect(state, pieceId)) return false;
+  const ids = confabulationForPiece(state, pieceId)?.pieceIds ?? [pieceId];
+  // Apply FAQ p.20's Paladin -> Coup movement ruling to Crab under the
+  // later-Continuing-Effect rule. Keep the physical Crab for cancellation.
+  for (let index = state.effects.length - 1; index >= 0; index -= 1) {
+    const effect = state.effects[index];
+    const record = effectRecord(effect);
+    if (record?.active === false || record?.suspended === true) continue;
+    if (isCrabEffect(effect) && effect.pieceId === pieceId) return true;
+    if (isRetainedContinuingEffect(effect) && effect.type === 'coup'
+      && typeof effect.kingId === 'string' && ids.includes(effect.kingId)) return false;
+  }
+  return false;
 }
 
 function curseAllowsMove(state: GameState, piece: PieceState, from: SquareName, to: SquareName, component?: PieceState): boolean {
@@ -502,7 +537,8 @@ function targetMatchesPiece(target: unknown, piece: PieceState): boolean {
 
 function captureForbidden(state: GameState, piece: PieceState): boolean {
   const components = physicalPieces(state, piece);
-  if (components.some(component => (component as unknown as Record<string, unknown>).pacifist === true)) {
+  const royal = components.some(component => component.royal);
+  if (!royal && components.some(component => (component as unknown as Record<string, unknown>).pacifist === true)) {
     return true;
   }
   return components.some(component => state.effects.some(effect => {
@@ -510,14 +546,14 @@ function captureForbidden(state: GameState, piece: PieceState): boolean {
     if (!record || record.active === false || record.suspended === true) return false;
     const kind = effectKind(effect);
     if (kind === 'truce') return true;
-    if (kind !== 'pacifism') return false;
+    if (kind !== 'pacifism' || royal) return false;
     const targets = record.pieceIds;
     return targetMatchesPiece(record.pieceId ?? record.targetId ?? record.target, component)
       || (Array.isArray(targets) && targets.some(target => targetMatchesPiece(target, component)));
   }));
 }
 
-function captureImmune(state: GameState, piece: PieceState, captor = state.turn.color): boolean {
+function captureImmune(state: GameState, piece: PieceState, captor = state.turn.color, prospectiveTurn = false): boolean {
   const components = physicalPieces(state, piece);
   if (
     captureForbidden(state, piece)
@@ -534,7 +570,7 @@ function captureImmune(state: GameState, piece: PieceState, captor = state.turn.
     const kind = effectKind(effect);
     if (kind !== 'mysticshield') return false;
     if (typeof record.player === 'string'
-      && (record.player === state.turn.color || record.player === captor)) return false;
+      && ((!prospectiveTurn && record.player === state.turn.color) || record.player === captor)) return false;
     const targets = record.pieceIds;
     return targetMatchesPiece(record.pieceId ?? record.targetId ?? record.target, component)
       || (Array.isArray(targets) && targets.some(target => targetMatchesPiece(target, component)));
@@ -547,11 +583,13 @@ export function doomsayerTargets(
   role: DoomsayerRole,
 ): PieceState[] {
   return state.pieces.filter(piece =>
-    piece.owner === player
+    (piece.owner === player || piece.neutral)
     && piece.zone === 'board'
     && piece.square
     && !piece.royal
-    && hasRole(state, piece, role)
+    && (role === 'crab' ? hasCrabEffect(state, piece.id)
+      : role === 'prince' ? physicalPieces(state, piece).some(component => component.role === 'king' && !component.royal)
+        : hasRole(state, piece, role))
     && !captureImmune(state, piece),
   );
 }
@@ -619,7 +657,7 @@ export function boardFen(state: GameState): string {
 
 export function legalDests(
   state: GameState,
-  allowAfterMoveRescue = true,
+  allowAfterMoveRescue: boolean | 'defer' = true,
   enforceVendetta = true,
   stopAfterFirst = false,
   capturesOnly = false,
@@ -631,19 +669,33 @@ export function legalDests(
   }
   const position = positionFor(state);
   const dests = chessgroundDests(position);
+  const knownRescues: Extract<GameAction, { type: 'playCard' }>[] = [];
+  const rescueSearch: typeof hasAfterMoveRescue = (next, movedPieces) =>
+    hasAfterMoveRescue(next, movedPieces, knownRescues);
+  const checkedMoves = new Map<string, boolean>();
   const moveIsLegal = (piece: PieceState, to: SquareName): boolean => {
+    const key = `${piece.square}-${to}`;
+    const checked = checkedMoves.get(key);
+    if (checked !== undefined) return checked;
     if (capturesOnly && !vendettaVictim(state, piece.square!, to)) return false;
     const promotions: Array<Role | undefined> = !confabulationForPiece(state, piece.id)
       && (piece.role === 'pawn' || hasCrabEffect(state, piece.id))
       && isPromotionSquare(state, piece.owner, to)
       ? [...PROMOTIONS]
       : [undefined];
-    return promotions.some(promotion => movePiece(
+    const legal = promotions.some(promotion => movePiece(
       state,
       { type: 'move', from: piece.square!, to, ...(promotion ? { promotion } : {}) },
       allowAfterMoveRescue,
       false,
-    ).ok);
+      false,
+      rescueSearch,
+    ).ok) || (!capturesOnly && Boolean(confabulationForPiece(state, piece.id))
+      && Boolean(enPassantCapture(state, piece.square!, to))
+      && movePiece(state, { type: 'move', from: piece.square!, to, enPassant: false },
+        allowAfterMoveRescue, false, false, rescueSearch).ok);
+    checkedMoves.set(key, legal);
+    return legal;
   };
   for (const piece of state.pieces) {
     if (
@@ -742,13 +794,14 @@ function vendettaVictim(
   state: GameState,
   from: SquareName,
   to: SquareName,
+  allowEnPassant = true,
 ): PieceState | undefined {
   return state.pieces.find(piece =>
     piece.zone === 'board'
     && piece.square === to
     && piece.owner === opposite(state.turn.color),
   ) ?? (() => {
-    const capture = enPassantCapture(state, from, to);
+    const capture = allowEnPassant ? enPassantCapture(state, from, to) : undefined;
     return capture?.victim.owner === opposite(state.turn.color) ? capture.victim : undefined;
   })();
 }
@@ -772,9 +825,7 @@ function expireVendettaIfBlocked(state: GameState): GameState {
     !isVendettaEffect(effect) || !ids.has(effect.card.id),
   );
   for (const effect of active) {
-    if (!next.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-      next.players[effect.owner].discard.push(effect.card);
-    }
+    discardEffectCard(next, effect);
   }
   return next;
 }
@@ -809,7 +860,7 @@ export function forcedMarchDests(state: GameState, from: SquareName): SquareName
     !pawn
     || (pawn.owner !== state.turn.color && !pawn.neutral)
     || !hasUnpromotedPawn(state, pawn)
-    || !dungeonAllowsMove(state, pawn)
+    || !dungeonAllowsMove(state, pawn, state.turn.color, true)
   ) return [];
 
   const square = parseSquare(from);
@@ -840,38 +891,40 @@ export function darkMirrorDests(state: GameState, from: SquareName): SquareName[
     !pawn
     || (pawn.owner !== state.turn.color && !pawn.neutral)
     || !hasUnpromotedPawn(state, pawn)
-    || hasCrabEffect(state, pawn.id)
     || captureForbidden(state, pawn)
   ) return [];
 
   const source = parseSquare(from);
-  const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
   const vendettaRequired = activeVendettas(state).length > 0 && vendettaCaptureDests(state, true).size > 0;
-  return [[forwardRank, -forwardFile], [-forwardRank, forwardFile]].flatMap(([sideFile, sideRank]) => {
-    const file = squareFile(source) - forwardFile + sideFile;
-    const rank = squareRank(source) - forwardRank + sideRank;
-    if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
-    const to = makeSquare(rank * 8 + file);
-    const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === to);
-    return victim
-      && (pawn.neutral || victim.neutral || victim.owner !== pawn.owner)
-      && (!vendettaRequired || victim.owner === opposite(state.turn.color))
-      && !victim.royal
-      && !captureImmune(state, victim)
-      ? [to]
-      : [];
-  }).sort((left, right) => parseSquare(left) - parseSquare(right));
+  return [...new Set(physicalPieces(state, pawn).flatMap(component => {
+    if (component.originalRole !== 'pawn' || component.promoted || componentHasCrabMovement(state, component.id)) return [];
+    const [forwardFile, forwardRank] = pawnForward(state, component.owner);
+    return [[forwardRank, -forwardFile], [-forwardRank, forwardFile]].flatMap(([sideFile, sideRank]) => {
+      const file = squareFile(source) - forwardFile + sideFile;
+      const rank = squareRank(source) - forwardRank + sideRank;
+      if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
+      const to = makeSquare(rank * 8 + file);
+      const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === to);
+      return victim
+        && (pawn.neutral || victim.neutral || victim.owner !== pawn.owner)
+        && (!vendettaRequired || victim.owner === opposite(state.turn.color))
+        && !victim.royal
+        && !captureImmune(state, victim)
+        ? [to]
+        : [];
+    });
+  }))].sort((left, right) => parseSquare(left) - parseSquare(right));
 }
 
 export function breakthroughDests(state: GameState, from: SquareName): SquareName[] {
   const carrier = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
   if (!carrier || (carrier.owner !== state.turn.color && !carrier.neutral)
-    || captureForbidden(state, carrier) || hasCrabEffect(state, carrier.id)) return [];
+    || captureForbidden(state, carrier)) return [];
   const source = parseSquare(from);
   const occupied = setupFor(state).board.occupied;
   const required = activeVendettas(state).length > 0 && vendettaCaptureDests(state, true).size > 0;
   return [...new Set(physicalPieces(state, carrier).flatMap(pawn => {
-    if (pawn.originalRole !== 'pawn' || pawn.promoted) return [];
+    if (pawn.originalRole !== 'pawn' || pawn.promoted || componentHasCrabMovement(state, pawn.id)) return [];
     const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
     const forwardX = squareFile(source) + forwardFile;
     const forwardY = squareRank(source) + forwardRank;
@@ -881,10 +934,11 @@ export function breakthroughDests(state: GameState, from: SquareName): SquareNam
       component.role !== 'pawn'
       && attacks({ color: component.owner, role: component.role }, source, occupied).has(forward),
     );
-    const sides = capturesForward ? [-1, 1] : [0];
-    return sides.flatMap(side => {
-      const file = squareFile(source) + forwardFile + side * forwardRank;
-      const rank = squareRank(source) + forwardRank - side * forwardFile;
+    const offsets = capturesForward ? [[1, -1], [1, 1]]
+      : onStartingSquare(state, pawn.owner, from) && !occupied.has(forward) ? [[1, 0], [2, 0]] : [[1, 0]];
+    return offsets.flatMap(([distance, side]) => {
+      const file = squareFile(source) + distance * forwardFile + side * forwardRank;
+      const rank = squareRank(source) + distance * forwardRank - side * forwardFile;
       if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
       const to = makeSquare(rank * 8 + file);
       const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === to);
@@ -1186,7 +1240,7 @@ export function masqueradeDests(state: GameState, from: SquareName): SquareName[
     !piece
     || (piece.owner !== state.turn.color && !piece.neutral)
     || physicalPieces(state, piece).every(component =>
-      component.role === 'pawn' || component.originalRole === 'pawn'
+      component.role === 'pawn' || (!component.promoted && component.originalRole === 'pawn')
     )
   ) return [];
 
@@ -1221,6 +1275,8 @@ function doppelgangerCopy(state: GameState): PieceState | undefined {
     if (
       (event.type === 'cardPlayed' || event.type === 'cardFizzled')
       && !event.preservePreviousMove
+      && !(event.type === 'cardPlayed'
+        && ['forbidden-city', 'fortification'].includes(event.copiedCardId ?? event.cardId ?? ''))
     ) return undefined;
   }
   if (movement?.length !== 1) return undefined;
@@ -1255,7 +1311,7 @@ export function doppelgangerDests(state: GameState, from: SquareName): SquareNam
   const source = parseSquare(from);
   return [...new Set(copiedComponents.flatMap(component => {
     const role = component.role;
-    const crab = componentHasCrabEffect(state, component.id);
+    const crab = componentHasCrabMovement(state, component.id);
     const destinations: SquareName[] = [];
     if (crab) {
       const [fileStep, rankStep] = pawnForward(state, piece.owner);
@@ -1343,6 +1399,7 @@ function revokeCastlingRights(
 }
 
 function syncFen(state: GameState, movedPieces: readonly PieceState[] = []): void {
+  refreshCoups(state);
   state.enPassant = state.enPassant.filter(opportunity => enPassantVictim(state, opportunity));
   const setup = setupFor(state);
   revokeCastlingRights(setup, movedPieces);
@@ -1391,7 +1448,7 @@ function recordsBogRollback(
   if (
     promotion
     || !state.players[opposite(state.turn.color)].hand.some(card => card.cardId === 'bog')
-    || !['rook', 'bishop', 'queen'].includes(piece.role)
+    || !(['rook', 'bishop', 'queen'] as const).some(role => hasRole(state, piece, role))
   ) return false;
   const source = parseSquare(from);
   const destination = parseSquare(to);
@@ -1601,9 +1658,14 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   }
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Bog does not take a target.');
 
-  const event = reactionEvent(state);
+  const latest = state.history.at(-1);
+  const fireball = latest?.type === 'cardPlayed' && (latest.copiedCardId ?? latest.cardId) === 'fireball'
+    && state.fogCheckpoint?.historyLength === state.history.length
+    ? state.fogCheckpoint : undefined;
+  const moved = fireball?.before ?? state;
+  const event = reactionEvent(moved);
   const cardId = event?.copiedCardId ?? event?.cardId;
-  const checkpoint = state.chaosCheckpoint?.before;
+  const checkpoint = moved.chaosCheckpoint?.before;
   const additional = cardId === 'crusade' || cardId === 'merciless';
   const preceding = additional && checkpoint ? reactionEvent(checkpoint) : undefined;
   const castle = preceding?.castlingRook;
@@ -1621,11 +1683,15 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   if ((!movementCard && move?.type !== 'move') || !move?.from || !move.to || move.promotion) {
     return reject(state, 'INVALID_TIMING', "Bog must immediately follow your opponent's move.");
   }
-  const piece = state.pieces.find(candidate =>
+  const piece = moved.pieces.find(candidate =>
     candidate.zone === 'board' && candidate.square === move.to,
   );
-  if (!piece || (piece.owner !== mover && !piece.neutral) || !['rook', 'bishop', 'queen'].includes(piece.role)) {
+  if (!piece || (piece.owner !== mover && !piece.neutral)
+    || !(['rook', 'bishop', 'queen'] as const).some(role => hasRole(moved, piece, role))) {
     return reject(state, 'WRONG_ROLE', 'Bog follows only a Rook, Bishop, or Queen move.');
+  }
+  if (fireball && (latest?.target !== piece.square || !fireballPieces(moved).some(center => center.id === piece.id))) {
+    return reject(state, 'INVALID_TIMING', 'The explosion must belong to the shortened move.');
   }
   const from = parseSquare(move.from);
   const to = parseSquare(move.to);
@@ -1659,7 +1725,12 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     return reject(state, 'INVALID_TIMING', 'The preceding move cannot be reconstructed.');
   }
 
-  const resolved = structuredClone(state);
+  let resolved = structuredClone(moved);
+  if (fireball) {
+    // Restore the validated pre-explosion state, retaining the actual physical card and its draw.
+    spendCard(resolved, fireball.card.cardId, fireball.card.id, true, fireball.player);
+    resolved.history = structuredClone(state.history);
+  }
   const before = captured ? checkpoint : undefined;
   if (captured) {
     const victim = before?.pieces.find(candidate => candidate.id === captured.id);
@@ -1701,14 +1772,18 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     if (mover === 'black') setup.fullmoves = Math.max(1, setup.fullmoves - 1);
     resolved.fen = makeFen(setup);
   }
+  const movedComponents = physicalPieces(moved, piece);
   completeReplacementMove(resolved, mover,
-    resetsHalfmoveClock(piece, Boolean(move.capturedId && first === move.to)), [], [piece]);
+    movedComponents.some(component => resetsHalfmoveClock(component, Boolean(move.capturedId && first === move.to))),
+    [], movedComponents);
   if (before) {
     springManTraps(before, resolved);
     if (resolved.shieldMove) resolved.shieldMove.capturedOpponent = resolved.pieces.some(candidate =>
       candidate.zone === 'captured' && boardCarrier(before, candidate.id)
       && (candidate.owner !== mover || candidate.neutral));
   }
+  const explosion = fireball ? explodeFireball(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!) : undefined;
+  if (explosion) resolved = explosion.state;
   if (
     (!isOrdinaryCheckmate(state, mover) && isOrdinaryCheckmate(resolved, mover))
     || (!isOrdinaryCheckmate(state, reactor) && isOrdinaryCheckmate(resolved, reactor))
@@ -1718,9 +1793,10 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   if (isKingInCheck(resolved, mover) || isKingInCheck(resolved, reactor)) {
     return fizzleCard(state, 'bog', 'SELF_CHECK', cardInstanceId, false, reactor);
   }
+  if (fireball) resolved.pendingRescue = null;
   resolved.outcome = null;
   spendCard(resolved, 'bog', cardInstanceId, true, reactor);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'bog' });
+  resolved.history.push({ type: 'cardPlayed', cardId: 'bog', ...(explosion ? { capturedIds: explosion.capturedIds } : {}) });
   return { ok: true, state: resolved };
 }
 
@@ -1728,28 +1804,32 @@ function revengePawn(piece: PieceState): boolean {
   return piece.role === 'pawn' || (!piece.promoted && piece.originalRole === 'pawn');
 }
 
-function revengeTrigger(state: GameState): PieceState | undefined {
+function revengePawns(state: GameState): PieceState[] {
   const move = reactionEvent(state);
   if (
     state.turn.phase !== 'afterMove'
     || !state.turn.moveMade
-    || (move?.type !== 'move' && (move?.type !== 'cardPlayed' || move.cardId !== 'dark-mirror'))
+    || move?.type !== 'move'
     || !move.capturedId
   ) {
-    return undefined;
+    return [];
   }
   const reactor = opposite(state.turn.color);
-  return state.pieces.find(piece =>
-    piece.id === move.capturedId
+  const before = state.chaosCheckpoint?.historyLength === state.history.length
+    ? state.chaosCheckpoint.before : undefined;
+  return state.pieces.filter(piece =>
+    (piece.id === move.capturedId || move.capturedIds?.includes(piece.id))
     && piece.zone === 'captured'
     && piece.square === null
-    && (piece.owner === reactor || piece.neutral)
+    // Capture ends Neutrality, so retain control from this capture's snapshot.
+    && (piece.owner === reactor || piece.neutral || (before && boardCarrier(before, piece.id)?.neutral)
+      || state.plotsExecution?.window.revengePawnIds?.includes(piece.id))
     && revengePawn(piece),
   );
 }
 
 function revengeTargets(state: GameState): SquareName[] {
-  if (!revengeTrigger(state)) return [];
+  if (!revengePawns(state).length) return [];
   const mover = state.turn.color;
   return state.pieces.flatMap(piece =>
     piece.zone === 'board'
@@ -1775,26 +1855,8 @@ function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown
   if (cardAllowanceUsed(state, reactor)) {
     return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
   }
-  if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
-    return reject(state, 'INVALID_TIMING', "Revenge must immediately follow your opponent's capture.");
-  }
-
-  const move = reactionEvent(state);
-  if (
-    (move?.type !== 'move' && (move?.type !== 'cardPlayed' || move.cardId !== 'dark-mirror'))
-    || !move.capturedId
-  ) {
-    return reject(state, 'INVALID_TIMING', "Revenge must immediately follow your opponent's capture.");
-  }
-  const triggeringPawn = state.pieces.find(piece => piece.id === move.capturedId);
-  if (!triggeringPawn || triggeringPawn.zone !== 'captured' || triggeringPawn.square !== null) {
-    return reject(state, 'INVALID_TIMING', 'The captured Pawn is no longer in the captured zone.');
-  }
-  if (triggeringPawn.owner !== reactor && !triggeringPawn.neutral) {
-    return reject(state, 'WRONG_OWNER', 'The captured Pawn must be one you control.');
-  }
-  if (!revengePawn(triggeringPawn)) {
-    return reject(state, 'WRONG_ROLE', 'Revenge follows only the capture of a Pawn.');
+  if (!revengePawns(state).length) {
+    return reject(state, 'INVALID_TIMING', 'Revenge immediately follows capture of a Pawn you control.');
   }
   if (typeof target !== 'string' || !SQUARE.test(target)) {
     return reject(state, 'INVALID_TARGET', "Choose one of your opponent's Pawns.");
@@ -1842,6 +1904,16 @@ function tollMovement(state: GameState): CardMove[] | undefined {
   if (event?.type === 'cardPlayed' && event.cardId === 'irresistible-force' && Array.isArray(event.target)) {
     return event.target as CardMove[];
   }
+  const checkpoint = state.chaosCheckpoint;
+  if (event?.type === 'cardPlayed' && ['charge', 'crusade', 'merciless'].includes(event.copiedCardId ?? event.cardId ?? '')
+    && checkpoint && (state.plotsExecution || checkpoint.historyLength === state.history.length)
+    && checkpoint.before.turn.color === state.turn.color && checkpoint.before.turn.moveMade) {
+    // Keep both displacements; reactionEvent also resolves a Plots saved trigger.
+    const preceding = reactionEvent(checkpoint.before);
+    const first = preceding?.type === 'move' && preceding.from && preceding.to
+      ? [{ from: preceding.from, to: preceding.to }] : [];
+    return [...first, ...(event.movement ?? [])];
+  }
   return event?.type === 'cardPlayed' && event.movement?.length ? event.movement : undefined;
 }
 
@@ -1865,8 +1937,8 @@ function tollTargets(state: GameState): Array<SquareName | undefined> {
     piece.zone === 'board'
       && piece.square
       && (piece.owner === mover || piece.neutral)
-      && revengePawn(piece)
-      && !piece.royal
+      && hasRole(state, piece, 'pawn')
+      && !hasRole(state, piece, 'king')
       && !captureImmune(state, piece)
       ? [piece.square]
       : [],
@@ -1927,8 +1999,8 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
   if (pawn.owner !== mover && !pawn.neutral) {
     return reject(state, 'WRONG_OWNER', "Choose one of your opponent's Pawns.");
   }
-  if (!revengePawn(pawn)) return reject(state, 'WRONG_ROLE', 'Toll can target only a Pawn.');
-  if (pawn.royal || captureImmune(state, pawn)) {
+  if (!hasRole(state, pawn, 'pawn')) return reject(state, 'WRONG_ROLE', 'Toll can target only a Pawn.');
+  if (hasRole(state, pawn, 'king') || captureImmune(state, pawn)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be captured.');
   }
   const resolved = structuredClone(state);
@@ -1992,7 +2064,7 @@ function pieceAttacksSquare(
   const destination = parseSquare(target);
   return physicalPieces(state, piece).some(component => {
     if (!curseAllowsMove(state, piece, piece.square!, target, component)) return false;
-    const crab = componentHasCrabEffect(state, component.id);
+    const crab = componentHasCrabMovement(state, component.id);
     const jumping = component.role === 'knight' && !crab;
     if (forbiddenCityBlocksMove(state, piece.square!, target, jumping)) return false;
     if (component.role === 'pawn' || crab) {
@@ -2030,7 +2102,7 @@ function componentCanMove(
 
   const source = parseSquare(carrier.square);
   const destination = parseSquare(to);
-  const crab = componentHasCrabEffect(state, component.id);
+  const crab = componentHasCrabMovement(state, component.id);
   if (forbiddenCityBlocksMove(state, carrier.square, to, component.role === 'knight' && !crab)) {
     return false;
   }
@@ -2093,9 +2165,10 @@ function legallyAttacksRoyal(
 
 function isRoyalInCheck(state: GameState, piece: PieceState): boolean {
   if (piece.zone !== 'board' || !piece.square) return false;
-  const hostileControllers: readonly Color[] = piece.neutral
-    ? ['white', 'black']
-    : [opposite(piece.owner)];
+  // Royal threats include the next opposing turn, when a newly played Shield protects its target.
+  const hostileControllers: readonly Color[] = (piece.neutral
+    ? ['white', 'black'] as const
+    : [opposite(piece.owner)]).filter(hostile => !captureImmune(state, piece, hostile, true));
   if (hostileControllers.some(hostile => isRoyalEnPassantThreatened(state, piece, hostile))) {
     return true;
   }
@@ -2133,6 +2206,10 @@ function moveLeavesRoyalInCheck(
   movedPieces: readonly PieceState[],
 ): boolean {
   state = withoutTruce(state);
+  if (state.effects.some(effect => isRetainedContinuingEffect(effect)
+    && effect.type === 'coup' && effect.owner === color && effect.suspended)
+    && !state.pieces.some(piece => piece.owner === color && piece.royal
+      && (piece.zone === 'board' || piece.zone === 'away'))) return true;
   if (isKingInCheck(state, color)) return true;
   return movedPieces.some(moved => {
     if (!moved.neutral || !moved.royal || moved.owner === color) return false;
@@ -2152,37 +2229,35 @@ function enPassantCapture(
     !moving
     || (moving.owner !== controller && !moving.neutral)
     || !hasUnpromotedPawn(state, moving)
-    || hasCrabEffect(state, moving.id)
     || state.pieces.some(piece => piece.zone === 'board' && piece.square === to)
     || forbiddenCityBlocksMove(state, from, to)
   ) return undefined;
 
   const source = parseSquare(from);
   const target = parseSquare(to);
-  const pawn = physicalPieces(state, moving).find(component =>
-    component.originalRole === 'pawn' && !component.promoted,
-  )!;
-  const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
-  const fileDelta = squareFile(target) - squareFile(source);
-  const rankDelta = squareRank(target) - squareRank(source);
-  const diagonal = Math.abs(fileDelta) + Math.abs(rankDelta) === 2
-    && fileDelta * forwardFile + rankDelta * forwardRank === 1;
-  if (!diagonal) return undefined;
+  for (const pawn of physicalPieces(state, moving)) {
+    if (pawn.originalRole !== 'pawn' || pawn.promoted || componentHasCrabMovement(state, pawn.id)) continue;
+    const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
+    const fileDelta = squareFile(target) - squareFile(source);
+    const rankDelta = squareRank(target) - squareRank(source);
+    const diagonal = Math.abs(fileDelta) + Math.abs(rankDelta) === 2
+      && fileDelta * forwardFile + rankDelta * forwardRank === 1;
+    if (!diagonal) continue;
 
-  const victimSquare = makeSquare(
-    (squareRank(target) - forwardRank) * 8 + squareFile(target) - forwardFile,
-  );
-  const victim = state.enPassant.flatMap(opportunity => {
-    if (opportunity.target !== to) return [];
-    const candidate = enPassantVictim(state, opportunity);
-    return candidate?.square === victimSquare ? [candidate] : [];
-  })[0];
-  return victim
-    && !captureForbidden(state, moving)
-    && !captureImmune(state, victim)
-    && (moving.neutral || victim.neutral || victim.owner !== moving.owner)
-    ? { moving, victim }
-    : undefined;
+    const victimSquare = makeSquare(
+      (squareRank(target) - forwardRank) * 8 + squareFile(target) - forwardFile,
+    );
+    const victim = state.enPassant.flatMap(opportunity => {
+      if (opportunity.target !== to) return [];
+      const candidate = enPassantVictim(state, opportunity);
+      return candidate?.square === victimSquare ? [candidate] : [];
+    })[0];
+    if (victim
+      && !captureForbidden(state, moving)
+      && !captureImmune(state, victim)
+      && (moving.neutral || victim.neutral || victim.owner !== moving.owner)) return { moving, victim };
+  }
+  return undefined;
 }
 
 function resolveEnPassant(
@@ -2241,8 +2316,9 @@ function completeReplacementMove(
     )
     ? parseSquare(enPassant[0].target)
     : undefined;
-  setup.halfmoves = pawnMoved ? 0 : setup.halfmoves + 1;
-  if (color === 'black') setup.fullmoves += 1;
+  const additionalMove = state.chaosForbidden?.player === color && state.chaosForbidden.additionalMove;
+  setup.halfmoves = pawnMoved ? 0 : setup.halfmoves + (additionalMove ? 0 : 1);
+  if (color === 'black' && !additionalMove) setup.fullmoves += 1;
   state.fen = makeFen(setup);
   state.enPassant = enPassant;
   state.turn.phase = 'afterMove';
@@ -2259,7 +2335,7 @@ function resetsHalfmoveClock(piece: PieceState, capture = false): boolean {
 function fizzleCard(
   state: GameState,
   cardId: string,
-  reason: 'DIRECT_MATE' | 'SELF_CHECK',
+  reason: 'DIRECT_MATE' | 'SELF_CHECK' | 'FORBIDDEN_CITY',
   cardInstanceId?: unknown,
   consumesMove = false,
   spendColor = state.turn.color,
@@ -2339,10 +2415,6 @@ function playConfabulation(state: GameState, target: unknown, cardInstanceId?: u
     [mover],
   );
   expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'confabulation', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
   if (moveLeavesRoyalInCheck(resolved, color, [mover, carrier])) {
     return fizzleCard(state, 'confabulation', 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
@@ -2679,9 +2751,7 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   }
 
   const enPassant = moves.flatMap((move, index) =>
-    pawnHomeDistance(state, pawns[index].owner, move.from) === 1
-      ? doubleStepEnPassant(state, pawns[index], move.from, move.to)
-      : [],
+    doubleStepEnPassant(state, pawns[index], move.from, move.to),
   );
   if (moves.some(move => isEnPassantTarget(enPassant, move.to))) {
     return reject(state, 'ILLEGAL_MOVE', "A Pawn cannot occupy another Pawn's en-passant target.");
@@ -2830,7 +2900,12 @@ function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknow
     resolved.pieces.find(piece => piece.id === follower.id)!.square = followerMove.to;
   }
   const movedPieces = follower ? [pawn, follower] : [pawn];
-  completeReplacementMove(resolved, color, true, [], movedPieces);
+  const enPassant = follower ? [] : physicalPieces(state, pawn).flatMap(component =>
+    component.originalRole === 'pawn'
+      ? doubleStepEnPassant(state, component, pawnMove.from, pawnMove.to)
+      : [],
+  );
+  completeReplacementMove(resolved, color, true, enPassant, movedPieces);
 
   expireFatalAttractions(state, resolved);
   if (isOrdinaryCheckmate(resolved, opposite(color))) {
@@ -2981,7 +3056,7 @@ function playUnderElfHill(state: GameState, target: unknown, cardInstanceId?: un
   }
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Under Elf Hill takes no target.');
   const king = state.pieces.find(piece => piece.owner === color && piece.royal && piece.zone === 'board' && piece.square);
-  if (!king || !dungeonAllowsMove(state, king)) return reject(state, 'ILLEGAL_MOVE', 'Your King cannot leave the board.');
+  if (!king || !dungeonAllowsMove(state, king, color, true)) return reject(state, 'ILLEGAL_MOVE', 'Your King cannot leave the board.');
   const next = structuredClone(state);
   const departed = next.pieces.find(piece => piece.id === king.id)!;
   departed.zone = 'away';
@@ -3043,11 +3118,17 @@ function returnElfKing(state: GameState, action: Extract<GameAction, { type: 're
 function evilEyeVictims(state: GameState, attacker: PieceState): SquareName[] {
   if (!attacker.square || attacker.zone !== 'board'
     || (attacker.owner !== state.turn.color && !attacker.neutral)) return [];
-  const destinations = legalDests(state, false).get(attacker.square) ?? [];
+  // FAQ26: judge a royal attacker's safety where it stays, not on the victim's square.
+  const royal = physicalPieces(state, attacker).some(piece => piece.royal);
+  const destinations = legalDests(state, royal ? 'defer' : false, !royal).get(attacker.square) ?? [];
   const victims = new Set<SquareName>();
   for (const destination of destinations) {
+    const enPassant = enPassantCapture(state, attacker.square, destination);
     const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === destination)
-      ?? enPassantCapture(state, attacker.square, destination)?.victim;
+      ?? (enPassant
+        && movePiece(state, { type: 'move', from: attacker.square, to: destination, enPassant: true },
+          royal ? 'defer' : false, !royal).ok
+        ? enPassant.victim : undefined);
     if (victim?.square && victim.id !== attacker.id
       && (victim.neutral || victim.owner !== state.turn.color)
       && !physicalPieces(state, victim).some(piece => piece.royal)) victims.add(victim.square);
@@ -3256,7 +3337,7 @@ function playSlidingMoveCard(state: GameState, cardId: 'masquerade' | 'blessing'
     return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
   }
   if (cardId === 'masquerade' && physicalPieces(state, piece).every(component =>
-    component.role === 'pawn' || component.originalRole === 'pawn'
+    component.role === 'pawn' || (!component.promoted && component.originalRole === 'pawn')
   )) {
     return reject(state, 'WRONG_ROLE', 'Masquerade cannot move a Pawn.');
   }
@@ -3375,7 +3456,7 @@ function playHiddenPassage(state: GameState, target: unknown, cardInstanceId?: u
   if (!king.royal) return reject(state, 'WRONG_ROLE', 'Choose your royal piece.');
   if (move.from === move.to || state.pieces.some(piece => piece.zone === 'board' && piece.square === move.to)
     || forbiddenCityBlocksMove(state, move.from, move.to, true)
-    || !dungeonAllowsMove(state, king)
+    || !dungeonAllowsMove(state, king, color, true)
     || !curseAllowsMove(state, king, move.from, move.to)
     || !challengeAllows(state, [king])) {
     return reject(state, 'ILLEGAL_MOVE', 'Choose a different empty destination.');
@@ -3554,7 +3635,8 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
   if (!hasUnpromotedPawn(state, pawn)) {
     return reject(state, 'WRONG_ROLE', `${name} can move only an unpromoted original Pawn.`);
   }
-  if (hasCrabEffect(state, pawn.id)) {
+  if (!physicalPieces(state, pawn).some(component => component.originalRole === 'pawn'
+    && !component.promoted && !componentHasCrabMovement(state, component.id))) {
     return reject(state, 'INVALID_TARGET', `Crab prevents that Pawn from using ${name}.`);
   }
   const victim = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.to);
@@ -3563,35 +3645,30 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
     return reject(state, 'WRONG_OWNER', 'The Pawn must capture an opponent piece.');
   }
   if (victim.royal) return reject(state, 'INVALID_TARGET', 'A King can never be captured.');
-  const source = parseSquare(move.from);
-  const destination = parseSquare(move.to);
-  const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
-  const fileDelta = squareFile(destination) - squareFile(source);
-  const rankDelta = squareRank(destination) - squareRank(source);
+  if (captureForbidden(state, pawn) || captureImmune(state, victim)) {
+    return reject(state, 'INVALID_TARGET', 'That Pawn cannot capture or the target cannot be captured.');
+  }
   if (
     cardId === 'breakthrough'
       ? !breakthroughDests(state, move.from).includes(move.to)
-      : Math.abs(fileDelta) + Math.abs(rankDelta) !== 2
-        || fileDelta * forwardFile + rankDelta * forwardRank !== -1
+      : !darkMirrorDests(state, move.from).includes(move.to)
   ) {
     return reject(state, 'ILLEGAL_MOVE', `That is not a legal ${name} capture.`);
-  }
-  if (captureForbidden(state, pawn) || captureImmune(state, victim)) {
-    return reject(state, 'INVALID_TARGET', 'That Pawn cannot capture or the target cannot be captured.');
   }
 
   const wasInCheck = isKingInCheck(state, color);
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === pawn.id)!.square = move.to;
-  const resolvedPawn = resolved.pieces.find(piece => piece.id === pawn.id)!;
-  losePiece(resolved, resolved.pieces.find(piece => piece.id === victim.id)!, 'captured');
-  completeReplacementMove(resolved, color, true, [], [resolvedPawn, victim]);
+  const movedPieces = physicalPieces(state, pawn);
+  const capturedPieces = physicalPieces(state, victim);
+  const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === victim.id)!, 'captured');
+  completeReplacementMove(resolved, color, true, [], [...movedPieces, ...capturedPieces]);
   expireFatalAttractions(state, resolved);
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
     return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
-  if (moveLeavesRoyalInCheck(resolved, color, [resolvedPawn])) {
+  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
     return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, !wasInCheck);
   }
 
@@ -3601,6 +3678,7 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
     cardId,
     target: moves,
     capturedId: victim.id,
+    ...(capturedIds.length > 1 ? { capturedIds } : {}),
   });
   return { ok: true, state: resolved };
 }
@@ -3739,7 +3817,7 @@ function playDungeon(state: GameState, target: unknown, cardInstanceId?: unknown
     || state.pieces.some(candidate => candidate.zone === 'board' && candidate.square === move.to)
     || forbiddenCityBlocksMove(state, move.from, move.to, true)
     || !curseAllowsMove(state, piece, move.from, move.to)
-    || !dungeonAllowsMove(state, piece)) {
+    || !dungeonAllowsMove(state, piece, color, true)) {
     return reject(state, 'ILLEGAL_MOVE', 'Choose a legal empty corner.');
   }
   const resolved = structuredClone(state);
@@ -4131,7 +4209,8 @@ function earthquakeOrientation(
   orientation: BoardOrientation,
   direction: EarthquakeDirection,
 ): BoardOrientation {
-  return ((orientation + (direction === 'clockwise' ? 90 : 270)) % 360) as BoardOrientation;
+  // Board-attached squares; positive orientation is counterclockwise viewed from above.
+  return ((orientation + (direction === 'clockwise' ? 270 : 90)) % 360) as BoardOrientation;
 }
 
 function earthquakePromotionPieces(
@@ -4150,6 +4229,50 @@ function earthquakePromotionPieces(
         && isPromotionSquare(rotated, owner, piece.square)
       )
       .sort((left, right) => parseSquare(left.square!) - parseSquare(right.square!)),
+  );
+}
+
+function earthquakePromotions(required: PieceState[], promotions: unknown): PromotionDeclaration[] | undefined {
+  if (
+    !Array.isArray(promotions)
+    || Object.getPrototypeOf(promotions) !== Array.prototype
+    || Reflect.ownKeys(promotions).some(key =>
+      key !== 'length'
+      && (typeof key !== 'string' || !/^\d+$/.test(key) || Number(key) >= promotions.length)
+    )
+    || Array.from(promotions).some(promotion =>
+      !promotion
+      || typeof promotion !== 'object'
+      || Array.isArray(promotion)
+      || Object.getPrototypeOf(promotion) !== Object.prototype
+      || Reflect.ownKeys(promotion).length !== 2
+      || !Object.hasOwn(promotion, 'square')
+      || !Object.hasOwn(promotion, 'role')
+    )
+  ) return undefined;
+
+  const parsedPromotions = promotions.map(promotion => {
+    const { square, role } = promotion as Record<string, unknown>;
+    return typeof square === 'string' && SQUARE.test(square) && typeof role === 'string' && PROMOTIONS.has(role as Role)
+      ? { square: square as SquareName, role: role as EarthquakeTarget['promotions'][number]['role'] }
+      : undefined;
+  });
+  if (
+    parsedPromotions.length !== required.length
+    || parsedPromotions.some((promotion, index) =>
+      !promotion || promotion.square !== required[index].square
+    )
+  ) return undefined;
+  return parsedPromotions as PromotionDeclaration[];
+}
+
+function earthquakeTargets(state: GameState, direction: EarthquakeDirection): EarthquakeTarget[] {
+  return earthquakePromotionPieces(state, direction).reduce<EarthquakeTarget[]>(
+    (targets, piece) => targets.flatMap(target => [...PROMOTIONS].map(role => ({
+      direction,
+      promotions: [...target.promotions, { square: piece.square!, role: role as PromotionDeclaration['role'] }],
+    }))),
+    [{ direction, promotions: [] }],
   );
 }
 
@@ -4176,46 +4299,18 @@ function playEarthquake(state: GameState, target: unknown, cardInstanceId?: unkn
     || !Object.hasOwn(target, 'direction')
     || !Object.hasOwn(target, 'promotions')
   ) return reject(state, 'INVALID_TARGET', 'Choose a direction and every required promotion.');
-
   const fields = target as Record<string, unknown>;
   const direction = fields.direction;
-  const promotions = fields.promotions;
-  if (
-    (direction !== 'clockwise' && direction !== 'counterclockwise')
-    || !Array.isArray(promotions)
-    || Object.getPrototypeOf(promotions) !== Array.prototype
-    || Reflect.ownKeys(promotions).some(key =>
-      key !== 'length'
-      && (typeof key !== 'string' || !/^\d+$/.test(key) || Number(key) >= promotions.length)
-    )
-    || Array.from(promotions).some(promotion =>
-      !promotion
-      || typeof promotion !== 'object'
-      || Array.isArray(promotion)
-      || Object.getPrototypeOf(promotion) !== Object.prototype
-      || Reflect.ownKeys(promotion).length !== 2
-      || !Object.hasOwn(promotion, 'square')
-      || !Object.hasOwn(promotion, 'role')
-    )
-  ) return reject(state, 'INVALID_TARGET', 'Choose a direction and every required promotion.');
-
+  if (direction !== 'clockwise' && direction !== 'counterclockwise') {
+    return reject(state, 'INVALID_TARGET', 'Choose a direction and every required promotion.');
+  }
   const required = earthquakePromotionPieces(state, direction);
-  const parsedPromotions = promotions.map(promotion => {
-    const { square, role } = promotion as Record<string, unknown>;
-    return typeof square === 'string' && SQUARE.test(square) && typeof role === 'string' && PROMOTIONS.has(role as Role)
-      ? { square: square as SquareName, role: role as EarthquakeTarget['promotions'][number]['role'] }
-      : undefined;
-  });
-  if (
-    parsedPromotions.length !== required.length
-    || parsedPromotions.some((promotion, index) =>
-      !promotion || promotion.square !== required[index].square
-    )
-  ) return reject(state, 'INVALID_TARGET', 'Promote every qualifying Pawn, opponent first and in square order.');
+  const promotions = earthquakePromotions(required, fields.promotions);
+  if (!promotions) return reject(state, 'INVALID_TARGET', 'Promote every qualifying Pawn, opponent first and in square order.');
 
   const canonicalTarget: EarthquakeTarget = {
     direction,
-    promotions: parsedPromotions as EarthquakeTarget['promotions'],
+    promotions,
   };
   const resolved = structuredClone(state);
   resolved.orientation = earthquakeOrientation(state.orientation, direction);
@@ -4260,7 +4355,21 @@ function isRetainedContinuingEffect(effect: unknown): effect is RetainedEffect {
   return !Object.hasOwn(CARD_CATALOG, record.type) || CARD_CATALOG[record.type].continuing !== false;
 }
 
-function peaceTalksTargets(state: GameState): string[] {
+function peaceTalksEffects(state: GameState, effect: RetainedEffect): RetainedEffect[] {
+  const effectIndex = state.effects.indexOf(effect);
+  return [effect, ...state.effects.filter((candidate, index): candidate is RetainedEffect =>
+    isConfabulationEffect(effect)
+      && isRetainedContinuingEffect(candidate)
+      && ((candidate.type === 'coup'
+        && typeof candidate.kingId === 'string'
+        && effect.pieceIds.includes(candidate.kingId))
+        || (index > effectIndex
+          && typeof candidate.pieceId === 'string'
+          && effect.pieceIds.includes(candidate.pieceId))),
+  )];
+}
+
+function peaceTalksEffectIds(state: GameState): string[] {
   const color = state.turn.color;
   if (
     state.outcome
@@ -4280,38 +4389,76 @@ function peaceTalksTargets(state: GameState): string[] {
       && (effect.type !== 'earthquake'
         || effect.direction === 'clockwise'
         || effect.direction === 'counterclockwise')
-      && (effect.type !== 'coup' || safeCoupPieces(state, effect) !== undefined)
+      && peaceTalksEffects(state, effect).every((candidate, _index, cancelled) =>
+        candidate.type !== 'coup' || safeCoupPieces(state, candidate, cancelled) !== undefined,
+      )
       ? [effect.card.id]
       : [],
   );
 }
 
-function restoreCoupPieces(state: GameState, effect: RetainedEffect): void {
+function peaceTalksTargets(state: GameState): (string | PeaceTalksTarget)[] {
+  return peaceTalksEffectIds(state).flatMap<string | PeaceTalksTarget>(effectId => {
+    const effect = state.effects.find((candidate): candidate is RetainedEffect =>
+      isRetainedContinuingEffect(candidate) && candidate.card.id === effectId,
+    )!;
+    if (effect.type !== 'earthquake') return [effectId];
+    return earthquakeTargets(state, effect.direction === 'clockwise' ? 'counterclockwise' : 'clockwise')
+      .map(({ promotions }) => promotions.length ? { effectId, promotions } : effectId);
+  });
+}
+
+function restoreCoupPieces(state: GameState, effect: RetainedEffect, cancelled: RetainedEffect[]): void {
+  if (cancelled.length && !cancelled.some(candidate =>
+    candidate.type === 'coup' && candidate.owner === effect.owner && !candidate.suspended)) return;
   const coups = state.effects.filter((candidate): candidate is RetainedEffect =>
     isRetainedContinuingEffect(candidate) && candidate.type === 'coup' && candidate.owner === effect.owner,
   );
   for (const coup of [...coups].reverse()) {
+    if (coup.suspended) continue;
     const prince = state.pieces.find(piece => piece.id === coup.princeId);
     const king = state.pieces.find(piece => piece.id === coup.kingId);
     if (!prince || !king) continue;
-    prince.royal = true;
-    if (typeof coup.princeRole === 'string') prince.role = coup.princeRole as Role;
+    prince.royal = prince.zone === 'board' || prince.zone === 'away';
+    if (prince.role === 'king' && typeof coup.princeRole === 'string') prince.role = coup.princeRole as Role;
     king.royal = false;
   }
+  // A captured Prince still anchors the succession; a retained Coup can crown its surviving replacement.
+  let prince = state.pieces.find(piece => piece.owner === effect.owner && piece.royal)
+    ?? state.pieces.find(piece => piece.id === (coups.find(coup => !coup.suspended) ?? coups[0])?.princeId);
   for (const coup of coups) {
-    if (coup.card.id === effect.card.id) continue;
-    const prince = state.pieces.find(piece => piece.owner === effect.owner && piece.royal);
+    if (cancelled.some(candidate => candidate.card.id === coup.card.id)) continue;
     const king = state.pieces.find(piece => piece.id === coup.kingId);
+    if (king && (hasRole(state, king, 'queen') || hasRole(state, king, 'rook'))) {
+      coup.suspended = true;
+      continue;
+    }
+    delete coup.suspended;
     if (!prince || !king) continue;
     coup.princeId = prince.id;
     coup.princeRole = prince.role;
     prince.royal = false;
     prince.role = 'king';
-    king.royal = true;
+    king.royal = king.zone === 'board' || king.zone === 'away';
+    prince = king;
   }
+  state.fen = [boardFen(state), ...state.fen.split(' ').slice(1)].join(' ');
 }
 
-function safeCoupPieces(state: GameState, effect: RetainedEffect): [PieceState, PieceState] | undefined {
+function refreshCoups(state: GameState): void {
+  for (const owner of ['white', 'black'] as const) {
+    const changed = state.effects.find((effect): effect is RetainedEffect => {
+      if (!isRetainedContinuingEffect(effect) || effect.type !== 'coup' || effect.owner !== owner) return false;
+      const king = state.pieces.find(piece => piece.id === effect.kingId);
+      return Boolean(king && (hasRole(state, king, 'queen') || hasRole(state, king, 'rook'))) !== Boolean(effect.suspended);
+    });
+    if (!changed) continue;
+    restoreCoupPieces(state, changed, []);
+  }
+  refreshNeutrality(state);
+}
+
+function safeCoupPieces(state: GameState, effect: RetainedEffect, cancelled: RetainedEffect[]): [PieceState, PieceState] | undefined {
   const prince = typeof effect.princeId === 'string'
     ? state.pieces.find(piece => piece.id === effect.princeId)
     : undefined;
@@ -4321,18 +4468,20 @@ function safeCoupPieces(state: GameState, effect: RetainedEffect): [PieceState, 
   const pieces = prince
     && king
     && prince !== king
-    && prince.zone === 'board'
-    && king.zone === 'board'
-    && prince.square
-    && king.square
-    && SQUARE.test(prince.square)
-    && SQUARE.test(king.square)
+    && (effect.suspended || (king.zone === 'board' && king.square && SQUARE.test(king.square))
+      || (king.zone === 'away' && state.underElfHill?.some(entry => entry.pieceId === king.id && !entry.returned)))
     ? [prince, king] as [PieceState, PieceState]
     : undefined;
   if (!pieces) return undefined;
   const resolved = structuredClone(state);
-  restoreCoupPieces(resolved, effect);
-  return isOrdinaryCheckmate(resolved, pieces[0].owner) ? undefined : pieces;
+  restoreCoupPieces(resolved, effect, cancelled);
+  resolved.effects = resolved.effects.filter(candidate =>
+    !isRetainedContinuingEffect(candidate) || !cancelled.some(removed => removed.card.id === candidate.card.id),
+  );
+  refreshNeutrality(resolved);
+  return !resolved.pieces.some(piece => piece.owner === effect.owner && piece.royal
+    && (piece.zone === 'board' || piece.zone === 'away'))
+    || isOrdinaryCheckmate(resolved, pieces[0].owner) ? undefined : pieces;
 }
 
 function playPeaceTalks(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
@@ -4349,37 +4498,71 @@ function playPeaceTalks(state: GameState, target: unknown, cardInstanceId?: unkn
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Peace Talks is played after the regular move.');
   }
-  if (typeof target !== 'string' || !peaceTalksTargets(state).includes(target)) {
+  const fields = typeof target === 'string' ? undefined : effectRecord(target);
+  if (typeof target !== 'string' && (!fields
+    || Object.getPrototypeOf(target) !== Object.prototype
+    || Reflect.ownKeys(fields).length !== 2
+    || !Object.hasOwn(fields, 'effectId')
+    || !Object.hasOwn(fields, 'promotions'))) {
+    return reject(state, 'INVALID_TARGET', 'Choose one retained Continuing Effect card and its required promotions.');
+  }
+  const effectId = fields ? fields.effectId : target;
+  if (typeof effectId !== 'string' || !peaceTalksEffectIds(state).includes(effectId)) {
     return reject(state, 'INVALID_TARGET', 'Choose one retained Continuing Effect card.');
   }
 
   const effect = state.effects.find((candidate): candidate is RetainedEffect =>
-    isRetainedContinuingEffect(candidate) && candidate.card.id === target,
+    isRetainedContinuingEffect(candidate) && candidate.card.id === effectId,
   )!;
-  const coupPieces = effect.type === 'coup' ? safeCoupPieces(state, effect) : undefined;
+  if (fields && effect.type !== 'earthquake') {
+    return reject(state, 'INVALID_TARGET', 'Promotion declarations apply only to Earthquake cancellation.');
+  }
+  const direction = effect.direction === 'clockwise' ? 'counterclockwise' : 'clockwise';
+  const required = effect.type === 'earthquake' ? earthquakePromotionPieces(state, direction) : [];
+  const promotions = earthquakePromotions(required, fields ? fields.promotions : []);
+  if (!promotions) return reject(state, 'INVALID_TARGET', 'Promote every qualifying Pawn, opponent first and in square order.');
+  const cancelled = peaceTalksEffects(state, effect);
 
   const resolved = structuredClone(state);
   spendCard(resolved, 'peace-talks', cardInstanceId);
-  if (coupPieces) restoreCoupPieces(resolved, effect);
+  for (const owner of ['white', 'black'] as const) {
+    const coup = cancelled.find(candidate => candidate.type === 'coup' && candidate.owner === owner);
+    if (coup) restoreCoupPieces(resolved, coup, cancelled);
+  }
   resolved.effects = resolved.effects.filter(candidate =>
-    !isRetainedContinuingEffect(candidate) || candidate.card.id !== target,
+    !isRetainedContinuingEffect(candidate) || !cancelled.some(removed => removed.card.id === candidate.card.id),
   );
+  if (isConfabulationEffect(effect)) {
+    // FAQ 18 retains pre-merge attachments, without specifying an absent component's return placement.
+    for (const marker of resolved.effects) {
+      if (isRetainedContinuingEffect(marker) && ['pacifism', 'crab', 'curse'].includes(marker.type)
+        && typeof marker.pieceId === 'string' && effect.pieceIds.includes(marker.pieceId)
+        && resolved.pieces.some(piece => piece.id === marker.pieceId && piece.zone === 'away')) {
+        marker.confabulationEnded = true;
+      }
+    }
+  }
   refreshNeutrality(resolved);
-  if (!(['white', 'black'] as const).some(owner =>
-    ['hand', 'deck', 'discard'].some(pile =>
-      resolved.players[owner][pile as keyof typeof resolved.players[typeof owner]].some(card => card.id === effect.card.id),
-    )
-  )) resolved.players[effect.owner].discard.push(structuredClone(effect.card));
+  for (const removed of cancelled) {
+    if (!(['white', 'black'] as const).some(owner =>
+      ['hand', 'deck', 'discard'].some(pile =>
+        resolved.players[owner][pile as keyof typeof resolved.players[typeof owner]].some(card => card.id === removed.card.id),
+      )
+    )) discardEffectCard(resolved, removed);
+  }
   if (effect.type === 'doomsayer' && resolved.pendingDoomsayer?.cardInstanceId === effect.card.id) {
     resolved.pendingDoomsayer = null;
   }
   if (effect.type === 'earthquake') {
-    resolved.orientation = earthquakeOrientation(
-      state.orientation,
-      effect.direction === 'clockwise' ? 'counterclockwise' : 'clockwise',
-    );
+    resolved.orientation = earthquakeOrientation(state.orientation, direction);
+    required.forEach((piece, index) => {
+      const promoted = resolved.pieces.find(candidate => candidate.id === piece.id)!;
+      promoted.role = promotions[index].role;
+      promoted.promoted = true;
+    });
+    if (required.length) syncFen(resolved);
   }
-  resolved.history.push({ type: 'cardPlayed', cardId: 'peace-talks' });
+  resolved.history.push({ type: 'cardPlayed', cardId: 'peace-talks', ...(fields ? { target: { effectId, promotions } } : {}) });
   return { ok: true, state: resolved };
 }
 
@@ -4641,6 +4824,7 @@ function playPassingInTheNight(state: GameState, target: unknown, cardInstanceId
     resolved.pieces.find(piece => piece.id === pawns[index * 2].id)!.square = pair.to;
     resolved.pieces.find(piece => piece.id === pawns[index * 2 + 1].id)!.square = pair.from;
   });
+  if (!resolveFatalAttractionSwap(state, resolved)) return reject(state, 'ILLEGAL_MOVE', 'Fatal Attraction prevents swapping that piece.');
   completeReplacementMove(resolved, color, true, [], pawns);
   const defender = opposite(color);
   const consumesMove = !isKingInCheck(state, color);
@@ -4696,6 +4880,7 @@ function playManOfStraw(state: GameState, target: unknown, cardInstanceId?: unkn
   let resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === king.id)!.square = parsedTarget.pawn;
   resolved.pieces.find(piece => piece.id === pawn.id)!.square = parsedTarget.king;
+  if (!resolveFatalAttractionSwap(state, resolved)) return reject(state, 'ILLEGAL_MOVE', 'Fatal Attraction prevents swapping that piece.');
   const movedPieces = [...physicalPieces(state, king), ...physicalPieces(state, pawn)];
   syncFen(resolved, movedPieces);
   resolved = expirePieceEffects({ ok: true, state: resolved }).state;
@@ -4761,7 +4946,7 @@ function playSanctuary(state: GameState, target: unknown, cardInstanceId?: unkno
   ].filter(move => move.from !== move.to);
   for (const move of moves) {
     if (occupied.has(move.to) || forbiddenCityBlocksMove(state, move.from, move.to, move.jumping)
-      || !curseAllowsMove(state, move.piece, move.from, move.to) || !dungeonAllowsMove(state, move.piece)) {
+      || !curseAllowsMove(state, move.piece, move.from, move.to) || !dungeonAllowsMove(state, move.piece, color, true)) {
       return reject(state, 'ILLEGAL_MOVE', 'A destination or movement restriction blocks Sanctuary.');
     }
   }
@@ -4881,6 +5066,7 @@ function playSwapCard(
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === firstPiece.id)!.square = secondSquare as SquareName;
   resolved.pieces.find(piece => piece.id === secondPiece.id)!.square = firstSquare as SquareName;
+  if (!resolveFatalAttractionSwap(state, resolved)) return reject(state, 'ILLEGAL_MOVE', 'Fatal Attraction prevents swapping that piece.');
   if (config.replacesMove) {
     completeReplacementMove(resolved, color, false, [], [firstPiece, secondPiece]);
   } else {
@@ -5163,7 +5349,7 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
     return reject(state, 'INVALID_TARGET', 'No Quarter does not take a target.');
   }
 
-  const move = state.history.at(-1);
+  const move = hostageCaptureEvent(state);
   const captured = move?.type === 'move' && move.capturedId
     ? state.pieces.find(piece => piece.id === move.capturedId)
     : undefined;
@@ -5174,13 +5360,16 @@ function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unkno
           || (piece.zone === 'captured' && piece.square === null))
       : piece.zone === 'board' && piece.square === move.to)
     : undefined;
+  // Plots preserves who made the ordinary capture even if an extra removes or moves its capturer.
+  const ownCapture = state.plotsExecution
+    ? state.plotsExecution.window.shieldMove?.player === color
+    : mover && (mover.owner === color || mover.neutral);
   if (
     !captured
     || captured.zone !== 'captured'
     || captured.square !== null
     || (captured.owner === color && !captured.neutral)
-    || !mover
-    || (mover.owner !== color && !mover.neutral)
+    || !ownCapture
   ) {
     return reject(state, 'INVALID_TIMING', 'No Quarter must immediately follow your ordinary move capturing an enemy piece.');
   }
@@ -5208,6 +5397,14 @@ function additionalMovePiece(state: GameState, role: 'knight' | 'bishop' | 'rook
     && piece.zone === 'board' && piece.square === (castle?.to ?? move.to)
     && (piece.owner === state.turn.color || piece.neutral)
     && hasRole(state, piece, role));
+}
+
+function preserveAdditionalMoveClocks(before: GameState, next: GameState): void {
+  const setup = parseFen(next.fen).unwrap();
+  const previousSetup = parseFen(before.fen).unwrap();
+  setup.fullmoves = previousSetup.fullmoves;
+  if (setup.halfmoves > 0) setup.halfmoves = previousSetup.halfmoves;
+  next.fen = makeFen(setup);
 }
 
 function playAdditionalMove(state: GameState, cardId: 'charge' | 'crusade' | 'merciless', target: unknown, cardInstanceId?: unknown): ApplyResult {
@@ -5242,7 +5439,7 @@ function playAdditionalMove(state: GameState, cardId: 'charge' | 'crusade' | 'me
     return reject(state, 'INVALID_TARGET', `Move the same ${role} once more.`);
   }
   const view = turnView(state, color);
-  const result = movePiece(view, { type: 'move', ...moves[0] }, 'defer', false);
+  const result = movePiece(view, { type: 'move', ...moves[0] }, 'defer', false, true);
   if (!result.ok) return reject(state, result.error.code, result.error.message);
   const resolved = result.state;
   if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
@@ -5252,11 +5449,7 @@ function playAdditionalMove(state: GameState, cardId: 'charge' | 'crusade' | 'me
     return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId);
   }
   resolved.turn = structuredClone(state.turn);
-  const setup = parseFen(resolved.fen).unwrap();
-  const previousSetup = parseFen(state.fen).unwrap();
-  setup.fullmoves = previousSetup.fullmoves;
-  if (setup.halfmoves > 0) setup.halfmoves = previousSetup.halfmoves;
-  resolved.fen = makeFen(setup);
+  preserveAdditionalMoveClocks(state, resolved);
   spendCard(resolved, cardId, cardInstanceId);
   Object.assign(resolved.history.at(-1)!, {
     type: 'cardPlayed', cardId, target: moves, preservePreviousMove: false,
@@ -5278,7 +5471,7 @@ function playCoup(state: GameState, target: unknown, cardInstanceId?: unknown): 
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose a board square.');
   const king = state.pieces.find(piece => piece.zone === 'board' && piece.square === target);
   if (!king) return reject(state, 'INVALID_TARGET', 'Choose an occupied square.');
-  if (king.owner !== color) return reject(state, 'WRONG_OWNER', 'Choose one of your pieces.');
+  if (king.owner !== color && !king.neutral) return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
   if (king.royal || hasRole(state, king, 'rook') || hasRole(state, king, 'queen')
     || physicalPieces(state, king).some(piece => piece.originalRole === 'king')) {
     return reject(state, 'WRONG_ROLE', 'Choose a different piece, except a Rook or Queen.');
@@ -5290,12 +5483,14 @@ function playCoup(state: GameState, target: unknown, cardInstanceId?: unknown): 
   demoted.royal = false;
   demoted.role = 'king';
   resolved.pieces.find(piece => piece.id === king.id)!.royal = true;
-  if (moveLeavesRoyalInCheck(resolved, color, [king])) {
+  refreshNeutrality(resolved);
+  if (king.owner === color && moveLeavesRoyalInCheck(resolved, color, [king])) {
     return fizzleCard(state, 'coup', 'SELF_CHECK', cardInstanceId);
   }
   resolved.fen = [boardFen(resolved), ...state.fen.split(' ').slice(1)].join(' ');
   const card = spendCard(resolved, 'coup', cardInstanceId, false);
   resolved.effects.push({ type: 'coup', owner: color, card, princeId: prince.id, kingId: king.id, princeRole: prince.role });
+  if (king.owner !== color) resolved.outcome = { winner: opposite(color), reason: 'surrender' };
   resolved.history.push({ type: 'cardPlayed', cardId: 'coup', target: target as SquareName });
   return { ok: true, state: resolved };
 }
@@ -5320,7 +5515,8 @@ function playChallenge(
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
   if (!piece) return reject(state, 'INVALID_TARGET', 'Choose an occupied square.');
   if (piece.owner === color && !piece.neutral) return reject(state, 'WRONG_OWNER', 'Choose an opponent piece.');
-  if (piece.royal || hasRole(state, piece, 'king') || hasRole(state, piece, 'queen')) {
+  if (piece.royal || hasRole(state, piece, 'king') || physicalPieces(state, piece).every(component =>
+    component.role === 'queen' || (!component.promoted && component.originalRole === 'queen'))) {
     return reject(state, 'WRONG_ROLE', 'Challenge cannot name a King or Queen.');
   }
   if (!opponentDests().get(piece.square!)?.length) {
@@ -5398,7 +5594,7 @@ function playBombard(state: GameState, target: unknown, cardInstanceId?: unknown
   const rankDelta = squareRank(destination) - squareRank(source);
   if (source === destination || (fileDelta !== 0 && rankDelta !== 0)
     || !curseAllowsMove(state, mover, move.from, move.to)
-    || !dungeonAllowsMove(state, mover) || !challengeAllows(state, [mover])) {
+    || !dungeonAllowsMove(state, mover, color, true) || !challengeAllows(state, [mover])) {
     return reject(state, 'ILLEGAL_MOVE', 'Choose an allowed straight Rook move.');
   }
   const blocked = forbiddenCitySquares(state);
@@ -5477,9 +5673,6 @@ function playGhostwalk(state: GameState, target: unknown, cardInstanceId?: unkno
     return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
   }
   const components = physicalPieces(state, mover);
-  if (mover.royal || components.some(component => component.royal)) {
-    return reject(state, 'WRONG_ROLE', 'Ghostwalk cannot move a royal piece.');
-  }
   if (!(['pawn', 'bishop', 'rook', 'queen'] as const).some(role => hasRole(state, mover, role))) {
     return reject(state, 'WRONG_ROLE', 'Choose a Pawn, Bishop, Rook, or Queen.');
   }
@@ -5603,6 +5796,7 @@ function playIrresistibleForce(state: GameState, target: unknown, cardInstanceId
     if (!carrier) break;
   }
 
+  let blockedByCity = false;
   for (const carrier of chain) {
     const square = parseSquare(carrier.square!);
     const file = squareFile(square) + fileStep;
@@ -5610,7 +5804,12 @@ function playIrresistibleForce(state: GameState, target: unknown, cardInstanceId
     if (
       file >= 0 && file <= 7 && rank >= 0 && rank <= 7
       && forbiddenCityBlocksMove(state, carrier.square!, makeSquare(rank * 8 + file))
-    ) return reject(state, 'ILLEGAL_MOVE', 'That push is blocked by Forbidden City.');
+    ) {
+      if (!forbiddenCitySquares(state).has(makeSquare(rank * 8 + file))) {
+        return reject(state, 'ILLEGAL_MOVE', 'That push is blocked by Fortification.');
+      }
+      blockedByCity = true;
+    }
   }
   const terminal = terminalOffBoard ? chain.at(-1)! : undefined;
   if (terminal && (captureForbidden(state, mover) || captureImmune(state, terminal))) {
@@ -5618,6 +5817,9 @@ function playIrresistibleForce(state: GameState, target: unknown, cardInstanceId
   }
 
   const wasInCheck = isKingInCheck(state, color);
+  if (blockedByCity) {
+    return fizzleCard(state, 'irresistible-force', 'FORBIDDEN_CITY', cardInstanceId, !wasInCheck);
+  }
   const movedPieces = chain.flatMap(carrier => physicalPieces(state, carrier));
   const resolved = structuredClone(state);
   let capturedIds: string[] = [];
@@ -5685,17 +5887,29 @@ function playVulture(state: GameState, target: unknown, cardInstanceId?: unknown
   if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Vulture does not take a target.');
   const discard = state.players[response.player].discard;
-  const played = state.playedCards?.slice().reverse().find(entry => entry.player === response.player
-    && discard.some(card => card.id === entry.cardInstanceId));
-  if (!played) return reject(state, 'INVALID_TARGET', 'There is no eligible played card to take.');
+  const played = state.playedCards?.slice().reverse().find(entry => entry.player === response.player);
+  const discarded = discard.find(card => card.id === played?.cardInstanceId);
+  const retained = state.effects.find((effect): effect is RetainedEffect =>
+    isRetainedContinuingEffect(effect) && effect.owner === response.player
+      && !effect.card.proxy && effect.card.id === played?.cardInstanceId);
+  const taken = discarded ?? retained?.card;
+  if (!taken) return reject(state, 'INVALID_TARGET', 'There is no eligible played card to take.');
   const resolved = structuredClone(state);
-  const opponentDiscard = resolved.players[response.player].discard;
-  const [taken] = opponentDiscard.splice(opponentDiscard.findIndex(card => card.id === played.cardInstanceId), 1);
+  if (discarded) {
+    resolved.players[response.player].discard = resolved.players[response.player].discard.filter(card => card.id !== taken.id);
+  } else {
+    // FAQ 50: the card changes hands; its independently cancelable proxy stays in play.
+    const effect = resolved.effects[state.effects.indexOf(retained!)] as RetainedEffect;
+    effect.card = { ...taken, id: `vulture-proxy-${state.history.length}-${taken.id}`, proxy: true };
+    if (resolved.pendingDoomsayer?.cardInstanceId === taken.id) {
+      resolved.pendingDoomsayer.cardInstanceId = effect.card.id;
+    }
+  }
   const player = resolved.players[color];
   const cost = player.deck.shift();
   if (cost) player.discard.push(cost);
   spendCard(resolved, 'vulture', cardInstanceId, true, color);
-  player.hand.push(taken);
+  player.hand.push(structuredClone(taken));
   resolved.history.push({ type: 'cardPlayed', cardId: 'vulture', player: color });
   return { ok: true, state: resolved };
 }
@@ -5717,10 +5931,10 @@ function hauntingCopy(state: GameState, cardInstanceId?: unknown, target?: unkno
   const played = state.playedCards?.at(-1);
   const deckOwner = previous?.deckOwner ?? (played?.cardInstanceId.startsWith('white-') ? 'white'
     : played?.cardInstanceId.startsWith('black-') ? 'black' : previous?.player ?? played?.player);
-  if (CARD_CATALOG[previous!.cardId!]?.unique && deckOwner === color) return undefined;
+  if (CARD_CATALOG[cardId].unique && deckOwner === color) return undefined;
   const substituted = structuredClone(state);
   substituted.players[color].hand.find(candidate => candidate.id === card.id)!.cardId = cardId;
-  return { substituted, cardId, card, color };
+  return { substituted, cardId, card, color, deckOwner };
 }
 
 function playHauntingMemories(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
@@ -5742,6 +5956,7 @@ function playHauntingMemories(state: GameState, target: unknown, cardInstanceId?
   event.cardId = 'haunting-memories';
   event.copiedCardId = copy.cardId;
   event.player = copy.color;
+  if (CARD_CATALOG[copy.cardId].unique && copy.deckOwner) event.deckOwner = copy.deckOwner;
   return result;
 }
 
@@ -5750,15 +5965,35 @@ function mysticShieldPieces(state: GameState): PieceState[] {
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade || move?.player !== state.turn.color) return [];
   return [...new Map(move.pieceIds.flatMap(id => {
     const piece = boardCarrier(state, id);
-    return piece && !physicalPieces(state, piece).some(component => component.royal)
-      ? [[piece.id, piece] as const] : [];
+    return piece ? [[piece.id, piece] as const] : [];
   })).values()];
 }
 
 function fireballPieces(state: GameState): PieceState[] {
   const move = state.plotsExecution ? state.plotsExecution.window.shieldMove : state.shieldMove;
   if (!move || move.capturedOpponent !== false) return [];
-  return mysticShieldPieces(state).filter(piece => !captureImmune(state, piece));
+  return mysticShieldPieces(state).filter(piece =>
+    !physicalPieces(state, piece).some(component => component.royal || component.role === 'king') && !captureImmune(state, piece));
+}
+
+function explodeFireball(state: GameState, center: PieceState): { state: GameState; capturedIds: string[] } {
+  const square = parseSquare(center.square!)!;
+  const victims = state.pieces.filter(piece => piece.zone === 'board' && piece.square
+    && Math.abs(squareFile(parseSquare(piece.square)!) - squareFile(square)) <= 1
+    && Math.abs(squareRank(parseSquare(piece.square)!) - squareRank(square)) <= 1
+    && !physicalPieces(state, piece).some(component => component.royal || component.role === 'king')
+    && !captureImmune(state, piece));
+  const removed = victims.flatMap(piece => physicalPieces(state, piece));
+  const resolved = structuredClone(state);
+  const capturedIds = victims.flatMap(piece =>
+    losePiece(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!, 'captured'));
+  syncFen(resolved, removed);
+  const setup = parseFen(resolved.fen).unwrap();
+  setup.halfmoves = 0;
+  resolved.fen = makeFen(setup);
+  const result: ApplyResult = { ok: true, state: resolved };
+  expirePieceEffects(result);
+  return { state: result.state, capturedIds };
 }
 
 function playFireball(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
@@ -5776,23 +6011,9 @@ function playFireball(state: GameState, target: unknown, cardInstanceId?: unknow
   }
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose one occupied square.');
   const center = fireballPieces(state).find(piece => piece.square === target);
-  if (!center) return reject(state, 'INVALID_TARGET', 'Choose an unprotected nonroyal piece you just moved.');
-  const square = parseSquare(center.square!)!;
-  const victims = state.pieces.filter(piece => piece.zone === 'board' && piece.square
-    && Math.abs(squareFile(parseSquare(piece.square)!) - squareFile(square)) <= 1
-    && Math.abs(squareRank(parseSquare(piece.square)!) - squareRank(square)) <= 1
-    && !physicalPieces(state, piece).some(component => component.royal)
-    && !captureImmune(state, piece));
-  const removed = victims.flatMap(piece => physicalPieces(state, piece));
-  const resolved = structuredClone(state);
-  const capturedIds = victims.flatMap(piece =>
-    losePiece(resolved, resolved.pieces.find(candidate => candidate.id === piece.id)!, 'captured'));
-  syncFen(resolved, removed);
-  const setup = parseFen(resolved.fen).unwrap();
-  setup.halfmoves = 0;
-  resolved.fen = makeFen(setup);
-  const result: ApplyResult = { ok: true, state: resolved };
-  expirePieceEffects(result);
+  if (!center) return reject(state, 'INVALID_TARGET', 'Choose an unprotected piece you just moved, except a King or Prince.');
+  const explosion = explodeFireball(state, center);
+  const result: ApplyResult = { ok: true, state: explosion.state };
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(turnView(state, defender), defender)
     && isOrdinaryCheckmate(turnView(result.state, defender), defender)) {
@@ -5800,7 +6021,7 @@ function playFireball(state: GameState, target: unknown, cardInstanceId?: unknow
   }
   if (isKingInCheck(result.state, color)) return fizzleCard(state, 'fireball', 'SELF_CHECK', cardInstanceId);
   spendCard(result.state, 'fireball', cardInstanceId);
-  result.state.history.push({ type: 'cardPlayed', cardId: 'fireball', target: center.square!, capturedIds, player: color });
+  result.state.history.push({ type: 'cardPlayed', cardId: 'fireball', target: center.square!, capturedIds: explosion.capturedIds, player: color });
   return result;
 }
 
@@ -5817,7 +6038,7 @@ function playMysticShield(state: GameState, target: unknown, cardInstanceId?: un
   }
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose one occupied square.');
   const piece = mysticShieldPieces(state).find(candidate => candidate.square === target);
-  if (!piece) return reject(state, 'INVALID_TARGET', 'Choose a nonroyal piece you just moved.');
+  if (!piece) return reject(state, 'INVALID_TARGET', 'Choose a piece you just moved.');
   const move = state.plotsExecution ? state.plotsExecution.window.shieldMove : state.shieldMove;
   const pieceId = physicalPieces(state, piece).find(component => move!.pieceIds.includes(component.id))!.id;
   const resolved = structuredClone(state);
@@ -5840,8 +6061,20 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
     return reject(state, 'CARD_NOT_IN_HAND', `${CARD_CATALOG[cardId].name} is not in your hand.`);
   }
   if (cardAllowanceUsed(state, player)) return reject(state, 'CARD_ALREADY_PLAYED', 'The card allowance is already used.');
-  const checkpoint = state.chaosCheckpoint;
-  if (!checkpoint || state.turn.phase !== 'afterMove' || !state.turn.moveMade
+  // The existing card snapshot still holds the real move before an optional card.
+  const afterCard = state.plotsExecution?.window.fogCheckpoint ?? state.fogCheckpoint;
+  const optionalMove = afterCard?.player === state.turn.color && afterCard.before.turn.moveMade
+    && afterCard.before.chaosCheckpoint?.historyLength === afterCard.before.history.length
+    && state.history.slice(afterCard.historyLength).every(event =>
+      (event.copiedCardId ?? event.cardId) === 'plots-within-plots')
+    && !['plots-within-plots', 'fog-of-war'].includes(state.history[afterCard.historyLength - 1]?.copiedCardId
+      ?? state.history[afterCard.historyLength - 1]?.cardId ?? '')
+    ? afterCard.before.chaosCheckpoint : undefined;
+  const checkpoint = state.chaosCheckpoint ?? (optionalMove && {
+    ...optionalMove, card: optionalMove.card ?? afterCard!.card, historyLength: afterCard!.historyLength,
+  });
+  const optional = !state.chaosCheckpoint && optionalMove && !optionalMove.card ? afterCard!.before : undefined;
+  if (!checkpoint || state.turn.phase !== 'afterMove' || !state.turn.moveMade || state.pendingRescue
     || (!state.plotsExecution && checkpoint.historyLength !== state.history.length)) {
     return reject(state, 'INVALID_TIMING', `${CARD_CATALOG[cardId].name} immediately follows an opposing move.`);
   }
@@ -5873,7 +6106,35 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
           .filter(allowance => allowance.player === player).length;
     }
   }
-  if (checkpoint.card && choice?.returnCard === false) {
+  if (optional && choice?.returnCard === false) {
+    // FAQ p.37 cancels the move, not an optional card the mover chooses to keep.
+    const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
+    resolved.orientation = state.orientation;
+    resolved.pendingDoomsayer = structuredClone(state.pendingDoomsayer);
+    if (optional.orientation !== state.orientation || !same(optional.enPassant, state.enPassant)) {
+      resolved.enPassant = structuredClone(state.enPassant);
+    }
+    resolved.effects = [
+      ...resolved.effects.filter(effect => !optional.effects.some(previous => same(previous, effect))
+        || state.effects.some(current => same(current, effect))),
+      ...structuredClone(state.effects.filter(effect => !optional.effects.some(previous => same(previous, effect)))),
+    ];
+    for (const piece of resolved.pieces) {
+      const previous = optional.pieces.find(candidate => candidate.id === piece.id);
+      const current = state.pieces.find(candidate => candidate.id === piece.id);
+      if (!previous || !current) continue;
+      for (const key of new Set([...Object.keys(previous), ...Object.keys(current)]) as Set<keyof PieceState>) {
+        if (same(previous[key], current[key])) continue;
+        if (Object.hasOwn(current, key)) Object.assign(piece, { [key]: structuredClone(current[key]) });
+        else Reflect.deleteProperty(piece, key);
+      }
+    }
+    resolved.players[state.turn.color] = structuredClone(state.players[state.turn.color]);
+    resolved.turn.cardPlays[state.turn.color] = state.turn.cardPlays[state.turn.color];
+    resolved.playedCards.push(...structuredClone((state.playedCards ?? [])
+      .slice(checkpoint.before.playedCards?.length ?? 0).filter(card => card.player === state.turn.color)));
+    syncFen(resolved);
+  } else if (checkpoint.card && choice?.returnCard === false) {
     const execution = resolved.plotsExecution;
     delete resolved.plotsExecution;
     const allowanceIndex = resolved.plotsAllowances.map((allowance, index) => ({ allowance, index })).reverse()
@@ -5895,7 +6156,14 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
   resolved.turn.phase = 'beforeMove';
   resolved.turn.moveMade = false;
   resolved.outcome = null;
-  resolved.chaosForbidden = { player: state.turn.color, movement: checkpoint.movement };
+  const canceledMove = state.chaosCheckpoint ? state : afterCard!.before;
+  resolved.chaosForbidden = { player: state.turn.color, movement: chaosMovement(checkpoint.before, canceledMove, true) };
+  const canceledEvent = canceledMove.history[(canceledMove.chaosCheckpoint?.historyLength ?? checkpoint.historyLength) - 1];
+  if (['charge', 'crusade', 'merciless'].includes(canceledEvent?.copiedCardId ?? canceledEvent?.cardId ?? '')
+    || checkpoint.before.chaosForbidden?.additionalMove) {
+    // Replacing an extra movement keeps the first Regular Move's clock advancement.
+    resolved.chaosForbidden.additionalMove = true;
+  }
   delete resolved.chaosCheckpoint;
   if (isOrdinaryCheckmate(resolved, state.turn.color)
     && !isOrdinaryCheckmate(state, state.turn.color)) {
@@ -5906,12 +6174,29 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
   return { ok: true, state: resolved };
 }
 
+function fogCheckpoints(state: GameState): NonNullable<GameState['fogCheckpoint']>[] {
+  let checkpoint = state.plotsExecution?.window.fogCheckpoint ?? state.fogCheckpoint;
+  if (!checkpoint || (!state.plotsExecution && checkpoint.historyLength !== state.history.length)) return [];
+  const checkpoints = [];
+  while (checkpoint) {
+    checkpoints.push(checkpoint);
+    checkpoint = checkpoint.plots?.previous;
+  }
+  return checkpoints;
+}
+
 function playFogOfWar(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
-  if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Fog of War takes no target.');
-  const checkpoint = state.plotsExecution?.window.fogCheckpoint ?? state.fogCheckpoint;
-  if (!checkpoint || (!state.plotsExecution && checkpoint.historyLength !== state.history.length)) {
+  const checkpoints = fogCheckpoints(state);
+  const canceledCards = checkpoints[0]?.canceledCards ?? [];
+  const available = checkpoints.filter(candidate => !canceledCards.includes(candidate.card.id));
+  const selected = target === undefined ? available[0]
+    : checkpoints.length > 1 ? available.find(candidate => candidate.card.id === target) : undefined;
+  if (target !== undefined && !selected) return reject(state, 'INVALID_TARGET', 'Choose a physical card in the live Plots sequence.');
+  if (!selected || canceledCards.includes(checkpoints.at(-1)!.card.id)) {
     return reject(state, 'INVALID_TIMING', 'Fog of War immediately follows an opposing card.');
   }
+  const canceled = [...canceledCards, selected.card.id];
+  const checkpoint = [...checkpoints].reverse().find(candidate => canceled.includes(candidate.card.id))!;
   const player = opposite(checkpoint.player);
   const card = state.players[player].hand.find(candidate => candidate.cardId === 'fog-of-war'
     && (cardInstanceId === undefined || candidate.id === cardInstanceId));
@@ -5921,19 +6206,65 @@ function playFogOfWar(state: GameState, target: unknown, cardInstanceId?: unknow
   if (cardAllowanceUsed(state, player)) return reject(state, 'CARD_ALREADY_PLAYED', 'The card allowance is already used.');
   const pending = checkpoint.before.pendingRescue;
   const undoMove = Boolean(pending && isKingInCheck(checkpoint.before, checkpoint.before.turn.color));
-  const resolved = structuredClone(undoMove && pending?.before ? pending.before : checkpoint.before);
+  let resolved = structuredClone(undoMove && pending?.before ? pending.before : checkpoint.before);
   delete resolved.plotsExecution;
+  const spendIndependent = (source: GameState, entry: NonNullable<GameState['playedCards']>[number]) => {
+    const cards = resolved.players[entry.player];
+    const independent = cards.hand.find(candidate => candidate.id === entry.cardInstanceId);
+    if (!independent) return;
+    // Unplayed deck cards in this responder's discard are Vulture costs, including copies.
+    // Preserve them before the next ordinary draw; the canceled player's costs stay undone.
+    const played = new Set(source.playedCards?.map(card => card.cardInstanceId));
+    while (cards.deck[0] && !played.has(cards.deck[0].id)
+      && source.players[entry.player].discard.some(card => card.id === cards.deck[0].id)) {
+      cards.discard.push(cards.deck.shift()!);
+    }
+    spendCard(resolved, independent.cardId, independent.id, true, entry.player);
+  };
   for (const entry of (checkpoint.before.playedCards ?? []).slice(resolved.playedCards?.length ?? 0)) {
-    const independent = resolved.players[entry.player].hand.find(candidate => candidate.id === entry.cardInstanceId);
-    if (independent) spendCard(resolved, independent.cardId, independent.id, true, entry.player);
+    spendIndependent(checkpoint.before, entry);
   }
-  spendCard(resolved, checkpoint.card.cardId, checkpoint.card.id, true, checkpoint.player);
+  const spendCanceled = (entry: NonNullable<GameState['fogCheckpoint']>) => {
+    if (entry.plots && !undoMove) {
+      const allowanceIndex = entry.plots.allowanceIndex;
+      resolved.plotsExecution = { player: entry.player, allowanceIndex,
+        window: resolved.plotsAllowances![allowanceIndex].window };
+    }
+    spendCard(resolved, entry.card.cardId, entry.card.id, true, entry.player);
+    delete resolved.plotsExecution;
+  };
+  spendCanceled(checkpoint);
+  // FAQ p.52 commits the third physical card; execute it again only if its target is still legal.
+  const subsequent = checkpoints.slice(0, checkpoints.indexOf(checkpoint)).reverse();
+  let replayed = 0;
+  if (checkpoint.plots && !undoMove) {
+    resolved.history.push(...structuredClone(state.history.slice(checkpoint.before.history.length, checkpoint.historyLength)));
+    for (const later of subsequent) {
+      if (!later.action) break;
+      if (canceled.includes(later.card.id)) {
+        spendCanceled(later);
+        resolved.history.push(...structuredClone(state.history.slice(later.before.history.length, later.historyLength)));
+        replayed += 1;
+        continue;
+      }
+      let result = applyAction(resolved, later.action);
+      for (const response of later.responses ?? []) {
+        if (result.ok) result = applyAction(result.state, response);
+      }
+      if (!result.ok) {
+        const allowance = resolved.plotsAllowances?.[later.plots!.allowanceIndex];
+        if (allowance) allowance.eligibleCards = [later.card.id];
+        break;
+      }
+      resolved = result.state;
+      replayed += 1;
+    }
+  }
   // Reapply independent response expenditures without retaining the canceled card's transfers or costs.
   const laterPlays = (state.playedCards ?? []).slice((checkpoint.before.playedCards?.length ?? 0) + 1)
     .filter(entry => entry.player === player);
   for (const entry of laterPlays) {
-    const independent = resolved.players[player].hand.find(candidate => candidate.id === entry.cardInstanceId);
-    if (independent) spendCard(resolved, independent.cardId, independent.id, true, player);
+    spendIndependent(state, entry);
   }
   const allowances = (state.plotsAllowances ?? []).filter(allowance => allowance.player === player);
   resolved.plotsAllowances = [
@@ -5948,8 +6279,19 @@ function playFogOfWar(state: GameState, target: unknown, cardInstanceId?: unknow
           .filter(allowance => allowance.player === player).length;
     }
   }
-  resolved.history = structuredClone(state.history);
-  resolved.fogLocked = [...new Set([...(state.fogLocked ?? []), checkpoint.player])];
+  // Each reaction allowance retains the same live trio, including prior cancellations.
+  for (const allowance of resolved.plotsAllowances) {
+    const saved = allowance.window.fogCheckpoint;
+    if (saved?.card.id === checkpoints[0].card.id && saved.historyLength === checkpoints[0].historyLength) {
+      saved.canceledCards = canceled;
+    }
+  }
+  if (resolved.plotsExecution?.window.fogCheckpoint) {
+    resolved.plotsExecution.window.fogCheckpoint.canceledCards = canceled;
+  }
+  resolved.history = structuredClone(state.history.slice(0,
+    subsequent.length > replayed ? (subsequent[replayed].before.history.length) : state.history.length));
+  resolved.fogLocked = [...new Set([...(state.fogLocked ?? []), ...(!checkpoint.plots ? [checkpoint.player] : [])])];
   if (pending && undoMove) {
     resolved.fen = pending.fen;
     resolved.pieces = structuredClone(pending.pieces);
@@ -6056,11 +6398,14 @@ function plotsPlayer(state: GameState, target: unknown): Color | undefined {
 }
 
 function plotsWindow(state: GameState): NonNullable<GameState['plotsAllowances']>[number]['window'] {
+  const revengePawnIds = revengePawns(state)
+    .filter(piece => piece.owner !== opposite(state.turn.color) && !piece.neutral).map(piece => piece.id);
   return structuredClone(state.plotsExecution?.window ?? {
     phase: state.turn.phase,
     moveMade: state.turn.moveMade,
     shieldMove: state.shieldMove,
     reaction: reactionEvent(state),
+    ...(revengePawnIds.length ? { revengePawnIds } : {}),
     capture: hostageCaptureEvent(state),
     legacyCapture: state.legacyCapture?.historyLength === state.history.length ? state.legacyCapture : undefined,
     cardResponse: state.cardResponse?.historyLength === state.history.length ? state.cardResponse : undefined,
@@ -6159,7 +6504,7 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
     && state.pieces.some(piece => {
       const after = boardCarrier(result.state, piece.id);
       return piece.zone === 'board' && piece.square && after?.square && after.square !== piece.square
-        && !dungeonAllowsMove(state, piece);
+        && !dungeonAllowsMove(state, piece, state.turn.color, true);
     })) return reject(state, 'ILLEGAL_MOVE', 'Dungeon prevents moving that piece this turn.');
   if (result.ok && cardId !== 'man-of-straw' && cardId !== 'passing-in-the-night' && CARD_CATALOG[cardId]?.continuing === false && state.pieces.some(piece => {
     const after = boardCarrier(result.state, piece.id);
@@ -6180,10 +6525,14 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
   if (result.ok && result.state.history.at(-1)?.type === 'cardPlayed'
     && cardId !== 'man-of-straw' && cardId !== 'passing-in-the-night' && !Object.hasOwn(SWAP_CARDS, cardId)) springManTraps(state, result.state);
   expirePieceEffects(result);
+  // A staged rescue is still unfinished; otherwise FAQ p.4 protects the mover too.
+  const completedTurnReaction = (cardId === 'hostage' || cardId === 'revenge')
+    && state.turn.moveMade && !state.pendingRescue;
   if (result.ok && result.state.history.at(-1)?.type === 'cardPlayed'
-    && (result.state.effects !== effectsBeforeExpiry
+    && (cardId === 'toll' || completedTurnReaction || result.state.effects !== effectsBeforeExpiry
       || state.effects.some(isFatalAttractionEffect))
-    && CARD_CATALOG[cardId]?.continuing === false && cardId !== 'hostage' && cardId !== 'plots-within-plots') {
+    && CARD_CATALOG[cardId]?.continuing === false && (cardId !== 'hostage' || completedTurnReaction)
+    && cardId !== 'plots-within-plots') {
     const actor = result.state.playedCards?.at(-1)?.player ?? state.turn.color;
     const reaction = actor !== state.turn.color;
     const defender = opposite(actor);
@@ -6193,7 +6542,8 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
       || (cardId === 'bog' && !isOrdinaryCheckmate(state, actor) && isOrdinaryCheckmate(result.state, actor));
     const selfCheck = (result.state.turn.moveMade && isKingInCheck(result.state, actor)
       && (!reaction || cardId === 'bog' || !isKingInCheck(state, actor)))
-      || (cardId === 'bog' && isKingInCheck(result.state, defender));
+      || ((cardId === 'bog' || cardId === 'toll') && isKingInCheck(result.state, defender))
+      || (completedTurnReaction && isKingInCheck(result.state, state.turn.color));
     if (directMate || selfCheck) {
       const fizzled = fizzleCard(state, cardId, directMate ? 'DIRECT_MATE' : 'SELF_CHECK', cardInstanceId, consumesMove, actor);
       if (fizzled.ok && cardId === 'toll') {
@@ -6215,7 +6565,7 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
     }
   }
   if (result.ok && state.chaosForbidden?.player === state.turn.color
-    && chaosMovement(state, result.state) === state.chaosForbidden.movement) {
+    && chaosMovement(state, result.state, true) === state.chaosForbidden.movement) {
     return reject(state, 'ILLEGAL_MOVE', 'Chaos requires a different move.');
   }
   return result;
@@ -6244,7 +6594,11 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
   }
   if (cardId === 'legacy') return (['white', 'black'] as const).flatMap(player =>
     state.players[player].discard.filter(card => playLegacy(state, card.id).ok).map(card => card.id));
-  if (cardId === 'fog-of-war') return playFogOfWar(state, undefined).ok ? [undefined] : [];
+  if (cardId === 'fog-of-war') {
+    const checkpoints = fogCheckpoints(state);
+    return [undefined, ...(checkpoints.length > 1 ? checkpoints.map(checkpoint => checkpoint.card.id) : [])]
+      .filter(target => playFogOfWar(state, target).ok);
+  }
   if (state.pendingAbduction) return [];
   if (cardId === 'fireball') return fireballPieces(state).flatMap(piece => {
     const result = playFireball(state, piece.square);
@@ -6486,7 +6840,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
   if (cardId === 'truce') return !state.outcome && playTruce(state, undefined).ok ? [undefined] : [];
   if (cardId === 'panic') {
     if (state.outcome) return [];
-    const result = applyAction(state, { type: 'playCard', cardId: 'panic' });
+    const result = applyActionCore(state, { type: 'playCard', cardId: 'panic' });
     const event = result.ok ? result.state.history.at(-1) : undefined;
     return event?.type === 'cardPlayed' && event.cardId === 'panic' ? [undefined] : [];
   }
@@ -6585,19 +6939,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
     );
   }
   if (cardId === 'earthquake') {
-    return (['clockwise', 'counterclockwise'] as const).flatMap(direction => {
-      const pieces = earthquakePromotionPieces(state, direction);
-      return pieces.reduce<EarthquakeTarget[]>(
-        (targets, piece) => targets.flatMap(target => [...PROMOTIONS].map(role => ({
-          direction,
-          promotions: [...target.promotions, {
-            square: piece.square!,
-            role: role as EarthquakeTarget['promotions'][number]['role'],
-          }],
-        }))),
-        [{ direction, promotions: [] }],
-      );
-    });
+    return (['clockwise', 'counterclockwise'] as const).flatMap(direction => earthquakeTargets(state, direction));
   }
   if (cardId === 'peace-talks') return peaceTalksTargets(state);
   if (cardId === 'madman') return madmanTargets(state);
@@ -6623,7 +6965,8 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
     const config = SWAP_CARDS[cardId];
     const matchesOwner = (piece: PieceState, owner: 'own' | 'opponent') => piece.neutral
       || (owner === 'own' ? piece.owner === state.turn.color : piece.owner !== state.turn.color);
-    const candidates = state.pieces.filter(piece => piece.zone === 'board' && piece.square);
+    const candidates = state.pieces.filter(piece => piece.zone === 'board' && piece.square
+      && fatalAttractionAllowsMove(state, piece));
     const firstPieces = candidates.filter(piece =>
       matchesOwner(piece, config.firstOwner)
       && hasRole(state, piece, config.firstRole),
@@ -6729,7 +7072,13 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
           .map(to => ({ from: piece.square!, to }))
       : [],
   );
-  if (cardId === 'assassin' || cardId === 'dark-mirror' || cardId === 'long-jump' || cardId === 'dubbing' || cardId === 'masquerade' || cardId === 'doppelganger' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
+  if (cardId === 'long-jump' || cardId === 'dubbing') {
+    return steps.map(step => [step]).filter(target => {
+      const result = playCard(state, cardId, target);
+      return result.ok && result.state.history.at(-1)?.type === 'cardPlayed';
+    });
+  }
+  if (cardId === 'assassin' || cardId === 'dark-mirror' || cardId === 'masquerade' || cardId === 'doppelganger' || cardId === 'squaring-the-circle' || cardId === 'cowardice') {
     return steps.map(step => [step]);
   }
   if (cardId === 'onslaught') {
@@ -6774,7 +7123,7 @@ function namePiece(
 
   const role = typeof action.name === 'string' ? action.name : '';
   if (!DOOMSAYER_ROLES.has(role as DoomsayerRole)) {
-    return reject(state, 'INVALID_TARGET', 'Name pawn, knight, bishop, rook, or queen — never king.');
+    return reject(state, 'INVALID_TARGET', 'Name pawn, knight, bishop, rook, queen, crab, or prince — never king.');
   }
 
   const candidates = doomsayerTargets(state, speaker, role as DoomsayerRole);
@@ -6813,13 +7162,13 @@ function namePiece(
   if (new Set(selected.map(piece => piece.id)).size !== selected.length) {
     return reject(state, 'INVALID_TARGET', 'Choose each merged object at most once.');
   }
-  if (selected.some(piece => piece.owner !== speaker)) {
-    return reject(state, 'WRONG_OWNER', 'The named player can lose only an owned piece.');
+  if (selected.some(piece => piece.owner !== speaker && !piece.neutral)) {
+    return reject(state, 'WRONG_OWNER', 'The named player can lose only an owned or neutral piece.');
   }
   if (selected.some(piece => piece.royal || captureImmune(state, piece))) {
     return reject(state, 'INVALID_TARGET', 'That piece cannot be captured by Doomsayer.');
   }
-  if (selected.some(piece => !hasRole(state, piece, role as Role))) {
+  if (selected.some(piece => !candidates.includes(piece))) {
     return reject(state, 'WRONG_ROLE', 'Every loss must match the spoken piece type.');
   }
   if (mappings.length !== required) {
@@ -6827,8 +7176,8 @@ function namePiece(
       state,
       'INVALID_TARGET',
       required
-        ? `Choose ${required} owned ${titleForRole(role)}${required === 1 ? '' : 's'} to lose.`
-        : `No owned ${titleForRole(role)} can be lost; do not choose a piece.`,
+        ? `Choose ${required} eligible ${titleForRole(role)}${required === 1 ? '' : 's'} to lose.`
+        : `No eligible ${titleForRole(role)} can be lost; do not choose a piece.`,
     );
   }
 
@@ -6848,7 +7197,7 @@ function namePiece(
     !isDoomsayerEffect(effect) || !consumedIds.has(effect.card.id),
   );
   for (const effect of consumed) {
-    resolved.players[effect.owner].discard.push(effect.card);
+    discardEffectCard(resolved, effect);
   }
   resolved.pendingDoomsayer = null;
   resolved.history.push({
@@ -6934,19 +7283,31 @@ function declineDoomsayer(
     activeDoomsayers(state).find(effect => effect.card.id === state.pendingDoomsayer!.cardInstanceId)!.card.cardId));
 }
 
-function hasAfterMoveRescue(state: GameState, movedPieces: readonly PieceState[]): boolean {
+function hasAfterMoveRescue(
+  state: GameState,
+  movedPieces: readonly PieceState[],
+  knownRescues?: Extract<GameAction, { type: 'playCard' }>[],
+): boolean {
   const color = state.turn.color;
   if (cardAllowanceUsed(state, color)
     && !state.plotsAllowances?.some(allowance => allowance.player === color && allowance.remaining > 0)) return false;
+  const rescues = (cardId: string, target: unknown, cardInstanceId?: unknown) => {
+    const result = playCard(state, cardId, target, cardInstanceId);
+    return result.ok
+      && result.state.history.at(-1)?.type === 'cardPlayed'
+      && (!moveLeavesRoyalInCheck(result.state, color, movedPieces)
+        || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state, new Set(), movedPieces)
+        || (result.state.history.at(-1)?.copiedCardId ?? cardId) === 'plots-within-plots'
+          && hasAfterMoveRescue(result.state, movedPieces));
+  };
+  // Hints belong to one legalDests query. Revalidate the whole action on each
+  // candidate board; a stale target falls back to the complete rescue search.
+  if (knownRescues?.some(card => rescues(card.cardId, card.target, card.cardInstanceId))) return true;
   return state.players[color].hand.some(card =>
     cardPlayTargets(state, card.cardId).some(target => {
-      const result = playCard(state, card.cardId, target, card.id);
-      return result.ok
-        && result.state.history.at(-1)?.type === 'cardPlayed'
-        && (!moveLeavesRoyalInCheck(result.state, color, movedPieces)
-          || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state, new Set(), movedPieces)
-          || (result.state.history.at(-1)?.copiedCardId ?? card.cardId) === 'plots-within-plots'
-            && hasAfterMoveRescue(result.state, movedPieces));
+      if (!rescues(card.cardId, target, card.id)) return false;
+      knownRescues?.push({ type: 'playCard', cardId: card.cardId, cardInstanceId: card.id, target });
+      return true;
     }),
   );
 }
@@ -6956,11 +7317,14 @@ function finishRegularMove(
   next: GameState,
   movedPieces: readonly PieceState[],
   allowAfterMoveRescue: boolean | 'defer',
+  byCard = false,
+  rescueSearch: typeof hasAfterMoveRescue = hasAfterMoveRescue,
 ): ApplyResult {
+  refreshCoups(next);
   if (before.pieces.some(piece => {
     const after = boardCarrier(next, piece.id);
     return piece.zone === 'board' && piece.square && after?.square && after.square !== piece.square
-      && !dungeonAllowsMove(before, piece);
+      && !dungeonAllowsMove(before, piece, before.turn.color, byCard);
   })) return reject(before, 'ILLEGAL_MOVE', 'Dungeon prevents moving that piece this turn.');
   const event = next.history.at(-1)!;
   next.shieldMove = {
@@ -6980,8 +7344,11 @@ function finishRegularMove(
   next.shieldMove.capturedOpponent = next.pieces.some(piece => piece.zone === 'captured'
     && boardCarrier(before, piece.id) && (piece.owner !== before.turn.color || piece.neutral));
   if (before.chaosForbidden?.player === before.turn.color
-    && chaosMovement(before, next) === before.chaosForbidden.movement) {
+    && chaosMovement(before, next, true) === before.chaosForbidden.movement) {
     return reject(before, 'ILLEGAL_MOVE', 'Chaos requires a different move.');
+  }
+  if (before.chaosForbidden?.player === before.turn.color && before.chaosForbidden.additionalMove) {
+    preserveAdditionalMoveClocks(before, next);
   }
   if (event.capturedId && next.pieces.some(piece => piece.id === movedPieces[0].id
     && piece.zone === 'captured')) event.movedPieceId = movedPieces[0].id;
@@ -6997,7 +7364,7 @@ function finishRegularMove(
   if (!moveLeavesRoyalInCheck(next, before.turn.color, movedPieces)) {
     return { ok: true, state: next };
   }
-  if (!allowAfterMoveRescue || !hasAfterMoveRescue(next, movedPieces)) {
+  if (!allowAfterMoveRescue || !rescueSearch(next, movedPieces)) {
     return reject(before, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
   }
   next.pendingRescue = {
@@ -7016,6 +7383,8 @@ function movePiece(
   action: Extract<GameAction, { type: 'move' }>,
   allowAfterMoveRescue: boolean | 'defer' = true,
   enforceVendetta = true,
+  byCard = false,
+  rescueSearch: typeof hasAfterMoveRescue = hasAfterMoveRescue,
 ): ApplyResult {
   if (state.turn.moveMade || state.turn.phase !== 'beforeMove') {
     return reject(state, 'ILLEGAL_MOVE', 'The regular move has already been made.');
@@ -7031,11 +7400,18 @@ function movePiece(
 
   const fromName = action.from as SquareName;
   const toName = action.to as SquareName;
+  if (action.enPassant !== undefined && typeof action.enPassant !== 'boolean') {
+    return reject(state, 'ILLEGAL_MOVE', 'The en-passant selection must be boolean.');
+  }
+  const selectedEnPassant = action.enPassant === false ? undefined : enPassantCapture(state, fromName, toName);
+  if (action.enPassant === true && !selectedEnPassant) {
+    return reject(state, 'ILLEGAL_MOVE', 'That en-passant capture is not available.');
+  }
   if (
     enforceVendetta
     && activeVendettas(state).length
     && vendettaCaptureDests(state, true).size
-    && !vendettaVictim(state, fromName, toName)
+    && !vendettaVictim(state, fromName, toName, action.enPassant !== false)
   ) return reject(state, 'ILLEGAL_MOVE', 'Vendetta requires an available capture.');
   const from = parseSquare(fromName);
   const to = parseSquare(toName);
@@ -7051,7 +7427,7 @@ function movePiece(
   const move: Move = { from, to, ...(promotion ? { promotion } : {}) };
   const moving = state.pieces.find(piece => piece.zone === 'board' && piece.square === fromName);
   if (!moving) return reject(state, 'ILLEGAL_MOVE', 'There is no movable piece on that square.');
-  if (!dungeonAllowsMove(state, moving)) return reject(state, 'ILLEGAL_MOVE', 'Dungeon prevents moving that piece this turn.');
+  if (!dungeonAllowsMove(state, moving, state.turn.color, byCard)) return reject(state, 'ILLEGAL_MOVE', 'Dungeon prevents moving that piece this turn.');
   if (moving.owner !== state.turn.color && !moving.neutral) {
     return reject(state, 'ILLEGAL_MOVE', 'That piece is not under your control.');
   }
@@ -7061,7 +7437,7 @@ function movePiece(
   }
   if (confabulation) {
     const occupant = state.pieces.find(piece => piece.zone === 'board' && piece.square === toName);
-    const enPassantCaptureResult = enPassantCapture(state, fromName, toName);
+    const enPassantCaptureResult = selectedEnPassant;
     const target = occupant ?? enPassantCaptureResult?.victim;
     if (promotion !== undefined) return reject(state, 'ILLEGAL_MOVE', 'Confabulated pieces cannot promote.');
     if (target?.royal) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
@@ -7106,8 +7482,9 @@ function movePiece(
       to: toName,
       ...(target ? { capturedId: target.id } : {}),
       ...(capturedIds.length > 1 ? { capturedIds } : {}),
+      ...(recordsBogRollback(state, moving, fromName, toName) ? { previousFen: state.fen } : {}),
     });
-    return finishRegularMove(state, next, movedComponents, allowAfterMoveRescue);
+    return finishRegularMove(state, next, movedComponents, allowAfterMoveRescue, byCard, rescueSearch);
   }
   const castle = moving.owner === state.turn.color
     && moving.role === 'king'
@@ -7122,10 +7499,14 @@ function movePiece(
       })
     : undefined;
   const routeTo = castle ? makeSquare(kingCastlesTo(state.turn.color, castle)) : toName;
-  if (forbiddenCityBlocksMove(state, fromName, routeTo, moving.role === 'knight' && !hasCrabEffect(state, moving.id))) {
+  if (forbiddenCityBlocksMove(state, fromName, routeTo, moving.role === 'knight' && !componentHasCrabMovement(state, moving.id))) {
     return reject(state, 'ILLEGAL_MOVE', 'That route is blocked by Forbidden City.');
   }
-  const customEnPassant = enPassantCapture(state, fromName, toName);
+  const customEnPassant = selectedEnPassant;
+  if (action.enPassant === false && enPassantCapture(state, fromName, toName)
+    && !componentCanMove(state, moving, moving, toName, false)) {
+    return reject(state, 'ILLEGAL_MOVE', 'That piece cannot move there without capturing en passant.');
+  }
   const target = state.pieces.find(piece => piece.zone === 'board' && piece.square === toName);
   const enPassant = doubleStepEnPassant(state, moving, fromName, toName);
   if (
@@ -7135,7 +7516,7 @@ function movePiece(
     return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
   }
 
-  if (hasCrabEffect(state, moving.id)) {
+  if (componentHasCrabMovement(state, moving.id)) {
     if (target && target.owner === moving.owner && !moving.neutral && !target.neutral) {
       return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
     }
@@ -7169,7 +7550,7 @@ function movePiece(
       ...(promotion ? { promotion } : {}),
       ...(target ? { capturedId: target.id } : {}),
     });
-    return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
+    return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch);
   }
 
   if (customEnPassant) {
@@ -7199,7 +7580,7 @@ function movePiece(
       ...(recordsBogRollback(state, moving, fromName, toName, promotion) ? { previousFen: state.fen } : {}),
       ...(promotion ? { promotion } : {}),
     });
-    return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
+    return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch);
   }
 
   if (castlingSide(position, move) && !moving.royal && !target?.neutral) {
@@ -7285,7 +7666,7 @@ function movePiece(
       ...(promotion ? { promotion } : {}),
       ...(target ? { capturedId: target.id } : {}),
     });
-    return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
+    return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch);
   }
 
   if ((moving.neutral || target?.neutral) && !orthodox) {
@@ -7314,7 +7695,7 @@ function movePiece(
       ...(recordsBogRollback(state, moving, fromName, toName) ? { previousFen: state.fen } : {}),
       ...(target ? { capturedId: target.id } : {}),
     });
-    return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
+    return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch);
   }
 
   const promotes = moving.role === 'pawn' && SquareSet.backranks().has(to);
@@ -7333,21 +7714,6 @@ function movePiece(
     return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
   }
 
-  if (castle) {
-    const kingTo = kingCastlesTo(state.turn.color, castle);
-    if (isRoyalInCheck(state, moving)) {
-      return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
-    }
-    const step = Math.sign(kingTo - from);
-    for (let transit = from + step; transit !== kingTo; transit += step) {
-      const crossing = structuredClone(state);
-      const crossingKing = crossing.pieces.find(piece => piece.id === moving.id)!;
-      crossingKing.square = makeSquare(transit);
-      if (isRoyalInCheck(crossing, crossingKing)) {
-        return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
-      }
-    }
-  }
   const capturedSquare =
     !castle && moving.role === 'pawn' && position.epSquare === to && !position.board.has(to)
       ? to + (state.turn.color === 'white' ? -8 : 8)
@@ -7407,7 +7773,7 @@ function movePiece(
     ...(promotion ? { promotion } : {}),
     ...(captured ? { capturedId: captured.id } : {}),
   });
-  return finishRegularMove(state, next, [moving], allowAfterMoveRescue);
+  return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch);
 }
 
 function settlePendingRescue(
@@ -7443,7 +7809,7 @@ function settlePendingRescue(
   const spent = result.state.playedCards?.at(-1);
   const spentCard = spent && (beforeCard.players[spent.player].hand.find(card => card.id === spent.cardInstanceId)
     ?? activeDoomsayers(beforeCard).find(effect => effect.card.id === spent.cardInstanceId)?.card);
-  if (spentCard && !result.state.players[spent.player].discard.some(card => card.id === spentCard.id)) {
+  if (spentCard && !spentCard.proxy && !result.state.players[spent.player].discard.some(card => card.id === spentCard.id)) {
     result.state.players[spent.player].discard.push(spentCard);
   }
   result.state.effects = structuredClone(pending.before?.effects ?? beforeCard.effects);
@@ -7541,9 +7907,7 @@ function expireTruce(state: GameState, stalemate = false): GameState {
   const resolved = structuredClone(unprotected);
   for (const effect of state.effects) {
     if (effectKind(effect) !== 'truce' || !isRetainedContinuingEffect(effect)) continue;
-    if (!resolved.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-      resolved.players[effect.owner].discard.push(structuredClone(effect.card));
-    }
+    discardEffectCard(resolved, effect);
   }
   if (stalemate) {
     const setup = setupFor(resolved);
@@ -7579,9 +7943,12 @@ function expirePieceEffects(result: ApplyResult): ApplyResult {
       ? physicalPieces(result.state, piece).some(component => component.zone === 'board' && component.square)
       : false;
     const temporarilyAway = piece?.zone === 'away'
-      && result.state.underElfHill?.some(entry => entry.pieceId === piece.id && !entry.returned);
+      && physicalPieces(result.state, piece).some(component =>
+        result.state.underElfHill?.some(entry => entry.pieceId === component.id && !entry.returned));
     const awaitingRescue = kind === 'crab' && piece?.zone === 'captured' && recentlyCaptured(result.state, piece);
-    return !piece || (!compositeOnBoard && !temporarilyAway && !awaitingRescue) || (kind === 'crab' && piece.promoted);
+    const cancelledMergeTarget = piece?.zone === 'away' && record.confabulationEnded === true;
+    return !piece || (!compositeOnBoard && !temporarilyAway && !awaitingRescue && !cancelledMergeTarget)
+      || (kind === 'crab' && piece.promoted);
   });
   if (!expired.length) return result;
   const cardIds = new Set(expired.map(effect => effect.card.id));
@@ -7590,21 +7957,21 @@ function expirePieceEffects(result: ApplyResult): ApplyResult {
     return typeof card?.id !== 'string' || !cardIds.has(card.id);
   });
   for (const effect of expired) {
-    if (!result.state.players[effect.owner].discard.some(card => card.id === effect.card.id)) {
-      result.state.players[effect.owner].discard.push(effect.card);
-    }
+    discardEffectCard(result.state, effect);
   }
   result.state = expireTruce(result.state);
   return result;
 }
 
-function hasBoardOrCardEscape(state: GameState): boolean {
+function hasBoardOrCardEscape(state: GameState, allowCardContinuation = false): boolean {
   const color = state.turn.color;
-  return legalDests(state, isKingInCheck(state, color), true, true).size > 0
+  return legalDests(state, allowCardContinuation || isKingInCheck(state, color), true, true).size > 0
     || state.players[color].hand.some(card =>
       cardPlayTargets(state, card.cardId).some(target => {
         const result = playCard(state, card.cardId, target, card.id);
-        if (!result.ok || result.state.outcome) return false;
+        if (!result.ok) return false;
+        if (allowCardContinuation) return true;
+        if (result.state.outcome) return false;
         if (result.state.turn.moveMade) return !isKingInCheck(result.state, color)
           || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state);
         if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
@@ -7662,9 +8029,14 @@ function hasDoomsayerEscape(state: GameState, seen = new Set<string>(), movedPie
   return false;
 }
 
-function hasTurnEscape(state: GameState): boolean {
-  if (challengesFor(state).length && !isKingInCheck(state, state.turn.color)) return true;
-  return hasBoardOrCardEscape(state) || hasDoomsayerEscape(state);
+function canSkipRegularMove(state: GameState): boolean {
+  return Boolean(challengesFor(state).length || state.underElfHill?.some(entry =>
+    entry.player === state.turn.color && entry.returned) && !hasLegalMove(state, state.turn.color));
+}
+
+function hasTurnEscape(state: GameState, allowCardContinuation = false): boolean {
+  if (canSkipRegularMove(state) && !isKingInCheck(state, state.turn.color)) return true;
+  return hasBoardOrCardEscape(state, allowCardContinuation) || hasDoomsayerEscape(state);
 }
 
 function adjudicateTurn(state: GameState): GameState {
@@ -7696,8 +8068,15 @@ function consumeRiposteMove(state: GameState): GameState {
   return state;
 }
 
-function advanceTurn(state: GameState): ApplyResult {
+function advanceTurn(state: GameState, discardCardInstanceId?: string): ApplyResult {
   let next = structuredClone(state);
+  if (discardCardInstanceId !== undefined) {
+    const player = next.players[state.turn.color];
+    const index = player.hand.findIndex(card => card.id === discardCardInstanceId);
+    player.discard.push(...player.hand.splice(index, 1));
+    const drawn = player.deck.shift();
+    if (drawn) player.hand.push(drawn);
+  }
   delete next.riposteSkipped;
   delete next.riposteCheckDeferred;
   delete next.fogCheckpoint;
@@ -7738,8 +8117,21 @@ function advanceTurn(state: GameState): ApplyResult {
   return { ok: true, state: adjudicateTurn(consumeRiposteMove(next)) };
 }
 
-function endTurn(state: GameState): ApplyResult {
-  if (!state.turn.moveMade && challengesFor(state).length && !state.pendingDoomsayer) {
+function endTurn(state: GameState, discardCardInstanceId?: string): ApplyResult {
+  if (discardCardInstanceId !== undefined) {
+    if (typeof discardCardInstanceId !== 'string'
+      || state.players[state.turn.color].hand.filter(card => card.id === discardCardInstanceId).length !== 1) {
+      return reject(state, 'CARD_NOT_IN_HAND', 'Choose one physical card in your own hand to discard.');
+    }
+    if (state.turn.cardPlays[state.turn.color] > 0) {
+      return reject(state, 'CARD_ALREADY_PLAYED', 'Ordinary discard requires an own turn with no card played.');
+    }
+  }
+  if (state.pendingRescue && !state.pieces.some(piece => piece.owner === state.turn.color && piece.royal
+    && (piece.zone === 'board' || piece.zone === 'away'))) {
+    return reject(state, 'KING_IN_CHECK', 'Restore your King before ending the turn.');
+  }
+  if (!state.turn.moveMade && canSkipRegularMove(state) && !state.pendingDoomsayer) {
     if (isKingInCheck(state, state.turn.color)) return reject(state, 'KING_IN_CHECK', 'Your King is still in check.');
     const skipped = structuredClone(state);
     skipped.enPassant = [];
@@ -7749,18 +8141,16 @@ function endTurn(state: GameState): ApplyResult {
     setup.halfmoves += 1;
     if (state.turn.color === 'black') setup.fullmoves += 1;
     skipped.fen = makeFen(setup);
-    return advanceTurn(skipped);
+    return advanceTurn(skipped, discardCardInstanceId);
   }
   if (!state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Make the regular move before ending the turn.');
   if (state.pendingDoomsayer) {
     return reject(state, 'INVALID_TIMING', 'The opponent must name a piece or decline Doomsayer before the turn can end.');
   }
-  const tollResponse = state.history.at(-1)?.cardId === 'toll'
-    && state.history.at(-1)?.player === opposite(state.turn.color);
-  if (!tollResponse && state.riposteCheckDeferred !== state.turn.color && isKingInCheck(state, state.turn.color)) {
+  if (state.riposteCheckDeferred !== state.turn.color && isKingInCheck(state, state.turn.color)) {
     return reject(state, 'KING_IN_CHECK', 'Your King is still in check.');
   }
-  return advanceTurn(state);
+  return advanceTurn(state, discardCardInstanceId);
 }
 
 function panicTimeout(state: GameState): ApplyResult {
@@ -7797,6 +8187,10 @@ function rememberTurnStart(before: GameState, result: ApplyResult): ApplyResult 
 
 export function applyAction(state: GameState, action: GameAction | null | undefined): ApplyResult {
   const result = applyActionCore(state, action);
+  // A rejected discard must also roll back any lazy effect expiry in dispatch.
+  if (!result.ok && action?.type === 'endTurn' && action.discardCardInstanceId !== undefined) {
+    return { ...result, state };
+  }
   if (!result.ok || !action) return result;
   const event = result.state.history.at(-1);
   const cardId = event?.copiedCardId ?? event?.cardId;
@@ -7814,9 +8208,42 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
       const before = structuredClone({ ...state, fogCheckpoint: undefined });
       delete before.fogCheckpoint;
       result.state.fogCheckpoint = { before, player: played.player, card: structuredClone(card), historyLength: result.state.history.length };
+      const checkpoint = result.state.fogCheckpoint;
+      const allowanceIndex = (state.plotsAllowances ?? []).map((allowance, index) => ({ allowance, index })).reverse()
+        .find(({ allowance }) => allowance.player === played.player
+          && allowance.remaining > 0 && allowance.eligibleCards.includes(card.id))?.index ?? -1;
+      if (allowanceIndex >= 0) {
+        const belongsToPlots = (previous: GameState['fogCheckpoint']) => {
+          const previousEvent = previous && state.history[previous.historyLength - 1];
+          return previous?.player === played.player
+            && (previous.plots?.allowanceIndex === allowanceIndex
+              || ((previousEvent?.copiedCardId ?? previousEvent?.cardId) === 'plots-within-plots'
+                && (previous.before.plotsAllowances?.length ?? 0) === allowanceIndex));
+        };
+        const responseWindows = (result.state.plotsAllowances ?? []).filter(allowance =>
+          allowance.player !== played.player && allowance.remaining > 0 && belongsToPlots(allowance.window.fogCheckpoint));
+        const saved = responseWindows[0]?.window.fogCheckpoint;
+        const previous = state.fogCheckpoint?.historyLength === state.history.length && belongsToPlots(state.fogCheckpoint)
+          ? state.fogCheckpoint : saved;
+        checkpoint.action = structuredClone({ ...action, cardInstanceId: card.id });
+        checkpoint.plots = { allowanceIndex };
+        if (previous) checkpoint.plots.previous = structuredClone(previous);
+        if (saved?.canceledCards) checkpoint.canceledCards = [...saved.canceledCards];
+        for (const allowance of responseWindows) allowance.window.fogCheckpoint = structuredClone(checkpoint);
+      }
     }
-  } else {
+  } else if (!['revealAbduction', 'answerAbduction', 'abductionTimeout'].includes(action.type)) {
     delete result.state.fogCheckpoint;
+  } else if (result.state.fogCheckpoint?.plots) {
+    (result.state.fogCheckpoint.responses ??= []).push(structuredClone(action));
+  }
+  let next = result.state;
+  // A safe replacement stays open for any playable card or a move requiring rescue.
+  if (action.type === 'playCard' && next.chaosForbidden?.player === next.turn.color && !next.turn.moveMade
+    && !next.outcome && !next.pendingRescue && !next.pendingAbduction && !next.pendingDoomsayer
+    && !pendingElfReturn(next) && !isKingInCheck(next, next.turn.color) && !hasTurnEscape(next, true)) {
+    result.state = next = expireTruce(next, true);
+    if (!hasTurnEscape(next, true)) next.outcome = { reason: 'stalemate' };
   }
   if ((cardId === 'chaos' || cardId === 'knightmare' || cardId === 'think-again') && action.type === 'playCard') return result;
   const movement = chaosMovement(state, result.state);
@@ -7835,6 +8262,12 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
     result.state.chaosCheckpoint = { before, movement, historyLength: result.state.history.length, card };
   } else if (cardId !== 'plots-within-plots' || action.type !== 'playCard') {
     delete result.state.chaosCheckpoint;
+  }
+  // Resolve exhausted escape resources only after a real own-turn card and any staged-move rollback.
+  if (action.type === 'playCard' && next.playedCards?.at(-1)?.player === next.turn.color
+    && !next.outcome && !next.pendingRescue && !next.pendingAbduction && !next.pendingDoomsayer
+    && !pendingElfReturn(next) && isKingInCheck(next, next.turn.color) && !hasTurnEscape(next)) {
+    next.outcome = { winner: opposite(next.turn.color), reason: 'checkmate' };
   }
   return result;
 }
@@ -7873,7 +8306,7 @@ function applyActionCore(state: GameState, action: GameAction | null | undefined
   if (action.type === 'declineDoomsayer') {
     return expirePieceEffects(clearCompletedPanic(state, rememberTurnStart(state, declineDoomsayer(state, action))));
   }
-  if (action.type === 'endTurn') return expirePieceEffects(endTurn(state));
+  if (action.type === 'endTurn') return expirePieceEffects(endTurn(state, action.discardCardInstanceId));
   if (action.type !== 'playCard') return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
   return expirePieceEffects(clearCompletedPanic(state, rememberTurnStart(state, recordCardTransition(state, settlePendingRescue(
     state,

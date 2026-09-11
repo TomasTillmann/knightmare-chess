@@ -268,7 +268,7 @@ export const CARD_CATALOG: Record<CardId, CardDefinition> = {
     points: 6,
     unique: false,
     image: '/KC11_card4.png',
-    description: 'Secretly choose a square occupied by one of your pieces. The next opposing piece to end its move there is captured after completing its own capture. A King springs the trap but is unaffected.',
+    description: 'Secretly choose a square occupied by one of your pieces. The next unprotected opposing piece to end its move there is captured after completing its own capture. Kings and Pacifists do not set off the trap.',
     timing: ['afterMove'],
     continuing: true,
   },

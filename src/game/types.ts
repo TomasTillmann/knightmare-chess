@@ -25,6 +25,8 @@ export interface PieceState {
 export interface CardInstance {
   id: string;
   cardId: CardId;
+  /** Vulture's nonphysical Continuing Effect marker; never enters a player's piles. */
+  proxy?: true;
 }
 
 export interface CardMove {
@@ -114,7 +116,12 @@ export interface EarthquakeTarget {
   promotions: PromotionDeclaration[];
 }
 
-export type DoomsayerRole = Exclude<Role, 'king'>;
+export interface PeaceTalksTarget {
+  effectId: string;
+  promotions: PromotionDeclaration[];
+}
+
+export type DoomsayerRole = Exclude<Role, 'king'> | 'crab' | 'prince';
 
 export interface DoomsayerEffect {
   type: 'doomsayer';
@@ -242,8 +249,8 @@ export interface GameEvent {
   immediate?: boolean;
   movement?: CardMove[];
   preservePreviousMove?: boolean;
-  target?: SquareName | CardMove | CardMove[] | readonly PromotionDeclaration[] | HolyWarTarget | AnathemaTarget | SanctuaryTarget | ManOfStrawTarget | SiegeTarget | SplitKnightTarget | EvilEyeTarget | EvangelistsTarget | EarthquakeTarget | WingedVictoryTarget | HostageTarget;
-  reason?: 'DIRECT_MATE' | 'SELF_CHECK';
+  target?: SquareName | CardMove | CardMove[] | readonly PromotionDeclaration[] | HolyWarTarget | AnathemaTarget | SanctuaryTarget | ManOfStrawTarget | SiegeTarget | SplitKnightTarget | EvilEyeTarget | EvangelistsTarget | EarthquakeTarget | PeaceTalksTarget | WingedVictoryTarget | HostageTarget;
+  reason?: 'DIRECT_MATE' | 'SELF_CHECK' | 'FORBIDDEN_CITY';
   from?: SquareName;
   to?: SquareName;
   promotion?: Role;
@@ -255,10 +262,16 @@ export interface GameState {
   riposteSkipped?: Color;
   riposteCheckDeferred?: Color;
   legacyCapture?: { historyLength: number; pieceIds: string[] };
-  fogCheckpoint?: { before: GameState; player: Color; card: CardInstance; historyLength: number };
+  fogCheckpoint?: {
+    before: GameState; player: Color; card: CardInstance; historyLength: number;
+    action?: Extract<GameAction, { type: 'playCard' }>;
+    responses?: GameAction[];
+    plots?: { allowanceIndex: number; previous?: GameState['fogCheckpoint'] };
+    canceledCards?: string[];
+  };
   fogLocked?: Color[];
   chaosCheckpoint?: { before: GameState; movement: string; historyLength: number; card?: CardInstance };
-  chaosForbidden?: { player: Color; movement: string };
+  chaosForbidden?: { player: Color; movement: string; additionalMove?: boolean };
   shieldMove?: { player: Color; pieceIds: string[]; capturedOpponent?: boolean };
   plotsAllowances?: Array<{
     player: Color;
@@ -269,6 +282,7 @@ export interface GameState {
       moveMade: boolean;
       shieldMove?: GameState['shieldMove'];
       reaction?: GameEvent;
+      revengePawnIds?: string[];
       capture?: GameEvent;
       legacyCapture?: GameState['legacyCapture'];
       cardResponse?: { player: Color; historyLength: number };
@@ -308,7 +322,7 @@ export interface GameState {
   pendingRescue?: PendingRescueState | null;
   pendingDoomsayer?: PendingDoomsayerState | null;
   turnCheckpoint?: GameState | null;
-  outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' } | null;
+  outcome: { winner?: Color; reason: 'checkmate' | 'stalemate' | 'surrender' } | null;
 }
 
 export type GameAction =
@@ -316,12 +330,12 @@ export type GameAction =
   | { type: 'answerAbduction'; player: Color; role: Role; owner: Color; square: SquareName; pieceId?: string }
   | { type: 'abductionTimeout' }
   | { type: 'returnKing'; to: unknown }
-  | { type: 'move'; from: unknown; to: unknown; promotion?: unknown }
+  | { type: 'move'; from: unknown; to: unknown; promotion?: unknown; enPassant?: unknown }
   | { type: 'playCard'; cardId: CardId; cardInstanceId?: unknown; target?: unknown }
   | { type: 'namePiece'; speaker: Color; name: DoomsayerRole; losses: DoomsayerLoss[] }
   | { type: 'declineDoomsayer'; player?: unknown; color?: unknown }
   | { type: 'panicTimeout' }
-  | { type: 'endTurn' };
+  | { type: 'endTurn'; discardCardInstanceId?: string };
 
 export type GameErrorCode =
   | 'CARD_NOT_IN_HAND'
