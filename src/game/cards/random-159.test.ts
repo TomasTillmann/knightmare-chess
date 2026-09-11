@@ -75,7 +75,7 @@ const rationales = `
 62 White Nb1-a3 jumps into empty a3.
 63 White ends its Knight move.
 64 Black Bh7-f5 follows empty g6 into empty f5.
-65 Coup makes neutral Black Pawn g7 royal and e8 King a capturable Prince; g7 is safe and keeps neutrality.
+65 Coup makes neutral Black Pawn g7 royal and e8 King a capturable Prince; g7 is safe and Neutrality is suspended with its marker retained (official FAQ pp. 43–44).
 66 Black ends; royal identity remains on g7.
 67 White f2-f3 advances into empty f3.
 68 White ends its Pawn move.
@@ -267,7 +267,7 @@ test('iteration 159: independently reviewed deterministic engine regression', ()
       if(n===42) effects.push({type:'truce',owner:color,card})
       if(n===49) effects.push({type:'curse',owner:color,card,pieceId:'black-rook-h8'})
       if(n===54) { effects=effects.filter(e=>(e as {type:string}).type!=='truce'); players.black.discard.push({id:'black-deck-0-truce',cardId:'truce'}) }
-      if(n===65) { at(pieces,'e8')!.royal=false;at(pieces,'g7')!.royal=true; effects.push({type:'coup',owner:'black',card,princeId:'black-king-e8',kingId:'black-pawn-g7',princeRole:'king'}) }
+      if(n===65) { at(pieces,'e8')!.royal=false;at(pieces,'g7')!.royal=true;at(pieces,'g7')!.neutral=false; effects.push({type:'coup',owner:'black',card,princeId:'black-king-e8',kingId:'black-pawn-g7',princeRole:'king'}) }
       if(n===72) { const knight=at(pieces,'a3')!, bishop=at(pieces,'e6')!;knight.square='e6';bishop.square='a3';movement=[{from:'a3',to:'e6'},{from:'e6',to:'a3'}]; const escape=structuredClone(pieces);at(escape,'g7')!.square='g6';assert.equal(check(escape,'black',n),false,'g7-g6 witnesses nonmate') }
       if(n===75) effects.push({type:'dungeon',owner:'black',player:'white',pieceId:'white-knight-b1'})
       const replaces=[1,32,58,105,113,115].includes(n)
@@ -300,7 +300,7 @@ test('iteration 159: independently reviewed deterministic engine regression', ()
       assert.equal(check(pieces,owner,n),expected,`${label}: independently scanned raw royal threat`)
       assert.equal(isKingInCheck(state,owner),expected,label)
     }
-    // The sole neutral stays g7 and attacks only f6/h6, neither a royal square.
+    // Before Coup suspends Neutrality at step 65, g7 attacks only f6/h6, neither a royal square.
     // Therefore no legal-capture pin filter is needed for this trace's neutral attacks.
     if(n>=39) for(const p of pieces.filter(p=>p.royal)) assert.ok(!['f6','h6'].includes(p.square!))
     if(n===74) {

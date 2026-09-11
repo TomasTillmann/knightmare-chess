@@ -98,7 +98,29 @@ function checkTransition(before: GameState, action: GameAction, after: GameState
   }
 }
 
-export function replayTrace(trace: RandomTrace): GameState {
+export function rejectPendingCancellation(state: GameState, action: GameAction, rescue: GameAction[]): void {
+  assert.ok(state.pendingRescue, 'the preceding move still requires its saving card');
+  assert.equal(action.type, 'playCard');
+  if (action.type !== 'playCard') return;
+  const before = structuredClone(state);
+  const result = applyAction(state, action);
+  assert.equal(result.ok, false, 'FAQ p.16 requires the completed opposing turn');
+  if (!result.ok) assert.equal(result.error.code, 'INVALID_TIMING');
+  assert.deepEqual(result.state, before);
+  assert.deepEqual(cardPlayTargets(state, action.cardId), []);
+  assert.deepEqual(state, before);
+  assert.ok(rescue.length, 'preserve an independently verified saving continuation');
+  let saved = state;
+  for (const next of rescue) {
+    const result = applyAction(saved, next);
+    assert.ok(result.ok, JSON.stringify(next));
+    saved = result.state;
+  }
+  assert.equal(saved.pendingRescue, null);
+  assert.ok(applyAction(saved, { type: 'endTurn' }).ok);
+}
+
+export function replayTrace(trace: RandomTrace, stopBefore?: number): GameState {
   assert.equal(trace.failure, undefined, trace.failure ?? 'trace generation failed');
   const maxMoves = trace.maxMoves ?? 50;
   checkMoveBound(maxMoves);
@@ -107,6 +129,8 @@ export function replayTrace(trace: RandomTrace): GameState {
   let state = createGameState(trace.initial);
   checkState(state);
   for (const [index, step] of trace.steps.entries()) {
+    // Preserve historical digests only through a source-verified legal prefix.
+    if (index + 1 === stopBefore) return state;
     const original = digest(state);
     const result = applyAction(state, step.action);
     assert.equal(digest(state), original, `step ${index + 1}: input mutation`);

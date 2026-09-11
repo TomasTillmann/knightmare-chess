@@ -14,7 +14,7 @@ const apply = (state: GameState, action: object): GameState => {
   return (result as { ok: true; state: GameState }).state;
 };
 
-test('Toll uses the rotated frontier after clockwise Earthquake', () => {
+test('Toll uses the rotated frontier after counterclockwise Earthquake', () => {
     let state = game('4k3/8/8/8/3R4/8/1P6/4K3 b - - 0 1', {
       black: ['earthquake', 'toll'],
       white: [],
@@ -23,7 +23,7 @@ test('Toll uses the rotated frontier after clockwise Earthquake', () => {
     state = apply(state, {
       type: 'playCard',
       cardId: 'earthquake',
-      target: { direction: 'clockwise', promotions: [] },
+      target: { direction: 'counterclockwise', promotions: [] },
     });
     state = apply(state, { type: 'endTurn' });
     assert.ok(legalDests(state).get('d4')?.includes('e4'));
@@ -74,7 +74,7 @@ test('Toll is rejected after No Quarter closes the response window', () => {
     assert.equal(result.ok, false);
 });
 
-test('Toll uses the rotated frontier after counterclockwise Earthquake', () => {
+test('Toll uses the rotated frontier after clockwise Earthquake', () => {
   let state = game('k7/8/8/8/4R3/8/1P6/4K3 b - - 0 1', {
     black: ['earthquake', 'toll'],
     white: [],
@@ -83,7 +83,7 @@ test('Toll uses the rotated frontier after counterclockwise Earthquake', () => {
   state = apply(state, {
     type: 'playCard',
     cardId: 'earthquake',
-    target: { direction: 'counterclockwise', promotions: [] },
+    target: { direction: 'clockwise', promotions: [] },
   });
   state = apply(state, { type: 'endTurn' });
   assert.ok(legalDests(state).get('e4')?.includes('d4'));

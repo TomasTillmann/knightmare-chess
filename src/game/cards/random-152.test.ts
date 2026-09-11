@@ -54,7 +54,7 @@ const rationale = [
   '43. Lost Castle exchanges owned Rg1 and enemy Ra8 without capture; Bf1 shields Ke1 and Nb8 shields Kd8.',
   '44. End White replacement turn; Rook ownership and physical identities are unchanged.',
   '45. c6-c5 is a single Black pawn advance before the rotation.',
-  '46. Earthquake clockwise sets orientation 90; White h2 promotes to Knight first, Black a5 to Rook second, with coordinates and clocks unchanged.',
+  '46. Earthquake counterclockwise sets orientation 90; White h2 promotes to Knight first, Black a5 to Rook second, with coordinates and clocks unchanged.',
   '47. End Black turn; Earthquake stays in play and White pawn forward is east, Black west.',
   '48. Nh3xg1 jumps and captures the original black-rook-a8 for White; rotation does not change Knight geometry.',
   '49. End White turn with the captured Rook still attributed to White.',
@@ -86,7 +86,7 @@ const cardTargets: Record<number, { id: string; target?: unknown }> = {
   35: { id: 'dungeon', target: [{ from: 'f5', to: 'h1' }] },
   39: { id: 'hidden-passage', target: [{ from: 'h5', to: 'e1' }] },
   43: { id: 'lost-castle', target: { own: 'g1', opponent: 'a8' } },
-  46: { id: 'earthquake', target: { direction: 'clockwise', promotions: [{ square: 'h2', role: 'knight' }, { square: 'a5', role: 'rook' }] } },
+  46: { id: 'earthquake', target: { direction: 'counterclockwise', promotions: [{ square: 'h2', role: 'knight' }, { square: 'a5', role: 'rook' }] } },
   50: { id: 'evil-eye', target: { attacker: 'a5', victim: 'a2' } },
   54: { id: 'irresistible-force', target: [{ from: 'g7', to: 'f7' }] },
   61: { id: 'chaos' }, 65: { id: 'think-again' },
@@ -207,7 +207,7 @@ test('iteration 152: first invalid state is a lost Think Again prohibition after
     assert.equal(state.orientation, orientation);
     assert.deepEqual(state.enPassant, [], `${n}: no double advance, including prospective capture window`);
     assert.equal(state.outcome, null);
-    const earthquake = { type: 'earthquake', owner: 'black', card: { id: 'black-deck-0-earthquake', cardId: 'earthquake' }, direction: 'clockwise', target: cardTargets[46]!.target };
+    const earthquake = { type: 'earthquake', owner: 'black', card: { id: 'black-deck-0-earthquake', cardId: 'earthquake' }, direction: 'counterclockwise', target: cardTargets[46]!.target };
     assert.deepEqual(state.effects, n >= 46 ? [earthquake] : n >= 35 && n <= 37 ? [{ type: 'dungeon', owner: 'white', player: 'black', pieceId: 'black-queen-d8' }] : []);
     assert.deepEqual(state.underElfHill ?? [], n >= 21 && n <= 26 ? [{ pieceId: 'white-king-e1', player: 'white', returning: n >= 24, ...(n >= 25 ? { returned: true } : {}) }] : []);
     for (const color of ['white', 'black'] as const) {

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createGameState } from '../state.js';
-import { applyAction } from '../reducer.js';
+import { applyAction, cardPlayTargets } from '../reducer.js';
 import { CARD_CATALOG } from './catalog.js';
-import type { GameState, SquareName } from '../types.js';
+import type { GameAction, GameState, SquareName } from '../types.js';
 
 const initial = () => createGameState({ fen: '7k/8/8/8/8/8/3R4/K7 w - - 17 24', hands: { white: ['fireball'] } });
 function move(state: GameState, from: SquareName, to: SquareName): GameState {
@@ -127,6 +127,58 @@ test('a moved King is not an eligible center', () => {
   assert.equal(blast(state, 'b1').ok, false);
   assert.deepEqual(state, before);
 });
+
+for (const color of ['white', 'black'] as const) {
+  for (const replacement of [false, true]) {
+    for (const center of [false, true]) {
+      test(`Fireball ${center ? 'rejects' : 'spares'} ${color}'s ${replacement ? 'replacement Bishop' : 'original King'} Prince`, () => {
+        const square = (value: SquareName) => (color === 'white' ? value : `${value[0]}${9 - Number(value[1])}`) as SquareName;
+        let state = createGameState({
+          fen: color === 'white' ? '7k/8/8/8/8/8/P7/2B1K1N1 w - - 0 1' : '2b1k1n1/p7/8/8/8/8/8/7K b - - 0 1',
+          hands: { [color]: replacement ? ['coup', 'coup', 'fireball'] : ['coup', 'fireball'] },
+        });
+        const act = (action: GameAction) => {
+          const result = applyAction(state, action);
+          assert.equal(result.ok, true, JSON.stringify(action));
+          if (action.type === 'playCard') assert.equal(result.state.history.at(-1)?.type, 'cardPlayed');
+          state = result.state;
+        };
+        state = move(state, square('g1'), square('f3'));
+        act({ type: 'playCard', cardId: 'coup', target: square(replacement ? 'c1' : 'a2') });
+        act({ type: 'endTurn' });
+        state = move(state, square('h8'), square('h7'));
+        act({ type: 'endTurn' });
+        if (replacement) {
+          state = move(state, square('a2'), square('a3'));
+          act({ type: 'playCard', cardId: 'coup', target: square('a3') });
+          act({ type: 'endTurn' });
+          state = move(state, square('h7'), square('h8'));
+          act({ type: 'endTurn' });
+        }
+        const princeSquare = square(replacement ? 'c1' : 'e1');
+        const prince = state.pieces.find(piece => piece.square === princeSquare)!;
+        assert.equal(prince.royal, false);
+        assert.equal(prince.role, 'king');
+        state = move(state, center ? princeSquare : square('f3'), square('d2'));
+        if (center) {
+          const before = structuredClone(state);
+          const result = blast(state, square('d2'));
+          assert.equal(result.ok, false);
+          assert.deepEqual(result.state, before);
+          assert.deepEqual(cardPlayTargets(state, 'fireball'), []);
+          assert.deepEqual(state, before);
+        } else {
+          assert.deepEqual(cardPlayTargets(state, 'fireball'), [square('d2')]);
+          const result = resolved(state, square('d2'));
+          assert.deepEqual(result.pieces.find(piece => piece.id === prince.id), prince);
+          assert.deepEqual(result.pieces.filter(piece => piece.zone === 'captured').map(piece => piece.id).sort(),
+            [`${color}-knight-${square('g1')}`, ...(!replacement ? [`${color}-bishop-${square('c1')}`] : [])].sort());
+          assert.deepEqual(result.effects, state.effects);
+        }
+      });
+    }
+  }
+}
 
 for (const [fen, from, to] of [
   ['7k/8/8/8/3p4/8/3R4/K7 w - - 0 1', 'd2', 'd4'],

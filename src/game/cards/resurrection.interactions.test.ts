@@ -117,7 +117,7 @@ function blackCaptureAndCard(cardId: string, target: unknown): GameState {
 }
 
 test('Earthquake changes owner-relative Resurrection homes', () => {
-  const state = blackCaptureAndCard('earthquake', { direction: 'clockwise', promotions: [] });
+  const state = blackCaptureAndCard('earthquake', { direction: 'counterclockwise', promotions: [] });
   assert.equal(state.orientation, 90);
   const next = restoreKnight(state, 'a7');
   assert.equal(next.orientation, 90);

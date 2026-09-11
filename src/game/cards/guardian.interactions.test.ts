@@ -82,17 +82,17 @@ test('Guardian resolves the Pawn and optional follower simultaneously without lo
   assert.equal(endTurn(state).turn.color, 'black');
 });
 
-test('Guardian expires old en-passant and never offers its double-step Pawn en passant', () => {
+test('Guardian replaces old en-passant with its unaccompanied double-step Pawn', () => {
   let state = game({
     fen: '7k/8/8/3pP3/1p6/8/P7/4K3 w - d6 9 2',
     hands: { white: [GUARDIAN], black: [] },
   });
   state = guard(state, { from: 'a2', to: 'a4' });
-  assert.deepEqual(state.enPassant, []);
-  assert.equal(state.fen.split(' ')[3], '-');
+  assert.deepEqual(state.enPassant, [{ target: 'a3', pawnId: 'white-pawn-a2' }]);
+  assert.equal(state.fen.split(' ')[3], 'a3');
   assert.equal(state.fen.split(' ')[4], '0');
   state = endTurn(state);
-  assert.equal(legalDests(state).get('b4')?.includes('a3') ?? false, false);
+  assert.equal(legalDests(state).get('b4')?.includes('a3'), true);
 });
 
 test('Guardian follows owner-relative direction while preserving transformed and neutral identities', () => {

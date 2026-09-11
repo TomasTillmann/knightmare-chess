@@ -3,10 +3,205 @@ import test from 'node:test';
 
 import { applyAction, cardPlayTargets } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { ForbiddenCityEffect } from '../types.js';
+import type { Color, ForbiddenCityEffect, GameAction, GameState } from '../types.js';
 import { CARD_CATALOG } from './catalog.js';
 
 const CARD = 'irresistible-force';
+
+function act(state: GameState, ...actions: GameAction[]): GameState {
+  for (const action of actions) {
+    const result = applyAction(state, action);
+    assert.ok(result.ok, result.ok ? '' : result.error.message);
+    state = result.state;
+  }
+  return state;
+}
+
+function cityPosition(color: Color, longer = false, blocked = true): GameState {
+  const white = color === 'white';
+  const state = createGameState({
+    fen: white
+      ? longer ? '7k/8/8/2n5/2b5/2n5/2P5/7K w - - 0 1' : '7k/8/8/8/8/2n5/2P5/7K w - - 0 1'
+      : longer ? '7k/2p5/2N5/2B5/2N5/8/8/7K b - - 0 1' : '7k/2p5/2N5/8/8/8/8/7K b - - 0 1',
+    hands: { [color]: ['forbidden-city', CARD, CARD, 'haunting-memories'] },
+    decks: { [color]: ['bog', 'curse', 'truce'] },
+  });
+  return act(state,
+    { type: 'move', from: white ? 'h1' : 'h8', to: white ? 'h2' : 'h7' },
+    ...(blocked ? [{ type: 'playCard', cardId: 'forbidden-city', target: white ? longer ? 'c6' : 'c4' : longer ? 'c3' : 'c5' } as const] : []),
+    { type: 'endTurn' },
+    { type: 'move', from: white ? 'h8' : 'h1', to: white ? 'g8' : 'g1' },
+    { type: 'endTurn' },
+  );
+}
+
+function assertCityFizzle(state: GameState, result: GameState): void {
+  const color = state.turn.color;
+  assert.deepEqual(result.pieces, state.pieces);
+  assert.deepEqual(result.effects, state.effects);
+  assert.equal(result.orientation, state.orientation);
+  assert.equal(result.turn.cardPlays[color], state.turn.cardPlays[color] + 1);
+  assert.equal(result.turn.phase, 'afterMove');
+  assert.equal(result.turn.moveMade, true);
+  assert.equal(result.turn.color, color);
+  assert.deepEqual(result.enPassant, []);
+  assert.deepEqual(result.fen.split(' ').slice(4), [
+    String(Number(state.fen.split(' ')[4]) + 1),
+    String(Number(state.fen.split(' ')[5]) + (color === 'black' ? 1 : 0)),
+  ]);
+  assert.equal(result.history.at(-1)?.type, 'cardFizzled');
+  assert.equal(result.history.at(-1)?.reason, 'FORBIDDEN_CITY');
+  assert.deepEqual(result.history.at(-1)?.movement, []);
+}
+
+test('Forbidden City stops the entire push but Irresistible Force is still played', () => {
+  let state = createGameState({
+    fen: '7k/8/8/8/8/2n5/2P5/7K w - - 0 1',
+    hands: { white: ['forbidden-city', CARD] },
+  });
+  for (const action of [
+    { type: 'move', from: 'h1', to: 'h2' },
+    { type: 'playCard', cardId: 'forbidden-city', target: 'c4' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'h8', to: 'g8' },
+    { type: 'endTurn' },
+  ] as const) {
+    const result = applyAction(state, action);
+    assert.ok(result.ok);
+    state = result.state;
+  }
+  const before = structuredClone(state);
+  const cardInstanceId = state.players.white.hand.find(card => card.cardId === CARD)!.id;
+  const result = applyAction(state, {
+    type: 'playCard', cardId: CARD, cardInstanceId,
+    target: [{ from: 'c2', to: 'c3' }],
+  });
+  assert.ok(result.ok);
+  assert.deepEqual(result.state.pieces, before.pieces);
+  assert.deepEqual(result.state.effects, before.effects);
+  assert.equal(result.state.players.white.hand.some(card => card.id === cardInstanceId), false);
+  assert.equal(result.state.turn.cardPlays.white, 1);
+  assertCityFizzle(before, result.state);
+  assert.deepEqual(state, before);
+});
+
+for (const color of ['white', 'black'] as const) {
+  test(`${color} still pushes successfully without Forbidden City`, () => {
+    const state = cityPosition(color, false, false);
+    const before = structuredClone(state);
+    const from = color === 'white' ? 'c2' : 'c7';
+    const to = color === 'white' ? 'c3' : 'c6';
+    const beyond = color === 'white' ? 'c4' : 'c5';
+    const moved = act(state, { type: 'playCard', cardId: CARD, target: [{ from, to }] });
+    assert.equal(moved.pieces.find(piece => piece.id === state.pieces.find(piece => piece.square === from)!.id)?.square, to);
+    assert.equal(moved.pieces.find(piece => piece.id === state.pieces.find(piece => piece.square === to)!.id)?.square, beyond);
+    assert.equal(moved.history.at(-1)?.type, 'cardPlayed');
+    assert.equal(moved.turn.moveMade, true);
+    assert.equal(moved.turn.cardPlays[color], 1);
+    assert.deepEqual(state, before);
+  });
+
+  test(`${color} spends Force without moving any piece in a longer blocked chain`, () => {
+    const state = cityPosition(color, true);
+    const before = structuredClone(state);
+    const result = act(state, { type: 'playCard', cardId: CARD,
+      target: [{ from: color === 'white' ? 'c2' : 'c7', to: color === 'white' ? 'c3' : 'c6' }] });
+    assertCityFizzle(before, result);
+    assert.deepEqual(state, before);
+  });
+}
+
+test('Black also spends a single blocked push and can end the turn', () => {
+  const state = cityPosition('black');
+  const before = structuredClone(state);
+  const result = act(state, { type: 'playCard', cardId: CARD, target: [{ from: 'c7', to: 'c6' }] });
+  assertCityFizzle(before, result);
+  assert.equal(act(result, { type: 'endTurn' }).turn.color, 'white');
+  assert.deepEqual(state, before);
+});
+
+test('a blocked push spends the selected duplicate and draws exactly once with both allowances used', () => {
+  const state = cityPosition('white');
+  const before = structuredClone(state);
+  const duplicates = state.players.white.hand.filter(card => card.cardId === CARD);
+  const selected = duplicates[1]!;
+  const target = [{ from: 'c2', to: 'c3' }];
+  const targetBefore = structuredClone(target);
+  const result = act(state, { type: 'playCard', cardId: CARD, cardInstanceId: selected.id, target });
+  assertCityFizzle(before, result);
+  assert.deepEqual(result.players.white.hand, [...before.players.white.hand.filter(card => card.id !== selected.id), before.players.white.deck[0]]);
+  assert.deepEqual(result.players.white.deck, before.players.white.deck.slice(1));
+  assert.deepEqual(result.players.white.discard, [...before.players.white.discard, selected]);
+  assert.deepEqual(result.players.black, before.players.black);
+  assert.deepEqual(result.playedCards?.at(-1), { player: 'white', cardInstanceId: selected.id });
+  for (const action of [
+    { type: 'playCard', cardId: CARD, cardInstanceId: duplicates[0]!.id, target },
+    { type: 'move', from: 'h2', to: 'h3' },
+  ] as const) {
+    const rejected = applyAction(result, action);
+    assert.equal(rejected.ok, false);
+    assert.deepEqual(rejected.state, result);
+  }
+  assert.deepEqual(target, targetBefore);
+  assert.deepEqual(state, before);
+});
+
+test('a blocked Force spends the card while preserving a checked player’s escape move', () => {
+  const state = act(createGameState({
+    fen: 'r6k/8/8/8/8/2n5/2P5/7K w - - 0 1',
+    hands: { white: ['forbidden-city', CARD] },
+  }),
+  { type: 'move', from: 'h1', to: 'g1' },
+  { type: 'playCard', cardId: 'forbidden-city', target: 'c4' },
+  { type: 'endTurn' },
+  { type: 'move', from: 'a8', to: 'g8' },
+  { type: 'endTurn' });
+  const before = structuredClone(state);
+  const result = act(state, { type: 'playCard', cardId: CARD, target: [{ from: 'c2', to: 'c3' }] });
+  assert.deepEqual(result.pieces, before.pieces);
+  assert.deepEqual(result.effects, before.effects);
+  assert.equal(result.fen, before.fen);
+  assert.equal(result.turn.cardPlays.white, 1);
+  assert.equal(result.turn.moveMade, false);
+  assert.equal(result.turn.phase, 'beforeMove');
+  assert.equal(result.outcome, null);
+  assert.equal(applyAction(result, { type: 'endTurn' }).ok, false);
+  assert.equal(act(result, { type: 'move', from: 'g1', to: 'h2' }, { type: 'endTurn' }).turn.color, 'black');
+  assert.deepEqual(state, before);
+});
+
+test('Forbidden City does not turn malformed, wrong-owner, non-Pawn or wrong-geometry targets into spent cards', () => {
+  const state = cityPosition('white');
+  const before = structuredClone(state);
+  for (const target of [null, [], { from: 'c2', to: 'c3' }, [{ from: 'c2', to: 'c3', extra: true }],
+    [{ from: 'c3', to: 'c4' }], [{ from: 'h2', to: 'h3' }], [{ from: 'c2', to: 'c4' }],
+    [{ from: 'c2', to: 'd3' }], [{ from: 'd2', to: 'd3' }]]) {
+    const result = applyAction(state, { type: 'playCard', cardId: CARD, target });
+    assert.equal(result.ok, false);
+    assert.deepEqual(result.state, before);
+    assert.deepEqual(state, before);
+  }
+});
+
+test('publicly copying a blocked Force spends Haunting Memories with no movement', () => {
+  let state = cityPosition('white');
+  state = act(state,
+    { type: 'playCard', cardId: CARD, target: [{ from: 'c2', to: 'c3' }] },
+    { type: 'endTurn' },
+    { type: 'move', from: 'g8', to: 'f8' },
+    { type: 'endTurn' });
+  const before = structuredClone(state);
+  const selected = state.players.white.hand.find(card => card.cardId === 'haunting-memories')!;
+  const result = act(state, { type: 'playCard', cardId: 'haunting-memories', cardInstanceId: selected.id,
+    target: [{ from: 'c2', to: 'c3' }] });
+  assertCityFizzle(before, result);
+  assert.equal(result.history.at(-1)?.cardId, 'haunting-memories');
+  assert.equal(result.history.at(-1)?.copiedCardId, CARD);
+  assert.deepEqual(result.players.white.discard, [...before.players.white.discard, selected]);
+  assert.deepEqual(result.players.white.hand, [...before.players.white.hand.filter(card => card.id !== selected.id), before.players.white.deck[0]]);
+  assert.deepEqual(result.players.white.deck, before.players.white.deck.slice(1));
+  assert.deepEqual(state, before);
+});
 
 test('has the exact printed card metadata', () => {
   assert.deepEqual(CARD_CATALOG[CARD], {
@@ -200,7 +395,8 @@ test('uses original Pawn identity and owner-relative forward', () => {
   assert.deepEqual(promoted, before);
 });
 
-test('Forbidden City blocks every push boundary atomically', () => {
+// Official FAQ, lines 1354–1362: every piece stays put, but Force is still played.
+test('Forbidden City blocks every push boundary while spending Force', () => {
   for (const [square, fen] of [
     ['e3', '7k/8/8/8/8/4r3/4P3/K7 w - - 0 1'],
     ['e4', '7k/8/8/8/4b3/4r3/4P3/K7 w - - 0 1'],
@@ -220,8 +416,8 @@ test('Forbidden City blocks every push boundary atomically', () => {
       cardInstanceId: state.players.white.hand[0]!.id,
       target: [{ from: 'e2', to: 'e3' }],
     });
-    assert.equal(result.ok, false);
-    assert.deepEqual(result.state, before);
+    assert.ok(result.ok);
+    assertCityFizzle(before, result.state);
     assert.deepEqual(state, before);
   }
 });

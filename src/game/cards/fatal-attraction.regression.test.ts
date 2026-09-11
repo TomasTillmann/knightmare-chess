@@ -68,19 +68,11 @@ test('Fatal Attraction rejects an unknown physical card choice atomically', () =
   reject(fixture(), { type: 'playCard', cardId: 'fatal-attraction', cardInstanceId: 'missing', target: 'd4' });
 });
 
-test('Passing in the Night swaps a frozen Pawn with the magnet and preserves its physical marker', () => {
+test('Passing in the Night cannot swap a frozen Pawn with its magnet', () => {
   const original = fixture();
-  const magnetId = original.pieces.find(piece => piece.square === 'd4')!.id;
-  let state = ready(play(original, 'fatal-attraction', 'd4'));
+  const state = ready(play(original, 'fatal-attraction', 'd4'));
   state.players.white.hand = [{ id: 'swap', cardId: 'passing-in-the-night' }];
-  state = play(state, 'passing-in-the-night', [{ from: 'd4', to: 'e5' }]);
-  assert.equal(state.pieces.find(piece => piece.id === magnetId)!.square, 'e5');
-  assert.equal((state.effects[0] as FatalAttractionEffect).pieceId, magnetId);
-  const black = ready(state, 'black');
-  const control = structuredClone(black);
-  control.effects = [];
-  act(control, { type: 'move', from: 'd4', to: 'd3' });
-  reject(black, { type: 'move', from: 'd4', to: 'd3' });
+  reject(state, { type: 'playCard', cardId: 'passing-in-the-night', target: [{ from: 'd4', to: 'e5' }] });
 });
 
 test('Two separate magnets independently immobilize their own neighborhoods', () => {

@@ -163,7 +163,7 @@ test('Toll cannot take a pawn protected by Truce after a frontier crossing', () 
 test('Earthquake preserves Truce while rotating pawn movement', () => {
   const state = protectedState('7k/8/8/3p4/3P4/8/8/7K w - - 0 1', ['earthquake']);
   state.turn.cardPlays.white = 0;
-  const next = act(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'clockwise', promotions: [] } });
+  const next = act(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'counterclockwise', promotions: [] } });
   assert.equal(next.orientation, 90);
   assert.ok(next.effects.some(effect => (effect as { type: string }).type === 'truce'));
   assert.equal(boardFen(next), next.fen.split(' ')[0]);

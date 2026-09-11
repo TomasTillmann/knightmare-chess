@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction, cardPlayTargets } from '../reducer.js';
+import { applyAction, cardPlayTargets, legalDests, underElfHillReturnSquares } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { CardInstance, Color, GameState } from '../types.js';
+import type { CardInstance, Color, GameAction, GameState, SquareName } from '../types.js';
 
 const peaceTalks = (id = 'peace-talks-1'): CardInstance => ({ id, cardId: 'peace-talks' });
 const continuingCard = (cardId = 'doomsayer', id = `${cardId}-1`): CardInstance => ({ id, cardId });
@@ -43,6 +43,116 @@ function assertAtomicRejection(state: GameState, target: unknown, code: string) 
   assert.strictEqual(result.state, state);
   assert.deepEqual(state, before);
 }
+
+function royalConfabulation(owner: Color, capturePrince = false): GameState {
+  const opponent = owner === 'white' ? 'black' : 'white';
+  const square = (name: SquareName): SquareName => owner === 'white'
+    ? name : (name[0] + String(9 - Number(name[1]))) as SquareName;
+  let state = createGameState({
+    fen: owner === 'white'
+      ? 'k2r4/8/8/8/8/8/N7/2B1K3 w - - 0 1'
+      : '2b1k3/n7/8/8/8/8/8/K2R4 b - - 0 1',
+    hands: { [owner]: ['confabulation', 'coup'], [opponent]: ['peace-talks'] },
+  });
+  const actions: GameAction[] = [
+    { type: 'playCard', cardId: 'confabulation', target: [{ from: square('a2'), to: square('c1') }] },
+    { type: 'endTurn' },
+    { type: 'move', from: square('d8'), to: square(capturePrince ? 'f8' : 'd7') },
+    { type: 'endTurn' },
+    { type: 'move', from: square('e1'), to: square('f1') },
+    { type: 'playCard', cardId: 'coup', target: square('c1') },
+    { type: 'endTurn' },
+    { type: 'move', from: square(capturePrince ? 'f8' : 'd7'), to: square(capturePrince ? 'f1' : 'd8') },
+  ];
+  for (const action of actions) {
+    const result = applyAction(state, action);
+    assert.ok(result.ok, JSON.stringify(result.ok ? action : result.error));
+    state = result.state;
+  }
+  return state;
+}
+
+for (const owner of ['white', 'black'] as const) {
+for (const targetCard of ['confabulation', 'coup'] as const) {
+test(`cancelling ${owner} royal ${targetCard} restores the Prince and ends only the dependent effects`, () => {
+  const state = royalConfabulation(owner);
+  const before = structuredClone(state);
+  const target = `${owner}-hand-${targetCard === 'confabulation' ? 0 : 1}-${targetCard}`;
+  assert.ok(cardPlayTargets(state, 'peace-talks').includes(target));
+  const result = applyAction(state, { type: 'playCard', cardId: 'peace-talks', target });
+  assert.ok(result.ok);
+  const next = result.state;
+  assert.deepEqual(state, before);
+  const retained = targetCard === 'coup' ? [state.effects[0]] : [];
+  assert.deepEqual(next.effects, retained);
+  const prince = next.pieces.find(piece => piece.owner === owner && piece.originalRole === 'king')!;
+  assert.equal(prince.royal, true);
+  assert.equal(prince.square, owner === 'white' ? 'f1' : 'f8');
+  assert.equal(next.pieces.find(piece => piece.owner === owner && piece.originalRole === 'bishop')?.royal, false);
+  assert.deepEqual(next.players[owner].discard, targetCard === 'coup'
+    ? [{ id: `${owner}-hand-1-coup`, cardId: 'coup' }]
+    : [{ id: `${owner}-hand-0-confabulation`, cardId: 'confabulation' }, { id: `${owner}-hand-1-coup`, cardId: 'coup' }]);
+  assert.deepEqual(next.players[state.turn.color].discard, [state.players[state.turn.color].hand[0]]);
+});
+
+test(`${owner} ${targetCard} is immune to Peace Talks after the composite King's Prince is captured`, () => {
+  const state = royalConfabulation(owner, true);
+  assert.equal(state.pieces.find(piece => piece.owner === owner && piece.originalRole === 'king')?.zone, 'captured');
+  const target = `${owner}-hand-${targetCard === 'confabulation' ? 0 : 1}-${targetCard}`;
+  assert.equal(cardPlayTargets(state, 'peace-talks').includes(target), false);
+  const before = structuredClone(state);
+  const result = applyAction(state, { type: 'playCard', cardId: 'peace-talks', target });
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, 'INVALID_TARGET');
+  assert.strictEqual(result.state, state);
+  assert.deepEqual(state, before);
+});
+}
+}
+
+test('ending copied Confabulation preserves the opposing merge and a later independent Coup', () => {
+  let state = createGameState({
+    fen: '2b1k3/n2r4/8/8/8/8/N7/2B1K1N1 b - - 0 1',
+    hands: { white: ['haunting-memories', 'coup', 'coup'], black: ['confabulation', 'peace-talks'] },
+  });
+  const actions: GameAction[] = [
+    { type: 'playCard', cardId: 'confabulation', target: [{ from: 'a7', to: 'c8' }] },
+    { type: 'endTurn' },
+    { type: 'playCard', cardId: 'haunting-memories', target: [{ from: 'a2', to: 'c1' }] },
+    { type: 'endTurn' },
+    { type: 'move', from: 'd7', to: 'd8' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'e1', to: 'f1' },
+    { type: 'playCard', cardId: 'coup', target: 'c1' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'd8', to: 'd7' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'f1', to: 'f2' },
+    { type: 'playCard', cardId: 'coup', target: 'g1' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'd7', to: 'd8' },
+  ];
+  for (const action of actions) {
+    const result = applyAction(state, action);
+    assert.ok(result.ok, JSON.stringify(result.ok ? action : result.error));
+    state = result.state;
+  }
+  const opposingMerge = structuredClone(state.effects[0]);
+  const result = applyAction(state, {
+    type: 'playCard', cardId: 'peace-talks', target: 'white-hand-0-haunting-memories',
+  });
+  assert.ok(result.ok);
+  assert.deepEqual(result.state.effects, [opposingMerge, {
+    type: 'coup', owner: 'white', card: { id: 'white-hand-2-coup', cardId: 'coup' },
+    kingId: 'white-knight-g1', princeId: 'white-king-e1', princeRole: 'king',
+  }]);
+  assert.deepEqual(result.state.pieces.filter(piece => piece.owner === 'white' && piece.royal).map(piece => piece.id), ['white-knight-g1']);
+  assert.deepEqual(result.state.players.white.discard, [
+    { id: 'white-hand-0-haunting-memories', cardId: 'haunting-memories' },
+    { id: 'white-hand-1-coup', cardId: 'coup' },
+  ]);
+  assert.deepEqual(result.state.players.black.discard, [{ id: 'black-hand-1-peace-talks', cardId: 'peace-talks' }]);
+});
 
 test('catalog records the exact printed Peace Talks metadata', () => {
   assert.deepEqual(CARD_CATALOG['peace-talks'], {
@@ -201,6 +311,66 @@ test('game-over state rejects cancellation and exposes no targets', () => {
   assert.deepEqual(cardPlayTargets(state, 'peace-talks'), []);
   assertAtomicRejection(state, 'doomsayer-1', 'GAME_OVER');
 });
+
+for (const owner of ['white', 'black'] as const) {
+for (const [role, letter] of [['knight', 'N'], ['bishop', 'B'], ['pawn', 'P']] as const) {
+test(`Peace Talks cancels ${owner} Coup while its ${role} is temporarily away`, () => {
+  const opponent = owner === 'white' ? 'black' : 'white';
+  const square = (name: SquareName): SquareName => owner === 'white'
+    ? name : (name[0] + String(9 - Number(name[1]))) as SquareName;
+  let state = createGameState({
+    fen: owner === 'white'
+      ? `8/7k/8/8/8/2${letter}5/8/6K1 w - - 4 2`
+      : `6k1/8/2${letter.toLowerCase()}5/8/8/8/7K/8 b - - 4 2`,
+    hands: { [owner]: ['coup', 'under-elf-hill'], [opponent]: ['peace-talks'] },
+  });
+  const coup = state.players[owner].hand[0]!;
+  const princeId = `${owner}-king-${square('g1')}`;
+  const replacementId = `${owner}-${role}-${square('c3')}`;
+  const act = (action: GameAction) => {
+    const result = applyAction(state, action);
+    assert.ok(result.ok, JSON.stringify(result.ok ? action : result.error));
+    state = result.state;
+  };
+  for (const action of [
+    { type: 'move', from: square('g1'), to: square('f1') },
+    { type: 'playCard', cardId: 'coup', target: square('c3') },
+    { type: 'endTurn' },
+    { type: 'move', from: square('h7'), to: square('g6') },
+    { type: 'endTurn' },
+    { type: 'playCard', cardId: 'under-elf-hill' },
+    { type: 'endTurn' },
+    { type: 'move', from: square('g6'), to: square('h7') },
+  ] as GameAction[]) act(action);
+  assert.ok(cardPlayTargets(state, 'peace-talks').includes(coup.id));
+  act({ type: 'playCard', cardId: 'peace-talks', target: coup.id });
+  assert.equal(state.effects.length, 0);
+  assert.equal(state.pieces.find(piece => piece.id === princeId)?.royal, true);
+  const replacement = state.pieces.find(piece => piece.id === replacementId)!;
+  assert.equal(replacement.royal, false);
+  assert.equal(replacement.zone, 'away');
+  assert.equal(replacement.square, null);
+  assert.equal(replacement.role, role);
+  assert.equal(state.underElfHill?.[0]?.pieceId, replacementId);
+  assert.deepEqual(underElfHillReturnSquares(state), []);
+  act({ type: 'endTurn' });
+  assert.ok(underElfHillReturnSquares(state).includes(square('a4')));
+  assert.equal(applyAction(state, { type: 'move', from: square('f1'), to: square('e1') }).ok, false);
+  act({ type: 'returnKing', to: square('a4') });
+  const returned = state.pieces.find(piece => piece.id === replacementId)!;
+  assert.equal(returned.square, square('a4'));
+  assert.equal(returned.zone, 'board');
+  assert.equal(returned.royal, false);
+  assert.equal(returned.role, role);
+  assert.equal(legalDests(state).get(square('a4'))?.length ?? 0, 0);
+  act({ type: 'move', from: square('f1'), to: square('e1') });
+  act({ type: 'endTurn' });
+  act({ type: 'move', from: square('h7'), to: square('g6') });
+  act({ type: 'endTurn' });
+  assert.ok((legalDests(state).get(square('a4'))?.length ?? 0) > 0);
+});
+}
+}
 
 test('Coup cannot be cancelled after the original Prince is lost', () => {
   const state = readyState();

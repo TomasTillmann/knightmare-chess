@@ -95,7 +95,7 @@ for (const fixture of [
     assert.deepEqual(restored.pieces, initial.pieces);
     assert.deepEqual(restored.enPassant, initial.enPassant);
     assert.equal(restored.fen, initial.fen);
-    invalid(restored, { type: 'move', from: fixture.from, to: fixture.name === 'castling rook and rights' ? 'h1' : fixture.to, ...('promotion' in fixture ? { promotion: 'knight' } : {}) });
+    invalid(restored, { type: 'move', from: fixture.from, to: fixture.name === 'castling rook and rights' ? 'h1' : fixture.to, ...('promotion' in fixture ? { promotion: fixture.promotion } : {}) });
   });
 }
 

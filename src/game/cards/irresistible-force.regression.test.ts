@@ -141,7 +141,7 @@ test("targets follow owner, orientation, neutrality, and transformed Pawn identi
   }
 });
 
-test("30 seeded malformed, stale, and unsafe plays reject atomically", () => {
+test("29 seeded malformed, stale, and unsafe plays reject atomically", () => {
   const chain = () => createGameState({
     fen: "7k/8/8/8/4n3/4r3/4P3/K7 w - - 0 1",
     hands: { white: ["irresistible-force"] },
@@ -173,11 +173,6 @@ test("30 seeded malformed, stale, and unsafe plays reject atomically", () => {
     () => play(move, chain(), "irresistible-force-stale"),
     () => play(move, createGameState({ fen: "8/8/8/8/8/4k3/4P3/K7 w - - 0 1", hands: { white: ["irresistible-force"] } })),
     () => play(move, createGameState({ fen: "8/8/8/4k3/4n3/4r3/4P3/K7 w - - 0 1", hands: { white: ["irresistible-force"] } })),
-    () => {
-      const state = chain();
-      state.effects.push({ type: "forbidden-city", owner: "white", card: { id: "fc", cardId: "forbidden-city" }, square: "e5" });
-      return play(move, state);
-    },
     () => {
       const state = edge();
       const terminal = state.pieces.find((piece) => piece.square === "a8")!;
@@ -216,7 +211,7 @@ test("30 seeded malformed, stale, and unsafe plays reject atomically", () => {
       return play(edgeMove, state);
     },
   ];
-  assert.equal(attempts.length, 30);
+  assert.equal(attempts.length, 29);
   let seed = 0x1f0ace;
   for (let index = attempts.length - 1; index > 0; index -= 1) {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -274,7 +269,16 @@ test("Pacifism, Truce, Forbidden City, Earthquake, Crab, and Confabulation inter
   [city] = accepted(city, { type: "move", from: "h8", to: "g8" });
   [city] = accepted(city, { type: "playCard", cardId: "forbidden-city", target: "e5" });
   [city] = accepted(city, { type: "endTurn" });
-  rejectForce(city, "e2", "e3");
+  // Official FAQ 1354–1362 overrides the old no-spend rejection expectation.
+  const cityBefore = structuredClone(city);
+  const [blocked] = accepted(city, { type: "playCard", cardId: "irresistible-force", target: [{ from: "e2", to: "e3" }] });
+  assert.deepEqual(blocked.pieces, cityBefore.pieces);
+  assert.deepEqual(blocked.effects, cityBefore.effects);
+  assert.deepEqual(blocked.players.white.discard, cityBefore.players.white.hand);
+  assert.equal(blocked.turn.cardPlays.white, 1);
+  assert.equal(blocked.turn.moveMade, true);
+  assert.equal(blocked.history.at(-1)?.type, "cardFizzled");
+  assert.deepEqual(city, cityBefore);
 
   let earthquake = createGameState({
     fen: "6nk/8/8/8/2Np4/8/8/KN6 w - - 0 1",
@@ -284,7 +288,7 @@ test("Pacifism, Truce, Forbidden City, Earthquake, Crab, and Confabulation inter
   [earthquake] = accepted(earthquake, {
     type: "playCard",
     cardId: "earthquake",
-    target: { direction: "clockwise", promotions: [] },
+    target: { direction: "counterclockwise", promotions: [] },
   });
   [earthquake] = accepted(earthquake, { type: "endTurn" });
   [earthquake] = accepted(earthquake, {

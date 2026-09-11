@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { applyAction, isKingInCheck } from '../reducer.js';
+import { applyAction, doomsayerTargets, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
 
@@ -88,6 +88,123 @@ const totalCards = (state: State) => (['white', 'black'] as const).reduce(
     + state.players[color].discard.length,
   activeDoomsayers(state).length,
 );
+
+function knightDoomsayer(speaker: Color, neutral = true): State {
+  const opponent = speaker === 'white' ? 'black' : 'white';
+  let state = game({
+    fen: speaker === 'white'
+      ? '7k/8/2n5/8/8/8/8/K7 w - - 0 1'
+      : 'k7/8/8/8/8/2N5/8/7K b - - 0 1',
+    hands: { [speaker]: ['neutrality'], [opponent]: [DOOMSAYER] },
+  });
+  state = move(state, speaker === 'white' ? 'a1' : 'a8', speaker === 'white' ? 'a2' : 'a7');
+  if (neutral) state = play(state, 'neutrality', speaker === 'white' ? 'c6' : 'c3');
+  return playDoomsayer(move(endTurn(state), speaker === 'white' ? 'h8' : 'h1', speaker === 'white' ? 'h7' : 'h2'));
+}
+
+for (const speaker of ['white', 'black'] as const) {
+  const opponent = speaker === 'white' ? 'black' : 'white';
+  const victimId = `${opponent}-knight-${speaker === 'white' ? 'c6' : 'c3'}`;
+  const effectId = `${opponent}-hand-0-doomsayer`;
+  const loss: Action = {
+    type: 'namePiece', speaker, name: 'knight', losses: [{ effectId, pieceId: victimId }],
+  };
+
+  test(`Doomsayer lets ${speaker} lose the opponent's neutral Knight`, () => {
+    const state = knightDoomsayer(speaker);
+    const snapshot = structuredClone(state);
+    const result = applied(state, loss);
+    assert.deepEqual(doomsayerTargets(state, speaker, 'knight').map(piece => piece.id), [victimId]);
+    const victim = result.pieces.find(piece => piece.id === victimId)!;
+    assert.deepEqual([victim.zone, victim.square, victim.owner, victim.role, victim.originalRole, victim.neutral],
+      ['captured', null, opponent, 'knight', 'knight', false]);
+    assert.deepEqual(result.players[opponent].discard, [{ id: effectId, cardId: DOOMSAYER }]);
+    assert.deepEqual(result.players[speaker].discard, [{ id: `${speaker}-hand-0-neutrality`, cardId: 'neutrality' }]);
+    assert.equal(result.effects.length, 0);
+    assert.equal(result.pieces.length, state.pieces.length);
+    assert.deepEqual(result.pieces.filter(piece => piece.id !== victimId), state.pieces.filter(piece => piece.id !== victimId));
+    assert.deepEqual(result.players[speaker].hand, state.players[speaker].hand);
+    assert.deepEqual(result.players[opponent].hand, state.players[opponent].hand);
+    rejected(state, { ...loss, losses: [] }, 'INVALID_TARGET');
+    assert.deepEqual(state, snapshot);
+  });
+
+  test(`Doomsayer still lets the ${opponent} owner lose that neutral Knight`, () => {
+    const state = declineDoomsayer(knightDoomsayer(speaker));
+    assert.deepEqual(doomsayerTargets(state, opponent, 'knight').map(piece => piece.id), [victimId]);
+    const result = applied(state, { ...loss, speaker: opponent });
+    assert.equal(result.pieces.find(piece => piece.id === victimId)?.zone, 'captured');
+    assert.equal(result.pieces.find(piece => piece.id === victimId)?.owner, opponent);
+  });
+
+  test(`Doomsayer rejects ${speaker} losing the opponent's nonneutral Knight`, () => {
+    const state = knightDoomsayer(speaker, false);
+    assert.deepEqual(doomsayerTargets(state, speaker, 'knight'), []);
+    rejected(state, loss, 'WRONG_OWNER');
+    const result = applied(state, { ...loss, losses: [] });
+    assert.deepEqual(result.pieces, state.pieces);
+    assert.deepEqual(result.effects, state.effects);
+  });
+}
+
+test('canceling Neutrality restores the Doomsayer ownership restriction', () => {
+  let state = game({
+    fen: '7k/8/2n5/8/8/8/8/K7 w - - 0 1',
+    hands: { white: ['neutrality'], black: [DOOMSAYER, 'fog-of-war'] },
+  });
+  state = play(move(state, 'a1', 'a2'), 'neutrality', 'c6');
+  state = applied(state, { type: 'playCard', cardId: 'fog-of-war', cardInstanceId: 'black-hand-1-fog-of-war' });
+  state = playDoomsayer(move(endTurn(state), 'h8', 'h7'));
+  assert.equal(pieceAt(state, 'c6')!.neutral, false);
+  assert.deepEqual(doomsayerTargets(state, 'white', 'knight'), []);
+  rejected(state, {
+    type: 'namePiece', speaker: 'white', name: 'knight',
+    losses: [{ effectId: 'black-hand-0-doomsayer', pieceId: 'black-knight-c6' }],
+  }, 'WRONG_OWNER');
+});
+
+test('Coup suspends Neutrality and excludes the royal Knight from Doomsayer', () => {
+  let state = game({
+    fen: '7k/8/2N5/8/8/8/8/K7 b - - 0 1',
+    hands: { white: ['coup'], black: ['neutrality', DOOMSAYER] },
+  });
+  state = endTurn(play(move(state, 'h8', 'h7'), 'neutrality', 'c6'));
+  state = endTurn(play(move(state, 'a1', 'a2'), 'coup', 'c6'));
+  state = playDoomsayer(move(state, 'h7', 'h8'));
+  assert.equal(pieceAt(state, 'c6')!.neutral, false);
+  assert.equal(pieceAt(state, 'c6')!.royal, true);
+  assert.ok(state.effects.some(effect => (effect as Effect).type === 'neutrality'));
+  for (const speaker of ['white', 'black'] as const) {
+    assert.deepEqual(doomsayerTargets(state, speaker, 'knight'), []);
+    rejected(speaker === 'white' ? state : declineDoomsayer(state), {
+      type: 'namePiece', speaker, name: 'knight',
+      losses: [{ effectId: 'black-hand-1-doomsayer', pieceId: 'white-knight-c6' }],
+    }, speaker === 'white' ? 'INVALID_TARGET' : 'WRONG_OWNER');
+  }
+});
+
+for (const protection of ['pacifism', 'truce'] as const) {
+  test(`Neutrality does not bypass ${protection} when resolving Doomsayer`, () => {
+    let state = game({
+      fen: '7k/8/2n5/8/8/8/8/K7 b - - 0 1',
+      hands: { white: ['neutrality'], black: [protection, DOOMSAYER] },
+    });
+    state = protection === 'pacifism'
+      ? endTurn(move(play(state, protection, 'c6'), 'h8', 'h7'))
+      : endTurn(play(move(state, 'h8', 'h7'), protection));
+    state = endTurn(play(move(state, 'a1', 'a2'), 'neutrality', 'c6'));
+    state = playDoomsayer(move(state, 'h7', 'h8'));
+    assert.equal(pieceAt(state, 'c6')!.neutral, true);
+    assert.deepEqual(doomsayerTargets(state, 'white', 'knight'), []);
+    rejected(state, {
+      type: 'namePiece', speaker: 'white', name: 'knight',
+      losses: [{ effectId: 'black-hand-1-doomsayer', pieceId: 'black-knight-c6' }],
+    }, 'INVALID_TARGET');
+    const result = namePiece(state, 'knight', undefined, 'white');
+    assert.deepEqual(result.pieces, state.pieces);
+    assert.deepEqual(result.effects, state.effects);
+  });
+}
 
 test('catalog preserves the physical card metadata', () => {
   assert.deepEqual(CARD_CATALOG[DOOMSAYER], {
@@ -349,22 +466,20 @@ test('an ordinarily promoted Pawn answers only to its current promoted role', ()
   assert.equal(activeDoomsayers(unchanged).length, 1);
 });
 
-test('a neutral piece remains owned by its recorded owner for Doomsayer', () => {
-  const before = game();
-  const owned = pieceAt(before, 'b8')!;
-  const opposing = pieceAt(before, 'b1')!;
-  owned.neutral = true;
-  opposing.neutral = true;
-
-  let state = playDoomsayer(move(before, 'e2', 'e4'));
-  const effectId = effectInstanceId(activeDoomsayers(state)[0]!);
-  rejected(state, {
-    type: 'namePiece', speaker: 'black', name: 'knight',
-    losses: [{ effectId, pieceId: opposing.id }],
-  } as unknown as Action, 'WRONG_OWNER');
-  state = namePiece(state, 'knight', 'b8');
-  assert.equal(state.pieces.find(piece => piece.id === owned.id)?.zone, 'captured');
-  assert.equal(state.pieces.find(piece => piece.id === opposing.id)?.zone, 'board');
+test('Doomsayer permits choosing either an owned Knight or an opposing neutral Knight', () => {
+  let state = game({
+    fen: '7k/8/2n5/8/8/2N5/8/K7 w - - 0 1',
+    hands: { white: ['neutrality'], black: [DOOMSAYER] },
+  });
+  state = endTurn(play(move(state, 'a1', 'a2'), 'neutrality', 'c6'));
+  state = playDoomsayer(move(state, 'h8', 'h7'));
+  assert.deepEqual(doomsayerTargets(state, 'white', 'knight').map(piece => piece.id).sort(),
+    ['black-knight-c6', 'white-knight-c3']);
+  for (const square of ['c3', 'c6']) {
+    const result = namePiece(state, 'knight', square, 'white');
+    assert.equal(result.pieces.find(piece => piece.id === pieceAt(state, square)!.id)?.zone, 'captured');
+    assert.equal(pieceAt(result, square === 'c3' ? 'c6' : 'c3')?.zone, 'board');
+  }
 });
 
 test('a royal non-King cannot be lost through a piece-name capture', () => {

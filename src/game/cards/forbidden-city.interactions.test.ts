@@ -764,8 +764,8 @@ describe('Forbidden City movement interactions', () => {
     if (!rejected.ok) assert.strictEqual(rejected.state, before);
   });
 
-  it('keeps Forbidden City on fixed table coordinates through Earthquake', () => {
-    const earthquake = { type: 'playCard' as const, cardId: 'earthquake', target: { direction: 'clockwise', promotions: [] } };
+  it('keeps Forbidden City on board-attached coordinates through Earthquake', () => {
+    const earthquake = { type: 'playCard' as const, cardId: 'earthquake', target: { direction: 'counterclockwise', promotions: [] } };
     const shake = (state: ReturnType<typeof createGameState>) => {
       const pawnMoved = applyAction(state, { type: 'move', from: 'h7', to: 'h6' });
       assert(pawnMoved.ok);

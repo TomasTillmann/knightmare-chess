@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { replayTrace, type RandomTrace } from './random-campaign.js'
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js'
 import { Chess } from 'chessops/chess'
 import { makeBoardFen, parseFen } from 'chessops/fen'
 import { parseSquare } from 'chessops/util'
@@ -143,6 +143,8 @@ const cardChanges: Record<number, Record<string, string | null>> = {
   105: { 'black-pawn-a7': null }, 117: { 'black-pawn-h7': 'h3' },
 }
 
+// F4 / FAQ p.16: only actions 1–92 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 93; original artifact hashes remain unchanged.
 test('random campaign iteration 068 independently reviewed semantics', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/068.json', import.meta.url), 'utf8')) as RandomTrace
   assert.equal(trace.seed, 860068)
@@ -150,7 +152,7 @@ test('random campaign iteration 068 independently reviewed semantics', () => {
   assert.equal(trace.steps.filter(s => s.action.type === 'playCard').length, 16)
   let state = createGameState(trace.initial)
   const states: GameState[] = [state]
-  for (const [index, { action }] of trace.steps.entries()) {
+  for (const [index, { action }] of trace.steps.slice(0, 92).entries()) {
     const n = index + 1
     assert.ok(rationales[index]!.startsWith(`${n} `))
     const before = state
@@ -229,9 +231,6 @@ test('random campaign iteration 068 independently reviewed semantics', () => {
       : n >= 103 && n <= 104 ? [{ type: 'doomsayer', owner: 'black', card: { id: 'black-deck-6-doomsayer', cardId: 'doomsayer' } }] : []
     assert.deepEqual(state.effects, expectedEffects)
   }
-  assert.equal(state.fen, '1rb2k1r/1p1p4/pN4pq/2PPN3/6P1/P3BPQp/1P4B1/R2K1R2 b - - 0 26')
-  assert.equal(state.players.white.deck.length, 68)
-  assert.equal(state.players.black.deck.length, 65)
-  assert.deepEqual(state.enPassant, [])
-  assert.equal(replayTrace(trace).fen, state.fen)
+  assert.deepEqual(replayTrace(trace, 93), state);
+  rejectPendingCancellation(state, trace.steps[92]!.action, [{"type":"playCard","cardId":"rebirth","cardInstanceId":"black-hand-2-rebirth","target":[{"from":"e5","to":"b1"}]}]);
 })

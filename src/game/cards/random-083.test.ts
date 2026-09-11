@@ -261,7 +261,7 @@ test('iteration 083 deterministic trace', () => {
       assert.deepEqual(after.players[actor].discard, [...state.players[actor].discard, ...(step === 14 ? [] : [card])]);
       assert.deepEqual(after.players[opposite(actor)], state.players[opposite(actor)]);
       assert.equal(after.turn.cardPlays[actor], 1);
-      if (step === 14) assert.deepEqual(after.effects, [{ type: 'earthquake', owner: 'white', card, direction: 'counterclockwise', target: action.target }]);
+      if (step === 14) assert.deepEqual(after.effects, [{ type: 'earthquake', owner: 'white', card, direction: 'clockwise', target: action.target }]);
     } else assert.deepEqual(after.players, state.players);
     if (step !== 14) assert.deepEqual(after.effects, state.effects);
     if ([75, 90].includes(step)) assert.deepEqual(after.underElfHill, [{ pieceId: actor === 'white' ? 'white-king-e1' : 'black-king-e8', player: actor, returning: false }]);

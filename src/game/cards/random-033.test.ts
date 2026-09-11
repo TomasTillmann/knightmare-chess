@@ -83,7 +83,7 @@ const rationales = [
   '73 b4-c6: White Knight captures c7 pawn; e8 Black King is not attacked.',
   '74 End White capture turn.',
   '75 g4-h6: Black Knight jumps to empty h6.',
-  '76 Earthquake: counterclockwise orientation makes White forward west, Black east; lone White pawn on a-file at a3 promotes to Queen; retain card.',
+  '76 Earthquake: clockwise orientation makes White forward west, Black east; lone White pawn on a-file at a3 promotes to Queen; retain card.',
   '77 End Black turn after orientation change; coordinates and barriers stay fixed.',
   '78 c6-b8: White Knight captures Black b8 Knight; rotation does not alter Knight geometry.',
   '79 End White capture turn; promoted a3 Queen remains White.',
@@ -237,7 +237,7 @@ test('iteration 033 sequential rules review', () => {
         }
         case 76:
           at('a3').role = 'queen'; at('a3').promoted = true;
-          effects.push({ type: 'earthquake', owner: actor, card: played, direction: 'counterclockwise', target: { direction: 'counterclockwise', promotions: [{ square: 'a3', role: 'queen' }] } });
+          effects.push({ type: 'earthquake', owner: actor, card: played, direction: 'clockwise', target: { direction: 'clockwise', promotions: [{ square: 'a3', role: 'queen' }] } });
           break;
         case 89: relocate('b6', 'd6'); half = 0; full++; expectedEp = [{ target: 'c6', pawnId: 'black-pawn-a7' }]; break;
         case 102: assert.ok(before.pendingRescue); relocate('e7', 'f8'); break;

@@ -15,8 +15,8 @@ function act(state: GameState, action: GameAction): GameState {
 function cardIds(state: GameState): string[] {
   return [...Object.values(state.players).flatMap(player => [...player.hand, ...player.deck, ...player.discard]),
     ...state.effects.flatMap(effect => {
-      const card = (effect as { card?: { id: string } }).card;
-      return card ? [card] : [];
+      const card = (effect as { card?: { id: string; proxy?: true } }).card;
+      return card && !card.proxy ? [card] : [];
     })].map(card => card.id).sort();
 }
 
@@ -106,18 +106,21 @@ test('a valid response expires after a move and stays expired across endTurn', (
   }
 });
 
-test('an active continuing card stays in play while Vulture recovers the older eligible discard', () => {
+test('FAQ 50: Vulture retrieves the last active card, leaving its proxy and the older discard', () => {
   const initial = createGameState({ hands: { white: ['disintegration', 'pacifism'], black: ['vulture'] } });
   const recovered = initial.players.white.hand[0]!;
   const continuing = initial.players.white.hand[1]!;
   let state = act(initial, { type: 'playCard', cardId: 'disintegration', target: 'a2' });
   state = finish(finish(state));
   state = act(state, { type: 'playCard', cardId: 'pacifism', target: 'c2' });
-  const effects = structuredClone(state.effects);
   state = act(state, { type: 'playCard', cardId: 'vulture' });
-  assert.deepEqual(state.players.black.hand, [recovered]);
-  assert.deepEqual(state.effects, effects);
-  assert.ok(JSON.stringify(state.effects).includes(continuing.id));
+  assert.deepEqual(state.players.black.hand, [continuing]);
+  assert.deepEqual(state.players.white.discard, [recovered]);
+  assert.equal(state.effects.length, 1);
+  const effect = state.effects[0] as { type: string; card: { id: string; proxy?: true } };
+  assert.equal(effect.type, 'pacifism');
+  assert.equal(effect.card.proxy, true);
+  assert.notEqual(effect.card.id, continuing.id);
   invariant(state, initial);
 });
 

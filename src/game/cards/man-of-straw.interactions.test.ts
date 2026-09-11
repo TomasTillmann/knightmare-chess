@@ -52,7 +52,7 @@ function act(state: GameState, action: GameAction): GameState {
 }
 
 for (const effect of ['pacifism', 'crab', 'man-trap', 'fatal-attraction']) {
-  test(`Man of Straw preserves actual ${effect} continuing effect`, () => {
+  test(`Man of Straw ${effect === 'fatal-attraction' ? 'expires' : 'preserves'} actual ${effect} continuing effect`, () => {
     let state = createGameState({
       fen: '5r1k/8/8/8/8/8/PP6/4K1N1 w - - 7 3',
       hands: { white: [effect, card] },
@@ -70,7 +70,11 @@ for (const effect of ['pacifism', 'crab', 'man-trap', 'fatal-attraction']) {
     const pawn = state.pieces.find(piece => piece.square === 'a2')!;
     const next = act(state, { type: 'playCard', cardId: card, target: { king: 'e1', pawn: 'a2' } });
     assert.equal(next.history.at(-1)?.type, 'cardPlayed');
-    assert.deepEqual(next.effects, before.effects);
+    assert.deepEqual(next.effects, effect === 'fatal-attraction' ? [] : before.effects);
+    if (effect === 'fatal-attraction') {
+      const retained = (before.effects[0] as { card: { id: string } }).card;
+      assert.deepEqual(next.players.white.discard.filter(card => card.id === retained.id), [retained]);
+    }
     assert.deepEqual(next.pieces.find(piece => piece.id === king.id), { ...king, square: 'a2' });
     assert.deepEqual(next.pieces.find(piece => piece.id === pawn.id), { ...pawn, square: 'e1' });
     assert.equal(isKingInCheck(next, 'white'), false);

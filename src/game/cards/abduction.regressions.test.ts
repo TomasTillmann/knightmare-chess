@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState } from '../state';
 import { applyAction } from '../reducer';
-import type { GameAction } from '../types';
+import type { GameAction, GameState } from '../types';
 
 function challenge() {
   const initial = createGameState({
@@ -14,6 +14,76 @@ function challenge() {
   const recall = applyAction(played.state, { type: 'revealAbduction' });
   assert.equal(recall.ok, true);
   return { initial, played: played.state, recall: recall.state };
+}
+
+function act(state: GameState, action: GameAction): GameState {
+  const snapshot = structuredClone(state);
+  const result = applyAction(state, action);
+  assert.deepEqual(state, snapshot);
+  assert.equal(result.ok, true, JSON.stringify(result.ok ? action : result.error));
+  return result.state;
+}
+
+for (const player of ['white', 'black'] as const) {
+  const opponent = player === 'white' ? 'black' : 'white';
+  for (const copied of [false, true]) for (const outcome of ['correct', 'wrong', 'timeout'] as const) {
+    test(`Fog cancels ${player}'s ${copied ? 'copied' : 'original'} Abduction after ${outcome} recall`, () => {
+      let state = createGameState({
+        fen: `7k/1p6/5n2/8/8/2N5/1P6/K7 ${opponent === 'white' ? 'w' : 'b'} - - 7 3`,
+        turn: opponent, phase: 'afterMove', moveMade: true,
+        hands: { [player]: ['abduction', 'haunting-memories'], [opponent]: ['abduction', 'fog-of-war'] },
+        decks: { white: ['crab', 'panic', 'curse'], black: ['crab', 'panic', 'curse'] },
+      });
+      const inventory = (s: GameState) => Object.values(s.players)
+        .flatMap(p => [...p.hand, ...p.deck, ...p.discard]).map(c => `${c.id}:${c.cardId}`).sort();
+      const originalCards = inventory(state);
+      const sourceTarget = player === 'white' ? 'b2' : 'b7';
+      state = act(state, { type: 'playCard', cardId: 'abduction', target: sourceTarget });
+      state = act(state, { type: 'revealAbduction' });
+      state = act(state, {
+        type: 'answerAbduction', player, role: 'pawn', owner: player, square: sourceTarget,
+      });
+      state = act(state, { type: 'endTurn' });
+      state = act(state, { type: 'move', from: player === 'white' ? 'a1' : 'h8', to: player === 'white' ? 'b1' : 'g8' });
+      const before = state;
+      const cardId = copied ? 'haunting-memories' : 'abduction';
+      const physicalCard = before.players[player].hand.find(c => c.cardId === cardId)!;
+      const fogCard = before.players[opponent].hand.find(c => c.cardId === 'fog-of-war')!;
+      const target = player === 'white' ? 'f6' : 'c3';
+      const victim = before.pieces.find(piece => piece.square === target)!;
+      const played = act(before, { type: 'playCard', cardId, target });
+      // Both mandatory stages retain the same immediate cancellation opportunity.
+      assert.deepEqual(act(played, { type: 'playCard', cardId: 'fog-of-war' }).pieces, before.pieces);
+      const recall = act(played, { type: 'revealAbduction' });
+      state = act(recall, outcome === 'timeout' ? { type: 'abductionTimeout' } : {
+        type: 'answerAbduction', player: opponent, role: outcome === 'correct' ? 'knight' : 'rook',
+        owner: opponent, square: target,
+      });
+      assert.equal(state.pendingAbduction, null);
+      assert.equal(state.pieces.find(piece => piece.id === victim.id)?.zone, outcome === 'correct' ? 'board' : 'captured');
+      assert.deepEqual(state.players, played.players, 'resolution spends and draws no additional cards');
+      assert.equal(state.history.length, played.history.length);
+      const ended = act(state, { type: 'endTurn' });
+      const stale = applyAction(ended, { type: 'playCard', cardId: 'fog-of-war' });
+      assert.equal(stale.ok, false, 'ending the turn still closes the response window');
+      assert.deepEqual(stale.state, ended);
+      state = act(state, { type: 'playCard', cardId: 'fog-of-war' });
+      assert.deepEqual(state.pieces, before.pieces);
+      assert.deepEqual(state.effects, before.effects);
+      assert.equal(state.fen, before.fen, 'the independent regular move and its clocks survive');
+      assert.equal(state.turn.moveMade, true);
+      assert.equal(state.pendingAbduction, null);
+      assert.deepEqual(state.players[player], played.players[player]);
+      assert.deepEqual(state.players[player].discard.at(-1), physicalCard);
+      assert.deepEqual(state.players[opponent].discard, [...before.players[opponent].discard, fogCard]);
+      assert.deepEqual(state.players[opponent].deck, before.players[opponent].deck.slice(1));
+      assert.deepEqual(state.players[opponent].hand, [
+        ...before.players[opponent].hand.filter(c => c.id !== fogCard.id), before.players[opponent].deck[0],
+      ]);
+      assert.deepEqual(inventory(state), originalCards, 'all physical cards retain their identities');
+      assert.deepEqual(act(recall, { type: 'playCard', cardId: 'fog-of-war' }).pieces, before.pieces);
+    });
+  }
 }
 
 for (const [name, fields] of [

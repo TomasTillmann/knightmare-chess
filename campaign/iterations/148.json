@@ -478,7 +478,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "black-hand-1-earthquake",
         "target": {
-          "direction": "counterclockwise",
+          "direction": "clockwise",
           "promotions": [
             {
               "square": "a3",
@@ -491,13 +491,13 @@
           ]
         }
       },
-      "expected": "97ecd8475ff40eefc357c2a58b1dd1fa544ca4cdbab2776a06dacb421be666fe"
+      "expected": "5fbf8404699c6f9e18db3a46f00f05e28492b893dcdda6ccee362e3116a4cc3e"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "741da84d3e8b70c3ca83ca8b5d2c798976dcd1152862a11f035178b0b1c7497a"
+      "expected": "425e272f332d8e44e50d13810c82c166954c18f582beee2f7d95ce8d5a62f806"
     },
     {
       "action": {
@@ -505,13 +505,13 @@
         "from": "d2",
         "to": "f3"
       },
-      "expected": "628a71d1afa7693b9ce6aa900bc6aff842458acc22ff4c3f10c47c372b975e4d"
+      "expected": "6be3e766e03eb91c9cb499c4db839eef86bfe589b1c12fe9b8795229bfbdda3f"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "519fd33cb7d6f3196b95052036e7cc3782d894cc5467672336feff0afc7172cf"
+      "expected": "eb94192c12ffa59045bdac508dc82199627ce5112e6e6b6d1c4f4ae466fcdac9"
     },
     {
       "action": {
@@ -519,13 +519,13 @@
         "from": "d5",
         "to": "e5"
       },
-      "expected": "d0de3264c6b90679030eb244c366ff3e0d97103ee4481da9e0a358efb167032e"
+      "expected": "c2d9232ca94dcc12643a7794467d80f9e48da301a8e263382b3b0f60213426b8"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "8802e008dc89ec609708aa8b786ca1734397af2719d52d5b7172582e0a638f8a"
+      "expected": "3f63f5688251cccd584ab272830376d794af9e83a64a7c322df9f019414454d7"
     },
     {
       "action": {
@@ -533,7 +533,7 @@
         "from": "a3",
         "to": "a6"
       },
-      "expected": "cef158247ede950fa6b7bb06091e6080bc1ee9de65b2eb27a82c905a6cd4fb1a"
+      "expected": "4aad8096565c5f9ece21da0389305677509df9daf731dda37601179304f6aa42"
     },
     {
       "action": {
@@ -545,13 +545,13 @@
           "knight": "h5"
         }
       },
-      "expected": "c09fbbf0ea97857423085d4758e1b081fd5028bf15ab1d6d883d89e1b1ba434e"
+      "expected": "2bc3a20113ec5b212d325b61e86943881a87b7edbc4092ad3d55fc7dd1bf315e"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "1f20ec8efbd3e1353fd4eab542d8cdf490e78b32f62c8b4bc8d149e8a3fd626b"
+      "expected": "7ce3714661747c2c77bae14c54e3cc74cf4b300e09d134f104a74799a66d32bf"
     },
     {
       "action": {
@@ -559,7 +559,7 @@
         "from": "f8",
         "to": "h7"
       },
-      "expected": "b87596aace04744a06dacec655ffe19d1f9ab9a7df9b9c04dac3def90006feec"
+      "expected": "5d72bf1fabdbee021499fd96ba00c41d74f1ad042dd28dc2dbccbbd08681a55f"
     },
     {
       "action": {

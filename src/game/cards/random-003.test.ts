@@ -1,11 +1,14 @@
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { checkState, digest, type RandomTrace } from './random-campaign.js';
+import { applyAction } from '../reducer.js';
+import { createGameState } from '../state.js';
 
 // Independently reviewed against rules §§8–14, 15.3, 16.2, 18–21 and card metadata.
 // Every regular move below preserves royal safety unless explicitly marked pending rescue.
 // Quiet moves retain captures/identity; endTurn retains board/clocks/cards and resets allowances.
+// Finding43: preserve the archive, but its branch after the forbidden action 52 is unreachable.
 const reasons = [
   '1. b2-b3: White pawn advances one onto empty b3; pawn clock resets.',
   '2. White ends; Black receives its first move and no draw occurs.',
@@ -58,7 +61,7 @@ const reasons = [
   '49. Bg7-f8: enter magnet-adjacent f8 legally, then become immobilized.',
   '50. End Black; magnet still at e8.',
   '51. Qh4-h3: one empty rank step; no capture.',
-  '52. Holy Quest after move swaps enemy Bf8/Na6; swap ignores immobilization, Knight now frozen f8; spend/draw Man-Trap.',
+  '52. FAQ40 and Fatal Attraction forbid Holy Quest: Bf8 is frozen by magnet e8; reject without spending or drawing. Later rows describe the obsolete archived branch.',
   '53. End White; swap does not move magnet or release it.',
   '54. c7-c6: source c7 outside e8 adjacency, destination empty.',
   '55. Siege swaps controlled Ne4/Ra1 after move; no capture, no clock advance; draw Bombard.',
@@ -129,16 +132,28 @@ const reasons = [
   '120. End White: Qe2 leaves both royals safe; pass to Black beforeMove, reset move allowance, retain permanent Coup/Crab/Man-Trap and all pieces/cards.',
 ];
 
-test('random campaign iteration 003: 50 moves and cards', () => {
+test('random campaign iteration 003: unchanged prefix and forbidden Fatal Attraction swap', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/003.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(reasons.length, trace.steps.length, 'every action has an independent sequential rule review');
-  const state = replayTrace(trace);
-  assert.equal(state.turn.color, 'black');
-  assert.equal(state.turn.moveMade, false);
   assert.equal(trace.seed, 860003);
-  assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 17);
-  assert.equal(state.pieces.find(piece => piece.owner === 'black' && piece.royal)?.square, 'b7');
-  assert.equal(state.pieces.find(piece => piece.owner === 'white' && piece.royal)?.square, 'f2');
-  assert.deepEqual(state.effects.map(effect => (effect as { type: string }).type), ['coup', 'crab', 'man-trap']);
-  assert.equal(state.fen, '2b1r3/1p1nk3/bPp5/3pppNq/P3r1p1/1R1PR1P1/3PQK2/n1B2B2 b - - 5 27');
+  let state = createGameState(trace.initial);
+  for (const [index, step] of trace.steps.slice(0, 51).entries()) {
+    const before = structuredClone(state);
+    const result = applyAction(state, step.action);
+    assert.deepEqual(state, before);
+    assert.equal(result.ok, true, reasons[index]);
+    checkState(result.state);
+    assert.equal(digest(result.state, trace.digestVersion ?? 1), step.expected, `unchanged action ${index + 1}`);
+    state = result.state;
+  }
+  const before = structuredClone(state);
+  assert.equal(state.pieces.find(piece => piece.id === 'black-bishop-f8')?.square, 'f8');
+  assert.ok(state.effects.some(effect => (effect as { pieceId?: string }).pieceId === 'black-king-e8'));
+  assert.deepEqual(trace.steps[51].action, { type: 'playCard', cardId: 'holy-quest',
+    cardInstanceId: 'white-hand-0-holy-quest', target: { bishop: 'f8', knight: 'a6' } });
+  const rejected = applyAction(state, trace.steps[51].action);
+  assert.equal(rejected.ok, false, reasons[51]);
+  assert.deepEqual(rejected.state, before);
+  assert.deepEqual(state, before);
+  assert.equal(applyAction(state, { type: 'endTurn' }).ok, true);
 });

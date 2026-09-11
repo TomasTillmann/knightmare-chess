@@ -115,7 +115,7 @@ const rationales = `
 104 White g2-g3 Pawn advances quietly.
 105 White ends with g2 vacant.
 106 Black f8-g7 Bishop moves diagonally to an empty square.
-107 Earthquake rotates counterclockwise: White a-file and Black h-file pawns promote, White a2 to Rook first then Black h4 to Knight; all coordinates stay fixed.
+107 Earthquake rotates clockwise: White a-file and Black h-file pawns promote, White a2 to Rook first then Black h4 to Knight; all coordinates stay fixed.
 108 Black ends; orientation remains 270 and both promotion identities remain Pawns originally.
 109 White e4-g2 Bishop crosses empty f3, moving geometrically independently of orientation.
 110 White ends with g2 Bishop; a2 promoted Rook remains frozen beside b1 magnet.
@@ -250,7 +250,7 @@ test('iteration 106 independently verifies every identity, rule transition, and 
           Object.assign(expected.pieces.find(p => p.id === effect.pieceId)!, { neutral: true, neutralBeforeEffects: false });
         } else if (card.cardId === 'crab') { assert.equal(action.target, 'b2'); effect.pieceId = 'white-pawn-b2'; }
         else if (card.cardId === 'earthquake') {
-          const target = { direction: 'counterclockwise', promotions: [{ square: 'a2', role: 'rook' }, { square: 'h4', role: 'knight' }] };
+          const target = { direction: 'clockwise', promotions: [{ square: 'a2', role: 'rook' }, { square: 'h4', role: 'knight' }] };
           assert.deepEqual(action.target, target); Object.assign(effect, { direction: target.direction, target });
           expected.orientation = 270;
           Object.assign(expected.pieces.find(p => p.id === 'white-pawn-a2')!, { role: 'rook', promoted: true });

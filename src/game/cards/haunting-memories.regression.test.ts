@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyAction } from '../reducer.js';
+import { applyAction, cardPlayTargets } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { GameAction, GameState } from '../types.js';
+import type { Color, GameAction, GameState } from '../types.js';
 
 const fen = '4k3/pp6/8/8/8/8/PPP5/4K3 w - - 0 1';
 function act(state: GameState, action: GameAction): GameState {
@@ -20,20 +20,25 @@ test('an invalid copy with no declaration preserves the complete state', () => {
   assert.deepEqual(state, snapshot);
 });
 
-function fanaticSource(): GameState {
-  let state = createGameState({ fen, hands: { white: ['fanatic', 'haunting-memories'], black: ['haunting-memories'] } });
-  state = act(state, { type: 'playCard', cardId: 'fanatic', target: 'a2' });
+function fanaticSource(owner: Color = 'white'): GameState {
+  const opponent = owner === 'white' ? 'black' : 'white';
+  let state = createGameState({ fen: '4k3/ppp5/8/8/8/8/PPP5/4K3 w - - 0 1', turn: owner,
+    hands: { [owner]: ['fanatic', 'haunting-memories'], [opponent]: ['haunting-memories'] } });
+  state = act(state, { type: 'playCard', cardId: 'fanatic', target: owner === 'white' ? 'a2' : 'a7' });
   return act(state, { type: 'endTurn' });
 }
 
-test('a real copy of a copy retains the underlying card text', () => {
-  let state = fanaticSource();
-  state = act(state, { type: 'playCard', cardId: 'haunting-memories', target: 'b7' });
-  state = act(state, { type: 'endTurn' });
-  state = act(state, { type: 'playCard', cardId: 'haunting-memories', target: 'c2' });
-  assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-c2')?.square, 'c5');
-  assert.equal(state.history.at(-1)?.copiedCardId, 'fanatic');
-});
+for (const owner of ['white', 'black'] as const) {
+  test(`${owner} can copy its nonunique card through an opposing copy`, () => {
+    let state = fanaticSource(owner);
+    state = act(state, { type: 'playCard', cardId: 'haunting-memories', target: owner === 'white' ? 'b7' : 'b2' });
+    state = act(state, { type: 'endTurn' });
+    state = act(state, { type: 'playCard', cardId: 'haunting-memories', target: owner === 'white' ? 'c2' : 'c7' });
+    assert.equal(state.pieces.find(piece => piece.id === `${owner}-pawn-${owner === 'white' ? 'c2' : 'c7'}`)?.square,
+      owner === 'white' ? 'c5' : 'c4');
+    assert.equal(state.history.at(-1)?.copiedCardId, 'fanatic');
+  });
+}
 
 test('a rejected declaration does not replace the source declaration', () => {
   let state = fanaticSource();
@@ -60,10 +65,52 @@ test('a physical copied card stays Haunting Memories in discard', () => {
   assert.equal(state.players.white.discard[0]?.cardId, 'fanatic');
 });
 
-function guardianSource(): GameState {
-  let state = createGameState({ fen, hands: { white: ['guardian', 'haunting-memories'], black: ['haunting-memories'] } });
-  state = act(state, { type: 'playCard', cardId: 'guardian', target: [{ from: 'a2', to: 'a3' }] });
+function guardianSource(owner: Color = 'white'): GameState {
+  const opponent = owner === 'white' ? 'black' : 'white';
+  let state = createGameState({
+    fen: owner === 'white' ? '4k3/p4p2/8/7B/8/8/PP6/4K3 w - - 0 1' : '4k3/pp6/8/8/7b/8/P4P2/4K3 b - - 0 1',
+    hands: { [owner]: ['guardian', 'haunting-memories'], [opponent]: ['haunting-memories'] },
+  });
+  state = act(state, { type: 'playCard', cardId: 'guardian', target: [{ from: owner === 'white' ? 'a2' : 'a7', to: owner === 'white' ? 'a3' : 'a6' }] });
   return act(state, { type: 'endTurn' });
+}
+
+for (const owner of ['white', 'black'] as const) {
+  for (const fizzles of [false, true]) {
+    test(`${owner} cannot copy its unique card through a ${fizzles ? 'fizzled' : 'successful'} opposing copy`, () => {
+      let state = guardianSource(owner);
+      const opponent = state.turn.color;
+      const physical = structuredClone(state.players[opponent].hand[0]);
+      state = act(state, { type: 'playCard', cardId: 'haunting-memories', target: [{
+        from: owner === 'white' ? (fizzles ? 'f7' : 'a7') : (fizzles ? 'f2' : 'a2'),
+        to: owner === 'white' ? (fizzles ? 'f6' : 'a6') : (fizzles ? 'f3' : 'a3'),
+      }] });
+      assert.equal(state.history.at(-1)?.type, fizzles ? 'cardFizzled' : 'cardPlayed');
+      assert.equal(state.history.at(-1)?.copiedCardId, 'guardian');
+      assert.deepEqual(state.players[opponent].discard, [physical]);
+      state = act(state, { type: 'endTurn' });
+      const snapshot = structuredClone(state);
+      const result = applyAction(state, { type: 'playCard', cardId: 'haunting-memories', target: [{
+        from: owner === 'white' ? 'b2' : 'b7', to: owner === 'white' ? 'b3' : 'b6',
+      }] });
+      assert.equal(result.ok, false);
+      assert.deepEqual(result.state, snapshot);
+      assert.deepEqual(state, snapshot);
+      assert.deepEqual(cardPlayTargets(state, 'haunting-memories'), []);
+    });
+  }
+
+  test(`${owner} cannot directly copy its own unique Guardian`, () => {
+    let state = guardianSource(owner);
+    state = act(state, { type: 'move', from: owner === 'white' ? 'a7' : 'a2', to: owner === 'white' ? 'a6' : 'a3' });
+    state = act(state, { type: 'endTurn' });
+    const snapshot = structuredClone(state);
+    const result = applyAction(state, { type: 'playCard', cardId: 'haunting-memories', target: [{
+      from: owner === 'white' ? 'b2' : 'b7', to: owner === 'white' ? 'b3' : 'b6',
+    }] });
+    assert.equal(result.ok, false);
+    assert.deepEqual(result.state, snapshot);
+  });
 }
 
 test('an opponent unique Guardian can be copied with its move target', () => {
@@ -71,16 +118,6 @@ test('an opponent unique Guardian can be copied with its move target', () => {
   state = act(state, { type: 'playCard', cardId: 'haunting-memories', target: [{ from: 'a7', to: 'a6' }] });
   assert.equal(state.pieces.find(piece => piece.id === 'black-pawn-a7')?.square, 'a6');
   assert.equal(state.turn.moveMade, true);
-});
-
-test('a unique card from the copying players own deck remains forbidden', () => {
-  let state = guardianSource();
-  state = act(state, { type: 'move', from: 'b7', to: 'b6' });
-  state = act(state, { type: 'endTurn' });
-  const snapshot = structuredClone(state);
-  const result = applyAction(state, { type: 'playCard', cardId: 'haunting-memories', target: [{ from: 'b2', to: 'b3' }] });
-  assert.equal(result.ok, false);
-  assert.deepEqual(result.state, snapshot);
 });
 
 function twoPacifisms(): GameState {

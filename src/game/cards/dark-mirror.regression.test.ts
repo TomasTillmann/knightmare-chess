@@ -114,7 +114,8 @@ test('seeded malformed and illegal Dark Mirror targets are atomic', () => {
   assert.deepEqual(cardPlayTargets(state, 'dark-mirror'), [[{ from: 'd4', to: 'c3' }]]);
 });
 
-test('Dark Mirror capture opens the immediate opponent Revenge response', () => {
+// KC6_card2 requires a Pawn capture without a card.
+test('Dark Mirror capture does not open the opponent Revenge response', () => {
   let state = createGameState({
     fen: '7k/8/8/8/3PP3/2p5/8/K7 w - - 0 1',
     hands: { white: ['dark-mirror'], black: ['revenge'] },
@@ -122,10 +123,10 @@ test('Dark Mirror capture opens the immediate opponent Revenge response', () => 
   state = transition(state, {
     type: 'playCard', cardId: 'dark-mirror', target: [{ from: 'd4', to: 'c3' }],
   });
-  assert.deepEqual(cardPlayTargets(state, 'revenge'), ['c3', 'e4']);
-  state = transition(state, { type: 'playCard', cardId: 'revenge', target: 'e4' });
-  assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-e4')?.zone, 'captured');
-  assert.deepEqual(state.history.slice(-2).map(event => event.cardId), ['dark-mirror', 'revenge']);
+  assert.deepEqual(cardPlayTargets(state, 'revenge'), []);
+  state = transition(state, { type: 'playCard', cardId: 'revenge', target: 'e4' }, false);
+  assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-e4')?.zone, 'board');
+  assert.deepEqual(state.history.map(event => event.cardId), ['dark-mirror']);
 });
 
 test('Pacifism and Crab persist across turns and each blocks its Pawn from Dark Mirror', () => {
@@ -166,7 +167,7 @@ test('replay is deterministic across mixed ordinary and card turns', () => {
     { type: 'endTurn' },
   ];
   const replay = () => actions.reduce(
-    (state, action) => transition(state, action),
+    (state, action) => transition(state, action, action.type !== 'playCard' || action.cardId !== 'revenge'),
     createGameState({
       fen: '7k/8/8/8/3PP3/2p5/8/K7 w - - 0 1',
       hands: { white: ['dark-mirror'], black: ['revenge'] },

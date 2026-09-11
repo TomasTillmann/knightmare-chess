@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { applyAction, isKingInCheck } from '../reducer.js'
 import { createGameState } from '../state.js'
-import { checkState, digest, type RandomTrace } from './random-campaign.js'
+import { checkState, digest, rejectPendingCancellation, type RandomTrace } from './random-campaign.js'
 
 // Rules §§8–11, 17.1 and cards.md; catalog supplies printed timing.
 // Review stops at the first invalid history event, action 65. Artifact actions 66–107
@@ -73,10 +73,12 @@ const review = [
   '62. Ng5-f7 is a normal empty knight jump that checks Kd6; White f1 remains safe.',
   '63. End White checking turn; Black may answer check with a move or eligible card.',
   '64. Kd6-e5 remains attacked by Nf7, so §11.6 requires same-turn rescue. Rebirth can legally relocate that enemy knight to vacant starting square g1; the move is provisional, clocks advance and pendingRescue is present.',
-  '65. White Chaos is an immediate opponent-move reaction with unused allowance. It restores Black king d6, clocks 3/16, and a replacement opportunity banning d6-e5. White f1 stays safe and Kd5 is a different escape, so Chaos succeeds, spends/draws once and must record cardPlayed rather than cardFizzled SELF_CHECK.',
+  '65. White Chaos is premature under FAQ p.16: Black has not completed the Rebirth rescue required by §11.6. Reject INVALID_TIMING without changing the pending move or resources.',
 ]
 
-test('iteration 015: Chaos cancellation of a provisional check escape is successful, not a self-check fizzle', () => {
+// F4 / FAQ p.16: only actions 1–64 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 65; original artifact hashes remain unchanged.
+test('iteration 015: Chaos must wait for the provisional check escape to complete', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/015.json', import.meta.url), 'utf8')) as RandomTrace
   assert.equal(review.length, 65)
   assert.ok(review.every((rationale, index) => rationale.startsWith(`${index + 1}. `)))
@@ -98,27 +100,5 @@ test('iteration 015: Chaos cancellation of a provisional check escape is success
   assert.ok(rescue.ok, 'action 64 has a real same-turn card rescue')
   assert.equal(isKingInCheck(rescue.state, 'black'), false)
   assert.ok(!rescue.state.pendingRescue)
-  const result = applyAction(state, trace.steps[64]!.action)
-  assert.ok(result.ok)
-  const final = result.state
-  checkState(final)
-  assert.equal(final.fen, 'b4bnr/p1pP1N2/np1kp1p1/1B3p1p/Q6P/q3P1r1/PP1P1PP1/RNB2K1R b - - 3 16')
-  assert.equal(final.pieces.find(piece => piece.id === 'black-king-e8')?.square, 'd6')
-  assert.equal(final.pieces.find(piece => piece.id === 'white-knight-g1')?.square, 'f7')
-  assert.equal(final.pieces.find(piece => piece.id === 'black-pawn-d7')?.zone, 'captured')
-  assert.equal(isKingInCheck(final, 'white'), false)
-  assert.deepEqual(final.chaosForbidden, { player: 'black', movement: 'black-king-e8:d6:e5' })
-  assert.equal(final.turn.color, 'black')
-  assert.equal(final.turn.phase, 'beforeMove')
-  assert.equal(final.turn.moveMade, false)
-  assert.deepEqual(final.turn.cardPlays, { white: 1, black: 0 })
-  assert.ok(!final.pendingRescue)
-  assert.equal(final.players.white.deck.length, 73)
-  assert.deepEqual(final.players.white.discard.map(card => card.cardId), ['lost-castle', 'chaos'])
-  assert.equal(final.players.white.hand.length, 5)
-  assert.equal(final.players.white.hand.at(-1)?.cardId, 'forbidden-city')
-  const escape = applyAction(final, { type: 'move', from: 'd6', to: 'd5' })
-  assert.ok(escape.ok, 'Chaos does not create board mate: Kd5 escapes the knight')
-  assert.equal(isKingInCheck(escape.state, 'black'), false)
-  assert.equal(final.history.at(-1)?.type, 'cardPlayed', review[64])
+  rejectPendingCancellation(state, trace.steps[64]!.action, [{"type":"playCard","cardId":"rebirth","cardInstanceId":"black-hand-2-rebirth","target":[{"from":"f7","to":"g1"}]}]);
 })

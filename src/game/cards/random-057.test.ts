@@ -82,7 +82,7 @@ const rationales = [
   '71. Qh4-h2 crosses empty h3 and checks Ke2 along empty g2,f2.',
   '72. Black ends; White receives its checked turn.',
   '73. Ke2-e1 escapes the h2 rank attack; e1 is not attacked by Nd2.',
-  '74. Clockwise Earthquake makes White advance east and Black west; black a7 pawn promotes to bishop, trap stays a2.',
+  '74. Counterclockwise Earthquake makes White advance east and Black west; black a7 pawn promotes to bishop, trap stays a2.',
   '75. White ends with orientation 90 and promoted bishop identity retained.',
   '76. Qh2xg3 captures white g-pawn diagonally; promotion elsewhere remains unchanged.',
   '77. Black ends after Qxg3.',
@@ -102,7 +102,7 @@ const rationales = [
   '91. White ends its legal king capture; Nd2 stays captured.',
   '92. Rf8-g8 moves one square, leaving Kd8 safe.',
   '93. Black ends after Rg8.',
-  '94. e3-f3 is the white pawn one-square forward move under clockwise orientation; no capture.',
+  '94. e3-f3 is the white pawn one-square forward move under counterclockwise orientation; no capture.',
   '95. White ends after f3, orientation unchanged.',
   '96. Guardian replaces Black move: c4-b4 advances west one square; no follower occupies d4 and no en passant arises.',
   '97. Black ends its Guardian move.',
@@ -129,7 +129,7 @@ const rationales = [
   '118. Rg6-d6 crosses empty f6,e6 and is a different permitted move; black bishop d7 shields Kd8.',
   '119. White ends its replacement move, clearing cancellation restriction and allowances.',
   '120. Rc6-c3 crosses empty c5,c4; Kd8 remains shielded by Bd7.',
-  '121. Black ends: White begins safe, trap a2 and clockwise Earthquake remain active; 50 regular move commands reviewed.',
+  '121. Black ends: White begins safe, trap a2 and counterclockwise Earthquake remain active; 50 regular move commands reviewed.',
 ];
 
 const xy = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1] as const;
@@ -282,7 +282,7 @@ test('iteration 057 independently reviews its deterministic campaign trace', () 
     if (number >= 15 && number < 18) expectedEffects.push({ type: 'dungeon', owner: 'white', player: 'black', pieceId: 'black-pawn-e7' });
     if (number >= 24) expectedEffects.push({ type: 'man-trap', owner: 'white', card: { id: 'white-hand-1-man-trap', cardId: 'man-trap' }, square: 'a2' });
     if (number >= 50 && number < 52) expectedEffects.push({ type: 'panic', owner: 'black', player: 'white', durationMs: 15000 });
-    if (number >= 74) expectedEffects.push({ type: 'earthquake', owner: 'white', card: { id: 'white-hand-2-earthquake', cardId: 'earthquake' }, direction: 'clockwise', target: { direction: 'clockwise', promotions: [{ square: 'a7', role: 'bishop' }] } });
+    if (number >= 74) expectedEffects.push({ type: 'earthquake', owner: 'white', card: { id: 'white-hand-2-earthquake', cardId: 'earthquake' }, direction: 'counterclockwise', target: { direction: 'counterclockwise', promotions: [{ square: 'a7', role: 'bishop' }] } });
     assert.deepEqual(after.effects, expectedEffects);
     const ep = number >= 3 && number <= 4 ? [{ target: 'e6', pawnId: 'black-pawn-e7' }]
       : number >= 30 && number <= 31 ? [{ target: 'b6', pawnId: 'black-pawn-b7' }]

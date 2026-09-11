@@ -220,9 +220,9 @@ for (const direction of ['clockwise', 'counterclockwise'] as const) {
     assert.notEqual(state.orientation, 0);
     const victim = state.pieces.find(piece => piece.id === 'black-pawn-d4')!;
     assert.ok(victim.square);
-    assert.equal(victim.square, 'd4', 'Earthquake retains table coordinates');
-    assert.equal(state.orientation, direction === 'clockwise' ? 90 : 270);
-    if (direction === 'counterclockwise') {
+    assert.equal(victim.square, 'd4', 'Earthquake retains board-attached coordinates');
+    assert.equal(state.orientation, direction === 'clockwise' ? 270 : 90);
+    if (direction === 'clockwise') {
       const result = applyAction(state, { type: 'playCard', cardId: 'betrayal', target: { pieceId: target.pieceId, to: victim.square } });
       assert.equal(result.ok, false);
       assert.deepEqual(result.state, state);

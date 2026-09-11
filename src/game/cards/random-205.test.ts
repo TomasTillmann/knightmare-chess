@@ -105,7 +105,7 @@ const rationales = [
   '93. End White turn after Qc4.',
   '94. a8-a6: Rook traverses empty a7.',
   '95. Black Fortification marks adjacent boundary b4-c3, retains card and draws Hidden Passage; no clocks or board change.',
-  '96. White Vulture reacts to Black card, takes last eligible discard Siege; discard top Breakthrough, spend Vulture, draw Tournament, retain wall.',
+  '96. FAQ 50: White Vulture takes the immediately preceding Fortification, leaving Siege discarded and a cancelable wall proxy; discard top Breakthrough, spend Vulture, draw Tournament.',
   '97. End Black turn with both card allowances reset.',
   '98. c4-e6: Queen traverses empty d5, checks adjacent Black King f6.',
   '99. End White turn; Black has Kxe6 escape.',
@@ -244,8 +244,8 @@ function rescued(actual:GameState,expected:GameState,n:number){
     assert.deepEqual(a.shieldMove,e.shieldMove);
     assert.deepEqual(a.cardResponse,{player:'black',historyLength:a.history.length});
     const reveal=immutable(a,{type:'revealAbduction'});assert.ok(reveal.ok);
-    const revealed=structuredClone(a);revealed.pendingAbduction!.phase='recall';delete revealed.fogCheckpoint;
-    assert.deepEqual(reveal.state,revealed,'reveal opens recall and closes immediate Fog cancellation');a=reveal.state;
+    const revealed=structuredClone(a);revealed.pendingAbduction!.phase='recall';
+    assert.deepEqual(reveal.state,revealed,'reveal opens recall and preserves immediate Fog cancellation');a=reveal.state;
     const timeout=immutable(a,{type:'abductionTimeout'});assert.ok(timeout.ok);a=timeout.state;
     Object.assign(at(e.pieces,'e6')!,{square:null,zone:'captured',capturedBy:'black'});
     e.fen=`${board(e.pieces)} w - - 0 24`;
@@ -313,7 +313,11 @@ test('iteration 205: independent ordered board, cards, history, FEN, royal and r
       const definition=CARD_CATALOG[action.cardId]!;
       assert.ok(definition.timing.includes(n===96?'afterOpponentCard':e.turn.phase));
       if(n===96){assert.deepEqual(e.cardResponse,{player:'black',historyLength:e.history.length});
-        const stolen=e.players.black.discard.pop()!;assert.deepEqual(stolen,{id:'black-deck-4-siege',cardId:'siege'});
+        assert.deepEqual(e.players.black.discard.at(-1),{id:'black-deck-4-siege',cardId:'siege'});
+        const wall=e.effects[0] as {type:string;card:{id:string;cardId:string;proxy?:true}};
+        assert.equal(wall.type,'fortification');
+        const stolen=wall.card;assert.deepEqual(stolen,{id:'black-deck-1-fortification',cardId:'fortification'});
+        wall.card={id:'vulture-proxy-50-black-deck-1-fortification',cardId:'fortification',proxy:true};
         const top=e.players.white.deck.shift()!;assert.equal(top.cardId,'breakthrough');e.players.white.discard.push(top);
         // Standard replacement is drawn before adding the extra stolen physical card.
         const card=spend(e,action,owner);assert.equal(card.cardId,'vulture');e.players.white.hand.push(stolen);

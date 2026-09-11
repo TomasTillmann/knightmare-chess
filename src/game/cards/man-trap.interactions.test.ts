@@ -133,7 +133,7 @@ for (const trapFirst of [false, true]) {
 }
 
 for (const trapFirst of [false, true]) {
-  test(`later ${trapFirst ? 'Pacifism prevents' : 'Man-Trap permits'} the trap capture`, () => {
+  test(`Pacifism ${trapFirst ? 'after' : 'before'} Man-Trap prevents capture and triggering (FAQ 40/46)`, () => {
     let state: GameState;
     if (trapFirst) {
       state = vacated(['pacifism']);
@@ -151,8 +151,8 @@ for (const trapFirst of [false, true]) {
       state = turn(move(state, 'd4', 'f3'));
     }
     state = move(state, 'd5', 'd4');
-    assert.equal(zone(state, 'black-rook-d5'), trapFirst ? 'board' : 'captured');
-    assert.equal(traps(state).length, 0, 'the next opposing arrival spends the trap');
+    assert.equal(zone(state, 'black-rook-d5'), 'board');
+    assert.equal(traps(state).length, 1, 'a Pacifist does not set off the trap');
   });
 }
 
@@ -172,7 +172,7 @@ for (const royalArrives of [false, true]) {
     state = turn(arm(state));
     state = move(state, from, 'd4');
     assert.equal(zone(state, mover), royalArrives ? 'board' : 'captured');
-    assert.equal(traps(state).length, 0);
+    assert.equal(traps(state).length, royalArrives ? 1 : 0);
     assert.equal(zone(state, royalArrives ? 'white-pawn-d4' : 'white-knight-d4'), 'captured');
   });
 }

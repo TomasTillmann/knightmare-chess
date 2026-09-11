@@ -248,11 +248,11 @@ test('Crab, Earthquake, and Pacifism compose across real turns', () => {
   state = succeed(state, { type: 'endTurn' })
   state = succeed(state, { type: 'move', from: 'h8', to: 'g8' })
   assert.ok(cardPlayTargets(state, 'earthquake').some(target =>
-    (target as { direction?: unknown; promotions?: unknown[] }).direction === 'clockwise'
+    (target as { direction?: unknown; promotions?: unknown[] }).direction === 'counterclockwise'
       && (target as { promotions?: unknown[] }).promotions?.length === 0,
   ))
   state = succeed(state, {
-    type: 'playCard', cardId: 'earthquake', target: { direction: 'clockwise', promotions: [] },
+    type: 'playCard', cardId: 'earthquake', target: { direction: 'counterclockwise', promotions: [] },
   })
   assert.equal(state.orientation, 90)
   state = succeed(state, { type: 'endTurn' })

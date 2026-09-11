@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 import { applyAction, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { Color, GameAction, GameState, PieceState, SquareName } from '../types.js';
@@ -205,6 +205,8 @@ function compare(actual: GameState, expected: GameState, n: number) {
   assert.deepEqual(actual, snapshot, 'royal queries are immutable');
 }
 
+// F4 / FAQ p.16: only actions 1–17 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 18; original artifact hashes remain unchanged.
 test('iteration 185 independently reviewed physical, temporal and card oracle', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/185.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(rationales.length, 111);
@@ -215,7 +217,7 @@ test('iteration 185 independently reviewed physical, temporal and card oracle', 
   const saved = new Map<number, GameState>();
   let shield: GameState['shieldMove'];
   let moves = 0, cards = 0, rescueProbes = 0;
-  for (const [i, step] of trace.steps.entries()) {
+  for (const [i, step] of trace.steps.slice(0, 17).entries()) {
     const n = i + 1, action = step.action;
     assert.ok(rationales[i]!.startsWith(`${n} `));
     const before = structuredClone(expected), actor = expected.turn.color;
@@ -360,12 +362,11 @@ test('iteration 185 independently reviewed physical, temporal and card oracle', 
     }
     saved.set(n, structuredClone(expected));
   }
-  assert.deepEqual([moves, cards, rescueProbes], [50, 9, 2]);
-  assert.equal(actual.fen, '1rbr4/1N1np3/5n1b/pP3Ppk/P2p2P1/1P1Bp1RP/1R1PQ3/4K2N w - - 0 27');
+  rejectPendingCancellation(actual, trace.steps[17]!.action, [{"type":"playCard","cardId":"coup","cardInstanceId":"black-hand-0-coup","target":"a7"}]);
 });
 
 test('iteration 185 deterministic replay', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/185.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.ok(trace);
-  replayTrace(trace);
+  rejectPendingCancellation(replayTrace(trace, 18), trace.steps[17]!.action, [{"type":"playCard","cardId":"coup","cardInstanceId":"black-hand-0-coup","target":"a7"}]);
 });

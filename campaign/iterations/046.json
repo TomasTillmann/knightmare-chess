@@ -874,7 +874,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "black-deck-3-earthquake",
         "target": {
-          "direction": "counterclockwise",
+          "direction": "clockwise",
           "promotions": [
             {
               "square": "a4",
@@ -951,7 +951,7 @@
       "action": {
         "type": "revealAbduction"
       },
-      "expected": "2d71e515884ab497a23a374b3373ab387dd8c8247e7f20a7cf01614d7926daff"
+      "expected": "93868f372b14db53ed20d75cb01cdc6aef37bede0436cec80299637838a9d002"
     },
     {
       "action": {
@@ -962,7 +962,7 @@
         "square": "c2",
         "pieceId": "white-pawn-c2"
       },
-      "expected": "4bcbce0718899b60360e25666ac5a196effb705148fa2dbd20b67a1b04f53863"
+      "expected": "0bae86ac5b821655fcc848213285107e7dda55c634d784a71fbd8ff193b2e670"
     },
     {
       "action": {

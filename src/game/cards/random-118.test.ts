@@ -112,7 +112,7 @@ const rationale = `
 98. Rb7-f7 crosses c7,d7,e7, all empty.
 99. Black ends; no obligations are due at White's start.
 100. b2-b4 crosses vacant b3 and creates the b3 opportunity.
-101. Earthquake rotates orientation counterclockwise to 270: Black Ph4 promotes to Rook first, White Pa4 to Knight second; fixed squares stay put, EP clears, draw Dubbing.
+101. Earthquake rotates orientation clockwise to 270: Black Ph4 promotes to Rook first, White Pa4 to Knight second; fixed squares stay put, EP clears, draw Dubbing.
 102. White ends; both promotions and changed Pawn directions persist.
 103. Na6-c7 is a quiet jump unaffected by orientation.
 104. Black ends; no captures and no new promotions.
@@ -264,15 +264,15 @@ test('iteration 118: 115 independently reviewed actions and complete physical st
         if (card.cardId === 'curse') { assert.equal(action.target, 'h1'); effect.pieceId = 'white-rook-h1'; }
         if (card.cardId === 'earthquake') {
           const expectedTarget = index === 100
-            ? { direction: 'counterclockwise', promotions: [{ square: 'h4', role: 'rook' }, { square: 'a4', role: 'knight' }] }
-            : { direction: 'counterclockwise', promotions: [] };
+            ? { direction: 'clockwise', promotions: [{ square: 'h4', role: 'rook' }, { square: 'a4', role: 'knight' }] }
+            : { direction: 'clockwise', promotions: [] };
           assert.deepEqual(action.target, expectedTarget);
           orientation = (orientation + 270) % 360; ep = []; fenEp = '-';
           for (const promotion of expectedTarget.promotions) {
             const p = at(promotion.square)!; assert.equal(p.role, 'pawn');
             p.role = promotion.role as Role; p.promoted = true;
           }
-          effect.direction = 'counterclockwise'; effect.target = expectedTarget;
+          effect.direction = 'clockwise'; effect.target = expectedTarget;
         }
         effects.push(effect);
       } else {

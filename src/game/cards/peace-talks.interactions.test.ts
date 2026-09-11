@@ -94,8 +94,8 @@ test('Peace Talks reverses the rotation when it cancels Earthquake', () => {
     type: 'earthquake',
     owner: 'black',
     card: { id: 'black-effect-earthquake', cardId: 'earthquake' },
-    direction: 'clockwise',
-    target: { direction: 'clockwise', promotions: [] },
+    direction: 'counterclockwise',
+    target: { direction: 'counterclockwise', promotions: [] },
   };
   const result = peaceTalks(state, 'black-effect-earthquake');
   assert.equal(result.ok, true);

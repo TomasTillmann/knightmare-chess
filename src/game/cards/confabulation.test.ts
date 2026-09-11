@@ -15,6 +15,24 @@ const rejected = (state: any, target: any) => { const before = structuredClone(s
 
 describe('Confabulation continuing-effect direct mate (§11.4)', () => {
   for (const fixture of [
+    { color: 'white', previous: 'black', fen: 'k6B/pp6/8/8/3n4/5p2/8/3K3R b - - 0 1', setupFrom: 'd4', setupTo: 'f3', from: 'h1', to: 'h8' },
+    { color: 'black', previous: 'white', fen: '3k3r/8/5P2/3N4/8/8/PP6/K6b w - - 0 1', setupFrom: 'd5', setupTo: 'f6', from: 'h8', to: 'h1' },
+  ] as const) {
+    it(`${fixture.color}: Haunting Memories retains copied Confabulation through direct mate`, () => {
+      const state = game({ fen: fixture.fen, hands: { [fixture.previous]: ['confabulation'], [fixture.color]: ['haunting-memories'] }, decks: { white: [], black: [] } });
+      const copied = state.players[fixture.color].hand[0];
+      const previous = accepted(play(state, [{ from: fixture.setupFrom, to: fixture.setupTo }]));
+      const ready = accepted(applyAction(previous, { type: 'endTurn' }));
+      const played = accepted(applyAction(ready, { type: 'playCard', cardId: 'haunting-memories', target: [{ from: fixture.from, to: fixture.to }] }));
+      assert.equal(played.history.at(-1)?.type, 'cardPlayed');
+      const ended = accepted(applyAction(played, { type: 'endTurn' }));
+      assert.deepEqual(ended.outcome, { winner: fixture.color, reason: 'checkmate' });
+      assert.deepEqual(ended.effects.find((effect: any) => effect.type === 'confabulation' && effect.owner === fixture.color)?.card, copied);
+      assert.equal(ended.players[fixture.color].discard.some((card: any) => card.id === copied.id), false);
+    });
+  }
+
+  for (const fixture of [
     { color: 'white', fen: 'k6B/pp6/8/8/8/8/8/4K2R w - - 0 1', queenFen: 'k6Q/pp6/8/8/8/8/8/4K3 b - - 0 1', from: 'h1', to: 'h8' },
     { color: 'black', fen: '4k2r/8/8/8/8/8/PP6/K6b b - - 0 1', queenFen: '4k3/8/8/8/8/8/PP6/K6q w - - 0 2', from: 'h8', to: 'h1' },
   ] as const) {

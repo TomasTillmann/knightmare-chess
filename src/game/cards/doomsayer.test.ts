@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction, boardFen, isKingInCheck } from '../reducer.js';
+import { applyAction, boardFen, doomsayerTargets, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { CardInstance, Color, PieceState, Role } from '../types.js';
 
@@ -169,6 +169,127 @@ function deepFreeze<T>(value: T): T {
   }
   return value;
 }
+
+describe('Doomsayer transformed piece names (FAQ 8)', () => {
+  function transformedState(transformed: 'crab' | 'prince', color: Color = 'white', protection?: 'pacifism' | 'truce'): State {
+    const white = color === 'white';
+    const opponent = white ? 'black' : 'white';
+    const cardId = transformed === 'crab' ? 'crab' : 'coup';
+    let state = createGameState({
+      fen: white ? '7k/8/8/8/8/2P5/5P2/K7 w - - 0 1' : 'k7/5p2/2p5/8/8/8/8/7K b - - 0 1',
+      hands: { [color]: [cardId, ...(protection ? [protection] : [])], [opponent]: [CARD] },
+      decks: { [opponent]: ['fanatic'] },
+    });
+    const actions: Action[] = [
+      { type: 'move', from: white ? 'a1' : 'a8', to: white ? 'a2' : 'a7' },
+      { type: 'playCard', cardId, target: transformed === 'crab' ? (white ? 'c3' : 'c6') : (white ? 'f2' : 'f7') },
+      { type: 'endTurn' },
+      { type: 'move', from: white ? 'h8' : 'h1', to: white ? 'h7' : 'h2' },
+    ];
+    if (protection) {
+      actions.push({ type: 'endTurn' });
+      if (protection === 'pacifism') actions.push({ type: 'playCard', cardId: protection,
+        target: transformed === 'crab' ? (white ? 'c3' : 'c6') : (white ? 'a2' : 'a7') });
+      actions.push({ type: 'move', from: white ? 'a2' : 'a7', to: white ? 'a3' : 'a6' });
+      if (protection === 'truce') actions.push({ type: 'playCard', cardId: protection });
+      actions.push({ type: 'endTurn' }, { type: 'move', from: white ? 'h7' : 'h2', to: white ? 'h8' : 'h1' });
+    }
+    actions.push({ type: 'playCard', cardId: CARD });
+    for (const action of actions) state = ok(applyAction(state, action));
+    return state;
+  }
+
+  for (const transformed of ['crab', 'prince'] as const) {
+    for (const color of ['white', 'black'] as const) {
+      it(`accepts ${color}'s ${transformed}, capturing and discarding exact physical identities atomically`, () => {
+        const state = deepFreeze(transformedState(transformed, color));
+        const snapshot = structuredClone(state);
+        const opponent = color === 'white' ? 'black' : 'white';
+        const square = transformed === 'crab' ? (color === 'white' ? 'c3' : 'c6') : (color === 'white' ? 'a2' : 'a7');
+        const pieceId = transformed === 'crab' ? `${color}-pawn-${square}` : `${color}-king-${color === 'white' ? 'a1' : 'a8'}`;
+        const effectId = `${opponent}-hand-0-doomsayer`;
+        const action = deepFreeze({ type: 'namePiece', speaker: color, name: transformed,
+          losses: [{ effectId, pieceId }] } as Action);
+        const actionSnapshot = structuredClone(action);
+        const result = ok(applyAction(state, action));
+        assert.deepEqual(pieceById(result, pieceId), { ...pieceAt(state, square), square: null, zone: 'captured', capturedBy: opponent,
+          ...(transformed === 'crab' ? { capturedAtPly: color === 'white' ? 1 : 2 } : {}) });
+        assert.deepEqual(doomsayerTargets(state, color, transformed as Parameters<typeof doomsayerTargets>[2]).map(piece => piece.id), [pieceId]);
+        assert.deepEqual(doomsayers(result), []);
+        assert.equal(result.pendingDoomsayer, null);
+        assert.deepEqual(result.players[opponent].discard, [{ id: effectId, cardId: CARD }]);
+        assert.deepEqual(result.players[opponent].hand, [{ id: `${opponent}-deck-0-fanatic`, cardId: 'fanatic' }]);
+        assert.deepEqual(result.history.at(-1), { type: 'pieceNamed', speaker: color, name: transformed,
+          capturedIds: [pieceId], resolvedEffectIds: [effectId] });
+        assert.deepEqual(result.pieces.filter(piece => piece.id !== pieceId), state.pieces.filter(piece => piece.id !== pieceId));
+        assert.deepEqual(state, snapshot);
+        assert.deepEqual(action, actionSnapshot);
+      });
+    }
+
+    it(`rejects wrong, missing, malformed and wrong-card losses when naming ${transformed}`, () => {
+      const state = deepFreeze(transformedState(transformed));
+      const snapshot = structuredClone(state);
+      rejectedName(state, 'white', transformed, ['f2'], transformed === 'crab' ? 'WRONG_ROLE' : 'INVALID_TARGET');
+      if (transformed === 'prince') rejectedName(state, 'white', transformed, ['c3'], 'WRONG_ROLE');
+      rejectedName(state, 'white', transformed, []);
+      rejectedName(state, 'white', transformed.toUpperCase(), []);
+      rejectedResult(applyUnknown(state, { type: 'namePiece', speaker: 'white', name: transformed,
+        losses: [{ effectId: 'black-deck-0-fanatic', pieceId: transformed === 'crab' ? 'white-pawn-c3' : 'white-king-a1' }] }), state, 'INVALID_TARGET');
+      assert.deepEqual(state, snapshot);
+    });
+
+    it(`accepts ${transformed} with no eligible piece and retains the physical Doomsayer`, () => {
+      const state = deepFreeze(active());
+      const snapshot = structuredClone(state);
+      const result = ok(name(state, 'black', transformed, []));
+      assert.deepEqual(result.pieces, state.pieces);
+      assert.deepEqual(doomsayers(result), doomsayers(state));
+      assert.deepEqual(result.players, state.players);
+      assert.equal(result.pendingDoomsayer, null);
+      assert.deepEqual(state, snapshot);
+    });
+  }
+
+  for (const color of ['white', 'black'] as const) {
+    it(`still captures ${color}'s Crab or ordinary Pawn when Pawn is named`, () => {
+      const state = transformedState('crab', color);
+      for (const square of color === 'white' ? ['c3', 'f2'] : ['c6', 'f7']) {
+        const victim = pieceAt(state, square)!;
+        const result = ok(name(state, color, 'pawn', [square]));
+        assert.deepEqual(pieceById(result, victim.id), { ...victim, square: null, zone: 'captured', capturedBy: color === 'white' ? 'black' : 'white',
+          ...(square.startsWith('c') ? { capturedAtPly: color === 'white' ? 1 : 2 } : {}) });
+      }
+    });
+  }
+
+  it('exempts King and retains Doomsayer when the only Pawn is the Coup King', () => {
+    let state = createGameState({ fen: '7k/8/8/8/8/8/5P2/K7 w - - 0 1', hands: { white: ['coup'], black: [CARD] } });
+    for (const action of [
+      { type: 'move', from: 'a1', to: 'a2' }, { type: 'playCard', cardId: 'coup', target: 'f2' },
+      { type: 'endTurn' }, { type: 'move', from: 'h8', to: 'h7' }, { type: 'playCard', cardId: CARD },
+    ] as Action[]) state = ok(applyAction(state, action));
+    rejectedName(state, 'white', 'king', []);
+    rejectedName(state, 'white', 'pawn', ['f2']);
+    const result = ok(name(state, 'white', 'pawn', []));
+    assert.deepEqual(result.pieces, state.pieces);
+    assert.deepEqual(doomsayers(result), doomsayers(state));
+  });
+
+  it('respects public Pacifism and Truce protection for both transformed names', () => {
+    for (const transformed of ['crab', 'prince'] as const) {
+      for (const protection of ['pacifism', 'truce'] as const) {
+        const state = deepFreeze(transformedState(transformed, 'white', protection));
+        const snapshot = structuredClone(state);
+        rejectedName(state, 'white', transformed, [transformed === 'crab' ? 'c3' : 'a3']);
+        const result = ok(name(state, 'white', transformed, []));
+        assert.deepEqual(result.pieces, state.pieces);
+        assert.deepEqual(doomsayers(result), doomsayers(state));
+        assert.deepEqual(state, snapshot);
+      }
+    }
+  });
+});
 
 describe('Doomsayer printed contract', () => {
   it('has the stable id and display name', () => {
@@ -395,12 +516,14 @@ describe('Doomsayer roles, ownership, and protected identities', () => {
     assert.equal(expectCaptured(before, after, 'a8').owner, 'black');
   });
 
-  it('does not let control of an opponent-owned neutral piece satisfy owned-piece loss', () => {
+  it('requires losing an opponent-owned neutral piece while preserving its original ownership', () => {
     const seeded = active({ fen: '4k3/8/8/8/8/8/8/R3K3 w - - 17 42' });
     const before = updatePiece(seeded, 'a1', { neutral: true });
-    const after = ok(name(before, 'black', 'rook', []));
-    assert.ok(pieceAt(after, 'a1'));
-    assert.equal(doomsayers(after).length, 1);
+    assert.deepEqual(doomsayerTargets(before, 'black', 'rook').map(piece => piece.id), [pieceAt(before, 'a1')!.id]);
+    rejectedResult(name(before, 'black', 'rook', []), before, 'INVALID_TARGET');
+    const after = ok(name(before, 'black', 'rook', ['a1']));
+    assert.equal(expectCaptured(before, after, 'a1').owner, 'white');
+    assert.equal(doomsayers(after).length, 0);
   });
 
   it('never captures a royal non-King-role piece and therefore keeps the effect', () => {

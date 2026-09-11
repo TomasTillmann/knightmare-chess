@@ -31,7 +31,7 @@ const rationales = `
 19. End White's turn; original a2 pawn stays a3.
 20. Original e7 pawn advances to e6; royal b8 knight is unthreatened.
 21. End Black's turn with Prince e8 and royal b8 distinct.
-22. Guardian replaces move with original f2 pawn to f4 via empty f3; optional f1 follower stays; no en passant.
+22. Guardian replaces move with original f2 pawn to f4 via empty f3; optional f1 follower stays; f3 en passant opens.
 23. End White's Guardian turn, consuming the move and card exactly once.
 24. Prince e8 steps to empty e7 with King movement, losing remaining black castling rights; b8 stays royal.
 25. End Black's turn, with capturable Prince e7.
@@ -274,7 +274,7 @@ test('iteration 087 independently models every identity, move, card, clock and r
       if (replacementSteps.has(n)) {
         assert.equal(made,false); made=true;
         half=n===1||pawnReplacementSteps.has(n)?0:half+1;
-        ep=n===82?[{target:'d3',pawnId:'white-pawn-d2'}]:[];
+        ep=n===22?[{target:'f3',pawnId:'white-pawn-f2'}]:n===82?[{target:'d3',pawnId:'white-pawn-d2'}]:[];
         if(actor==='black')full++;
       } else assert.equal(made,true);
     } else if (action.type==='answerAbduction') {

@@ -526,7 +526,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "white-deck-0-earthquake",
         "target": {
-          "direction": "clockwise",
+          "direction": "counterclockwise",
           "promotions": [
             {
               "square": "a7",
@@ -539,13 +539,13 @@
           ]
         }
       },
-      "expected": "0d3f0c47324f6d78ecfe0e61928b129fc1ee2b0c251a1ba04c76a9698babc4dc"
+      "expected": "5f62c8ef8319c9a61de783a0fc522c328e3d352e5608911f38de85fa8d081fbe"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "68f449e97f5997ba6c642f2e25f41679b7d3d36e23cf8fefecd323f487b10338"
+      "expected": "833202bd683c79e022d32a65fe4a1726fc09c0c142e80b3b5d513bbe85b2d17e"
     },
     {
       "action": {
@@ -553,7 +553,7 @@
         "from": "f7",
         "to": "e6"
       },
-      "expected": "14da37a49836061804530de6b2089b6d48dc3a7d9a6b86dc8714e8964981e912"
+      "expected": "fa9b71ddee62d7296f5f9977c7c5ebf9a23e89375cd1ce660b72aacbe5f4f340"
     },
     {
       "action": {
@@ -565,13 +565,13 @@
           "pawn": "d2"
         }
       },
-      "expected": "786b66bf40a713446b70c91df1aeae6012c4e92f54b1f899d5df7edb74454c9e"
+      "expected": "7181ecacb1997b86f7560ff114f1797b372ef5b3c6b3dfda891de8acf7b1fcba"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "3bc63f13efb79c142280271f413e3fdc704c882be32b14589ef1432392c7b3ec"
+      "expected": "3f356eb8e81e687df200c945af15c6ac7232295449356fe141ff755a03b32d20"
     },
     {
       "action": {
@@ -579,13 +579,13 @@
         "from": "h2",
         "to": "f4"
       },
-      "expected": "8f225182877631351c370f9b54a2d90f6c1ffcc37007db3f740cafe3c8ef7642"
+      "expected": "d981bceb9ebadec556a7b3f354691c594e3b417e69a0f410363825b2bebad982"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "b9a09d6030078f3af6af2c5ca5c8413cb3e998c95460d8c69851093d5db390a8"
+      "expected": "ba51b47b924e8f2def28b2f1380a2615053d8cefcb3b2475b55cb60fa0405331"
     },
     {
       "action": {
@@ -593,13 +593,13 @@
         "from": "e5",
         "to": "d4"
       },
-      "expected": "7d4395aabd3aa6c7ac4c14b47f4e732911b01bee07e8d4492133d6f3d9d0399d"
+      "expected": "000660bea9deef8382d52a583e135c54db295e6eac561a61aa0268ed59148d2c"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "2b270512e2885e6cb4e4449a39b2f0367f037835e6a6379f31dafc64eff1ab33"
+      "expected": "faca412c8c71d9b394ca6b04b9d21e0edbacd8753e4459b36834d2d557039ddc"
     },
     {
       "action": {
@@ -607,13 +607,13 @@
         "from": "g1",
         "to": "h3"
       },
-      "expected": "75739f22899fb7ba5ee2294025154bd7d58beba15b8d56a7c9596fa5c8d4d2ed"
+      "expected": "5a7bc605632bb7475125b641e20401aff5ca788a8447dfc1d079299b96ec88c4"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "5ba1dadffaf857a91a05fd8a6aa4be5a0c963ced221b0dc21d1bd9119af5d1a8"
+      "expected": "e581a4bbd21e7a3c404434e27cccaa88b5bb192ad64344dc4a0608c8d8eca3d1"
     },
     {
       "action": {
@@ -621,13 +621,13 @@
         "from": "c7",
         "to": "d8"
       },
-      "expected": "168f90dc172c594d84d645ee72b3fb45b110a939f6d80d07c40ed20ea68a6d1f"
+      "expected": "f2cadb8609fc1ff5df5e088440c436f83ca3beb5a61b0f4fef90934bc34a5618"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "fd506e180ce021feaeb93081e6d1cec1a19e12001334c278799f5a594e6c0140"
+      "expected": "3e9deab9d3ccfe85d7879d72d24ff8e49ae422cfefae3123d3ee6cc1fba805a2"
     },
     {
       "action": {
@@ -635,13 +635,13 @@
         "from": "h3",
         "to": "g5"
       },
-      "expected": "c4cbb0009e494bd3a7ef9367e05bd54c32d44820e0695e202d91850a61d89e01"
+      "expected": "527cab1d95c2192f83bc10c3dd4c07d01eea5d8aaf82c9c61670dee1de036623"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "2710e97352c589cd2cbb2cd2890747bd510a1f05342b314bad3f9009eb654c74"
+      "expected": "2e2324a9b7238add8f0409757d7c509cbb846a45e5cea966160e4db1acfdc49e"
     },
     {
       "action": {
@@ -649,13 +649,13 @@
         "from": "a7",
         "to": "c5"
       },
-      "expected": "e00748a518a7e78ff1c9a493e589d197912188664786c9f86b078a3b8baecd44"
+      "expected": "ace3008d6d76e24c7dd22ac0848e5793dfd0ff2900a7ff278da96ca7f94e2994"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "a0cf0e6bc566772215989f2ba4c7f9e6b367a78181dc13df96c1c12b0d3b9b85"
+      "expected": "60f26740e8a30b4f52e4aa4fdfc91fae39d2c58eeca93da7fd0aecad960a04d4"
     },
     {
       "action": {
@@ -663,13 +663,13 @@
         "from": "g5",
         "to": "h3"
       },
-      "expected": "7b4c0f3e9331f669b317efde920991a62d5a908ae38a25838c9135662859993f"
+      "expected": "d41758d3e20fe4efe68742d1d29f6267e4e28503c77725eed9a0aaedd6b41762"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "c318ae018a71b7d6cc99ffffa8ced38e82a05d2582ddb317eac87c613983e124"
+      "expected": "810a012b0fc5fe456f962ecf520c6a79c2215a97aad6edad8021d14e5e7db6e9"
     },
     {
       "action": {
@@ -677,13 +677,13 @@
         "from": "d4",
         "to": "a1"
       },
-      "expected": "192f11ae54c35a96694e268003e3e418213330fcc92406923bf192400e8aadac"
+      "expected": "bdb418cf9910c6773fea3d5416e22a7ab3c45e9307096b530f18634f571ebd25"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "0df97b99097d23a6a41cbd373d661570edbc941ef5a8add23b4ebf0ad8710aa2"
+      "expected": "3413504f47c2e319c999c02d1a1258f29e4bbb14c1c3879f3a1d2c460c6d405d"
     },
     {
       "action": {
@@ -691,13 +691,13 @@
         "from": "e1",
         "to": "h1"
       },
-      "expected": "2cf44e39d46985b7b3d0f92cddc3374c66ab55c80d649594be89a657735b3eda"
+      "expected": "2830f814f9f591f6b51cd860bb8d36ed725da6b7f2349e79806079cdc90a9285"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "9e28d54d3577d24f9cd75939c88d7e08e7e8e0b730bc4d40103b3da48bfa81d3"
+      "expected": "69c2a22b250e329312c05387a9ae9b3e38d9db16a3cb9044f37a3df5237687f0"
     },
     {
       "action": {
@@ -711,13 +711,13 @@
           }
         ]
       },
-      "expected": "fbf7e7e67ad3114d6bf86736b20fa5af47a80ad2f5bacc030779f908ba3b1fc0"
+      "expected": "eebbe097bd7f35ac0450b61c28d945acef76f58907bc20658af0fef36d31f1a9"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "ae8a9bf7bbeb2c34c45cfb4f7d6b84ef0fc377a1d430edaa3f6e45a7b098e0ee"
+      "expected": "52349012a978d60f18b01b2bf0ae709f247f17754d8e55c3633cb6d121c2a3b0"
     },
     {
       "action": {
@@ -725,13 +725,13 @@
         "from": "f4",
         "to": "g5"
       },
-      "expected": "f691b88fe60b0cb9577a2e452581e5c465f3875b5acdc791295ddac8f544d4cf"
+      "expected": "8361ce8c1beb6fd4f129f0a2271c66062d1206d7381b2fbe5d70f32243c24618"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "c0474f330d04349e0187bd223143f99a5c2029ef100bc14304952b1b7d5c6c32"
+      "expected": "00220c8ecdfc5e6ca989d8d38610bae06d59ec5f5dab2bc8934e01ab276b3f29"
     },
     {
       "action": {
@@ -739,13 +739,13 @@
         "from": "c5",
         "to": "b4"
       },
-      "expected": "6adc179403bb6dd669e165a7ca9d2a272168e006c4eed142bacbb4659233ebf5"
+      "expected": "ce141e091963976c9c409a4318a705882b0bbbcabe96fe1e381890a1bb89faae"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "4accbe678c7aaeb6358e5fc406e2ac7944ffea359535ba2a9c10af9be1692b8e"
+      "expected": "812fa2956d5457be5e08b762894449affa600960eed37f95b2aefdd7fac0d009"
     },
     {
       "action": {
@@ -753,13 +753,13 @@
         "from": "f5",
         "to": "e5"
       },
-      "expected": "150b81753c48d68553605e50750b374b1b9b90dc37ab6e74ed6f587c13da566e"
+      "expected": "3ce7500c2e22c7326365cac4e7a054ba3e1af2be1b8c5d429d6c7f73f4d209f1"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "0fce7eba0e66448b86593f24fec551e587d504c552939f3d2021fe454134465b"
+      "expected": "f6e1fa1f8ef31070ea1ad22b6685ca375be61b2e85e324f751238b7b413565bc"
     },
     {
       "action": {
@@ -767,13 +767,13 @@
         "from": "h4",
         "to": "g5"
       },
-      "expected": "cb1ccec86d59498f4ad946db6933ecc3e3156b962ba63fc79c4a6b0298a95d02"
+      "expected": "be6f9e12cdb876d547729c1f0b7ecf1ecd9cacb019adebb15c6fe6714505db6a"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "aa78fdbe49ca21153fbe02b4675958f506901d6083c22ee44c8fa65c58245fad"
+      "expected": "4c1d8d90b5122064a2051e325976ea9be1f0b6ad266f1c88274371d148258bf2"
     },
     {
       "action": {
@@ -781,13 +781,13 @@
         "from": "a5",
         "to": "b4"
       },
-      "expected": "12527540798a96d310a08908f8cdc261e5055babdb17cd86c29116a62ae32bfc"
+      "expected": "15985a64f6d30197edafae27c5027ff4a0c0b2316e90342426f0ea119d6fa3c6"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "6718129e710958469a55f5adb77ec397724e92e5ff86b30e592dd546974f9756"
+      "expected": "13de9a45f03dfd00c853bfe0f6ed040a457d53d4fc8abe439018a98ae90365b5"
     },
     {
       "action": {
@@ -795,13 +795,13 @@
         "from": "h8",
         "to": "g7"
       },
-      "expected": "b360806f8161818e1cd56d06e719ad66e9699d28270e0cb76107bd186c909b66"
+      "expected": "d50a88468cb33d418c445fec0e566da6d6fc69d14e5a0b2c8237fd3f87446fc8"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "a2a7c07c50bec3f4add4d73c53ad827440b2723c9d1ce6629dd75fa0d830f911"
+      "expected": "5e518cdd5cf11022c50877d759f6ad09bb6b88bcfc95389ce1c03f35eca71862"
     },
     {
       "action": {
@@ -809,13 +809,13 @@
         "from": "e5",
         "to": "d4"
       },
-      "expected": "b1c458bddb3d559b3964a42cdf8d53bcbb3b357581273c598d711703636e5453"
+      "expected": "986649bae4fcdb4e85fa95015e71e3125afc5ff369e46587124350935aadde6e"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "48c392f09b52396605bf1ecf8bf8c00043baea15b301aff521da08c45033e3a0"
+      "expected": "5d85d59c8db6016a6b5430ce596c3d96afff0b1b588cf107c1cfa459da9e754a"
     },
     {
       "action": {
@@ -823,13 +823,13 @@
         "from": "a8",
         "to": "a6"
       },
-      "expected": "6ca7c1574fc13369b998fb9127368b161dc1d824fc3da22e3f262c57e325ee73"
+      "expected": "8ac1f8dc4af5058cd234014d4e98eeab2c233eb3f04d2c311ae3bd5ab4e2b9fb"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "90e95803a6d94f4ad95f23f710737ce2f71e77d5c69d241f571ec28963073dfc"
+      "expected": "db55eca2cde690dbedd57ef1c6a2f8e705249b84f1416f540b6ebdf00e748ab5"
     },
     {
       "action": {
@@ -837,13 +837,13 @@
         "from": "g1",
         "to": "h1"
       },
-      "expected": "2a4560615a1bc9a81bacf629bbde30ec47a141aa4eb3b74c493f1b14c1b68c66"
+      "expected": "2aebdceb79d20c5504e47474498b1a68ac78fb12bfd54201eaaf29566f5b8b41"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "81d76f81e283e454dd5355fa951e3caa91d89bd99037b6b818fe88ad8e131f77"
+      "expected": "17fdfbb1bbb7383d06411a3e0e09479d1571e3dfbe27fa12b5ae6cc9e0b198bf"
     },
     {
       "action": {
@@ -851,13 +851,13 @@
         "from": "e7",
         "to": "d7"
       },
-      "expected": "55b30ad7ec74ed0705f46d4892b24f7da7ed295029bee60dbb643edba8cbe5f0"
+      "expected": "4dcd2193d6eb6010f0305cd9bd6f388be4adef18e8b94c4e824778096a3c65cd"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "11cd04ad0511e8ecf91e8ee3ea4d5aed4422897cf588342ae0decd13490435ff"
+      "expected": "17bcda5310437c0799799f4d4df20fecc0da325e32c2e65a63da1c2e168549c1"
     },
     {
       "action": {
@@ -865,7 +865,7 @@
         "from": "h3",
         "to": "f4"
       },
-      "expected": "9e2dded985925530d47a6f853b959c9d78947b9e54b9af7eef16fd38ed3cf3fe"
+      "expected": "4305596d7f48c67db93c2b2255bdc3f8d44c1400d72434686c4359e75e7276fb"
     },
     {
       "action": {
@@ -874,13 +874,13 @@
         "cardInstanceId": "white-hand-2-figure-dance",
         "target": []
       },
-      "expected": "32e58665e53cff677dbd9a4ffa4e912c05641b3c69129b83780f4c7df1fc5be2"
+      "expected": "c39c77c8544f37e23888dba83d4047859b2323a948c409204b31d1919490de1e"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "141446c12d7920887807f5ebcb5ea74bef4af2eef60c6c7568fc4e7ee396c586"
+      "expected": "49e1d4e821a502e66795eed7b1c9fdf224080be99e37bd29ec36c23fcd651150"
     },
     {
       "action": {
@@ -888,13 +888,13 @@
         "from": "h7",
         "to": "f6"
       },
-      "expected": "bb373dcd32c8eb7ddc6755cef50820002926c36b22aefa49588fe1a637c4c557"
+      "expected": "77b3d6a4fcd309ac0636bec7847ef122ddf4cf464cc693d295e53a7ff6cb7639"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "42943150684de823c71684c9bd2e7dfa938d94329118f4d6c7f7a116b81ff165"
+      "expected": "b4b21aa714aabe057fb1c11665271bf1481ea984f4f9a7fe0930df70edd3cf14"
     },
     {
       "action": {
@@ -902,13 +902,13 @@
         "from": "f4",
         "to": "h3"
       },
-      "expected": "12e92b57e75e0198b9e39fac793b3f423f0ddcba19efefc2eea54f29e308990a"
+      "expected": "49a7e7cb9173c7e5cee22ea69a8cc0993aa40e96875315f23a9ca0f85c1d71cb"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "da81c30eab9ae0adb5f06a0051f5916610fdd5c500e128d0be7f210f48e675fa"
+      "expected": "b26c0ce1bf3ff21f51f00cf66d9178d222a8857fd7042cc0d70f5ed9d1775e05"
     },
     {
       "action": {
@@ -916,13 +916,13 @@
         "from": "f6",
         "to": "h5"
       },
-      "expected": "0713b0d87dc9d1f007838814f2efc7fbc07e00dae021546b90f73b9f4be8a3a5"
+      "expected": "93d4e9debabcf7b7d61a1ea29c67c63a92916149fb42fa561dae511a62019142"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "e0044a1979f1bd9a544677343eebdd3a97f834850424451de17e37bdb8492084"
+      "expected": "58b24f69a470e405a382f4fbd7e1b6411e6bd675c244dd799585b6770c184792"
     },
     {
       "action": {
@@ -936,13 +936,13 @@
           }
         ]
       },
-      "expected": "88f0a20fb1c4dbbb559bdd28f52487f90461b87ae6d6ee9be1f9dc937089b07a"
+      "expected": "2f9b62d4873c0a92a37bf2b22b785aa30d769e9064264e4c1baa2a56f59014b5"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "43a1eb5e166c2e1592019a85d9a56c1a1a467bcdaab75fa8229a56e41cc26276"
+      "expected": "a8174114586380f7eade8e81daef3112a30cc103a2aeda9cfed560946f98c76e"
     },
     {
       "action": {
@@ -950,13 +950,13 @@
         "from": "a1",
         "to": "d4"
       },
-      "expected": "5a5d7db8630343ba9fefb46526be0707bd1fa808606c66036068a7d54c7f04db"
+      "expected": "2b5644e48982e7ab3afd1e7111cdddc72b6d41b9dc7ecb1780f8defaabf40fa3"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "7ded0269173ea13ef11c166cdbacfcedb5782e8529fbb9882cea82c0fc0de507"
+      "expected": "e8b0eb3ddbef530c1580d7f229002fb560579c088287b997105e863328331cf4"
     },
     {
       "action": {
@@ -964,7 +964,7 @@
         "from": "a3",
         "to": "c4"
       },
-      "expected": "bb33b1c989ffed7aa26550fff7d6bd460ca5125d04a668ac8b9c887a14ab44ec"
+      "expected": "16e5a4818fe073e94115f61544fc8771637616a3a62ba4bf0e41d3da3572a811"
     },
     {
       "action": {
@@ -973,13 +973,13 @@
         "cardInstanceId": "white-deck-5-peace-talks",
         "target": "white-deck-0-earthquake"
       },
-      "expected": "0aaf0d93aa0efe263ff433b7c9b334e97caf573951c2c7a4fc41b618dc9ac81c"
+      "expected": "e7bd6d9af2836b33e3407c66630cb89dfd86c81642e09b1cc905af381c37903e"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "d2de2d2693dc8361157adcdc43ac0e78caa14ec01c6443b1b3c7f209b2c7b3ec"
+      "expected": "479625dac0673bdfff579867013179efaf8745f19ed66a8036d5539568b32eb7"
     },
     {
       "action": {
@@ -987,7 +987,7 @@
         "from": "g7",
         "to": "e5"
       },
-      "expected": "23bdbff90f3a1fea56c48760088d69e5348d8e15916ab8d619af5361ef527007"
+      "expected": "572f13eec3b1a87116ac2c70b1e15f48d971aad43a54977274666319c4fd91ae"
     },
     {
       "action": {
@@ -996,13 +996,13 @@
         "cardInstanceId": "black-deck-2-fatal-attraction",
         "target": "a6"
       },
-      "expected": "543d5bcf4c648848c2d287b433fa45f340552f4c61c565c18d241b621bea42b5"
+      "expected": "19448c5baa6803027381ed4e0fab62ceeadc111cf6ffa4fb8327186536c325c0"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "e91c69d5888316d5d24e6b5ace6a8d8a8d9d40a02169ce3d87d672342ea18583"
+      "expected": "a8977c014ef995e642e875e7e827adc6035b83dd819a8ec1e3655600c979b420"
     },
     {
       "action": {
@@ -1010,7 +1010,7 @@
         "from": "g2",
         "to": "g4"
       },
-      "expected": "da2eb08d73588817f78b0b8ff8773ac3c655b128ff116488a119953702bf3974"
+      "expected": "e92f60d588d45a5f337be16827cb7b3f503fa95a7bbc8570a0f2db36b2251030"
     },
     {
       "action": {
@@ -1019,13 +1019,13 @@
         "cardInstanceId": "white-hand-0-fireball",
         "target": "g4"
       },
-      "expected": "858cbfe10d4c61325a331be607774179056dc6b4c71507d7f3650b808426627c"
+      "expected": "840a594a1fd75ebcd91ce41d8d48675c103c81572ecce9e15b64d18fce33b479"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "e7733d45ddcf51d0535783635bbec377d55da4d6d1b4f12bd1b8ab783145fa1d"
+      "expected": "62ac466130e63135fbcaf94bb67cd3c3587f29a85cac60aa84ec73005940abfd"
     },
     {
       "action": {
@@ -1033,13 +1033,13 @@
         "from": "d4",
         "to": "e3"
       },
-      "expected": "81e29e9192d9413ece5d104098c4f7b237d7ec8167b7c3c0c55724a9eebdb250"
+      "expected": "d6e4a256b89176facb0a8104ec151772295e48e98f4d07463f2051fd727d6e5a"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "5b88ef024ae446c984b7bcae28fd1e978f17259afacf0dcc53219ef8ef93d1d5"
+      "expected": "b918af841b7147521b9b4421a54b45e820377f1d8f7d5acb7ce813d119851bef"
     },
     {
       "action": {
@@ -1047,13 +1047,13 @@
         "from": "d1",
         "to": "h5"
       },
-      "expected": "b5c8e1470aa9f51ce2e6bd91d016abbd342f260d3313e71b7b34f170ec28fb40"
+      "expected": "7f2670937afaf949329a96cf7105c418ca8c05d750098e42b2ff0cddce32d184"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "e2058beaa3338848a5d81e0968af2bc1869e1412fa20e2bd5b3fec28687f0f74"
+      "expected": "ef290f940142421d93e25662f7973520e016f451423416b826882411d723b0d7"
     }
   ],
   "moves": 50,

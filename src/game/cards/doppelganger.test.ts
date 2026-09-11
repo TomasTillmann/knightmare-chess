@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { applyAction, isKingInCheck } from '../reducer.js';
+import { applyAction, cardPlayTargets, doppelgangerDests, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
+import type { SquareName } from '../types.js';
 
 type State = ReturnType<typeof createGameState>;
 
@@ -25,6 +26,87 @@ function play(state: State, from: string, to: string) {
 function assertRejected(result: ReturnType<typeof applyAction>, code: string): void {
   assert.equal(result.ok, false);
   if (!result.ok) assert.equal(result.error.code, code);
+}
+
+for (const color of ['white', 'black'] as const) {
+  for (const [marker, copied] of [
+    ['none', false], ['crab', false], ['forbidden-city', false], ['fortification', false],
+    ['forbidden-city', true], ['fortification', true],
+  ] as const) {
+    test(`${color} retains the last mover after ${copied ? 'copied ' : ''}${marker}`, () => {
+      const opponent = color === 'white' ? 'black' : 'white';
+      const square = (value: SquareName): SquareName => color === 'white'
+        ? value : `${value[0]}${9 - Number(value[1])}` as SquareName;
+      const board = color === 'white' ? '7k/7p/5n2/8/8/R7/2K5/8' : '8/2k5/r7/8/8/5N2/7P/7K';
+      const firstPlayer = copied ? color : opponent;
+      let state = createGameState({
+        fen: `${board} ${firstPlayer[0]} - - 0 1`,
+        hands: {
+          [color]: copied ? ['doppelganger', marker] : ['doppelganger'],
+          [opponent]: copied ? ['haunting-memories'] : marker === 'none' ? [] : [marker],
+        },
+      });
+      if (copied) {
+        state = succeed(state, { type: 'move', from: square('c2'), to: square('d2') });
+        state = succeed(state, { type: 'playCard', cardId: marker,
+          target: marker === 'forbidden-city' ? square('g4') : { from: square('g4'), to: square('h4') } });
+        state = succeed(state, { type: 'endTurn' });
+      }
+      state = succeed(state, { type: 'move', from: square('f6'), to: square('h5') });
+      if (marker !== 'none') state = succeed(state, {
+        type: 'playCard', cardId: copied ? 'haunting-memories' : marker,
+        target: marker === 'crab' ? square('h7') : marker === 'forbidden-city'
+          ? square('d5') : { from: square('d5'), to: square('e5') },
+      });
+      state = succeed(state, { type: 'endTurn' });
+      state = JSON.parse(JSON.stringify(state)) as State;
+      const before = structuredClone(state);
+      const from = square('a3');
+      const to = square('b5');
+      assert.ok(doppelgangerDests(state, from).includes(to));
+      assert.ok(cardPlayTargets(state, 'doppelganger').some(target =>
+        JSON.stringify(target) === JSON.stringify([{ from, to }])));
+      assertRejected(play(state, from, square('a4')), 'ILLEGAL_MOVE');
+      const actor = state.pieces.find(piece => piece.square === from)!;
+      const result = succeed(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from, to }] });
+      assert.deepEqual(result.pieces.find(piece => piece.id === actor.id), { ...actor, square: to });
+      assert.deepEqual(result.effects, before.effects);
+      assert.equal(result.effects.length, marker === 'none' ? 0 : copied ? 2 : 1);
+      assert.deepEqual(state, before);
+    });
+  }
+}
+
+for (const marker of ['forbidden-city', 'fortification'] as const) {
+  test(`copied Rook movement still obeys the preceding ${marker}`, () => {
+    let state = createGameState({ fen: '4k2r/8/8/8/8/8/8/R3K3 b - - 0 1',
+      hands: { white: ['doppelganger'], black: [marker] } });
+    state = succeed(state, { type: 'move', from: 'h8', to: 'h7' });
+    state = succeed(state, { type: 'playCard', cardId: marker,
+      target: marker === 'forbidden-city' ? 'a3' : { from: 'a2', to: 'a3' } });
+    state = succeed(state, { type: 'endTurn' });
+    assert.ok(doppelgangerDests(state, 'a1').includes('a2'));
+    assert.ok(!doppelgangerDests(state, 'a1').includes('a4'));
+    assertRejected(play(state, 'a1', 'a4'), 'ILLEGAL_MOVE');
+    const result = succeed(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a1', to: 'a2' }] });
+    assert.equal(result.pieces.find(piece => piece.id === 'white-rook-a1')?.square, 'a2');
+    assert.deepEqual(result.effects, state.effects);
+  });
+
+  test(`Doppelganger after ${marker} still fizzles self-check and spends the card`, () => {
+    let state = createGameState({ fen: 'r3k3/8/8/8/8/8/R7/K7 b - - 0 1',
+      hands: { white: ['doppelganger'], black: [marker] } });
+    state = succeed(state, { type: 'move', from: 'a8', to: 'a7' });
+    state = succeed(state, { type: 'playCard', cardId: marker,
+      target: marker === 'forbidden-city' ? 'd5' : { from: 'd5', to: 'e5' } });
+    state = succeed(state, { type: 'endTurn' });
+    const result = succeed(state, { type: 'playCard', cardId: 'doppelganger', target: [{ from: 'a2', to: 'b2' }] });
+    assert.deepEqual(result.pieces, state.pieces);
+    assert.deepEqual(result.effects, state.effects);
+    assert.equal(result.history.at(-1)?.type, 'cardFizzled');
+    assert.equal(result.players.white.hand.some(card => card.cardId === 'doppelganger'), false);
+    assert.equal(isKingInCheck(result, 'white'), false);
+  });
 }
 
 test('metadata is exact', () => assert.deepEqual(CARD_CATALOG.doppelganger, {

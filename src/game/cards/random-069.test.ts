@@ -194,8 +194,8 @@ const continuedRationales = [...rationales.slice(0, 63),
   '83. End Black protected turn; Mystic Shield expires, three traps persist, no second card draw.',
   '84. Pe2-e3 moves one empty forward square; own copied trap e2 remains despite being vacated; Kc1 safe; clock reset.',
   '85. End White turn; Black begins with no further board or clock change.',
-  '86. Guardian Pc7-c5 advances two from starting rank through empty c6 to empty c5; c8 has no follower; no capture or en-passant; Kg8 safe; reset clock/fullmove20, draw Madman.',
-  '87. End Black Guardian move; White begins and c5 still grants no en-passant capture.',
+  '86. Guardian Pc7-c5 advances two from starting rank through empty c6 to empty c5; c8 has no follower, so c6 en passant opens; no capture; Kg8 safe; reset clock/fullmove20, draw Madman.',
+  '87. End Black Guardian move; White receives the c6 en-passant opportunity.',
   '88. Pa2-a3 is one empty pawn step, legal now that King sits c1 instead of checked d1; clock reset.',
   '89. End White turn; Black begins with the unchanged captured-piece and card zones.',
   '90. Nb8-c6 is an unobstructed knight jump to empty c6; Kg8 safe; halfmove1/fullmove21.',
@@ -298,8 +298,8 @@ test('iteration 069: full 50-move review with corrected sampler', () => {
     if (number === 81 || number === 82) assert.equal(state.effects.length, 4);
     if (number >= 83) assert.equal(state.effects.length, 3);
     if (number === 86) {
-      assert.equal(state.fen, '1n4k1/b2r2pp/pp6/2p1p2P/7R/1PP1P3/P4PP1/2K2BN1 w - - 0 20');
-      assert.deepEqual(state.enPassant, []);
+      assert.equal(state.fen, '1n4k1/b2r2pp/pp6/2p1p2P/7R/1PP1P3/P4PP1/2K2BN1 w - c6 0 20');
+      assert.deepEqual(state.enPassant, [{ target: 'c6', pawnId: 'black-pawn-c7' }]);
     }
     if (number === 92 || number === 93) assert.deepEqual(state.enPassant, [{ target: 'f3', pawnId: 'white-pawn-f2' }]);
     if (number === 94 || number === 95) assert.deepEqual(state.enPassant, [{ target: 'g6', pawnId: 'black-pawn-g7' }]);

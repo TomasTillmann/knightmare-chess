@@ -32,7 +32,7 @@ const review = `
 21 b5 c7 | Knight jumps to c7 and checks King e8.
 22 end | Black receives its escape turn in check.
 23 d8 c7 | Queen captures the checking white knight on adjacent diagonal c7.
-24 earthquake | After-move clockwise rotation: White forward becomes east, Black west; h4 promotes to Rook and a6 to Queen, opponent first. Retain card.
+24 earthquake | After-move counterclockwise rotation: White forward becomes east, Black west; h4 promotes to Rook and a6 to Queen, opponent first. Retain card.
 25 end | Rotation persists; White receives the move.
 26 d1 c2 | Queen takes adjacent empty diagonal c2.
 27 end | Pass completed White turn.
@@ -243,10 +243,10 @@ test('iteration 117 independently reviewed random campaign', () => {
       assert.equal(turn.phase, replacement || n === 44 ? 'beforeMove' : 'afterMove');
       switch (n) {
         case 24: {
-          const target = { direction: 'clockwise', promotions: [{ square: 'h4', role: 'rook' }, { square: 'a6', role: 'queen' }] };
+          const target = { direction: 'counterclockwise', promotions: [{ square: 'h4', role: 'rook' }, { square: 'a6', role: 'queen' }] };
           assert.deepEqual(action.target, target);
           Object.assign(at('h4'), { role: 'rook', promoted: true }); Object.assign(at('a6'), { role: 'queen', promoted: true });
-          orientation = 90; effects.push({ type: 'earthquake', owner: actor, card, direction: 'clockwise', target }); break;
+          orientation = 90; effects.push({ type: 'earthquake', owner: actor, card, direction: 'counterclockwise', target }); break;
         }
         case 28: assert.deepEqual(action.target, [{ from: 'b7', to: 'a7' }]); relocate('b7', 'a7'); break;
         case 44: assert.equal(action.target, 'g7'); effects.push({ type: 'pacifism', owner: actor, card, pieceId: 'black-pawn-g7' }); break;

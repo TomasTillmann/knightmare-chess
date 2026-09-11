@@ -62,7 +62,7 @@ const rationales = `
 51. Na8-c7 jumps to empty c7 without exposing c8.
 52. Black ends the Knight move.
 53. Bd1-b3 passes empty c2 and remains the same physical Bishop.
-54. Clockwise Earthquake changes forward to White east/Black west; Black a7 promotes Rook before White h3 promotes Queen; coordinates and clocks stay fixed.
+54. Counterclockwise Earthquake changes forward to White east/Black west; Black a7 promotes Rook before White h3 promotes Queen; coordinates and clocks stay fixed.
 55. White ends; continuing Earthquake and its promotions remain active.
 56. Promoted Ra7-b7 makes a quiet horizontal Rook move.
 57. Black ends; promotion remains permanent.
@@ -255,7 +255,7 @@ test('iteration 059 deterministic trace', () => {
     if (step === 6) assert.deepEqual(state.effects, [], why);
     if (step >= 54) assert.deepEqual(state.effects[0], {
       type: 'earthquake', owner: 'white', card: { id: 'white-deck-0-earthquake', cardId: 'earthquake' },
-      direction: 'clockwise', target: { direction: 'clockwise', promotions: [{ square: 'a7', role: 'rook' }, { square: 'h3', role: 'queen' }] },
+      direction: 'counterclockwise', target: { direction: 'counterclockwise', promotions: [{ square: 'a7', role: 'rook' }, { square: 'h3', role: 'queen' }] },
     }, why);
     assert.equal(state.effects.length, step === 4 || step === 5 ? 1 : step >= 81 ? 2 : step >= 54 ? 1 : 0, why);
     if (step >= 81) assert.deepEqual(state.effects[1], { type: 'curse', owner: 'black', card: { id: 'black-deck-3-curse', cardId: 'curse' }, pieceId: 'white-rook-h1' }, why);

@@ -123,7 +123,7 @@ const rationales = `
 
 const cardActions: Record<number, GameAction> = {
   16: { type: 'playCard', cardId: 'merciless', cardInstanceId: 'black-hand-2-merciless', target: [{ from: 'h8', to: 'g8' }] },
-  27: { type: 'playCard', cardId: 'earthquake', cardInstanceId: 'white-hand-4-earthquake', target: { direction: 'clockwise', promotions: [{ square: 'a7', role: 'knight' }, { square: 'h2', role: 'rook' }] } },
+  27: { type: 'playCard', cardId: 'earthquake', cardInstanceId: 'white-hand-4-earthquake', target: { direction: 'counterclockwise', promotions: [{ square: 'a7', role: 'knight' }, { square: 'h2', role: 'rook' }] } },
   32: { type: 'playCard', cardId: 'plots-within-plots', cardInstanceId: 'black-hand-3-plots-within-plots', target: { player: 'black' } },
   33: { type: 'playCard', cardId: 'curse', cardInstanceId: 'white-hand-2-curse', target: 'd8' },
   41: { type: 'playCard', cardId: 'madman', cardInstanceId: 'white-deck-1-madman', target: [{ from: 'd2', to: 'b4' }] },
@@ -243,7 +243,7 @@ test('iteration 199: independent 110-action physical, card, royal, FEN and oblig
         orientation = 90;
         Object.assign(at(pieces, 'a7')!, { role: 'knight', promoted: true });
         Object.assign(at(pieces, 'h2')!, { role: 'rook', promoted: true });
-        effects.push({ type: 'earthquake', owner, card, direction: 'clockwise', target: action.target });
+        effects.push({ type: 'earthquake', owner, card, direction: 'counterclockwise', target: action.target });
       } else if (n === 32) {
         delete event.target; event.player = owner;
         plots = [{ player: owner, remaining: 2, eligibleCards: [], window: {

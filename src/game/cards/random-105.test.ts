@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { Color, PieceState, SquareName } from '../types.js';
@@ -170,12 +170,14 @@ function boardFen(pieces: PieceState[]): string {
   }).join('/');
 }
 
+// F4 / FAQ p.16: only actions 1–22 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 23; original artifact hashes remain unchanged.
 test('iteration 105 reviewed random trace', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/105.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(reasons.length, trace.steps.length);
   let state = createGameState(trace.initial);
   let beforeCanceledMove = structuredClone(state);
-  for (const [index, {action}] of trace.steps.entries()) {
+  for (const [index, {action}] of trace.steps.slice(0, 22).entries()) {
     const n=index+1; const message=reasons[index];
     assert.ok(message?.startsWith(`${n} `));
     const original=structuredClone(state);
@@ -264,6 +266,6 @@ test('iteration 105 reviewed random trace', () => {
   }
   assert.equal(trace.steps.filter(s=>s.action.type==='move').length,50);
   assert.equal(trace.steps.filter(s=>s.action.type==='playCard').length,14);
-  assert.equal(state.fen,'1Bb2p1n/pppPq1pp/r5k1/3Q4/r4PPP/n4pN1/bP2P2R/R1K5 w - - 1 29');
-  assert.equal(replayTrace(trace).fen,state.fen);
+  assert.deepEqual(replayTrace(trace, 23), state);
+  rejectPendingCancellation(state, trace.steps[22]!.action, [{"type":"playCard","cardId":"rebirth","cardInstanceId":"white-hand-3-rebirth","target":[{"from":"d2","to":"c8"}]}]);
 });

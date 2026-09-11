@@ -39,11 +39,11 @@ test('a delayed empty-square arrival cannot turn the trapped mover into a No Qua
   assert.equal(piece(result.state, 'black-rook-h4').zone, 'captured');
 });
 
-test('No Quarter still applies to a King capture that consumes an otherwise harmless trap', () => {
+test('No Quarter still applies to a King capture that leaves Man-Trap armed', () => {
   let state = armed(fixture('8/p7/8/4k3/3P4/8/P7/K7 w - - 0 1'));
   state = move(state, 'e5', 'd4');
   assert.equal(piece(state, 'black-king-e5').square, 'd4');
-  assert.equal(traps(state).length, 0);
+  assert.equal(traps(state).length, 1);
   state = play(state, 'no-quarter');
   assert.equal(piece(state, 'white-pawn-d4').zone, 'dead');
 });

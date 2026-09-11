@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { replayTrace, type RandomTrace } from './random-campaign.js'
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js'
 import { applyAction } from '../reducer.js'
 import { createGameState } from '../state.js'
 import type { GameState } from '../types.js'
@@ -127,20 +127,22 @@ const rationales = [
   '116. White ends the fiftieth move command; Black begins with fresh allowances and the h5 royal Pawn intact.',
 ]
 
+// F4 / FAQ p.16: only actions 1–65 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 66; original artifact hashes remain unchanged.
 test('iteration 045 replays its deterministic trace', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/045.json', import.meta.url), 'utf8')) as RandomTrace
   assert.equal(trace.seed, 860045)
   assert.equal(rationales.length, trace.steps.length)
   assert.equal(trace.steps.length, 116)
   assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 15)
-  assert.ok(replayTrace(trace))
+  rejectPendingCancellation(replayTrace(trace, 66), trace.steps[65]!.action, [{"type":"playCard","cardId":"coup","cardInstanceId":"black-deck-0-coup","target":"c5"}]);
 })
 
 test('iteration 045 independently checks movement, bookkeeping and card semantics', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/045.json', import.meta.url), 'utf8')) as RandomTrace
   let state = createGameState(trace.initial)
   const snapshots: GameState[] = [state]
-  for (const [index, { action }] of trace.steps.entries()) {
+  for (const [index, { action }] of trace.steps.slice(0, 65).entries()) {
     const step = index + 1
     const before = state
     const result = applyAction(before, action)
@@ -202,7 +204,7 @@ test('iteration 045 independently checks movement, bookkeeping and card semantic
   }
   const at = (step: number) => snapshots[step]!
   const piece = (step: number, id: string) => at(step).pieces.find(item => item.id === id)!
-  for (const [cancel, original] of [[4, 2], [20, 18], [60, 58], [66, 64]]) {
+  for (const [cancel, original] of [[4, 2], [20, 18], [60, 58]]) {
     assert.equal(at(cancel!).fen, at(original!).fen)
     assert.deepEqual(at(cancel!).pieces, at(original!).pieces)
     assert.equal(at(cancel!).turn.moveMade, false)
@@ -217,33 +219,5 @@ test('iteration 045 independently checks movement, bookkeeping and card semantic
   assert.equal(at(41).history.at(-1)?.type, 'cardFizzled')
   assert.deepEqual(at(45).effects, [{ type: 'challenge', owner: 'white', player: 'black', pieceId: 'black-bishop-f8' }])
   assert.deepEqual(at(47).effects, [])
-  assert.equal(piece(67, 'black-queen-d8').square, 'd5')
-  assert.equal(piece(67, 'black-pawn-d7').square, 'd7')
-  assert.equal(piece(71, 'black-pawn-b7').square, 'd4')
-  assert.equal(piece(71, 'black-pawn-b7').zone, 'board')
-  assert.equal(piece(77, 'white-pawn-h2').square, 'c5')
-  assert.equal(piece(77, 'black-pawn-c7').square, 'h5')
-  assert.equal(piece(84, 'black-pawn-c7').royal, true)
-  assert.equal(piece(84, 'black-pawn-c7').role, 'pawn')
-  assert.equal(piece(84, 'black-king-e8').royal, false)
-  assert.deepEqual(at(84).effects, [{ type: 'coup', owner: 'black', card: { id: 'black-deck-0-coup', cardId: 'coup' }, princeId: 'black-king-e8', kingId: 'black-pawn-c7', princeRole: 'king' }])
-  for (const [id, square] of [['black-bishop-f8', 'b5'], ['white-bishop-c1', 'd1'], ['white-bishop-f1', 'e1']]) assert.equal(piece(95, id!).square, square)
-  assert.equal(piece(103, 'white-pawn-g2').role, 'queen')
-  assert.equal(piece(103, 'white-pawn-g2').promoted, true)
-  assert.equal(piece(104, 'black-rook-h8').zone, 'away')
-  assert.equal(at(104).pendingAbduction?.phase, 'concealment')
-  assert.equal(at(105).pendingAbduction?.phase, 'recall')
-  assert.deepEqual(at(105).pieces, at(104).pieces)
-  assert.deepEqual(at(106).pieces, at(103).pieces)
-  assert.equal(at(106).fen, at(103).fen)
-  assert.deepEqual(at(106).players, at(104).players)
-  assert.equal(at(106).pendingAbduction, null)
-  assert.deepEqual(at(108).pieces, at(107).pieces)
-  assert.equal(at(108).fen, at(107).fen)
-  assert.equal(at(108).turn.moveMade, false)
-  assert.equal(at(108).history.at(-1)?.type, 'cardFizzled')
-  assert.equal(piece(109, 'white-pawn-g2').zone, 'captured')
-  assert.equal(piece(113, 'white-queen-d1').zone, 'captured')
-  assert.equal(piece(116, 'black-pawn-c7').royal, true)
-  assert.equal(state.fen, '1nq4r/1r1pkpp1/p4n2/1bP4p/2PpP1R1/1P5N/P2PKP2/1R1BB3 b - - 1 25')
+  rejectPendingCancellation(state, trace.steps[65]!.action, [{"type":"playCard","cardId":"coup","cardInstanceId":"black-deck-0-coup","target":"c5"}]);
 })

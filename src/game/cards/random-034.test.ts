@@ -7,7 +7,7 @@ import { parseSquare } from 'chessops/util';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 
 // Reviewed in order from rules §§8–13, 17.1/17.3 and 20 and the printed catalog.
 const rationales = [
@@ -120,6 +120,8 @@ const rationales = [
   '107. Black ends; White begins safe, no pending rescue, 50 move commands including three later undone attempts.',
 ];
 
+// F4 / FAQ p.16: only actions 1–88 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 89; original artifact hashes remain unchanged.
 test('iteration 034 sequential semantic review', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/034.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(trace.seed, 860034);
@@ -128,7 +130,7 @@ test('iteration 034 sequential semantic review', () => {
   const states = [createGameState(trace.initial)];
   const crab = { type: 'crab', owner: 'black', card: { id: 'black-hand-1-crab', cardId: 'crab' }, pieceId: 'black-pawn-a7' };
   const unsafe = new Set([88, 90, 98]);
-  for (const [index, { action }] of trace.steps.entries()) {
+  for (const [index, { action }] of trace.steps.slice(0, 88).entries()) {
     const step = index + 1;
     assert.ok(rationales[index]!.startsWith(`${step}. `));
     const before = states.at(-1)!;
@@ -230,13 +232,6 @@ test('iteration 034 sequential semantic review', () => {
     }
   }
   const final = states.at(-1)!;
-  assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 9);
-  assert.equal(final.pieces.filter(piece => piece.zone === 'captured').length, 6);
-  assert.equal(final.fen, '6kr/1b1Nqrp1/p6n/1p1PBQ2/PpB1PP1b/3PR3/5P2/n3KRN1 w A - 3 25');
-  // Iteration 152 corrected §17.1 rollback bookkeeping; preserve the original artifact
-  // and every command, changing only the two affected state hashes for replay.
-  const correctedTrace = structuredClone(trace);
-  correctedTrace.steps[90]!.expected = '6c57740c1398e0f05f5421653e365fe2ed1b551e1ca85c25733d53be5ca3cd1a';
-  correctedTrace.steps[91]!.expected = 'e6595e8a1dd13f950555700de93a42e1cf368e11b92265f81c20adc837e053dc';
-  assert.deepEqual(replayTrace(correctedTrace), final);
+  assert.deepEqual(replayTrace(trace, 89), final);
+  rejectPendingCancellation(final, trace.steps[88]!.action, [{"type":"playCard","cardId":"abduction","target":"g6"},{"type":"revealAbduction"},{"type":"abductionTimeout"}]);
 });

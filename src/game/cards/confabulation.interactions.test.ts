@@ -392,8 +392,8 @@ it('Earthquake does not promote a Confabulated Pawn', () => {
   state = play(state, 'confabulation', [{ from: 'h1', to: 'h4' }]);
   state = blackCycle(state, 'a8', 'b8');
   state = move(state, 'a1', 'b1');
-  assert.equal(cardPlayTargets(state, 'earthquake').some(target => JSON.stringify(target) === JSON.stringify({ direction: 'clockwise', promotions: [] })), true);
-  state = play(state, 'earthquake', { direction: 'clockwise', promotions: [] });
+  assert.equal(cardPlayTargets(state, 'earthquake').some(target => JSON.stringify(target) === JSON.stringify({ direction: 'counterclockwise', promotions: [] })), true);
+  state = play(state, 'earthquake', { direction: 'counterclockwise', promotions: [] });
 
   assert.equal(state.orientation, 90);
   assert.deepEqual(at(state, 'h4').map(candidate => candidate.id), [pawnId]);

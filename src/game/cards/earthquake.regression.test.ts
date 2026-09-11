@@ -109,7 +109,7 @@ test("seeded Earthquakes rotate every starting orientation by exactly 90 degrees
     const pieces = state.pieces.map(piece => [piece.id, piece.square] as const);
     const target = pick(earthquakeTargets(state), rng(seeds[index]));
     const next = play(state, { type: "playCard", cardId: "earthquake", target });
-    const delta = target.direction === "clockwise" ? 90 : 270;
+    const delta = target.direction === "clockwise" ? 270 : 90;
     assert.equal(next.orientation, (orientation + delta) % 360);
     assert.deepEqual(next.pieces.map(piece => [piece.id, piece.square] as const), pieces);
   }
@@ -131,8 +131,8 @@ test("seeded rotated Pawns expose and execute a legal move", () => {
 
 test("black Earthquake promotes opponent before actor using the enumerated roles", () => {
   const state = ready("4k3/8/8/8/p6P/8/8/4K3 b - - 7 12", "black", ["earthquake"]);
-  const clockwise = earthquakeTargets(state).filter(target => target.direction === "clockwise");
-  const target = pick(clockwise, rng(seeds[2]));
+  const counterclockwise = earthquakeTargets(state).filter(target => target.direction === "counterclockwise");
+  const target = pick(counterclockwise, rng(seeds[2]));
   assert.deepEqual(target.promotions.map(promotion => promotion.square), ["h4", "a4"]);
   const next = play(state, { type: "playCard", cardId: "earthquake", target });
   for (const promotion of target.promotions) {

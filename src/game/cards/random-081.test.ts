@@ -38,7 +38,7 @@ const rationales = `
 23. White ends; Curse persists and allowances reset.
 24. d7-d5 crosses d6; e5 pawn can en passant to d6; e8 safe, fullmove increments.
 25. Black ends preserving d6 for White.
-26. Guardian moves b2-b4 across b3; no follower selected, b1 empty; no en passant, replaces move and draws Treason.
+26. Guardian moves b2-b4 across b3; no follower selected, b1 empty; b3 en passant opens, replaces move and draws Treason.
 27. White ends Guardian turn; Black receives normal move.
 28. Ng8-e7 jumps to empty e7; Curse concerns only Rh8, no King check.
 29. Black ends; Knight e7 and effects persist.
@@ -252,7 +252,7 @@ test('iteration 081 independently reviewed trace', () => {
       const replacements = [17, 26, 57, 76, 91];
       if (replacements.includes(step)) {
         assert.equal(state.turn.moveMade, true);
-        assert.deepEqual(state.enPassant, []);
+        assert.deepEqual(state.enPassant, step === 26 ? [{ target: 'b3', pawnId: 'white-pawn-b2' }] : []);
         const oldFen = parseFen(before.fen).unwrap(), newFen = parseFen(state.fen).unwrap();
         assert.equal(newFen.halfmoves, [26, 91].includes(step) ? 0 : oldFen.halfmoves + 1);
         assert.equal(newFen.fullmoves, oldFen.fullmoves + (owner === 'black' ? 1 : 0));

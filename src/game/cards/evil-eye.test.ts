@@ -3,7 +3,7 @@ import test from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { createGameState } from '../state.js';
 import { applyAction, boardFen, legalDests, cardPlayTargets, isKingInCheck } from '../reducer.js';
-import type { GameState } from '../types.js';
+import type { GameAction, GameState } from '../types.js';
 import { CARD_CATALOG } from './catalog.js';
 
 const fixture = () => createGameState({
@@ -18,6 +18,127 @@ function success(state = fixture(), target: unknown = { attacker: 'a4', victim: 
   assert.equal(result.state.history.filter(event => event.type === 'cardPlayed' && event.cardId === 'evil-eye').length, 1);
   return result.state;
 }
+
+function step(state: GameState, action: GameAction): GameState {
+  const result = applyAction(state, action);
+  assert.equal(result.ok, true, JSON.stringify(action));
+  if (action.type === 'playCard') assert.equal(result.state.history.at(-1)?.type, 'cardPlayed');
+  return result.state;
+}
+
+for (const [color, opponent, fen, attacker, victim, replyFrom, replyTo] of [
+  ['white', 'black', '4r2k/8/8/4n3/3K4/8/8/8 w - - 0 1', 'd4', 'e5', 'h8', 'h7'],
+  ['black', 'white', '8/8/8/3k4/4N3/8/8/4R2K b - - 0 1', 'd5', 'e4', 'h1', 'h2'],
+] as const) {
+  test(`Evil Eye permits the FAQ ${color} King to capture a protected Knight while remaining safe`, () => {
+    const state = createGameState({ fen, hands: { [color]: ['evil-eye', 'evil-eye'] }, decks: { [color]: ['crab', 'curse'] } });
+    const before = structuredClone(state);
+    const target = { attacker, victim };
+    const king = state.pieces.find(piece => piece.square === attacker)!;
+    const knight = state.pieces.find(piece => piece.square === victim)!;
+    assert.equal(legalDests(state, false).get(attacker)?.includes(victim) ?? false, false);
+    assert.ok(cardPlayTargets(state, 'evil-eye').some(offered => isDeepStrictEqual(offered, target)));
+    const after = step(state, { type: 'playCard', cardId: 'evil-eye', target, cardInstanceId: state.players[color].hand[1].id });
+    assert.equal(after.pieces.find(piece => piece.id === knight.id)?.zone, 'captured');
+    assert.deepEqual(after.pieces.filter(piece => piece.id !== knight.id), before.pieces.filter(piece => piece.id !== knight.id));
+    assert.deepEqual(after.pieces.find(piece => piece.id === king.id), king);
+    assert.equal(isKingInCheck(after, color), false);
+    assert.deepEqual(after.players[color].discard, [before.players[color].hand[1]]);
+    assert.deepEqual(after.players[color].hand, [before.players[color].hand[0], before.players[color].deck[0]]);
+    assert.deepEqual(after.players[color].deck, [before.players[color].deck[1]]);
+    assert.equal(after.turn.moveMade, true);
+    assert.equal(after.turn.cardPlays[color], 1);
+    assert.equal(after.fen.split(' ')[5], color === 'black' ? '2' : '1');
+    step(after, { type: 'endTurn' });
+    assert.deepEqual(state, before);
+  });
+
+  test(`Evil Eye ${color} royal attacker still respects actual victim Pacifism`, () => {
+    let state = createGameState({ fen, turn: opponent, hands: { [color]: ['evil-eye'], [opponent]: ['pacifism'] } });
+    state = step(state, { type: 'playCard', cardId: 'pacifism', target: victim });
+    state = step(state, { type: 'move', from: replyFrom, to: replyTo });
+    state = step(state, { type: 'endTurn' });
+    const before = structuredClone(state);
+    const target = { attacker, victim };
+    assert.equal(cardPlayTargets(state, 'evil-eye').some(offered => isDeepStrictEqual(offered, target)), false);
+    const result = play(state, target);
+    assert.equal(result.ok, false);
+    assert.deepEqual(result.state, before);
+    assert.deepEqual(state, before);
+  });
+}
+
+for (const [color, fen, attacker, victim, beganChecked] of [
+  ['white', '7k/8/5b2/4n3/3K4/8/8/8 w - - 0 1', 'd4', 'e5', false],
+  ['black', '8/8/8/3k4/4N3/5B2/8/7K b - - 0 1', 'd5', 'e4', false],
+  ['white', '3r3k/8/8/4n3/3K4/8/8/8 w - - 0 1', 'd4', 'e5', true],
+] as const) test(`Evil Eye preserves final ${color} stationary King safety, initially checked=${beganChecked}`, () => {
+  const state = createGameState({ fen, hands: { [color]: ['evil-eye'] } });
+  const before = structuredClone(state);
+  const target = { attacker, victim };
+  assert.equal(isKingInCheck(state, color), beganChecked);
+  assert.equal(cardPlayTargets(state, 'evil-eye').some(offered => isDeepStrictEqual(offered, target)), false);
+  const result = play(state, target);
+  assert.equal(result.ok, true);
+  assert.ok(result.state.history.some(event => event.type === 'cardFizzled' && event.cardId === 'evil-eye' && event.reason === 'SELF_CHECK'));
+  assert.equal(boardFen(result.state), boardFen(before));
+  assert.equal(result.state.turn.moveMade, !beganChecked);
+  assert.deepEqual(result.state.players[color].discard, before.players[color].hand);
+  assert.deepEqual(state, before);
+});
+
+for (const [color, fen, attacker, victim, kingFrom, kingTo, replyFrom, replyTo] of [
+  ['white', '2r4k/8/2p5/8/3N4/8/8/K7 w - - 0 1', 'd4', 'c6', 'a1', 'a2', 'h8', 'h7'],
+  ['black', 'k7/8/8/3n4/8/2P5/8/2R4K b - - 0 1', 'd5', 'c3', 'a8', 'a7', 'h1', 'h2'],
+] as const) test(`Evil Eye permits the current ${color} Coup Knight King to capture a protected victim`, () => {
+  let state = createGameState({ fen, hands: { [color]: ['coup', 'evil-eye'] } });
+  state = step(state, { type: 'move', from: kingFrom, to: kingTo });
+  state = step(state, { type: 'playCard', cardId: 'coup', target: attacker });
+  state = step(state, { type: 'endTurn' });
+  state = step(state, { type: 'move', from: replyFrom, to: replyTo });
+  state = step(state, { type: 'endTurn' });
+  const before = structuredClone(state);
+  const king = state.pieces.find(piece => piece.square === attacker)!;
+  assert.equal(king.royal, true);
+  assert.equal(legalDests(state, false).get(attacker)?.includes(victim) ?? false, false);
+  assert.ok(cardPlayTargets(state, 'evil-eye').some(offered => isDeepStrictEqual(offered, { attacker, victim })));
+  const after = success(state, { attacker, victim });
+  assert.deepEqual(after.pieces.find(piece => piece.id === king.id), king);
+  assert.equal(after.pieces.find(piece => piece.id === state.pieces.find(piece => piece.square === victim)!.id)?.zone, 'captured');
+  assert.deepEqual(after.effects, before.effects);
+  assert.equal(isKingInCheck(after, color), false);
+  assert.deepEqual(state, before);
+});
+
+test('Evil Eye royal attacker still respects actual Truce capture restrictions', () => {
+  let state = createGameState({ fen: '4r2k/8/8/4n3/3K4/8/8/8 b - - 0 1', hands: { white: ['evil-eye'], black: ['truce'] } });
+  state = step(state, { type: 'move', from: 'h8', to: 'h7' });
+  state = step(state, { type: 'playCard', cardId: 'truce' });
+  state = step(state, { type: 'endTurn' });
+  const before = structuredClone(state);
+  assert.deepEqual(cardPlayTargets(state, 'evil-eye'), []);
+  const result = play(state, { attacker: 'd4', victim: 'e5' });
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.state, before);
+  assert.deepEqual(state, before);
+});
+
+test('Evil Eye royal protected capture fulfills Vendetta even when another ordinary capture exists', () => {
+  let state = createGameState({ fen: '4r2k/8/8/4n3/3K4/1p6/P7/8 b - - 0 1', hands: { white: ['evil-eye'], black: ['vendetta'] } });
+  state = step(state, { type: 'move', from: 'h8', to: 'h7' });
+  state = step(state, { type: 'playCard', cardId: 'vendetta' });
+  state = step(state, { type: 'endTurn' });
+  const before = structuredClone(state);
+  assert.ok(legalDests(state, false).get('a2')?.includes('b3'));
+  const target = { attacker: 'd4', victim: 'e5' };
+  assert.ok(cardPlayTargets(state, 'evil-eye').some(offered => isDeepStrictEqual(offered, target)));
+  const after = success(state, target);
+  assert.equal(after.pieces.find(piece => piece.id === 'black-knight-e5')?.zone, 'captured');
+  assert.equal(after.pieces.find(piece => piece.id === 'white-king-d4')?.square, 'd4');
+  assert.equal(isKingInCheck(after, 'white'), false);
+  assert.deepEqual(after.effects, before.effects);
+  assert.deepEqual(state, before);
+});
 
 test('Evil Eye has the printed regular-card metadata', () => {
   const card = CARD_CATALOG['evil-eye'];

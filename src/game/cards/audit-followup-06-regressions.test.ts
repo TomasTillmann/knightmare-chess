@@ -82,7 +82,7 @@ describe('follow-up adversarial audit regressions', () => {
     assert.equal(result.ok, true);
   });
 
-  it('forbids castling through a square attacked by a neutral piece', () => {
+  it('allows castling through a square attacked by a neutral piece when the King lands safely', () => {
     const state = neutralize(
       createGameState({ fen: '4k3/8/8/8/8/8/3N4/4K2R w K - 0 1' }),
       'd2',
@@ -93,7 +93,8 @@ describe('follow-up adversarial audit regressions', () => {
       listed: legalDests(state).get('e1')?.includes('g1') ?? false,
       moved: result.ok,
       error: result.ok ? undefined : result.error.code,
-    }, { listed: false, moved: false, error: 'ILLEGAL_MOVE' });
+    }, { listed: true, moved: true, error: undefined });
+    assert.equal(applyAction(result.state, { type: 'endTurn' }).ok, true);
   });
 
   it('rotates ordinary Pawn movement with the board orientation', () => {

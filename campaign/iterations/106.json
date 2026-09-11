@@ -960,7 +960,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "black-hand-2-earthquake",
         "target": {
-          "direction": "counterclockwise",
+          "direction": "clockwise",
           "promotions": [
             {
               "square": "a2",
@@ -973,13 +973,13 @@
           ]
         }
       },
-      "expected": "a52a88728e581e19b2157eb86526cb16129d3908738044fe5748cbc4ab0e4482"
+      "expected": "78f4eec0b684fd922f4a11120e07da511ecaa8619a80dde12524c3cef1492456"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "832ff2713e0a0916485bae2419223c630c980b42f584bdc3bef3f19e675147d6"
+      "expected": "c01ca6475505a2f2ee269b007c5054fa8a97e094b709302882f7e8b50058986f"
     },
     {
       "action": {
@@ -987,13 +987,13 @@
         "from": "e4",
         "to": "g2"
       },
-      "expected": "abab404066e8099a4143e406f97d7bb8a5ab43b92a54ea80cd4fa069957f5bf3"
+      "expected": "f3c7da58cad130629abafc8a4bc30b16fd6c1e6b236bdfcd28321273af851424"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "bbb3943ff2155b7a3d1d614e4423535ef9509cb803bbd2612417b706286790fc"
+      "expected": "9300d71f358cb97c5fda5cb200e70b146e7b852f90820f022cec25bc2c3febed"
     },
     {
       "action": {
@@ -1001,13 +1001,13 @@
         "from": "h7",
         "to": "h8"
       },
-      "expected": "2b5bde627f1ae599317d5d0ea3184e763a0627d1bcb9490c623e25af13465ccd"
+      "expected": "76132a3d1c0b91624ebee876d356b8c19829213aa9323991526c9b03817af528"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "d830f8d43a3ffd8791a842d30c0401fb623c2f9e6e32ded56d0bc613ed622c25"
+      "expected": "7fc52521080324573c3755323b299e869c0791dfa4ade1c32f2d2b99fc23ef56"
     }
   ],
   "moves": 50,

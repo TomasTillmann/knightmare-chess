@@ -20,7 +20,7 @@ const rationales = `
 5 g2-g4: White Pawn crosses g3, expires h6 and offers g3 en passant.
 6 White ends; g3 opportunity survives.
 7 b8-a6: Black Knight jumps to empty a6; g3 opportunity expires.
-8 Earthquake after Black's move rotates forward clockwise to east/west; White h2 Pawn promotes Rook first, Black a7 Pawn Knight second; physical squares stay fixed.
+8 Earthquake after Black's move rotates forward counterclockwise to east/west; White h2 Pawn promotes Rook first, Black a7 Pawn Knight second; physical squares stay fixed.
 9 Black ends; the retained Earthquake persists.
 10 g1-f3: White Knight jumps to empty f3 under the unchanged Knight geometry.
 11 White ends its Knight move.
@@ -223,10 +223,10 @@ test('iteration 125: independent physical, card, orientation, clock and royal st
         case 'earthquake': {
           orientation = n === 8 ? 90 : 180;
           const promotions = n === 8 ? [{ square: 'h2', role: 'rook' }, { square: 'a7', role: 'knight' }] : [{ square: 'c1', role: 'queen' }];
-          const target = { direction: 'clockwise', promotions };
+          const target = { direction: 'counterclockwise', promotions };
           assert.deepEqual(action.target, target, label);
           for (const promotion of promotions) { const p = at(promotion.square); assert.equal(p.role, 'pawn'); p.role = promotion.role as Role; p.promoted = true; }
-          effects.push({ type: 'earthquake', owner: actor, card, direction: 'clockwise', target });
+          effects.push({ type: 'earthquake', owner: actor, card, direction: 'counterclockwise', target });
           break;
         }
         case 'mystic-shield':

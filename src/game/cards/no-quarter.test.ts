@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction } from '../reducer.js';
+import { applyAction, cardPlayTargets } from '../reducer.js';
 import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
@@ -84,6 +84,210 @@ function pieceById(state: State, id: string) {
 function capturedPiece(state: State) {
   return state.pieces.find(piece => piece.zone === 'captured');
 }
+
+// Finding32: printed No Quarter/Plots text and rules.md §17.3 preserve the
+// original ordinary capture, with the captured victim validated at execution.
+describe('No Quarter through Plots Within Plots', () => {
+  for (const color of ['white', 'black'] as const) for (const extra of [false, true]) {
+    it(`preserves ${color}'s ordinary capture as extra ${extra ? 2 : 1}`, () => {
+      const opponent = color === 'white' ? 'black' : 'white';
+      const at = (square: string) => color === 'white' ? square : `${square[0]}${9 - Number(square[1])}`;
+      const initial = game({
+        fen: color === 'white' ? '7k/8/8/8/8/n7/1P6/R5K1 w - - 0 1' : 'r5k1/1p6/N7/8/8/8/8/7K b - - 0 1',
+        hands: { [color]: ['plots-within-plots', CARD, 'crab', CARD], [opponent]: [CARD] },
+        decks: { [color]: [CARD, 'dubbing', 'panic'] },
+      });
+      const victim = pieceAt(initial, at('a3'))!;
+      const selected = initial.players[color].hand[3]!;
+      const drawnCopy = initial.players[color].deck[0]!;
+      let before = applied(move(initial, at('a1'), at('a3')), { type: 'playCard', cardId: 'plots-within-plots' });
+      if (extra) before = applied(before, { type: 'playCard', cardId: 'crab', target: at('b2') });
+      const snapshot = structuredClone(before);
+      assert.ok(before.plotsAllowances?.[0].eligibleCards.includes(selected.id));
+      assert.ok(cardPlayTargets(before, CARD).some(target => target === undefined));
+      rejected(before, 'CARD_ALREADY_PLAYED', { cardInstanceId: drawnCopy.id });
+      rejected(before, 'CARD_NOT_IN_HAND', { cardInstanceId: before.players[opponent].hand[0]!.id });
+      rejected(before, 'CARD_NOT_IN_HAND', { cardInstanceId: 'missing' });
+      const after = ok(play(before, { cardInstanceId: selected.id }));
+      const captured = pieceById(before, victim.id)!;
+      const { capturedBy: _capturedBy, ...identity } = captured;
+      assert.deepEqual(pieceById(after, victim.id), { ...identity, zone: 'dead' });
+      assert.deepEqual(after.pieces.filter(piece => piece.id !== victim.id), before.pieces.filter(piece => piece.id !== victim.id));
+      assert.deepEqual(after.players[color].hand, [...before.players[color].hand.filter(card => card.id !== selected.id), before.players[color].deck[0]]);
+      assert.deepEqual(after.players[color].deck, before.players[color].deck.slice(1));
+      assert.deepEqual(after.players[color].discard, [...before.players[color].discard, selected]);
+      assert.deepEqual(after.players[opponent], before.players[opponent]);
+      assert.equal(after.turn.cardPlays[color], extra ? 3 : 2);
+      assert.equal(after.plotsAllowances?.[0].remaining, extra ? 0 : 1);
+      assert.equal(after.fen, before.fen);
+      assert.deepEqual(before, snapshot);
+    });
+  }
+
+  it('retains the capture when Disintegration removes the capturing Pawn', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/3n4/2P5/6K1 w - - 0 1',
+      hands: { white: ['plots-within-plots', CARD, 'disintegration'] },
+    });
+    const victim = pieceAt(state, 'd3')!;
+    const capturer = pieceAt(state, 'c2')!;
+    state = applied(move(state, 'c2', 'd3'), { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(state, { type: 'playCard', cardId: 'disintegration', target: 'd3' });
+    assert.equal(pieceById(state, capturer.id)?.zone, 'dead');
+    const after = ok(play(state));
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    assert.deepEqual(pieceById(after, capturer.id), pieceById(state, capturer.id));
+  });
+
+  it('follows the saved capture after Siege moves the capturer off its arrival square', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n7/1P6/RN4K1 w - - 0 1',
+      hands: { white: ['plots-within-plots', CARD, 'siege'] },
+    });
+    const victim = pieceAt(state, 'a3')!;
+    const capturer = pieceAt(state, 'a1')!;
+    state = applied(move(state, 'a1', 'a3'), { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(state, { type: 'playCard', cardId: 'siege', target: { rook: 'a3', knight: 'b1' } });
+    assert.equal(pieceAt(state, 'b1')?.id, capturer.id);
+    const after = ok(play(state));
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    assert.equal(pieceAt(after, 'b1')?.id, capturer.id);
+  });
+
+  it('makes every captured composite component dead after Crab', () => {
+    let state = game({
+      fen: '7k/r7/8/8/8/n7/1P6/R5K1 b - - 0 1',
+      hands: { white: ['plots-within-plots', CARD, 'crab'], black: ['confabulation'] },
+    });
+    const ids = ['a3', 'a7'].map(square => pieceAt(state, square)!.id);
+    state = applied(state, { type: 'playCard', cardId: 'confabulation', target: [{ from: 'a7', to: 'a3' }] });
+    state = applied(state, { type: 'endTurn' });
+    state = move(state, 'a1', 'a3');
+    assert.deepEqual(new Set(state.history.at(-1)?.capturedIds), new Set(ids));
+    state = applied(state, { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(state, { type: 'playCard', cardId: 'crab', target: 'b2' });
+    const after = ok(play(state));
+    assert.deepEqual(after.pieces.filter(piece => piece.zone === 'dead').map(piece => piece.id).sort(), ids.sort());
+  });
+
+  it('preserves an ordinary capture whose mover was captured by an arrival trap', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n7/1P6/R5K1 b - - 0 1',
+      hands: { white: ['plots-within-plots', CARD, 'crab'], black: ['man-trap'] },
+    });
+    const victim = pieceAt(state, 'a3')!;
+    const capturer = pieceAt(state, 'a1')!;
+    state = applied(move(state, 'h8', 'g8'), { type: 'playCard', cardId: 'man-trap', target: 'a3' });
+    state = move(applied(state, { type: 'endTurn' }), 'a1', 'a3');
+    assert.equal(pieceById(state, capturer.id)?.zone, 'captured');
+    state = applied(state, { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(state, { type: 'playCard', cardId: 'crab', target: 'b2' });
+    const after = ok(play(state));
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    assert.equal(pieceById(after, capturer.id)?.zone, 'captured');
+  });
+
+  it('retains the exact recent victim rather than an older captured piece', () => {
+    let state = game({
+      fen: '7k/8/3b4/2n5/3P4/8/8/7K w - - 0 1',
+      hands: { white: ['plots-within-plots', CARD, 'crab'] },
+    });
+    const older = pieceAt(state, 'c5')!;
+    const victim = pieceAt(state, 'd6')!;
+    state = applied(move(state, 'd4', 'c5'), { type: 'endTurn' });
+    state = applied(move(state, 'h8', 'g8'), { type: 'endTurn' });
+    state = applied(move(state, 'c5', 'd6'), { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(state, { type: 'playCard', cardId: 'crab', target: 'd6' });
+    const after = ok(play(state));
+    assert.equal(pieceById(after, older.id)?.zone, 'captured');
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+  });
+
+  it('accepts No Quarter through a physical Haunting Memories copying Plots', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n7/1P6/R5K1 b - - 0 1',
+      hands: { white: ['haunting-memories', CARD, 'crab'], black: ['plots-within-plots'] },
+    });
+    const copy = state.players.white.hand[0]!;
+    const victim = pieceAt(state, 'a3')!;
+    state = applied(state, { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(move(state, 'h8', 'g8'), { type: 'endTurn' });
+    state = applied(move(state, 'a1', 'a3'), { type: 'playCard', cardId: 'haunting-memories', cardInstanceId: copy.id });
+    assert.equal(state.history.at(-1)?.copiedCardId, 'plots-within-plots');
+    state = applied(state, { type: 'playCard', cardId: 'crab', target: 'b2' });
+    const after = ok(play(state));
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    assert.deepEqual(after.players.white.discard[0], copy);
+  });
+
+  it('copies No Quarter for a new ordinary capture using the exact physical Haunting Memories', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n3p3/1P1P4/R5K1 b - - 0 1',
+      hands: { white: ['haunting-memories'], black: [CARD] },
+    });
+    state = ok(play(move(state, 'e3', 'd2')));
+    state = applied(state, { type: 'endTurn' });
+    const copy = state.players.white.hand[0]!;
+    const victim = pieceAt(state, 'a3')!;
+    state = move(state, 'a1', 'a3');
+    const after = applied(state, { type: 'playCard', cardId: 'haunting-memories', cardInstanceId: copy.id });
+    assert.equal(pieceById(after, victim.id)?.zone, 'dead');
+    assert.deepEqual(after.players.white.discard, [copy]);
+    assert.equal(after.history.at(-1)?.copiedCardId, CARD);
+  });
+
+  it('cannot manufacture eligibility from a quiet move or a first extra card capture', () => {
+    for (const mode of ['quiet', 'card', 'before'] as const) {
+      let state = game({
+        fen: '7k/8/8/8/8/n7/1P6/R5K1 w - - 0 1',
+        hands: { white: ['plots-within-plots', CARD, 'bombard', 'crab', 'disintegration'] },
+      });
+      if (mode === 'quiet') state = move(state, 'g1', 'f1');
+      state = applied(state, { type: 'playCard', cardId: 'plots-within-plots' });
+      assert.ok(!state.plotsAllowances?.[0].eligibleCards.includes(state.players.white.hand.find(card => card.cardId === CARD)!.id));
+      state = mode === 'card'
+        ? applied(state, { type: 'playCard', cardId: 'bombard', target: [{ from: 'a1', to: 'a3' }] })
+        : applied(state, { type: 'playCard', cardId: mode === 'quiet' ? 'crab' : 'disintegration', target: 'b2' });
+      if (mode === 'card') assert.equal(pieceById(state, 'black-knight-a3')?.zone, 'captured');
+      rejected(state, 'CARD_ALREADY_PLAYED');
+    }
+  });
+
+  it('rejects a duplicate No Quarter once the preserved victim is dead', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n7/1P6/R5K1 w - - 0 1',
+      hands: { white: ['plots-within-plots', CARD, CARD] },
+    });
+    state = applied(move(state, 'a1', 'a3'), { type: 'playCard', cardId: 'plots-within-plots' });
+    state = ok(play(state));
+    rejected(state, 'INVALID_TIMING');
+    assert.equal(state.plotsAllowances?.[0].remaining, 1);
+  });
+
+  it('rejects the original victim after opposing Plots and Riposte return it', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n7/1P6/R5K1 w - - 0 1',
+      hands: { white: ['plots-within-plots', CARD], black: ['plots-within-plots', 'riposte'] },
+    });
+    const victim = pieceAt(state, 'a3')!;
+    state = applied(move(state, 'a1', 'a3'), { type: 'playCard', cardId: 'plots-within-plots' });
+    state = applied(state, { type: 'playCard', cardId: 'plots-within-plots', target: { player: 'black' } });
+    state = applied(state, { type: 'playCard', cardId: 'riposte' });
+    assert.equal(pieceById(state, victim.id)?.zone, 'board');
+    rejected(state, 'INVALID_TIMING');
+  });
+
+  it('cannot reuse an earlier turn capture when a later quiet move opens Plots', () => {
+    let state = game({
+      fen: '7k/8/8/8/8/n7/1P6/R5K1 w - - 0 1',
+      hands: { white: ['plots-within-plots', CARD] },
+    });
+    state = applied(move(state, 'a1', 'a3'), { type: 'endTurn' });
+    state = applied(move(state, 'h8', 'g8'), { type: 'endTurn' });
+    state = applied(move(state, 'g1', 'f1'), { type: 'playCard', cardId: 'plots-within-plots' });
+    rejected(state, 'CARD_ALREADY_PLAYED');
+  });
+});
 
 describe('No Quarter contract', () => {
   it('has the complete printed metadata', () => {

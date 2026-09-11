@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { applyAction, boardFen, cardPlayTargets, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { CardInstance, GameAction, GameState } from '../types.js';
+import type { CardInstance, GameAction, GameState, SquareName } from '../types.js';
 
 function pick<T>(seed: number, values: readonly T[]): T {
   assert.ok(values.length > 0);
@@ -12,8 +12,81 @@ function pick<T>(seed: number, values: readonly T[]): T {
 
 function applied(state: GameState, action: GameAction): GameState {
   const result = applyAction(state, action);
-  if (!result.ok) throw new Error(result.error.message);
+  if (!result.ok) throw new Error(`${JSON.stringify(action)}: ${result.error.message}`);
   return result.state;
+}
+
+function cancelCoupAndCheckFen(state: GameState, square: SquareName, role: 'pawn' | 'knight' | 'bishop', royal: boolean): void {
+  const snapshot = structuredClone(state);
+  const prince = state.pieces.find(piece => piece.square === square)!;
+  const target = `${state.turn.color}-hand-1-coup`;
+  const effectCard = (state.effects.find(effect => (effect as { card?: CardInstance }).card?.id === target) as { card: CardInstance }).card;
+  const cards = (game: GameState) => [
+    ...(['white', 'black'] as const).flatMap(color => ['hand', 'deck', 'discard'].flatMap(zone => game.players[color][zone as 'hand' | 'deck' | 'discard'])),
+    ...game.effects.flatMap(effect => (effect as { card?: CardInstance }).card ?? []),
+  ].sort((a, b) => a.id.localeCompare(b.id));
+  assertCanonicalState(state);
+  assert.ok(cardPlayTargets(state, 'peace-talks').includes(target));
+  const cancelled = applied(state, { type: 'playCard', cardId: 'peace-talks', target });
+  assert.deepEqual(state, snapshot);
+  assert.deepEqual(cancelled.pieces, state.pieces.map(piece => piece.id === prince.id ? { ...piece, role, royal }
+    : royal && piece.royal && piece.owner === state.turn.color ? { ...piece, royal: false } : piece));
+  assert.deepEqual(cards(cancelled), cards(state));
+  assert.deepEqual(cancelled.players[state.turn.color].discard.find(card => card.id === target), effectCard);
+  assert.equal(cancelled.effects.some(effect => (effect as { card?: CardInstance }).card?.id === target), false);
+  assert.deepEqual(cancelled.effects.map(effect => (effect as { card: CardInstance }).card),
+    state.effects.filter(effect => (effect as { card: CardInstance }).card.id !== target).map(effect => (effect as { card: CardInstance }).card));
+  assert.deepEqual(cancelled.enPassant, state.enPassant);
+  assert.equal(cancelled.orientation, state.orientation);
+  assert.deepEqual({ ...cancelled.turn, cardPlays: state.turn.cardPlays }, state.turn);
+  assert.deepEqual(cancelled.fen.split(' ').slice(1), state.fen.split(' ').slice(1));
+  assert.equal(cancelled.fen.split(' ')[0], boardFen(cancelled));
+  const ended = applied(cancelled, { type: 'endTurn' });
+  assertCanonicalState(ended);
+  assert.deepEqual(ended.pieces, cancelled.pieces);
+  assert.equal(ended.outcome, null);
+}
+
+for (const color of ['white', 'black'] as const) {
+  const square = (at: SquareName): SquareName => color === 'white' ? at : `${at[0]}${9 - Number(at[1])}` as SquareName;
+  const fen = (board: string) => `${color === 'white' ? board : board.split('/').reverse().join('/').replace(/[a-z]/gi,
+    letter => letter === letter.toLowerCase() ? letter.toUpperCase() : letter.toLowerCase())} ${color[0]} - - 17 12`;
+  const move = (from: SquareName, to: SquareName): GameAction => ({ type: 'move', from: square(from), to: square(to) });
+  const coup = (target: SquareName): GameAction => ({ type: 'playCard', cardId: 'coup', target: square(target) });
+  for (const [letter, role] of [['P', 'pawn'], ['N', 'knight'], ['B', 'bishop']] as const) {
+    test(`Peace Talks synchronizes FEN when restoring a live ${color} Coup ${role} Prince`, () => {
+      let state = createGameState({
+        fen: fen(`4r2k/8/8/8/8/8/${letter}7/1N2K3`),
+        hands: { [color]: ['coup', 'coup', 'peace-talks'] },
+        decks: { [color]: ['crab', 'long-jump', 'dubbing'] },
+      });
+      for (const action of [
+        move('e1', 'd1'), coup('a2'), { type: 'endTurn' }, move('e8', 'd8'), { type: 'endTurn' },
+        move('b1', 'c3'), coup('c3'), { type: 'endTurn' }, move('d8', 'd7'), { type: 'endTurn' }, move('a2', 'a3'),
+      ] satisfies GameAction[]) state = applied(state, action);
+      cancelCoupAndCheckFen(state, square('a3'), role, true);
+    });
+  }
+  for (const role of ['knight', 'bishop'] as const) for (const retainedCopy of [false, true]) {
+    test(`Peace Talks preserves ${color} ordinary ${role} promotion${retainedCopy ? ' with a later Haunting Memories Coup retained' : ''}`, () => {
+      let state = createGameState({
+        fen: fen('7k/P7/3r4/8/8/8/2P5/1N2K3'),
+        hands: { [color]: retainedCopy ? ['coup', 'coup', 'haunting-memories', 'peace-talks'] : ['coup', 'coup', 'peace-talks'] },
+        decks: { [color]: ['crab', 'long-jump', 'dubbing', 'panic'] },
+      });
+      for (const action of [
+        { type: 'move', from: square('a7'), to: square('a8'), promotion: role }, coup(retainedCopy ? 'c2' : 'a8'), { type: 'endTurn' },
+        move('d6', 'd7'), { type: 'endTurn' }, move('b1', 'c3'), coup(retainedCopy ? 'a8' : 'c3'), { type: 'endTurn' },
+        move('d7', 'd6'), { type: 'endTurn' },
+        ...(retainedCopy ? [move('c3', 'b1'), { type: 'playCard', cardId: 'haunting-memories', target: square('b1') },
+          { type: 'endTurn' }, move('d6', 'd5'), { type: 'endTurn' }] satisfies GameAction[] : []),
+        move('a8', 'a7'),
+      ] satisfies GameAction[]) state = applied(state, action);
+      assert.equal(state.pieces.find(piece => piece.square === square('a7'))?.promoted, true);
+      if (retainedCopy) assert.ok(state.effects.some(effect => (effect as { card?: CardInstance }).card?.id === `${color}-hand-2-haunting-memories`));
+      cancelCoupAndCheckFen(state, square('a7'), role, !retainedCopy);
+    });
+  }
 }
 
 function afterSeededMove(state: GameState, seed: number): GameState {
@@ -142,7 +215,7 @@ test('cancellation across either owner and suspended state preserves unrelated e
 test('Earthquake reversal is canonical and unsafe Coup cancellation cannot expose a lost King', () => {
   const direction = pick(0x410300, ['clockwise', 'counterclockwise'] as const);
   const earthquake = afterSeededMove(createGameState({ hands: { white: ['peace-talks'] } }), 0x410301);
-  earthquake.orientation = direction === 'clockwise' ? 90 : 270;
+  earthquake.orientation = direction === 'clockwise' ? 270 : 90;
   earthquake.effects = [{
     type: 'earthquake', owner: 'black', card: { id: 'black-earthquake', cardId: 'earthquake' }, direction,
     target: { direction, promotions: [] },

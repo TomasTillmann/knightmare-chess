@@ -51,7 +51,7 @@ function assertAccepted(
   return results[0];
 }
 
-test('Chess960 queenside castling rejects every alias when a later King transit square is attacked', async t => {
+test('Chess960 queenside castling accepts every alias across attacked transit squares with a safe landing', async t => {
   for (const neutral of [false, true]) await t.test(neutral ? 'neutral attacker' : 'ordinary attacker', () => {
     let state = game(`${neutral ? '7k' : 'k7'}/8/8/8/8/8/2n5/R5K1 w Q - 0 1`);
     if (neutral) {
@@ -62,7 +62,10 @@ test('Chess960 queenside castling rejects every alias when a later King transit 
           : piece),
       };
     }
-    assertRejected(state, 'g1', ['c1', 'a1']);
+    const moved = assertAccepted(state, 'g1', ['c1', 'a1']);
+    const ended = applyAction(moved, { type: 'endTurn' });
+    assert.equal(ended.ok, true);
+    assert.equal(ended.state.turn.color, 'black');
   });
 });
 

@@ -16,6 +16,35 @@ const hasGhostwalkTarget = (state: GameState, move: CardMove): boolean =>
     return listed?.from === move.from && listed.to === move.to;
   });
 
+for (const [color, fen, move] of [
+  ['white', '7k/8/8/8/8/8/3P4/2B4K w - - 0 1', { from: 'c1', to: 'e3' }],
+  ['white', '7k/8/8/8/8/2P5/2P5/7K w - - 0 1', { from: 'c2', to: 'c4' }],
+  ['black', '2b4k/3p4/8/8/8/8/8/7K b - - 0 1', { from: 'c8', to: 'e6' }],
+  ['black', '7k/2p5/2p5/8/8/8/8/7K b - - 0 1', { from: 'c7', to: 'c5' }],
+] as const) {
+  test(`Ghostwalk passes a Coup royal ${color} piece from ${move.from} through its friendly blocker`, () => {
+    let state = createGameState({ fen, phase: 'afterMove', moveMade: true, hands: { [color]: ['coup', 'ghostwalk'] } });
+    const royal = state.pieces.find(piece => piece.square === move.from)!;
+    const coup = applyAction(state, { type: 'playCard', cardId: 'coup', target: move.from });
+    assert.equal(coup.ok, true);
+    state = coup.state;
+    for (const action of [
+      { type: 'endTurn' },
+      { type: 'move', from: color === 'white' ? 'h8' : 'h1', to: color === 'white' ? 'g8' : 'g1' },
+      { type: 'endTurn' },
+    ] as const) {
+      const result = applyAction(state, action);
+      assert.equal(result.ok, true);
+      state = result.state;
+    }
+    assert.equal(hasGhostwalkTarget(state, move), true);
+    const result = playGhostwalk(state, move);
+    assert.equal(result.ok, true);
+    assert.equal(result.state.pieces.find(piece => piece.id === royal.id)?.square, move.to);
+    assert.equal(result.state.pieces.find(piece => piece.id === royal.id)?.royal, true);
+  });
+}
+
 test('publishes Ghostwalk metadata', () => {
   assert.deepEqual(CARD_CATALOG.ghostwalk, {
     id: 'ghostwalk',

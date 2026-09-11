@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction, cardPlayTargets } from '../reducer.js';
+import { applyAction, cardPlayTargets, masqueradeDests } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { GameState, SquareName } from '../types.js';
+import type { GameAction, GameState, Role, SquareName } from '../types.js';
 
 const cardId = 'masquerade';
 
@@ -20,7 +20,7 @@ function play(state: GameState, from: SquareName, to: SquareName) {
   return applyAction(state, {
     type: 'playCard',
     cardId,
-    cardInstanceId: state.players.white.hand[0]?.id,
+    cardInstanceId: state.players[state.turn.color].hand.find(card => card.cardId === cardId)?.id,
     target: [{ from, to }],
   });
 }
@@ -30,6 +30,175 @@ function pieceAt(state: GameState, square: SquareName) {
   assert(piece, `expected a piece on ${square}`);
   return piece;
 }
+
+function advance(state: GameState, ...actions: GameAction[]): GameState {
+  for (const action of actions) {
+    const result = applyAction(state, action);
+    assert.equal(result.ok, true, JSON.stringify(result.ok ? action : result.error));
+    state = result.state;
+  }
+  return state;
+}
+
+const promotionFixtures = [
+  { color: 'white', opponent: 'black', fen: '7k/P7/8/8/8/8/8/7K w - - 0 1', pawn: 'a7', from: 'a8', to: 'a5', king: 'h8', wait: 'h7' },
+  { color: 'black', opponent: 'white', fen: '7k/8/8/8/8/8/p7/7K b - - 0 1', pawn: 'a2', from: 'a1', to: 'a4', king: 'h1', wait: 'h2' },
+] as const;
+
+function promotedGame(
+  fixture: typeof promotionFixtures[number],
+  role: Role = 'knight',
+  options: Parameters<typeof createGameState>[0] = {},
+) {
+  return advance(createGameState({ fen: fixture.fen, hands: { [fixture.color]: [cardId] }, ...options }),
+    { type: 'move', from: fixture.pawn, to: fixture.from, promotion: role },
+    { type: 'endTurn' });
+}
+
+function waitingTurn(state: GameState, fixture: typeof promotionFixtures[number]) {
+  return advance(state,
+    { type: 'move', from: fixture.king, to: fixture.wait },
+    { type: 'endTurn' });
+}
+
+describe('Masquerade ordinary promotion (finding44a)', () => {
+  // Derived from rulebook Transformed Pieces / Terminology: retained original-type
+  // targeting concerns Continuing Effects, not ordinary promotion. FAQ pp. 7–8
+  // addresses physical accounting and Crab/Prince targeting, not a named Masquerade ruling.
+  for (const fixture of promotionFixtures) {
+    for (const role of ['queen', 'rook', 'bishop', 'knight'] as const) {
+      it(`${fixture.color}: accepts an ordinarily promoted ${role} and preserves its identity and clocks`, () => {
+        const state = waitingTurn(promotedGame(fixture, role), fixture);
+        const before = structuredClone(state);
+        const piece = pieceAt(state, fixture.from);
+        assert.equal(piece.originalRole, 'pawn');
+        assert.equal(piece.promoted, true);
+        assert.equal(piece.role, role);
+        assert(masqueradeDests(state, fixture.from).includes(fixture.to));
+        const target = [{ from: fixture.from, to: fixture.to }];
+        assert(cardPlayTargets(state, cardId).some(candidate => JSON.stringify(candidate) === JSON.stringify(target)));
+        const result = play(state, fixture.from, fixture.to);
+        assert.equal(result.ok, true);
+        assert.deepStrictEqual(pieceAt(result.state, fixture.to), { ...piece, square: fixture.to });
+        assert.deepStrictEqual(state, before);
+        assert.equal(result.state.history.at(-1)?.type, 'cardPlayed');
+        assert.equal(result.state.turn.moveMade, true);
+        assert.equal(result.state.turn.cardPlays[fixture.color], 1);
+        assert.deepStrictEqual(result.state.players[fixture.color].discard, state.players[fixture.color].hand);
+        assert.deepStrictEqual(result.state.enPassant, []);
+        const clocks = state.fen.split(' ').slice(4).map(Number);
+        assert.deepStrictEqual(result.state.fen.split(' ').slice(4).map(Number),
+          [clocks[0] + 1, clocks[1] + (fixture.color === 'black' ? 1 : 0)]);
+        assert.equal(advance(result.state, { type: 'endTurn' }).turn.color, fixture.opponent);
+      });
+    }
+  }
+
+  it('keeps original Knights eligible for both colors', () => {
+    for (const fixture of promotionFixtures) {
+      const state = createGameState({
+        fen: fixture.color === 'white' ? 'N6k/8/8/8/8/8/8/7K w - - 0 1' : '7k/8/8/8/8/8/8/n6K b - - 0 1',
+        hands: { [fixture.color]: [cardId] },
+      });
+      assert.equal(pieceAt(state, fixture.from).promoted, false);
+      assert.equal(play(state, fixture.from, fixture.to).ok, true);
+    }
+  });
+
+  it('keeps ordinary Pawns and publicly created active Crabs excluded for both colors', () => {
+    for (const fixture of promotionFixtures) {
+      const pawn = fixture.color === 'white' ? 'd4' : 'd5';
+      const to = fixture.color === 'white' ? 'd7' : 'd2';
+      for (const crab of [false, true]) {
+        let state = createGameState({
+          fen: fixture.color === 'white' ? '7k/8/8/8/3P4/8/8/7K w - - 0 1' : '7k/8/8/3p4/8/8/8/7K b - - 0 1',
+          hands: { [fixture.color]: crab ? ['crab', cardId] : [cardId] },
+        });
+        if (crab) {
+          state = advance(state,
+            { type: 'move', from: fixture.color === 'white' ? 'h1' : 'h8', to: fixture.color === 'white' ? 'g1' : 'g8' },
+            { type: 'playCard', cardId: 'crab', target: pawn },
+            { type: 'endTurn' });
+          state = waitingTurn(state, fixture);
+          assert.deepStrictEqual(state.effects, [{
+            type: 'crab', owner: fixture.color, pieceId: pieceAt(state, pawn).id,
+            card: { id: `${fixture.color}-hand-0-crab`, cardId: 'crab' },
+          }]);
+        }
+        const before = structuredClone(state);
+        assert.deepStrictEqual(masqueradeDests(state, pawn), []);
+        assert(!cardPlayTargets(state, cardId).some(target => JSON.stringify(target).includes(`"from":"${pawn}"`)));
+        const result = play(state, pawn, to);
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.error.code, 'WRONG_ROLE');
+        assert.deepStrictEqual(result.state, before);
+        assert.deepStrictEqual(state, before);
+      }
+    }
+  });
+
+  it('rejects malformed and occupied promoted-Knight moves atomically for both colors', () => {
+    for (const fixture of promotionFixtures) {
+      const state = waitingTurn(promotedGame(fixture), fixture);
+      for (const [target, code] of [
+        [[{ from: fixture.from, to: fixture.to, promotion: 'queen' }], 'INVALID_TARGET'],
+        [[{ from: fixture.from, to: fixture.from }], 'ILLEGAL_MOVE'],
+        [[{ from: fixture.from, to: fixture.color === 'white' ? 'h1' : 'h8' }], 'ILLEGAL_MOVE'],
+      ] as const) {
+        const before = structuredClone(state);
+        const result = applyAction(state, { type: 'playCard', cardId, target });
+        assert.equal(result.ok, false);
+        if (!result.ok) assert.equal(result.error.code, code);
+        assert.deepStrictEqual(result.state, before);
+        assert.deepStrictEqual(state, before);
+      }
+    }
+  });
+
+  it('allows Haunting Memories to copy Masquerade onto an ordinary promoted Knight for both colors', () => {
+    for (const fixture of promotionFixtures) {
+      let state = promotedGame(fixture, 'knight', {
+        hands: { [fixture.color]: ['haunting-memories'], [fixture.opponent]: [cardId] },
+      });
+      state = advance(state,
+        { type: 'playCard', cardId, target: [{ from: fixture.king, to: fixture.wait }] },
+        { type: 'endTurn' });
+      const target = [{ from: fixture.from, to: fixture.to }];
+      assert(cardPlayTargets(state, 'haunting-memories').some(candidate => JSON.stringify(candidate) === JSON.stringify(target)));
+      const piece = pieceAt(state, fixture.from);
+      const next = advance(state, { type: 'playCard', cardId: 'haunting-memories', target });
+      assert.deepStrictEqual(pieceAt(next, fixture.to), { ...piece, square: fixture.to });
+      assert.equal(next.history.at(-1)?.copiedCardId, cardId);
+      assert.equal(next.players[fixture.color].discard.at(-1)?.cardId, 'haunting-memories');
+    }
+  });
+
+  it('allows a Pawn carrier merged with an ordinarily promoted Knight for both colors', () => {
+    for (const fixture of promotionFixtures) {
+      const carrier = fixture.color === 'white' ? 'b6' : 'b3';
+      const to = fixture.color === 'white' ? 'e6' : 'e3';
+      let state = waitingTurn(promotedGame(fixture, 'knight', {
+        fen: fixture.color === 'white' ? '7k/P7/1P6/8/8/8/8/7K w - - 0 1' : '7k/8/8/8/8/1p6/p7/7K b - - 0 1',
+        hands: { [fixture.color]: ['confabulation', cardId] },
+      }), fixture);
+      const knight = pieceAt(state, fixture.from);
+      state = advance(state,
+        { type: 'playCard', cardId: 'confabulation', target: [{ from: fixture.from, to: carrier }] },
+        { type: 'endTurn' },
+        { type: 'move', from: fixture.wait, to: fixture.king },
+        { type: 'endTurn' });
+      assert.equal(state.pieces.find(piece => piece.id === knight.id)?.zone, 'away');
+      const pawn = pieceAt(state, carrier);
+      assert.equal(pawn.promoted, false);
+      assert(masqueradeDests(state, carrier).includes(to));
+      const next = advance(state, { type: 'playCard', cardId, target: [{ from: carrier, to }] });
+      assert.deepStrictEqual(pieceAt(next, to), { ...pawn, square: to });
+      assert.deepStrictEqual(next.pieces.find(piece => piece.id === knight.id), state.pieces.find(piece => piece.id === knight.id));
+      assert.deepStrictEqual(next.effects, state.effects);
+      assert.equal(next.fen.split(' ')[4], '0');
+    }
+  });
+});
 
 describe('Masquerade', () => {
   it('publishes the printed card metadata', () => {
@@ -121,11 +290,10 @@ describe('Masquerade', () => {
     }
   });
 
-  it('excludes any current or original Pawn identity', () => {
+  it('excludes current Pawns and unpromoted original Pawn identities', () => {
     const rejectedCases: Array<[string, (piece: ReturnType<typeof pieceAt>) => void]> = [
       ['current Pawn', () => {}],
       ['original Pawn transformed to Knight', piece => { piece.role = 'knight'; }],
-      ['promoted original Pawn', piece => { piece.role = 'queen'; piece.promoted = true; }],
       ['original non-Pawn transformed to current Pawn', piece => {
         piece.role = 'pawn';
         piece.originalRole = 'knight';

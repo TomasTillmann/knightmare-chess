@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState } from '../state.js';
-import { applyAction, cardPlayTargets } from '../reducer.js';
-import type { GameState } from '../types.js';
+import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js';
+import type { Color, GameAction, GameState, SquareName } from '../types.js';
 import { CARD_CATALOG } from './catalog.js';
 
 function ready() {
@@ -15,6 +15,128 @@ function ready() {
 function play(state: GameState, target: unknown) {
   return applyAction(state, { type: 'playCard', cardId: 'neutrality', target });
 }
+
+function advance(state: GameState, ...actions: GameAction[]): GameState {
+  for (const action of actions) {
+    const before = structuredClone(state);
+    const result = applyAction(state, action);
+    assert.deepEqual(state, before, 'public actions preserve their input');
+    assert.equal(result.ok, true, JSON.stringify(result.ok ? action : result.error));
+    state = result.state;
+  }
+  return state;
+}
+
+function promotionSquare(owner: Color, square: SquareName): SquareName {
+  return owner === 'black' ? square : `${square[0]}${9 - Number(square[1])}` as SquareName;
+}
+
+for (const owner of ['black', 'white'] as const) {
+  const opponent = owner === 'black' ? 'white' : 'black';
+  const square = (value: SquareName) => promotionSquare(owner, value);
+  for (const [promotion, destination] of [['queen', 'a3'], ['rook', 'a3'], ['bishop', 'b2'], ['knight', 'b3']] as const) {
+    test(`Neutrality ${promotion === 'queen' ? 'suspends' : 'continues'} on ${owner} Pawn promotion to ${promotion}`, () => {
+      let state = createGameState({
+        fen: owner === 'black' ? '6k1/8/8/8/8/8/p7/5K2 w - - 0 1' : '5k2/P7/8/8/8/8/8/6K1 b - - 0 1',
+        hands: { [opponent]: ['neutrality'] }, decks: { [opponent]: ['pacifism'] },
+      });
+      const pawn = state.pieces.find(piece => piece.square === square('a2'))!;
+      const card = state.players[opponent].hand[0];
+      state = advance(state,
+        { type: 'move', from: square('f1'), to: square('f2') },
+        { type: 'playCard', cardId: 'neutrality', target: square('a2') }, { type: 'endTurn' });
+      const marked = state;
+      state = advance(state, { type: 'move', from: square('a2'), to: square('a1'), promotion });
+      assert.deepEqual(state.pieces.find(piece => piece.id === pawn.id), {
+        ...pawn, square: square('a1'), role: promotion, promoted: true,
+        neutral: promotion !== 'queen', neutralBeforeEffects: false,
+      });
+      assert.deepEqual(state.effects, marked.effects, 'retain the exact marker and physical card');
+      assert.deepEqual(state.players, marked.players, 'promotion neither discards nor draws another card');
+      assert.ok(JSON.stringify(state.effects).includes(card.id));
+      state = advance(state, { type: 'endTurn' });
+      const move: GameAction = { type: 'move', from: square('a1'), to: square(destination) };
+      assert.equal(legalDests(state).get(square('a1'))?.includes(square(destination)) ?? false, promotion !== 'queen');
+      const opposingMove = applyAction(state, move);
+      assert.equal(opposingMove.ok, promotion !== 'queen');
+      if (!opposingMove.ok) assert.deepEqual(opposingMove.state, state);
+      state = advance(state, { type: 'move', from: square('f2'), to: square('f3') }, { type: 'endTurn' }, move);
+      assert.equal(state.pieces.find(piece => piece.id === pawn.id)?.square, square(destination), 'original owner retains control');
+    });
+  }
+
+  test(`${owner} promotion refreshes Neutrality before checking the acting King's safety`, () => {
+    for (const ownPawn of [true, false]) for (const promotion of ['queen', 'rook', 'bishop', 'knight'] as const) {
+      const fen = ownPawn
+        ? owner === 'black' ? '5K2/8/8/8/8/8/p7/2k5 w - - 0 1' : '2K5/P7/8/8/8/8/8/5k2 b - - 0 1'
+        : owner === 'black' ? '6k1/8/8/8/8/8/p7/3K4 w - - 0 1' : '3k4/P7/8/8/8/8/8/6K1 b - - 0 1';
+      let state = advance(createGameState({ fen, hands: { [opponent]: ['neutrality'] } }),
+        { type: 'move', from: square(ownPawn ? 'f8' : 'd1'), to: square(ownPawn ? 'f7' : 'c1') },
+        { type: 'playCard', cardId: 'neutrality', target: square('a2') }, { type: 'endTurn' });
+      if (!ownPawn) state = advance(state,
+        { type: 'move', from: square('g8'), to: square('h8') }, { type: 'endTurn' });
+      const result = applyAction(state, { type: 'move', from: square('a2'), to: square('a1'), promotion });
+      const allowed = promotion === 'queen' ? ownPawn : promotion !== 'rook';
+      assert.equal(result.ok, allowed, `${promotion}, ownPawn=${ownPawn}`);
+      if (result.ok) {
+        assert.equal(isKingInCheck(result.state, state.turn.color), false);
+        advance(result.state, { type: 'endTurn' });
+      } else assert.deepEqual(result.state, state, 'unsafe promotion is atomic');
+    }
+  });
+}
+
+for (const cardId of ['figure-dance', 'earthquake'] as const) {
+  test(`Neutrality refreshes for actual ${cardId} promotions`, () => {
+    for (const promotion of ['queen', 'rook', 'bishop', 'knight'] as const) {
+      const dance = cardId === 'figure-dance';
+      let state = createGameState({
+        fen: dance ? 'p7/8/6k1/8/8/8/5K2/8 w - - 0 1' : '6k1/8/8/8/p7/8/5K2/8 w - - 0 1',
+        hands: { white: ['neutrality'], black: [cardId] },
+      });
+      state = advance(state, { type: 'move', from: 'f2', to: 'f3' },
+        { type: 'playCard', cardId: 'neutrality', target: dance ? 'a8' : 'a4' }, { type: 'endTurn' },
+        { type: 'move', from: dance ? 'g6' : 'g8', to: dance ? 'g5' : 'g7' });
+      const marker = structuredClone(state.effects[0]);
+      state = advance(state, { type: 'playCard', cardId,
+        target: dance ? [{ square: 'a1', role: promotion }] : { direction: 'counterclockwise', promotions: [{ square: 'a4', role: promotion }] } });
+      assert.equal(state.history.at(-1)?.type, 'cardPlayed');
+      const pawn = state.pieces.find(piece => piece.id === `black-pawn-${dance ? 'a8' : 'a4'}`)!;
+      assert.equal(pawn.role, promotion);
+      assert.equal(pawn.neutral, promotion !== 'queen');
+      assert.deepEqual(state.effects[0], marker);
+      assert.deepEqual(state.players.white.discard, []);
+    }
+  });
+}
+
+test('Neutrality on a Knight component still controls its Queen composite after movement', () => {
+  let state = advance(createGameState({ fen: '6k1/8/8/8/4q3/2n5/8/5K2 w - - 0 1',
+    hands: { white: ['neutrality'], black: ['confabulation'] } }),
+  { type: 'move', from: 'f1', to: 'f2' }, { type: 'playCard', cardId: 'neutrality', target: 'c3' },
+  { type: 'endTurn' }, { type: 'playCard', cardId: 'confabulation', target: [{ from: 'c3', to: 'e4' }] });
+  assert.equal(state.history.at(-1)?.type, 'cardPlayed');
+  const marker = structuredClone(state.effects[0]);
+  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.neutral, true);
+  state = advance(state, { type: 'endTurn' }, { type: 'move', from: 'e4', to: 'e5' });
+  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.neutral, true);
+  assert.deepEqual(state.effects[0], marker);
+});
+
+test('Peace Talks cancels the retained Neutrality card after Queen promotion', () => {
+  let state = advance(createGameState({ fen: '6k1/8/8/8/8/8/p7/5K2 w - - 0 1',
+    hands: { white: ['neutrality'], black: ['peace-talks'] } }),
+  { type: 'move', from: 'f1', to: 'f2' }, { type: 'playCard', cardId: 'neutrality', target: 'a2' },
+  { type: 'endTurn' }, { type: 'move', from: 'a2', to: 'a1', promotion: 'queen' });
+  assert.equal(state.pieces.find(piece => piece.square === 'a1')?.neutral, false);
+  assert.ok(cardPlayTargets(state, 'peace-talks').includes('white-hand-0-neutrality'));
+  state = advance(state, { type: 'playCard', cardId: 'peace-talks', target: 'white-hand-0-neutrality' });
+  assert.equal(state.effects.length, 0);
+  assert.deepEqual(state.players.white.discard, [{ id: 'white-hand-0-neutrality', cardId: 'neutrality' }]);
+  assert.equal(state.pieces.find(piece => piece.square === 'a1')?.neutral, false);
+  state = advance(state, { type: 'endTurn' });
+  assert.equal(applyAction(state, { type: 'move', from: 'a1', to: 'a3' }).ok, false);
+});
 
 test('Neutrality requires the completed Regular Move', () => {
   const state = createGameState({ hands: { white: ['neutrality'] } });

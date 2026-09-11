@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { GameState } from '../types.js';
@@ -128,6 +128,8 @@ const rationale = [
   '116. Crab targets Pe7 but cannot suppress Nf4-h5 attack; failed rescue spends/discards Crab, draws Cathedral, restores royal h6 and clock 4/fullmove 25; Black retains replacement move.',
 ];
 
+// F4 / FAQ p.16: only actions 1–77 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 78; original artifact hashes remain unchanged.
 test('iteration 079 independently reviewed deterministic campaign', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/079.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(rationale.length, 116);
@@ -135,7 +137,7 @@ test('iteration 079 independently reviewed deterministic campaign', () => {
   assert.equal(trace.moves, 50);
   assert.equal(trace.steps.filter(s => s.action.type === 'playCard').length, 16);
   const states: GameState[] = [createGameState(trace.initial)];
-  for (const [i, { action }] of trace.steps.entries()) {
+  for (const [i, { action }] of trace.steps.slice(0, 77).entries()) {
     const before = states[i]!;
     const result = applyAction(before, action);
     assert.ok(result.ok, rationale[i]);
@@ -221,35 +223,7 @@ test('iteration 079 independently reviewed deterministic campaign', () => {
   assert.equal(states[66]!.fen.split(' ')[4], '0');
   assert.deepEqual(states[73]!.effects.at(-1), { type: 'challenge', owner: 'white', player: 'black', pieceId: 'black-rook-a8' });
   assert.equal(states[75]!.effects.length, 2);
-  for (const [step, restored] of [[78, 76], [80, 76], [116, 114]]) {
-    assert.equal(states[step!]!.fen, states[restored!]!.fen);
-    assert.deepEqual(states[step!]!.pieces, states[restored!]!.pieces);
-    assert.deepEqual(states[step!]!.effects, states[restored!]!.effects);
-    assert.equal(states[step!]!.turn.moveMade, false);
-  }
-  assert.equal(piece(85, 'white-pawn-f2').square, 'b3');
-  // Iteration 152 exposed this historical §17.1 rollback: a failed rescue
-  // must retain Chaos's ban until a legal replacement move is completed.
-  const chaosBan = { player: 'white', movement: 'white-king-e1:d2:e3' };
-  assert.deepEqual(states[80]!.chaosForbidden, chaosBan);
-  assert.equal(states[81]!.chaosForbidden, undefined);
-  assert.deepEqual(states[81]!.chaosCheckpoint?.before.chaosForbidden, chaosBan);
-  assert.equal(piece(85, 'white-pawn-e2').square, 'e4');
-  assert.equal(piece(85, 'white-pawn-c2').square, 'c4');
-  assert.deepEqual(states[88]!.effects.at(-1), { type: 'curse', owner: 'black', card: { id: 'black-deck-4-curse', cardId: 'curse' }, pieceId: 'white-bishop-f1' });
-  assert.equal(piece(91, 'white-pawn-b2').royal, true);
-  assert.equal(piece(91, 'white-king-e1').royal, false);
-  assert.equal(piece(95, 'black-pawn-a7').square, 'b5');
-  assert.equal(piece(104, 'white-rook-a1').square, 'h1');
-  assert.equal(piece(104, 'white-queen-d1').square, 'h8');
-  assert.deepEqual(states[108]!.effects.at(-1), { type: 'pacifism', owner: 'white', card: { id: 'white-deck-6-pacifism', cardId: 'pacifism' }, pieceId: 'black-pawn-a7' });
-  assert.equal(piece(116, 'black-pawn-h7').square, 'h6');
-  assert.equal(piece(116, 'black-pawn-e7').role, 'pawn');
-  assert.equal(states[116]!.fen, '2b2q1Q/2rpp1br/5Pkp/1pp3p1/1nP1PN2/PPKP3N/1P5P/1B3n1R b - - 4 25');
-  // Preserve the original campaign artifact; only these two historical
-  // snapshots change when §17.1 preserves the ban across failed rescue.
-  const correctedTrace = structuredClone(trace);
-  correctedTrace.steps[79]!.expected = '8905d17320878a10ea68226563c7fece7639e171d287c5207b9c6a0727f1b8b9';
-  correctedTrace.steps[80]!.expected = '58a914708d5947ddf32b5405fdd86abb58927576fa01611ce09d8f33d45deca1';
-  assert.deepEqual(replayTrace(correctedTrace), states.at(-1));
+  const final = states.at(-1)!;
+  assert.deepEqual(replayTrace(trace, 78), final);
+  rejectPendingCancellation(final, trace.steps[77]!.action, [{"type":"playCard","cardId":"coup","cardInstanceId":"white-hand-2-coup","target":"f2"}]);
 });

@@ -290,7 +290,7 @@ describe('Revenge interactions', () => {
     const rotated = stateOf(applyAction(moved, {
       type: 'playCard',
       cardId: 'earthquake',
-      target: { direction: 'clockwise', promotions: [] },
+      target: { direction: 'counterclockwise', promotions: [] },
     }));
     const whiteTurn = stateOf(applyAction(rotated, { type: 'endTurn' }));
     const captured = stateOf(applyAction(whiteTurn, { type: 'move', from: 'd4', to: 'e5' }));

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createGameState } from '../state.js';
-import { applyAction, cardPlayTargets } from '../reducer.js';
+import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js';
 import { CARD_CATALOG } from './catalog.js';
 import type { GameAction, GameState } from '../types.js';
 
@@ -129,22 +129,22 @@ test('a synthetic afterMove phase without a move supplies no trigger', () => {
   assert.equal(applyAction(state, { type: 'playCard', cardId: 'mystic-shield', target: 'e2' }).ok, false);
 });
 
-test('moving a King does not create a legal target', () => {
+test('moving a King creates a legal Mystic Shield target', () => {
   const state = act(createGameState({
     fen: '7k/8/8/8/8/8/4P3/7K w - - 0 1', hands: { white: ['mystic-shield'] },
   }), { type: 'move', from: 'h1', to: 'g1' });
-  assert.deepEqual(cardPlayTargets(state, 'mystic-shield'), []);
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'mystic-shield', target: 'g1' }).ok, false);
+  assert.deepEqual(cardPlayTargets(state, 'mystic-shield'), ['g1']);
+  assert.equal(act(state, { type: 'playCard', cardId: 'mystic-shield', target: 'g1' }).history.at(-1)?.type, 'cardPlayed');
 });
 
-test('castling permits the relocated Rook, but not the King', () => {
+test('castling permits either the relocated King or Rook', () => {
   const state = act(createGameState({
     fen: 'k7/8/8/8/8/8/8/4K2R w K - 4 3', hands: { white: ['mystic-shield'] },
   }), { type: 'move', from: 'e1', to: 'g1' });
-  assert.deepEqual(cardPlayTargets(state, 'mystic-shield'), ['f1']);
+  assert.deepEqual(cardPlayTargets(state, 'mystic-shield').sort(), ['f1', 'g1']);
   const shielded = act(state, { type: 'playCard', cardId: 'mystic-shield', target: 'f1' });
   assert.equal(shielded.history.at(-1)?.type, 'cardPlayed');
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'mystic-shield', target: 'g1' }).ok, false);
+  assert.equal(act(state, { type: 'playCard', cardId: 'mystic-shield', target: 'g1' }).history.at(-1)?.type, 'cardPlayed');
 });
 
 test('a promoted pawn remains the moved physical piece', () => {
@@ -168,14 +168,110 @@ test('a controlled neutral piece qualifies despite its original owner', () => {
   assert.equal(shielded.pieces.find(piece => piece.square === 'e4')?.owner, 'black');
 });
 
-test('nonroyal role does not permit shielding a royal physical piece', () => {
+test('a moved royal Pawn also qualifies for Mystic Shield', () => {
   const initial = createGameState({
     fen: '7k/8/8/8/8/8/4P3/7K w - - 0 1', hands: { white: ['mystic-shield'] },
   });
   initial.pieces.find(piece => piece.square === 'e2')!.royal = true;
   const state = act(initial, { type: 'move', from: 'e2', to: 'e4' });
-  assert.deepEqual(cardPlayTargets(state, 'mystic-shield'), []);
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'mystic-shield', target: 'e4' }).ok, false);
+  assert.deepEqual(cardPlayTargets(state, 'mystic-shield'), ['e4']);
+  assert.equal(act(state, { type: 'playCard', cardId: 'mystic-shield', target: 'e4' }).history.at(-1)?.type, 'cardPlayed');
+});
+
+for (const [color, opponent, fen, from, to, safe, waitFrom, waitTo] of [
+  ['white', 'black', '5r1k/8/8/8/8/8/8/4K3 w - - 0 1', 'e1', 'f1', 'd1', 'h8', 'h7'],
+  ['black', 'white', '4k3/8/8/8/8/8/8/5R1K b - - 0 1', 'e8', 'f8', 'd8', 'h1', 'h2'],
+] as const) {
+  test(`${color} King may enter check, play Shield, and becomes checked again after expiry (FAQ page 5)`, () => {
+    const initial = createGameState({ fen, hands: { [color]: ['mystic-shield', 'mystic-shield'] }, decks: { [color]: ['merciless'] } });
+    const snapshot = structuredClone(initial);
+    const [retained, selected] = initial.players[color].hand;
+    assert.ok(legalDests(initial).get(from)?.includes(to));
+    assert.equal(legalDests(initial, false).get(from)?.includes(to) ?? false, false);
+    let state = act(initial, { type: 'move', from, to });
+    assert.ok(state.pendingRescue);
+    assert.equal(isKingInCheck(state, color), true);
+    assert.equal(applyAction(state, { type: 'endTurn' }).ok, false);
+    assert.deepEqual(cardPlayTargets(state, 'mystic-shield'), [to]);
+    const beforeShield = structuredClone(state);
+    state = act(state, { type: 'playCard', cardId: 'mystic-shield', cardInstanceId: selected.id, target: to });
+    assert.equal(state.history.at(-1)?.type, 'cardPlayed');
+    assert.equal(state.pendingRescue, null);
+    assert.equal(isKingInCheck(state, color), false);
+    assert.deepEqual(state.pieces, beforeShield.pieces);
+    assert.equal(state.fen, beforeShield.fen);
+    assert.deepEqual(state.players[color].discard, [selected]);
+    assert.equal(state.players[color].hand[0]?.id, retained.id);
+    assert.deepEqual(state.players[color].hand.map(card => card.cardId), ['mystic-shield', 'merciless']);
+    assert.equal(state.turn.cardPlays[color], 1);
+    state = act(state, { type: 'endTurn' });
+    assert.equal(state.turn.color, opponent);
+    assert.equal(isKingInCheck(state, color), false);
+    state = act(state, { type: 'move', from: waitFrom, to: waitTo });
+    assert.equal(isKingInCheck(state, color), false);
+    state = act(state, { type: 'endTurn' });
+    assert.equal(isKingInCheck(state, color), true);
+    assert.equal(state.outcome, null);
+    assert.deepEqual(initial, snapshot);
+  });
+
+  test(`${color} King can be shielded after a safe move`, () => {
+    const initial = createGameState({ fen, hands: { [color]: ['mystic-shield'] } });
+    const movedKing = act(initial, { type: 'move', from, to: safe });
+    assert.deepEqual(cardPlayTargets(movedKing, 'mystic-shield'), [safe]);
+    assert.equal(act(movedKing, { type: 'playCard', cardId: 'mystic-shield', target: safe }).history.at(-1)?.type, 'cardPlayed');
+  });
+
+  test(`${color} cannot enter check without an available Shield card`, () => {
+    for (const hand of [[], ['fireball']] as string[][]) {
+      const state = createGameState({ fen, hands: { [color]: hand } });
+      const snapshot = structuredClone(state);
+      assert.equal(legalDests(state).get(from)?.includes(to) ?? false, false);
+      const rejected = applyAction(state, { type: 'move', from, to });
+      assert.equal(rejected.ok, false);
+      assert.deepEqual(rejected.state, snapshot);
+      assert.deepEqual(state, snapshot);
+    }
+  });
+}
+
+for (const [color, fen, from, to] of [
+  ['white', 'k5r1/8/8/8/8/8/8/4K2R w K - 0 1', 'e1', 'g1'],
+  ['black', '4k2r/8/8/8/8/8/8/K5R1 b k - 0 1', 'e8', 'g8'],
+] as const) {
+  test(`${color} castled King can use Mystic Shield to rescue its attacked destination`, () => {
+    const initial = createGameState({ fen, hands: { [color]: ['mystic-shield'] } });
+    assert.ok(legalDests(initial).get(from)?.includes(to));
+    const movedKing = act(initial, { type: 'move', from, to });
+    assert.ok(movedKing.pendingRescue);
+    const shielded = act(movedKing, { type: 'playCard', cardId: 'mystic-shield', target: to });
+    assert.equal(shielded.history.at(-1)?.type, 'cardPlayed');
+    assert.equal(shielded.pendingRescue, null);
+    assert.equal(isKingInCheck(shielded, color), false);
+    assert.equal(act(shielded, { type: 'endTurn' }).turn.color, color === 'white' ? 'black' : 'white');
+  });
+}
+
+test('a Coup royal Knight may enter check and rescue itself with Mystic Shield', () => {
+  let state = createGameState({ fen: '5r1k/8/8/8/8/8/4N3/K7 w - - 0 1', hands: { white: ['coup', 'mystic-shield'] } });
+  state = act(state, { type: 'move', from: 'a1', to: 'b1' });
+  state = act(state, { type: 'playCard', cardId: 'coup', target: 'e2' });
+  state = act(state, { type: 'endTurn' });
+  state = act(state, { type: 'move', from: 'h8', to: 'h7' });
+  state = act(state, { type: 'endTurn' });
+  assert.ok(legalDests(state).get('e2')?.includes('f4'));
+  state = act(state, { type: 'move', from: 'e2', to: 'f4' });
+  assert.equal(state.pieces.find(piece => piece.square === 'f4')?.royal, true);
+  assert.ok(state.pendingRescue);
+  const before = structuredClone(state);
+  const wrongTarget = applyAction(state, { type: 'playCard', cardId: 'mystic-shield', target: 'b1' });
+  assert.equal(wrongTarget.ok, false);
+  assert.deepEqual(wrongTarget.state, before);
+  state = act(state, { type: 'playCard', cardId: 'mystic-shield', target: 'f4' });
+  assert.equal(state.history.at(-1)?.type, 'cardPlayed');
+  assert.equal(state.pendingRescue, null);
+  assert.equal(isKingInCheck(state, 'white'), false);
+  assert.equal(act(state, { type: 'endTurn' }).turn.color, 'black');
 });
 
 test('one regular card consumes the whole normal card allowance', () => {

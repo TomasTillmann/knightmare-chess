@@ -47,7 +47,7 @@ const rationales = [
   '37 White Nb1-d2 jumps to the empty square and expires h6.',
   '38 End White\'s completed Knight move.',
   '39 Black Nb4xa2 jumps to capture the White original a1 Rook.',
-  '40 Earthquake rotates counterclockwise: White now advances west and Black east; a3 promotes to White Rook, h5 to Black Knight, opponent first.',
+  '40 Earthquake rotates clockwise: White now advances west and Black east; a3 promotes to White Rook, h5 to Black Knight, opponent first.',
   '41 End Black\'s turn retaining the rotation and Forbidden City.',
   '42 White Nd2-f3 makes an ordinary quiet L jump under rotation.',
   '43 End White\'s completed Knight move.',
@@ -67,7 +67,7 @@ const cardActions: Record<number, { cardId: string; cardInstanceId: string; targ
   20: { cardId: 'rebirth', cardInstanceId: 'white-hand-0-rebirth', target: [{ from: 'b7', to: 'e7' }] },
   22: { cardId: 'assassin', cardInstanceId: 'black-hand-0-assassin', target: [{ from: 'e8', to: 'd8' }] },
   29: { cardId: 'forbidden-city', cardInstanceId: 'white-deck-0-forbidden-city', target: 'b8' },
-  40: { cardId: 'earthquake', cardInstanceId: 'black-hand-1-earthquake', target: { direction: 'counterclockwise', promotions: [{ square: 'a3', role: 'rook' }, { square: 'h5', role: 'knight' }] } },
+  40: { cardId: 'earthquake', cardInstanceId: 'black-hand-1-earthquake', target: { direction: 'clockwise', promotions: [{ square: 'a3', role: 'rook' }, { square: 'h5', role: 'knight' }] } },
   47: { cardId: 'holy-quest', cardInstanceId: 'white-deck-1-holy-quest', target: { bishop: 'f8', knight: 'h5' } },
   50: { cardId: 'plots-within-plots', cardInstanceId: 'black-deck-2-plots-within-plots', target: { player: 'black' } },
 };
@@ -196,7 +196,7 @@ test('iteration 148: independent first 49 rows, then Plots must keep a legal Dun
         const pawn = at('a3')!, opponent = at('h5')!;
         assert.equal(pawn.originalRole,'pawn'); assert.equal(opponent.originalRole,'pawn');
         pawn.role = 'rook'; pawn.promoted = true; opponent.role = 'knight'; opponent.promoted = true;
-        effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:cardActions[40]!.target});
+        effects.push({type:'earthquake',owner,card,direction:'clockwise',target:cardActions[40]!.target});
       }
       if (row === 47) { const bishop = at('f8')!, knight = at('h5')!; bishop.square = 'h5'; knight.square = 'f8'; }
       historyLength++;

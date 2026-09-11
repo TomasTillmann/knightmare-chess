@@ -242,7 +242,7 @@ test('iteration 130: every action independently preserves physical and rule stat
         for (const [square, role] of [['a6', 'knight'], ['a7', 'queen'], ['h2', 'queen']] as const) {
           const pawn = at(square)!; assert.equal(pawn.role, 'pawn'); pawn.role = role; pawn.promoted = true;
         }
-        effects.push({ type: 'earthquake', owner, card, direction: 'clockwise', target: { direction: 'clockwise', promotions: [{ square: 'a6', role: 'knight' }, { square: 'a7', role: 'queen' }, { square: 'h2', role: 'queen' }] } });
+        effects.push({ type: 'earthquake', owner, card, direction: 'counterclockwise', target: { direction: 'counterclockwise', promotions: [{ square: 'a6', role: 'knight' }, { square: 'a7', role: 'queen' }, { square: 'h2', role: 'queen' }] } });
       } else if (action.cardId === 'neutrality') {
         const pawn = at('g2')!; assert.equal(pawn.owner, 'white');
         pawn.neutralBeforeEffects = false; pawn.neutral = true;

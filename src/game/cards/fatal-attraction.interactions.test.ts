@@ -126,21 +126,22 @@ test('Dubbing moving the magnet discards Fatal Attraction and releases neighbors
   assert.ok(destinations(state, 'e5').includes('e4'));
 });
 
-test('Holy War swaps a frozen Bishop and the magnet without expiring its marker', () => {
-  let state = setup('holy-war', '7k/6n1/8/4B3/3N4/8/1P6/R3K3 w - - 7 3');
-  const id = state.pieces.find(piece => piece.square === 'd4')!.id;
-  state = play(whiteAfterMove(state), 'holy-war', { knight: 'd4', bishop: 'e5' });
-  assert.equal(state.pieces.find(piece => piece.id === id)?.square, 'e5');
-  assert.deepEqual(destinations(state, 'd4'), []);
-  assert.equal(state.players.white.discard.some(card => card.cardId === 'fatal-attraction'), false);
+test('Holy War cannot swap a frozen Bishop even when the other piece is its magnet', () => {
+  const state = whiteAfterMove(setup('holy-war', '7k/6n1/8/4B3/3N4/8/1P6/R3K3 w - - 7 3'));
+  const before = structuredClone(state);
+  const result = applyAction(state, { type: 'playCard', cardId: 'holy-war', target: { knight: 'd4', bishop: 'e5' } });
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.state, before);
+  assert.deepEqual(state, before);
 });
 
-test('Anathema swaps an opposing frozen Bishop with a remote Rook', () => {
-  let state = setup('anathema', '7k/6nr/8/4b3/3P4/8/1P6/R3K3 w - - 7 3');
-  const bishopId = state.pieces.find(piece => piece.square === 'e5')!.id;
-  state = play(whiteAfterMove(state), 'anathema', { bishop: 'e5', rook: 'h7' });
-  assert.equal(state.pieces.find(piece => piece.id === bishopId)?.square, 'h7');
-  assert.deepEqual(destinations(state, 'e5'), []);
+test('Anathema cannot swap an opposing frozen Bishop with a remote Rook', () => {
+  const state = whiteAfterMove(setup('anathema', '7k/6nr/8/4b3/3P4/8/1P6/R3K3 w - - 7 3'));
+  const before = structuredClone(state);
+  const result = applyAction(state, { type: 'playCard', cardId: 'anathema', target: { bishop: 'e5', rook: 'h7' } });
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.state, before);
+  assert.deepEqual(state, before);
 });
 
 test('Crab transformation preserves the physical magnet and its aura', () => {

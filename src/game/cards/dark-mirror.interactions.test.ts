@@ -8,7 +8,7 @@ const play = (state: ReturnType<typeof createGameState>, cardId: string, target:
 
 test("Earthquake rotates Dark Mirror's backward capture", () => {
   const state = createGameState({ fen: "4k3/8/8/8/3P4/2p5/8/4K3 b - - 0 1", hands: { black: ["earthquake"], white: ["dark-mirror"] }, phase: "afterMove", moveMade: true });
-  const earthquake = play(state, "earthquake", { direction: "clockwise", promotions: [] });
+  const earthquake = play(state, "earthquake", { direction: "counterclockwise", promotions: [] });
   assert.equal(earthquake.ok, true);
   const whiteTurn = applyAction(earthquake.state, { type: "endTurn" });
   assert.equal(whiteTurn.ok, true);
@@ -90,7 +90,8 @@ test("Vendetta accepts Dark Mirror as the required capture", () => {
   assert.deepEqual(mirrored.state.effects.find(effect => (effect as { type?: unknown }).type === "vendetta"), vendettaEffect);
 });
 
-test("Revenge can remove the Pawn that captured through Dark Mirror", () => {
+// KC6_card2: "Play when your Pawn is captured without a card."
+test("Revenge cannot remove the Pawn that captured through Dark Mirror", () => {
   const state = createGameState({ fen: "4k3/8/8/8/2P5/3p4/8/4K3 w - - 0 1", hands: { white: ["dark-mirror"], black: ["revenge"] } });
   const capturingPawn = state.pieces.find(piece => piece.square === "c4");
   const capturedPawn = state.pieces.find(piece => piece.square === "d3");
@@ -99,13 +100,17 @@ test("Revenge can remove the Pawn that captured through Dark Mirror", () => {
   assert.ok(capturingPawn && capturedPawn && darkMirrorCard && revengeCard);
   const mirrored = play(state, "dark-mirror", [{ from: "c4", to: "d3" }]);
   assert.equal(mirrored.ok, true);
+  const before = structuredClone(mirrored.state);
   const revenge = play(mirrored.state, "revenge", "d3");
-  assert.equal(revenge.ok, true);
-  assert.equal(boardFen(revenge.state), "4k3/8/8/8/8/8/8/4K3");
-  assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: null, zone: "captured", capturedBy: "black" });
+  assert.equal(revenge.ok, false);
+  assert.deepEqual(cardPlayTargets(mirrored.state, "revenge"), []);
+  assert.deepEqual(revenge.state, before);
+  assert.deepEqual(mirrored.state, before);
+  assert.equal(boardFen(revenge.state), "4k3/8/8/8/8/3P4/8/4K3");
+  assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturingPawn.id), { ...capturingPawn, square: "d3" });
   assert.deepEqual(revenge.state.pieces.find(piece => piece.id === capturedPawn.id), { ...capturedPawn, square: null, zone: "captured", capturedBy: "white" });
   assert.deepEqual(revenge.state.players.white, { hand: [], deck: [], discard: [darkMirrorCard] });
-  assert.deepEqual(revenge.state.players.black, { hand: [], deck: [], discard: [revengeCard] });
+  assert.deepEqual(revenge.state.players.black, { hand: [revengeCard], deck: [], discard: [] });
 });
 
 test("Dark Mirror does not create a Toll trigger across the frontier", () => {
@@ -289,21 +294,22 @@ test("Dark Mirror consumes the own-turn card allowance", () => {
   assert.deepEqual(mirrored.state, beforeRejectedPlay);
 });
 
-test("Earthquake, Dark Mirror, and Revenge replay deterministically", () => {
+test("Earthquake, Dark Mirror, and rejected Revenge replay deterministically", () => {
   const seed = createGameState({ fen: "4k3/8/8/8/3P4/2p5/8/4K3 b - - 0 1", hands: { black: ["earthquake", "revenge"], white: ["dark-mirror"] }, phase: "afterMove", moveMade: true });
   const firstInput = structuredClone(seed);
   const secondInput = structuredClone(seed);
   const firstBefore = structuredClone(firstInput);
   const secondBefore = structuredClone(secondInput);
   const run = (input: typeof seed) => {
-    const earthquake = play(input, "earthquake", { direction: "clockwise", promotions: [] });
+    const earthquake = play(input, "earthquake", { direction: "counterclockwise", promotions: [] });
     assert.equal(earthquake.ok, true);
     const whiteTurn = applyAction(earthquake.state, { type: "endTurn" });
     assert.equal(whiteTurn.ok, true);
     const mirrored = play(whiteTurn.state, "dark-mirror", [{ from: "d4", to: "c3" }]);
     assert.equal(mirrored.ok, true);
     const revenge = play(mirrored.state, "revenge", "c3");
-    assert.equal(revenge.ok, true);
+    assert.equal(revenge.ok, false);
+    assert.deepEqual(revenge.state, mirrored.state);
     return revenge.state;
   };
   const firstOutput = run(firstInput);
@@ -312,7 +318,7 @@ test("Earthquake, Dark Mirror, and Revenge replay deterministically", () => {
   assert.deepEqual(secondInput, secondBefore);
   assert.deepEqual(firstOutput, secondOutput);
   assert.equal(firstOutput.orientation, 90);
-  assert.equal(boardFen(firstOutput), "4k3/8/8/8/8/8/8/4K3");
+  assert.equal(boardFen(firstOutput), "4k3/8/8/8/8/2P5/8/4K3");
   assert.deepEqual(firstOutput.players.white.hand, []);
-  assert.deepEqual(firstOutput.players.black.hand, []);
+  assert.deepEqual(firstOutput.players.black.hand, [seed.players.black.hand[1]]);
 });

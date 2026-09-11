@@ -160,10 +160,11 @@ test('legal destinations exclude the repeat while retaining different moves', ()
   act(restored, { type: 'move', from: 'g1', to: 'f3' });
 });
 
-test('changing only the promotion declaration does not evade the repeat prohibition', () => {
+test('only a different promoted role permits the same destination (FAQ board-state rule)', () => {
   const before = createGameState({ fen: '7k/P7/8/8/8/8/8/4K3 w - - 0 1', hands: { black: ['think-again'] } });
   const restored = cancel(act(before, { type: 'move', from: 'a7', to: 'a8', promotion: 'queen' }));
-  for (const promotion of ['queen', 'rook', 'bishop', 'knight']) rejects(restored, { type: 'move', from: 'a7', to: 'a8', promotion });
+  rejects(restored, { type: 'move', from: 'a7', to: 'a8', promotion: 'queen' });
+  for (const promotion of ['rook', 'bishop', 'knight']) act(restored, { type: 'move', from: 'a7', to: 'a8', promotion });
   act(restored, { type: 'move', from: 'e1', to: 'e2' });
 });
 

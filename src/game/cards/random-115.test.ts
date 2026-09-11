@@ -36,7 +36,7 @@ const rationale = `
 23. Blessing replaces Black's move: e5-f6 is a noncapturing diagonal Pawn relocation; spend and draw Crab.
 24. Black ends its Blessing replacement move.
 25. White c3-c4 advances one empty square.
-26. After White's move Earthquake rotates counterclockwise: Black h7 promotes to Rook first, White a2 to Queen; coordinates stay fixed, white forward is left; retain effect, draw Fanatic.
+26. After White's move Earthquake rotates clockwise: Black h7 promotes to Rook first, White a2 to Queen; coordinates stay fixed, white forward is left; retain effect, draw Fanatic.
 27. White ends; orientation and both promotions persist.
 28. Black Bishop d6-g3 crosses empty e5 and f4.
 29. Black ends; Earthquake persists.
@@ -235,11 +235,11 @@ test('iteration 115 complete independent physical transition oracle', () => {
       switch(step) {
         case 23: assert.equal(card.cardId,'blessing'); assert.deepEqual(action.target,[{from:'e5',to:'f6'}]); move('e5','f6',undefined,'blessing'); break;
         case 26: {
-          const target={direction:'counterclockwise',promotions:[{square:'h7',role:'rook'},{square:'a2',role:'queen'}]};
+          const target={direction:'clockwise',promotions:[{square:'h7',role:'rook'},{square:'a2',role:'queen'}]};
           assert.deepEqual(action.target,target); orientation=270;
           Object.assign(id('black-pawn-h7'),{role:'rook',promoted:true});
           Object.assign(id('white-pawn-a2'),{role:'queen',promoted:true});
-          effects.push({type:'earthquake',owner:actor,card,direction:'counterclockwise',target}); break;
+          effects.push({type:'earthquake',owner:actor,card,direction:'clockwise',target}); break;
         }
         case 33: assert.equal(action.target,'c7'); effects.push({type:'crab',owner:actor,card,pieceId:'black-pawn-c7'}); break;
         case 60: assert.deepEqual(action.target,[{from:'e7',to:'h1'}]); assert.equal(at('h1'),undefined);id('black-pawn-h7').square='h1';effects.push({type:'dungeon',owner:actor,player:'black',pieceId:'black-pawn-h7'});break;

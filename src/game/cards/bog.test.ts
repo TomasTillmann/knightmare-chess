@@ -4,9 +4,206 @@ import { describe, it } from 'node:test';
 import { CARD_CATALOG } from './catalog.js';
 import { applyAction, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { GameAction, GameState } from '../types.js';
+import type { GameAction, GameState, SquareName } from '../types.js';
 
 const CARD = 'bog';
+
+it('Bog relocates Fireball to the shortened endpoint and recomputes its victims', () => {
+  assertBogControl();
+  const before = createGameState({
+    fen: '7k/8/1p6/8/8/8/1P6/R6K w - - 0 1',
+    hands: { white: ['fireball'], black: [CARD] },
+    decks: { white: ['panic'], black: ['panic'] },
+  });
+  const rook = before.pieces.find(piece => piece.square === 'a1')!;
+  const oldVictim = before.pieces.find(piece => piece.square === 'b6')!;
+  const newVictim = before.pieces.find(piece => piece.square === 'b2')!;
+  const moved = bogCompositeAction(before, { type: 'move', from: 'a1', to: 'a5' });
+  const exploded = bogCompositeAction(moved, { type: 'playCard', cardId: 'fireball', target: 'a5' });
+  assert.equal(exploded.pieces.find(piece => piece.id === oldVictim.id)?.zone, 'captured');
+  const snapshot = JSON.stringify(exploded);
+  const stopped = bogCompositeAction(exploded, { type: 'playCard', cardId: CARD });
+  assert.deepEqual(stopped.pieces.find(piece => piece.id === oldVictim.id), oldVictim);
+  for (const victim of [rook, newVictim]) assert.equal(stopped.pieces.find(piece => piece.id === victim.id)?.zone, 'captured');
+  for (const color of ['white', 'black'] as const) {
+    assert.deepEqual(stopped.players[color].hand.map(card => card.cardId), ['panic']);
+    assert.deepEqual(stopped.players[color].deck, []);
+    assert.deepEqual(stopped.players[color].discard, before.players[color].hand);
+  }
+  assert.equal(JSON.stringify(exploded), snapshot);
+});
+
+describe('Bog after Fireball (official FAQ pp. 12 and 28)', () => {
+  const geometries = [
+    ['rook', '7k/8/1p6/8/8/8/1P6/R6K w - - 17 24', 'a1', 'a5', 'b6', 'b2'],
+    ['bishop', '7k/8/5p2/8/8/8/P7/B6K w - - 17 24', 'a1', 'e5', 'f6', 'a2'],
+    ['queen', '7k/8/8/8/7K/8/1P3p2/Q7 w - - 17 24', 'a1', 'e1', 'f2', 'b2'],
+  ] as const;
+  for (const color of ['white', 'black'] as const) {
+    for (const [role, fen, from, to, oldSquare, newSquare] of geometries) {
+      it(`${color} ${role}: changes the physical victims and advances clocks only once`, () => {
+        const opponent = color === 'white' ? 'black' : 'white';
+        const square = (value: string) => (color === 'white' ? value : `${value[0]}${9 - Number(value[1])}`) as SquareName;
+        const mirrored = fen.split(' ')[0].split('/').reverse().join('/').replace(/[a-z]/gi,
+          value => value === value.toUpperCase() ? value.toLowerCase() : value.toUpperCase());
+        const before = createGameState({
+          fen: color === 'white' ? fen : `${mirrored} b - - 17 24`,
+          hands: { [color]: ['fireball', 'fireball'], [opponent]: [CARD, CARD] },
+          decks: { [color]: ['panic', 'crab'], [opponent]: ['panic', 'crab'] },
+        });
+        const center = before.pieces.find(piece => piece.square === square(from))!;
+        const oldVictim = before.pieces.find(piece => piece.square === square(oldSquare))!;
+        const newVictim = before.pieces.find(piece => piece.square === square(newSquare))!;
+        const fireball = before.players[color].hand[1];
+        const bog = before.players[opponent].hand[1];
+        const moved = bogCompositeAction(before, { type: 'move', from: square(from), to: square(to) });
+        const exploded = bogCompositeAction(moved, { type: 'playCard', cardId: 'fireball', cardInstanceId: fireball.id, target: square(to) });
+        assert.equal(exploded.history.at(-1)?.type, 'cardPlayed');
+        assert.equal(exploded.pieces.find(piece => piece.id === oldVictim.id)?.zone, 'captured');
+        const frozen = JSON.stringify(exploded);
+        const stopped = bogCompositeAction(exploded, { type: 'playCard', cardId: CARD, cardInstanceId: bog.id });
+        assert.equal(stopped.history.at(-1)?.type, 'cardPlayed');
+        assert.deepEqual(stopped.pieces.find(piece => piece.id === oldVictim.id), oldVictim);
+        assert.deepEqual(stopped.pieces.filter(piece => piece.zone === 'captured').map(piece => piece.id).sort(), [center.id, newVictim.id].sort());
+        for (const player of [color, opponent] as const) {
+          assert.deepEqual(stopped.players[player].hand, [before.players[player].hand[0], before.players[player].deck[0]]);
+          assert.deepEqual(stopped.players[player].deck, before.players[player].deck.slice(1));
+          assert.deepEqual(stopped.players[player].discard, [before.players[player].hand[1]]);
+          assert.equal(stopped.turn.cardPlays[player], 1);
+        }
+        assert.deepEqual(stopped.playedCards, [{ player: color, cardInstanceId: fireball.id }, { player: opponent, cardInstanceId: bog.id }]);
+        assert.deepEqual(stopped.history.slice(0, -1), exploded.history);
+        assert.deepEqual(stopped.fen.split(' ').slice(1), [opponent[0], '-', '-', '0', color === 'white' ? '24' : '25']);
+        assert.equal(stopped.turn.moveMade, true);
+        assert.equal(stopped.turn.phase, 'afterMove');
+        assert.equal(JSON.stringify(exploded), frozen);
+        bogCompositeAction(stopped, { type: 'endTurn' });
+      });
+    }
+  }
+
+  for (const effect of ['crab', 'confabulation'] as const) {
+    it(`restores the old blast victim's ${effect} and retained physical card`, () => {
+      let state = createGameState({
+        fen: effect === 'crab' ? '7k/8/1p6/8/8/8/1P6/R6K b - - 0 1' : '2n4k/8/1r6/8/8/8/1P6/R6K b - - 0 1',
+        hands: { white: ['fireball'], black: [effect, CARD] },
+      });
+      if (effect === 'crab') state = bogCompositeAction(state, { type: 'move', from: 'h8', to: 'g8' });
+      state = bogCompositeAction(state, { type: 'playCard', cardId: effect,
+        target: effect === 'crab' ? 'b6' : [{ from: 'c8', to: 'b6' }] });
+      if (!state.turn.moveMade) state = bogCompositeAction(state, { type: 'move', from: 'h8', to: 'g8' });
+      state = bogCompositeAction(state, { type: 'endTurn' });
+      const before = state;
+      state = bogCompositeAction(state, { type: 'move', from: 'a1', to: 'a5' });
+      state = bogCompositeAction(state, { type: 'playCard', cardId: 'fireball', target: 'a5' });
+      assert.equal(state.pieces.find(piece => piece.id === before.pieces.find(candidate => candidate.square === 'b6')!.id)?.zone, 'captured');
+      if (effect === 'confabulation') assert.ok(state.players.black.discard.some(card => card.cardId === effect));
+      state = bogCompositeAction(state, { type: 'playCard', cardId: CARD });
+      assert.deepEqual(state.effects, before.effects);
+      assert.deepEqual(state.pieces.filter(piece => piece.owner === 'black'), before.pieces.filter(piece => piece.owner === 'black'));
+      assert.deepEqual(state.players.black.discard.map(card => card.cardId), [CARD]);
+    });
+  }
+
+  for (const protection of ['pacifism', 'coup'] as const) {
+    it(`the relocated blast preserves a publicly created ${protection === 'coup' ? 'Prince' : 'Pacifist'}`, () => {
+      let state = createGameState({
+        fen: protection === 'coup' ? '7k/8/1p6/8/8/8/7P/RK6 w - - 0 1' : '7k/8/1p6/8/8/8/1P6/R6K w - - 0 1',
+        hands: { white: [protection, 'fireball'], black: [CARD] },
+      });
+      if (protection === 'coup') {
+        state = bogCompositeAction(state, { type: 'move', from: 'h2', to: 'h3' });
+        state = bogCompositeAction(state, { type: 'playCard', cardId: protection, target: 'h3' });
+      } else {
+        state = bogCompositeAction(state, { type: 'playCard', cardId: protection, target: 'b2' });
+        state = bogCompositeAction(state, { type: 'move', from: 'h1', to: 'g1' });
+      }
+      state = bogCompositeAction(state, { type: 'endTurn' });
+      state = bogCompositeAction(state, { type: 'move', from: 'h8', to: 'g8' });
+      state = bogCompositeAction(state, { type: 'endTurn' });
+      const before = state;
+      state = bogCompositeAction(state, { type: 'move', from: 'a1', to: 'a5' });
+      state = bogCompositeAction(state, { type: 'playCard', cardId: 'fireball', target: 'a5' });
+      state = bogCompositeAction(state, { type: 'playCard', cardId: CARD });
+      assert.deepEqual(state.effects, before.effects);
+      for (const piece of before.pieces.filter(piece => piece.square !== 'a1')) {
+        assert.deepEqual(state.pieces.find(candidate => candidate.id === piece.id), piece);
+      }
+    });
+  }
+
+  it('the complete relocated explosion rescues self-check without reviving a pending rescue', () => {
+    const before = createGameState({ fen: '7k/8/8/8/8/3b4/4R3/5K2 w - - 0 1',
+      hands: { white: ['fireball'], black: [CARD] } });
+    const moved = bogCompositeAction(before, { type: 'move', from: 'e2', to: 'e4' });
+    assert.ok(moved.pendingRescue);
+    assert.equal(isKingInCheck(moved, 'white'), true);
+    const exploded = bogCompositeAction(moved, { type: 'playCard', cardId: 'fireball', target: 'e4' });
+    assert.equal(exploded.pendingRescue, null);
+    const stopped = bogCompositeAction(exploded, { type: 'playCard', cardId: CARD });
+    assert.equal(stopped.history.at(-1)?.type, 'cardPlayed');
+    assert.equal(isKingInCheck(stopped, 'white'), false);
+    assert.equal(stopped.pendingRescue, null);
+    for (const id of ['white-rook-e2', 'black-bishop-d3']) assert.equal(stopped.pieces.find(piece => piece.id === id)?.zone, 'captured');
+    bogCompositeAction(stopped, { type: 'endTurn' });
+  });
+
+  it('spends Bog but retains the original explosion when the new victims expose the mover King', () => {
+    const before = createGameState({ fen: '1r5k/8/8/8/8/8/1P6/RK6 w - - 0 1',
+      hands: { white: ['fireball'], black: [CARD] }, decks: { black: ['panic'] } });
+    const moved = bogCompositeAction(before, { type: 'move', from: 'a1', to: 'a5' });
+    const exploded = bogCompositeAction(moved, { type: 'playCard', cardId: 'fireball', target: 'a5' });
+    assert.equal(exploded.history.at(-1)?.type, 'cardPlayed');
+    const snapshot = JSON.stringify(exploded);
+    const stopped = bogCompositeAction(exploded, { type: 'playCard', cardId: CARD });
+    assert.equal(stopped.history.at(-1)?.type, 'cardFizzled');
+    assert.equal(stopped.history.at(-1)?.reason, 'SELF_CHECK');
+    assert.deepEqual(stopped.pieces, exploded.pieces);
+    assert.deepEqual(stopped.effects, exploded.effects);
+    assert.equal(stopped.fen, exploded.fen);
+    assert.deepEqual(stopped.players.white, exploded.players.white);
+    assert.deepEqual(stopped.players.black.discard, before.players.black.hand);
+    assert.deepEqual(stopped.players.black.hand, before.players.black.deck);
+    assert.equal(JSON.stringify(exploded), snapshot);
+  });
+
+  it('relocates a publicly copied Fireball while preserving Haunting Memories identity', () => {
+    let state = createGameState({ fen: 'r6k/1p6/8/8/8/1P6/8/5N1K w - - 0 1',
+      hands: { white: ['fireball', CARD], black: ['haunting-memories'] },
+      decks: { white: ['panic', 'crab'], black: ['panic', 'crab'] } });
+    state = bogCompositeAction(state, { type: 'move', from: 'f1', to: 'd2' });
+    state = bogCompositeAction(state, { type: 'playCard', cardId: 'fireball', target: 'd2' });
+    state = bogCompositeAction(state, { type: 'endTurn' });
+    state = bogCompositeAction(state, { type: 'move', from: 'a8', to: 'a4' });
+    const before = state;
+    state = bogCompositeAction(state, { type: 'playCard', cardId: 'haunting-memories', target: 'a4' });
+    assert.equal(state.history.at(-1)?.copiedCardId, 'fireball');
+    assert.equal(state.pieces.find(piece => piece.id === 'white-pawn-b3')?.zone, 'captured');
+    const exploded = state;
+    state = bogCompositeAction(state, { type: 'playCard', cardId: CARD });
+    assert.deepEqual(state.players.black, exploded.players.black);
+    assert.deepEqual(state.players.black.discard, before.players.black.hand);
+    assert.deepEqual(state.pieces.find(piece => piece.id === 'white-pawn-b3'), before.pieces.find(piece => piece.id === 'white-pawn-b3'));
+    for (const id of ['black-rook-a8', 'black-pawn-b7']) assert.equal(state.pieces.find(piece => piece.id === id)?.zone, 'captured');
+    assert.equal(state.playedCards?.length, 3);
+    assert.deepEqual(state.history.slice(0, -1), exploded.history);
+  });
+
+  it('restores the old victim Rook castling right and revokes the new victim Rook right', () => {
+    const before = createGameState({ fen: 'r3k3/8/8/8/8/8/8/RR2K3 w Qq - 0 1',
+      hands: { white: ['fireball'], black: [CARD] } });
+    const moved = bogCompositeAction(before, { type: 'move', from: 'b1', to: 'b7' });
+    const exploded = bogCompositeAction(moved, { type: 'playCard', cardId: 'fireball', target: 'b7' });
+    assert.equal(exploded.history.at(-1)?.type, 'cardPlayed');
+    assert.equal(exploded.fen.split(' ')[2], 'Q');
+    const stopped = bogCompositeAction(exploded, { type: 'playCard', cardId: CARD });
+    assert.equal(stopped.history.at(-1)?.type, 'cardPlayed');
+    assert.deepEqual(stopped.pieces.find(piece => piece.id === 'black-rook-a8'), before.pieces.find(piece => piece.id === 'black-rook-a8'));
+    for (const id of ['white-rook-a1', 'white-rook-b1']) assert.equal(stopped.pieces.find(piece => piece.id === id)?.zone, 'captured');
+    assert.equal(stopped.fen.split(' ')[2], 'q');
+    for (const color of ['white', 'black'] as const) assert.equal(isKingInCheck(stopped, color), false);
+  });
+});
 
 describe('Bog responds to card-generated slider moves', () => {
   const cases = [

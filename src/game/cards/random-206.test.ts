@@ -133,7 +133,7 @@ const cards: Record<number, { id: string; instance: string; target?: unknown; re
   18: { id: 'under-elf-hill', instance: 'white-hand-4-under-elf-hill', replacement: true },
   21: { id: 'truce', instance: 'black-hand-4-truce' },
   38: { id: 'long-jump', instance: 'black-hand-0-long-jump', target: [{ from: 'd6', to: 'e2' }], replacement: true },
-  47: { id: 'earthquake', instance: 'black-hand-3-earthquake', target: { direction: 'clockwise', promotions: [{ square: 'h2', role: 'knight' }, { square: 'a7', role: 'bishop' }] } },
+  47: { id: 'earthquake', instance: 'black-hand-3-earthquake', target: { direction: 'counterclockwise', promotions: [{ square: 'h2', role: 'knight' }, { square: 'a7', role: 'bishop' }] } },
   63: { id: 'irresistible-force', instance: 'black-hand-1-irresistible-force', target: [{ from: 'e7', to: 'd7' }], replacement: true },
   88: { id: 'forbidden-city', instance: 'black-hand-2-forbidden-city', target: 'd5' },
   99: { id: 'dungeon', instance: 'white-hand-0-dungeon', target: [{ from: 'b3', to: 'a1' }] },
@@ -299,7 +299,7 @@ test('random campaign iteration 206: independent physical, timing, card and roya
         const white = at(expected.pieces, 'h2')!, black = at(expected.pieces, 'a7')!;
         assert.equal(white.originalRole, 'pawn'); assert.equal(black.originalRole, 'pawn');
         white.role = 'knight'; white.promoted = true; black.role = 'bishop'; black.promoted = true;
-        expected.effects.push({ type: 'earthquake', owner: actor, card, direction: 'clockwise', target: spec.target });
+        expected.effects.push({ type: 'earthquake', owner: actor, card, direction: 'counterclockwise', target: spec.target });
       }
       if (n === 63) {
         assert.equal(at(expected.pieces, 'e7')!.id, 'black-pawn-f7');

@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { CARD_CATALOG } from './catalog.js';
-import { applyAction, isKingInCheck } from '../reducer.js';
+import { applyAction, guardianDests, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
+import type { SquareName } from '../types.js';
 
 type State = ReturnType<typeof createGameState>;
 type Result = ReturnType<typeof applyAction>;
@@ -78,6 +79,183 @@ describe('Guardian printed contract', () => {
       timing: ['beforeMove'],
       continuing: false,
     });
+  });
+});
+
+// FAQ p. 7 plus Guardian's optional follower and causal “thus” protection:
+// no follower means the normal en-passant destination stays available.
+describe('Guardian no-follower en passant (finding44e)', () => {
+  function fixture(color: 'white' | 'black', changes: Record<string, string | undefined> = {}, orientation: State['orientation'] = 0) {
+    const square = (name: string) => {
+      let x = name.charCodeAt(0) - 97;
+      let y = color === 'white' ? Number(name[1]) - 1 : 8 - Number(name[1]);
+      for (let turn = 0; turn < orientation; turn += 90) [x, y] = [y, 7 - x];
+      return `${String.fromCharCode(97 + x)}${y + 1}` as SquareName;
+    };
+    const board = new Map<string, string>(Object.entries({ c6: 'K', h6: 'k', e2: 'P', d4: 'p', ...changes })
+      .filter((entry): entry is [string, string] => entry[1] !== undefined)
+      .map(([at, piece]) => [square(at), color === 'white' ? piece
+        : piece === piece.toUpperCase() ? piece.toLowerCase() : piece.toUpperCase()]));
+    const fen = Array.from({ length: 8 }, (_, row) => [...'abcdefgh']
+      .map(file => board.get(`${file}${8 - row}`) ?? '1').join('').replace(/1+/g, run => String(run.length)))
+      .join('/') + ` ${color === 'white' ? 'w' : 'b'} - - 0 1`;
+    const state = game({ fen, turn: color, hands: { [color]: [CARD] } });
+    state.orientation = orientation;
+    return { state, square };
+  }
+  const end = (state: State) => ok(applyAction(state, { type: 'endTurn' }));
+
+  it('allows en passant after a two-square advance without the optional follower', () => {
+    const before = game({ fen: '8/8/2K4k/8/3p4/8/4P3/8 w - - 0 1' });
+    const pawn = pieceAt(before, 'e2')!;
+    const advanced = ok(play(before, convoy(['e2', 'e4'])));
+    const opponent = ok(applyAction(advanced, { type: 'endTurn' }));
+    const after = ok(applyAction(opponent, { type: 'move', from: 'd4', to: 'e3' }));
+    assert.equal(pieceAt(after, 'e4'), undefined);
+    assert.equal(pieceAt(after, 'e3')?.owner, 'black');
+    assert.equal(after.pieces.find(piece => piece.id === pawn.id)?.zone, 'captured');
+  });
+
+  for (const color of ['white', 'black'] as const) {
+    it(`${color}: grants one right, captures the actual Pawn, and preserves physical cards and input`, () => {
+      const { state, square: s } = fixture(color, { e1: 'N' });
+      const before = deepFreeze(state);
+      const snapshot = structuredClone(before);
+      const pawn = pieceAt(before, s('e2'))!;
+      const attacker = pieceAt(before, s('d4'))!;
+      const target = deepFreeze(convoy([s('e2'), s('e4')]));
+      const advanced = ok(play(before, target));
+      assert.deepEqual(advanced.enPassant, [{ target: s('e3'), pawnId: pawn.id }]);
+      assert.deepEqual(advanced.pieces, before.pieces.map(piece => piece.id === pawn.id ? { ...piece, square: s('e4') } : piece));
+      assert.deepEqual(advanced.players[color].discard, before.players[color].hand);
+      assert.deepEqual(advanced.players[color].hand, []);
+      assert.equal(advanced.turn.cardPlays[color], 1);
+      const reply = end(advanced);
+      assert.equal(legalDests(reply).get(s('d4'))?.includes(s('e3')), true);
+      const after = ok(applyAction(reply, { type: 'move', from: s('d4'), to: s('e3'), enPassant: true }));
+      assert.equal(pieceAt(after, s('e3'))?.id, attacker.id);
+      assert.equal(after.pieces.find(piece => piece.id === pawn.id)?.zone, 'captured');
+      assert.equal(after.history.at(-1)?.capturedId, pawn.id);
+      assert.deepEqual(after.pieces.filter(piece => ![pawn.id, attacker.id].includes(piece.id)),
+        before.pieces.filter(piece => ![pawn.id, attacker.id].includes(piece.id)));
+      assert.deepEqual(after.players, reply.players);
+      assert.deepEqual(after.enPassant, []);
+      assert.deepEqual(before, snapshot);
+      assert.deepEqual(target, convoy([s('e2'), s('e4')]));
+    });
+
+    it(`${color}: a Knight follower is captured normally while the leading Pawn survives`, () => {
+      const { state: before, square: s } = fixture(color, { e1: 'N' });
+      const pawn = pieceAt(before, s('e2'))!;
+      const knight = pieceAt(before, s('e1'))!;
+      const advanced = ok(play(before, convoy([s('e1'), s('e3')], [s('e2'), s('e4')])));
+      assert.deepEqual(advanced.enPassant, []);
+      const reply = end(advanced);
+      assert.equal(applyAction(reply, { type: 'move', from: s('d4'), to: s('e3'), enPassant: true }).ok, false);
+      const after = ok(applyAction(reply, { type: 'move', from: s('d4'), to: s('e3') }));
+      assert.equal(pieceAt(after, s('e4'))?.id, pawn.id);
+      assert.equal(after.pieces.find(piece => piece.id === knight.id)?.zone, 'captured');
+      assert.equal(after.history.at(-1)?.capturedId, knight.id);
+    });
+
+    it(`${color}: King followers keep the target occupied and unsafe following rolls back`, () => {
+      for (const safe of [true, false]) {
+        const { state: before, square: s } = fixture(color, { c6: undefined, e1: 'K', ...(safe ? { d4: undefined, a4: 'p' } : {}) });
+        const snapshot = structuredClone(before);
+        const after = ok(play(before, convoy([s('e2'), s('e4')], [s('e1'), s('e3')])));
+        assert.deepEqual(after.enPassant, []);
+        assert.deepEqual(before, snapshot);
+        if (safe) {
+          assert.equal(pieceAt(after, s('e3'))?.role, 'king');
+          assert.equal(isKingInCheck(after, color), false);
+          end(after);
+        } else {
+          assert.deepEqual(after.pieces, before.pieces);
+          assert.equal(after.history.at(-1)?.reason, 'SELF_CHECK');
+          assert.deepEqual(after.players[color].discard, before.players[color].hand);
+        }
+      }
+    });
+
+    it(`${color}: one step grants no right and the specific second-rank condition excludes first-rank doubles`, () => {
+      const { state: before, square: s } = fixture(color);
+      assert.deepEqual(ok(play(before, convoy([s('e2'), s('e3')]))).enPassant, []);
+      const { state: first } = fixture(color, { e2: undefined, e1: 'P' });
+      assert.deepEqual(guardianDests(first, s('e1')), [s('e2')]);
+      rejected(first, convoy([s('e1'), s('e3')]), 'ILLEGAL_MOVE');
+      assert.deepEqual(ok(play(first, convoy([s('e1'), s('e2')]))).enPassant, []);
+    });
+
+    it(`${color}: rights expire on a declined reply and invalid payloads cannot leak rights`, () => {
+      const { state: before, square: s } = fixture(color, { e1: 'N' });
+      for (const target of [convoy([s('e2'), s('e4')], [s('e1'), s('e2')]),
+        [{ from: s('e2'), to: s('e4'), enPassant: true }]]) {
+        rejected(before, target, target.length === 2 ? 'ILLEGAL_MOVE' : 'INVALID_TARGET');
+      }
+      const reply = end(ok(play(before, convoy([s('e2'), s('e4')]))));
+      const declined = ok(applyAction(reply, { type: 'move', from: s('h6'), to: s('h7') }));
+      assert.deepEqual(declined.enPassant, []);
+      const own = end(declined);
+      const later = end(ok(applyAction(own, { type: 'move', from: s('c6'), to: s('b6') })));
+      const snapshot = structuredClone(later);
+      const capture = applyAction(later, { type: 'move', from: s('d4'), to: s('e3'), enPassant: true });
+      assert.equal(capture.ok, false);
+      assert.strictEqual(capture.state, later);
+      assert.deepEqual(later, snapshot);
+    });
+  }
+
+  it('uses rotated owner-relative targets for both colors at every orientation', () => {
+    for (const color of ['white', 'black'] as const) for (const orientation of [0, 90, 180, 270] as const) {
+      const { state: before, square: s } = fixture(color, {}, orientation);
+      const pawn = pieceAt(before, s('e2'))!;
+      const advanced = ok(play(before, convoy([s('e2'), s('e4')])));
+      assert.deepEqual(advanced.enPassant, [{ target: s('e3'), pawnId: pawn.id }]);
+      const reply = end(advanced);
+      assert.equal(legalDests(reply).get(s('d4'))?.includes(s('e3')), true);
+      const after = ok(applyAction(reply, { type: 'move', from: s('d4'), to: s('e3') }));
+      assert.equal(after.pieces.find(piece => piece.id === pawn.id)?.zone, 'captured');
+    }
+  });
+
+  it('allows the owner to capture its neutral Pawn through an opposing neutral Pawn', () => {
+    const before = game({ fen: '2k5/4p3/7K/3P4/8/8/8/8 w - - 0 1' });
+    pieceAt(before, 'e7')!.neutral = true;
+    pieceAt(before, 'd5')!.neutral = true;
+    const pawn = pieceAt(before, 'e7')!;
+    const advanced = ok(play(before, convoy(['e7', 'e5'])));
+    assert.deepEqual(advanced.enPassant, [{ target: 'e6', pawnId: pawn.id }]);
+    const after = ok(applyAction(end(advanced), { type: 'move', from: 'd5', to: 'e6' }));
+    assert.equal(after.pieces.find(piece => piece.id === pawn.id)?.zone, 'captured');
+  });
+
+  it('retains the physical Pawn identity when a Knight carries the Guardian composite', () => {
+    let before = game({ fen: '8/8/2K4k/8/3p4/8/4N3/4P3 w - - 0 1', hands: { white: ['confabulation', CARD] } });
+    const pawn = pieceAt(before, 'e1')!;
+    const knight = pieceAt(before, 'e2')!;
+    before = end(ok(applyAction(before, { type: 'playCard', cardId: 'confabulation', target: convoy(['e1', 'e2']) })));
+    before = end(ok(applyAction(before, { type: 'move', from: 'h6', to: 'h7' })));
+    assert.equal(pieceAt(before, 'e2')?.id, knight.id);
+    const advanced = ok(play(before, convoy(['e2', 'e4'])));
+    assert.deepEqual(advanced.enPassant, [{ target: 'e3', pawnId: pawn.id }]);
+    const after = ok(applyAction(end(advanced), { type: 'move', from: 'd4', to: 'e3' }));
+    for (const id of [pawn.id, knight.id]) assert.equal(after.pieces.find(piece => piece.id === id)?.zone, 'captured');
+  });
+
+  it('rejects en passant exposing the capturing King and fizzles a royal Guardian Pawn exposed to it', () => {
+    const pinned = game({ fen: '3k4/8/2K5/8/3p4/8/4P3/3R4 w - - 0 1' });
+    const reply = end(ok(play(pinned, convoy(['e2', 'e4']))));
+    assert.equal(legalDests(reply).get('d4')?.includes('e3') ?? false, false);
+    const capture = applyAction(reply, { type: 'move', from: 'd4', to: 'e3', enPassant: true });
+    assert.equal(capture.ok, false);
+    assert.strictEqual(capture.state, reply);
+    const { state: royal } = fixture('white');
+    pieceAt(royal, 'c6')!.royal = false;
+    pieceAt(royal, 'e2')!.royal = true;
+    const fizzled = ok(play(royal, convoy(['e2', 'e4'])));
+    assert.deepEqual(fizzled.pieces, royal.pieces);
+    assert.deepEqual(fizzled.enPassant, []);
+    assert.equal(fizzled.history.at(-1)?.reason, 'SELF_CHECK');
   });
 });
 
@@ -531,14 +709,14 @@ describe('Guardian FEN, castling, and en-passant protection', () => {
     assert.equal(after.fen.split(' ')[2], 'Qkq');
   });
 
-  it('clears a previous en-passant opportunity and never creates one for a two-step Guardian Pawn', () => {
+  it('replaces a previous en-passant opportunity after an unaccompanied two-step Guardian Pawn', () => {
     const before = game({ fen: '4k3/8/8/3pP3/8/8/4P3/4K3 w - d6 17 42' });
     const after = ok(play(before, convoy(['e2', 'e4'])));
-    assert.deepEqual(after.enPassant, []);
-    assert.equal(after.fen.split(' ')[3], '-');
+    assert.deepEqual(after.enPassant, [{ target: 'e3', pawnId: pieceAt(before, 'e2')!.id }]);
+    assert.equal(after.fen.split(' ')[3], 'e3');
   });
 
-  it('prevents the explicit en-passant capture on the immediately following reply', () => {
+  it('does not invent an en-passant capturer on an empty source square', () => {
     const before = game({ fen: '4k3/8/8/3p4/8/8/4P3/4K3 w - - 0 1' });
     const played = ok(play(before, convoy(['e2', 'e4'])));
     const reply = ok(applyAction(played, { type: 'endTurn' }));

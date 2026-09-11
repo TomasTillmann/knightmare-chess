@@ -121,7 +121,7 @@ const rationales = `
 111. Bh6-g7 is a quiet diagonal step.
 112. Black closes its Bishop move.
 113. Kf3-e4 is provisional because the f5 Pawn currently attacks e4.
-114. Earthquake counterclockwise changes White forward to west and Black to east; h5 promotes to Black Bishop before a6 to White Queen, removing f5's e4 attack without moving pieces or clocks.
+114. Earthquake clockwise changes White forward to west and Black to east; h5 promotes to Black Bishop before a6 to White Queen, removing f5's e4 attack without moving pieces or clocks.
 115. White closes its rescued King move; fixed wall coordinates persist.
 116. Promoted Bh5-f7 traverses empty g6; the wall only forbids f7/e8, beyond this landing.
 117. Black closes its promoted Bishop move.
@@ -246,7 +246,7 @@ test('iteration 093: independent semantic review', () => {
     if(n===11||n===12) effects.push({type:'challenge',owner:'white',player:'black',pieceId:'black-pawn-c7'})
     if(n>=47) effects.push({type:'fortification',owner:'white',card:{id:'white-deck-4-fortification',cardId:'fortification'},from:'e8',to:'f7'})
     if(n>=78&&n<=80) effects.push({type:'dungeon',owner:'black',player:'white',pieceId:'white-knight-g1'})
-    if(n>=114) effects.push({type:'earthquake',owner:'white',card:{id:'white-deck-8-earthquake',cardId:'earthquake'},direction:'counterclockwise',target:{direction:'counterclockwise',promotions:[{square:'h5',role:'bishop'},{square:'a6',role:'queen'}]}})
+    if(n>=114) effects.push({type:'earthquake',owner:'white',card:{id:'white-deck-8-earthquake',cardId:'earthquake'},direction:'clockwise',target:{direction:'clockwise',promotions:[{square:'h5',role:'bishop'},{square:'a6',role:'queen'}]}})
     assert.deepEqual(state.effects,effects,`${n}: exact effect identities and duration`)
     let ep:unknown[]=[]
     if(n>=10&&n<=12) ep=[{target:'e3',pawnId:'white-pawn-e2'}]

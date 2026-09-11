@@ -24,7 +24,7 @@ const rationales = `
 13. White h2-h3 advances one unobstructed square.
 14. End White's completed pawn turn without changing the board.
 15. Ng8-h6 is a (1,2) jump to an empty square.
-16. After Black's move Earthquake turns clockwise to 90; opponent h3 promotes to bishop first, then a7 to queen; retain the continuing card.
+16. After Black's move Earthquake turns counterclockwise to 90; opponent h3 promotes to bishop first, then a7 to queen; retain the continuing card.
 17. End Black's turn; the orientation and both promotions persist.
 18. At 90 degrees White g2-h2 advances toward the h-file and promotes to bishop.
 19. End White's promotion turn; retain promoted physical pawn identity.
@@ -308,14 +308,14 @@ test('iteration 133 independent physical, movement, card, clock, and royal oracl
           assert.deepEqual(action.target, [{ from: 'c8', to: 'e6' }]);
           assert.equal(at('e6'), undefined); resetClock = movePiece('c8', 'e6', undefined, false, true); break;
         case 'earthquake': {
-          const target = step === 16 ? { direction: 'clockwise', promotions: [{ square: 'h3', role: 'bishop' }, { square: 'a7', role: 'queen' }] }
-            : { direction: 'clockwise', promotions: [] };
+          const target = step === 16 ? { direction: 'counterclockwise', promotions: [{ square: 'h3', role: 'bishop' }, { square: 'a7', role: 'queen' }] }
+            : { direction: 'counterclockwise', promotions: [] };
           assert.deepEqual(action.target, target);
           orientation += 90;
           const promoting = pieces.filter(piece => piece.zone === 'board' && piece.role === 'pawn' && lastRank(piece, piece.square!));
           assert.deepEqual(promoting.map(piece => piece.square).sort(), target.promotions.map(item => item.square).sort());
           for (const item of target.promotions) { const piece = at(item.square)!; piece.role = item.role as Role; piece.promoted = true; }
-          effects.push({ type: 'earthquake', owner, card, direction: 'clockwise', target }); break;
+          effects.push({ type: 'earthquake', owner, card, direction: 'counterclockwise', target }); break;
         }
         case 'tournament':
           assert.deepEqual(action.target, { own: 'c3', opponent: 'b8' }); swap('c3', 'b8', 'knight', 'knight', owner, other); break;

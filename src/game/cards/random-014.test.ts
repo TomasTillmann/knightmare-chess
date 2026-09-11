@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 
 const trace: RandomTrace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/014.json', import.meta.url), 'utf8'));
 
@@ -129,7 +129,9 @@ const rationale = [
   '115. White final endTurn gives Black beforeMove, no pending rescue or return, unchanged board/resources and zeroed allowances.',
 ];
 
-test('iteration 014: all 115 actions and 50 move commands independently reviewed', () => {
+// F4 / FAQ p.16: only actions 1–95 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 96; original artifact hashes remain unchanged.
+test('iteration 014: 95 reviewed actions, then premature cancellation rejects and rescue completes', () => {
   assert.equal(rationale.length, trace.steps.length);
   rationale.forEach((line, index) => assert.ok(line.startsWith(`${index + 1}. `)));
   assert.equal(trace.seed, 860014);
@@ -137,38 +139,6 @@ test('iteration 014: all 115 actions and 50 move commands independently reviewed
   assert.equal(trace.steps.filter(step => step.action.type === 'playCard').length, 11);
   assert.equal(trace.steps.filter(step => step.action.type === 'endTurn').length, 53);
   assert.equal(trace.steps.filter(step => step.action.type === 'returnKing').length, 1);
-  const state = replayTrace(trace);
-  assert.equal(state.fen, '2kp1rP1/1np2p2/5b2/3bp1p1/pp1Q2rP/P3P3/2B1N2R/R1B2K2 b - - 0 27');
-  assert.deepEqual(state.turn, { color: 'black', phase: 'beforeMove', moveMade: false, cardPlays: { white: 0, black: 0 } });
-  assert.equal(state.outcome, null);
-  assert.ok(!state.pendingRescue);
-  assert.deepEqual(state.enPassant, []);
-  assert.deepEqual(state.underElfHill, []);
-  assert.equal(state.orientation, 0);
-  assert.deepEqual(state.pieces.filter(piece => piece.zone !== 'board').map(piece => [piece.id, piece.zone]).sort(), [
-    ['white-knight-b1', 'captured'], ['white-pawn-b2', 'captured'], ['white-pawn-c2', 'captured'],
-    ['white-pawn-f2', 'captured'], ['white-pawn-g2', 'captured'], ['black-knight-b8', 'captured'],
-    ['black-queen-d8', 'away'], ['black-pawn-g7', 'captured'],
-  ].sort());
-  assert.equal(state.pieces.filter(piece => piece.zone === 'board').length, 24);
-  assert.deepEqual(state.pieces.filter(piece => piece.royal).map(piece => [piece.id, piece.square]), [['white-king-e1', 'f1'], ['black-king-e8', 'c8']]);
-  const pawn = state.pieces.find(piece => piece.id === 'white-pawn-d2')!;
-  assert.deepEqual([pawn.square, pawn.role, pawn.originalRole, pawn.promoted], ['g8', 'pawn', 'pawn', false]);
-  assert.equal(state.pieces.find(piece => piece.id === 'black-pawn-d7')?.square, 'd8');
-  assert.equal(state.pieces.find(piece => piece.id === 'black-knight-g8')?.square, 'b7');
-  assert.equal(state.pieces.find(piece => piece.id === 'black-rook-a8')?.square, 'g4');
-  assert.equal(state.pieces.find(piece => piece.id === 'white-knight-g1')?.square, 'e2');
-  assert.deepEqual(state.pieces.filter(piece => piece.neutral).map(piece => [piece.id, piece.owner, piece.square]), [
-    ['white-bishop-f1', 'white', 'c2'], ['black-pawn-h7', 'black', 'g5'],
-  ]);
-  assert.deepEqual(state.effects, [
-    { type: 'neutrality', owner: 'white', card: { id: 'white-deck-0-neutrality', cardId: 'neutrality' }, pieceId: 'black-pawn-h7' },
-    { type: 'confabulation', owner: 'black', card: { id: 'black-hand-4-confabulation', cardId: 'confabulation' }, pieceIds: ['black-pawn-d7', 'black-queen-d8'] },
-    { type: 'neutrality', owner: 'black', card: { id: 'black-deck-2-neutrality', cardId: 'neutrality' }, pieceId: 'white-bishop-f1' },
-  ]);
-  assert.deepEqual(state.players.white.hand.map(card => card.cardId), ['hidden-passage', 'fanatic', 'hostage', 'abduction', 'rebirth']);
-  assert.deepEqual(state.players.black.hand.map(card => card.cardId), ['squaring-the-circle', 'vulture', 'revenge', 'long-jump', 'disintegration']);
-  assert.deepEqual([state.players.white.deck.length, state.players.black.deck.length], [70, 69]);
-  assert.deepEqual(state.players.white.discard.map(card => card.cardId), ['siege', 'haunting-memories', 'dubbing', 'madman']);
-  assert.deepEqual(state.players.black.discard.map(card => card.cardId), ['merciless', 'under-elf-hill', 'knightmare', 'siege']);
+  const state = replayTrace(trace, 96);
+  rejectPendingCancellation(state, trace.steps[95]!.action, [{"type":"playCard","cardId":"abduction","target":"d3"},{"type":"revealAbduction"},{"type":"abductionTimeout"}]);
 });

@@ -17,7 +17,7 @@ const rationales = `
 5. Fireball follows that noncapture: h6 and adjacent g7 are the only blast victims; both Kings survive.
 6. Black ends with both blasted Pawns captured and White to act.
 7. g1-f3 is an unobstructed Knight jump; the White King stays safe.
-8. Clockwise Earthquake promotes Black a7 to Bishop first and White h2 to Knight; fixed wall stays d7/e7.
+8. Counterclockwise Earthquake promotes Black a7 to Bishop first and White h2 to Knight; fixed wall stays d7/e7.
 9. Black begins with leftward Pawn advance and the two permanent promotions retained.
 10. Promoted a7 Bishop reaches d4 through empty b6/c5; e3 blocks its line toward White.
 11. Black ends with its King screened and the Bishop on d4.

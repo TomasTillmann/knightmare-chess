@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { applyAction, isKingInCheck, legalDests, underElfHillReturnSquares } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { GameAction, GameState } from '../types.js';
+import type { CrabEffect, GameAction, GameState, SquareName } from '../types.js';
 
 const elf = 'under-elf-hill';
 function act(state: GameState, action: GameAction): GameState {
@@ -33,6 +33,59 @@ function rejected(state: GameState, action: GameAction): void {
 
 test('Under Elf Hill return choices are unavailable before departure', () => {
   assert.deepEqual(underElfHillReturnSquares(createGameState()), []);
+});
+
+for (const owner of ['white', 'black'] as const) for (const fixture of [
+  { carrier: 'Knight', fens: ['7k/8/8/8/8/2N5/1P6/6K1', '6k1/1p6/2n5/8/8/8/8/7K'], pawn: 'b2', from: 'b2' },
+  { carrier: 'Bishop', fens: ['7k/8/8/4p3/8/2B5/1P6/6K1', '6k1/1p6/2b5/8/4P3/8/8/7K'], pawn: 'b2', from: 'b2' },
+  { carrier: 'Pawn', fens: ['7k/8/8/8/8/2P5/8/1N4K1', '1n4k1/8/2p5/8/8/8/8/7K'], pawn: 'c3', from: 'b1' },
+] as const) test(`Under Elf Hill retains ${owner} Crab through absence and return with a ${fixture.carrier} carrier`, () => {
+  const square = (value: SquareName): SquareName => owner === 'white'
+    ? value : (value[0] + String(9 - Number(value[1]))) as SquareName;
+  let state = createGameState({
+    fen: `${fixture.fens[owner === 'white' ? 0 : 1]} ${owner === 'white' ? 'w' : 'b'} - - 0 1`,
+    hands: { [owner]: ['crab', 'confabulation', 'coup', elf, 'peace-talks'] },
+  });
+  const crabId = state.players[owner].hand[0]!.id;
+  const coupId = state.players[owner].hand[2]!.id;
+  const retained = () => {
+    assert.ok(state.effects.some(effect => (effect as CrabEffect).type === 'crab' && (effect as CrabEffect).card.id === crabId));
+    assert.ok(!state.players[owner].discard.some(card => card.id === crabId));
+  };
+  for (const action of [
+    { type: 'move', from: square('g1'), to: square('f1') },
+    { type: 'playCard', cardId: 'crab', target: square(fixture.pawn) }, { type: 'endTurn' },
+    { type: 'move', from: square('h8'), to: square('g8') }, { type: 'endTurn' },
+    { type: 'playCard', cardId: 'confabulation', target: [{ from: square(fixture.from), to: square('c3') }] },
+    { type: 'endTurn' }, { type: 'move', from: square('g8'), to: square('h8') }, { type: 'endTurn' },
+    { type: 'move', from: square('f1'), to: square('g1') },
+    { type: 'playCard', cardId: 'coup', target: square('c3') }, { type: 'endTurn' },
+    { type: 'move', from: square('h8'), to: square('g8') }, { type: 'endTurn' },
+  ] satisfies GameAction[]) state = act(state, action);
+  retained();
+  state = act(state, { type: 'playCard', cardId: elf });
+  retained();
+  for (const action of [
+    { type: 'endTurn' }, { type: 'move', from: square('g8'), to: square('h8') }, { type: 'endTurn' },
+    { type: 'returnKing', to: square('a3') },
+  ] satisfies GameAction[]) state = act(state, action);
+  retained();
+  assert.deepEqual(legalDests(state).get(square('a3')) ?? [], []);
+  // Expire the return restriction and cancel Coup before evaluating ordinary Crab powers.
+  for (const action of [
+    { type: 'move', from: square('g1'), to: square('f1') }, { type: 'endTurn' },
+    { type: 'move', from: square('h8'), to: square('g8') }, { type: 'endTurn' },
+    { type: 'move', from: square('f1'), to: square('g1') },
+    { type: 'playCard', cardId: 'peace-talks', target: coupId }, { type: 'endTurn' },
+    { type: 'move', from: square('g8'), to: square('h8') }, { type: 'endTurn' },
+  ] satisfies GameAction[]) state = act(state, action);
+  retained();
+  assert.ok(!state.effects.some(effect => (effect as { type: string }).type === 'coup'));
+  assert.ok(legalDests(state).get(square('a3'))?.includes(square('b4')));
+  assert.ok(!legalDests(state).get(square('a3'))?.includes(square('a4')));
+  rejected(state, { type: 'move', from: square('a3'), to: square('a4') });
+  state = act(state, { type: 'move', from: square('a3'), to: square('b4') });
+  retained();
 });
 
 test('Under Elf Hill rejects target payloads and invalid physical instances atomically', () => {
@@ -85,6 +138,7 @@ test('returned King cannot move while another piece can complete the turn', () =
   const state = act(due(), { type: 'returnKing', to: 'c1' });
   assert.equal(state.outcome, null);
   assert.deepEqual(legalDests(state).get('c1') ?? [], []);
+  rejected(state, { type: 'endTurn' });
   rejected(state, { type: 'move', from: 'c1', to: 'd1' });
   const ended = act(act(state, { type: 'move', from: 'b2', to: 'b3' }), { type: 'endTurn' });
   assert.equal(ended.turn.color, 'black');
@@ -97,7 +151,7 @@ test('returned physical King cannot use Dubbing to bypass movement restriction',
   assert.deepEqual(result.state, state);
 });
 
-test('ordinary stalemate is adjudicated after the mandatory return when only the frozen King remains', () => {
+test('a safely returned frozen King allows either a replacement card or a turn without a move', () => {
   let saved = start('7k/6n1/4P3/8/8/8/8/4K3 b - - 7 3', ['winged-victory']);
   saved = act(saved, { type: 'move', from: 'g7', to: 'e6' });
   saved = act(saved, { type: 'endTurn' });
@@ -115,8 +169,51 @@ test('ordinary stalemate is adjudicated after the mandatory return when only the
   assert.equal(state.outcome, null, 'mandatory placement precedes ordinary move availability');
   assert.ok(underElfHillReturnSquares(state).includes('c1'));
   const returned = act(state, { type: 'returnKing', to: 'c1' });
-  assert.deepEqual(returned.outcome, { reason: 'stalemate' });
+  assert.equal(returned.outcome, null);
+  assert.equal(act(returned, { type: 'endTurn' }).turn.color, 'black');
 });
+
+for (const owner of ['white', 'black'] as const) for (const blockedPawn of [false, true]) {
+  test(`${owner} may end the Elf return turn with ${blockedPawn ? 'a blocked Pawn' : 'only the King'}`, () => {
+    const square = (value: SquareName): SquareName => owner === 'white'
+      ? value : (value[0] + String(9 - Number(value[1]))) as SquareName;
+    const board = owner === 'white'
+      ? blockedPawn ? '7k/8/8/8/8/8/P7/1K6' : '7k/8/8/8/8/8/8/K7'
+      : blockedPawn ? '1k6/p7/8/8/8/8/8/7K' : 'k7/8/8/8/8/8/8/7K';
+    let state = createGameState({
+      fen: `${board} ${owner === 'white' ? 'w' : 'b'} - - 7 3`,
+      hands: { [owner]: [elf] },
+    });
+    for (const action of [
+      { type: 'playCard', cardId: elf }, { type: 'endTurn' },
+      { type: 'move', from: square('h8'), to: square('g8') }, { type: 'endTurn' },
+    ] satisfies GameAction[]) state = act(state, action);
+    rejected(state, { type: 'endTurn' });
+    const beforeReturn = structuredClone(state);
+    const destination = square(blockedPawn ? 'a3' : 'a1');
+    const returned = act(state, { type: 'returnKing', to: destination });
+    assert.deepEqual(state, beforeReturn);
+    assert.equal(returned.outcome, null);
+    assert.equal(returned.turn.moveMade, false);
+    assert.deepEqual(returned.turn, state.turn);
+    assert.deepEqual(returned.fen.split(' ').slice(4), state.fen.split(' ').slice(4));
+    assert.ok([...legalDests(returned).values()].every(squares => squares.length === 0));
+    const beforeSkip = structuredClone(returned);
+    const skipped = act(returned, { type: 'endTurn' });
+    assert.deepEqual(returned, beforeSkip);
+    assert.equal(skipped.outcome, null);
+    assert.notEqual(skipped.turn.color, owner);
+    assert.equal(skipped.fen.split(' ')[1], owner === 'white' ? 'b' : 'w');
+    assert.equal(Number(skipped.fen.split(' ')[4]), Number(returned.fen.split(' ')[4]) + 1);
+    assert.equal(Number(skipped.fen.split(' ')[5]), Number(returned.fen.split(' ')[5]) + Number(owner === 'black'));
+    assert.deepEqual(skipped.players, returned.players);
+    assert.ok(!skipped.underElfHill?.some(entry => entry.player === owner && entry.returned));
+    rejected(skipped, { type: 'endTurn' });
+    state = act(act(skipped, { type: 'move', from: square('g8'), to: square('h8') }), { type: 'endTurn' });
+    assert.ok(legalDests(state).get(destination)?.includes(square(blockedPawn ? 'b3' : 'b1')));
+    rejected(state, { type: 'endTurn' });
+  });
+}
 
 test('Coup Pawn remains the absent royal while its capturable Prince may be threatened', () => {
   let state = start('7k/6n1/8/8/8/5K2/1P6/R7 w - - 7 3', ['coup']);

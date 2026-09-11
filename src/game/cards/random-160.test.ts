@@ -45,7 +45,7 @@ const rationales = `
 33 b5-b4: Black Pawn advances one empty square before rotation.
 34 end: Black closes safely.
 35 h3-h4: White Pawn advances one empty square.
-36 earthquake: Clockwise rotation makes White move east and Black west; a7 promotes to Black Rook before h4 promotes to White Bishop.
+36 earthquake: Counterclockwise rotation makes White move east and Black west; a7 promotes to Black Rook before h4 promotes to White Bishop.
 37 end: White closes; rotation remains active without moving coordinates.
 38 a6-b5: Black Bishop makes one diagonal step.
 39 think-again: Immediate White reaction restores a6 Bishop and clocks; forbids black-bishop-c8:a6:b5 only for replacement.
@@ -131,7 +131,7 @@ const rationales = `
 
 const targets: Record<number, unknown> = {
   14: 'g2', 19: { knight: 'f3', bishop: 'c1' }, 31: [{ from: 'c1', to: 'a2' }],
-  36: { direction: 'clockwise', promotions: [{ square: 'a7', role: 'rook' }, { square: 'h4', role: 'bishop' }] },
+  36: { direction: 'counterclockwise', promotions: [{ square: 'a7', role: 'rook' }, { square: 'h4', role: 'bishop' }] },
   39: undefined, 43: undefined, 48: [], 52: [{ from: 'e7', to: 'd7' }], 55: undefined,
   78: 'c7', 84: { own: 'a2', opponent: 'b8' }, 102: [{ from: 'c5', to: 'h5' }], 103: undefined,
 };
@@ -279,7 +279,7 @@ test('iteration 160 independently reviewed campaign', () => {
         shieldMove = {player:owner,pieceIds:[knight.id],capturedOpponent:false};
       } else if (n === 36) {
         orientation = 90; promote('a7','rook'); promote('h4','bishop');
-        effects.push({type:'earthquake',owner,card,direction:'clockwise',target:targets[36]});
+        effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:targets[36]});
       } else if (n === 39) {
         assert.ok(lastMove); pieces = structuredClone(lastMove.pieces); half = lastMove.half; full = lastMove.full; active = lastMove.active;
         turn.phase = 'beforeMove'; turn.moveMade = false;

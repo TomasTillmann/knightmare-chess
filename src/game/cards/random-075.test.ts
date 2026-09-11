@@ -43,7 +43,7 @@ const rationales = [
   '29. Nc6-a7 is an empty knight jump; b5 King remains outside its attacks.',
   '30. End Black turn; clocks and card zones unchanged.',
   '31. Kb5-a6 provisionally enters b7 pawn attack; an opposite Earthquake orientation could remove it.',
-  '32. Clockwise Earthquake promotes a5/h3 as specified but b7 still attacks a6; failed rescue rewinds King and orientation, spends card and draws Legacy.',
+  '32. Counterclockwise Earthquake promotes a5/h3 as specified but b7 still attacks a6; failed rescue rewinds King and orientation, spends card and draws Legacy.',
   '33. Kb5-a4 is an empty adjacent square safe behind a5 pawn; card allowance remains consumed.',
   '34. End White legal retry; no Earthquake effect persists.',
   '35. Ra8-b8 is a one-square rook move to the vacated knight square; removes black queenside right.',

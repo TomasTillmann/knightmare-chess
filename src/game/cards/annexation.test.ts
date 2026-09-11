@@ -63,6 +63,149 @@ function move(state: State, from: string, to: string): State {
   return applied(state, { type: 'move', from, to });
 }
 
+// FAQ p. 7 applies en passant to first- or second-rank double advances.
+// Derived application: Annexation guarantees starting-square vulnerability;
+// it does not grant immunity to an otherwise eligible first-rank advance.
+describe('Annexation first-rank en passant (finding44f)', () => {
+  function fixture(color: 'white' | 'black', rank: number, orientation: State['orientation']) {
+    const square = (name: string) => {
+      let x = name.charCodeAt(0) - 97;
+      let y = color === 'white' ? Number(name[1]) - 1 : 8 - Number(name[1]);
+      for (let turn = 0; turn < orientation; turn += 90) [x, y] = [y, 7 - x];
+      return `${String.fromCharCode(97 + x)}${y + 1}` as Piece['square'] & string;
+    };
+    const board = new Map(Object.entries({ c6: 'K', h6: 'k', [`e${rank}`]: 'P', [`g${rank}`]: 'P', [`f${rank + 2}`]: 'p' })
+      .map(([at, piece]) => [square(at), color === 'white' ? piece
+        : piece === piece.toUpperCase() ? piece.toLowerCase() : piece.toUpperCase()]));
+    const fen = Array.from({ length: 8 }, (_, row) => [...'abcdefgh']
+      .map(file => board.get(`${file}${8 - row}` as ReturnType<typeof square>) ?? '1')
+      .join('').replace(/1+/g, run => String(run.length))).join('/')
+      + ` ${color === 'white' ? 'w' : 'b'} - - 17 20`;
+    const state = game({ fen, turn: color, hands: { [color]: [CARD, CARD] }, decks: { [color]: ['fanatic'] } });
+    state.orientation = orientation;
+    return { state, square };
+  }
+
+  for (const [landing, victim, survivor] of [['e2', 'e3', 'g3'], ['g2', 'g3', 'e3']]) {
+    it(`allows f3-${landing}, capturing only the selected first-rank Pawn`, () => {
+      const before = game({ fen: '8/8/2K4k/8/8/5p2/8/4P1P1 w - - 0 1' });
+      const snapshot = structuredClone(before);
+      const ready = endTurn(ok(play(before, shifts(['e1', 'e3'], ['g1', 'g3']))));
+      const victimId = pieceAt(ready, victim)!.id;
+      const survivorId = pieceAt(ready, survivor)!.id;
+      const after = move(ready, 'f3', landing);
+      assert.equal(pieceAt(after, landing)?.owner, 'black');
+      assert.equal(pieceAt(after, victim), undefined);
+      assert.equal(after.pieces.find(piece => piece.id === victimId)?.zone, 'captured');
+      assert.equal(pieceAt(after, survivor)?.id, survivorId);
+      assert.deepEqual(before, snapshot);
+    });
+  }
+
+  for (const color of ['white', 'black'] as const) {
+    for (const orientation of [0, 90, 180, 270] as const) {
+      it(`${color}, ${orientation} degrees: first/second ranks preserve both captures, cards and clocks`, () => {
+        for (const rank of [1, 2]) {
+          const { state: before, square } = fixture(color, rank, orientation);
+          const snapshot = structuredClone(before);
+          const [kept, spent] = before.players[color].hand;
+          const drawn = before.players[color].deck[0];
+          const target = shifts(
+            [square(`e${rank}`), square(`e${rank + 2}`)],
+            [square(`g${rank}`), square(`g${rank + 2}`)],
+          );
+          const advanced = applied(before, { type: 'playCard', cardId: CARD, cardInstanceId: spent.id, target } as Action);
+          const rights = ['e', 'g'].map(file => ({
+            target: square(`${file}${rank + 1}`), pawnId: pieceAt(before, square(`${file}${rank}`))!.id,
+          }));
+          assert.deepEqual(advanced.enPassant, rights);
+          assert.deepEqual(advanced.players[color], { hand: [kept, drawn], deck: [], discard: [spent] });
+          assert.equal(advanced.turn.cardPlays[color], 1);
+          assert.equal(advanced.turn.moveMade, true);
+          assert.equal(advanced.turn.phase, 'afterMove');
+          assert.deepEqual(advanced.fen.split(' ').slice(1), [color === 'white' ? 'b' : 'w', '-', '-', '0', color === 'white' ? '20' : '21']);
+          const reply = endTurn(advanced);
+          const replySnapshot = structuredClone(reply);
+          assert.deepEqual(reply.enPassant, rights);
+          for (const [index, file] of ['e', 'g'].entries()) {
+            const landing = square(`${file}${rank + 1}`);
+            assert.ok(legalDests(reply).get(square(`f${rank + 2}`))?.includes(landing));
+            const captured = move(reply, square(`f${rank + 2}`), landing);
+            assert.equal(pieceAt(captured, landing)?.id, pieceAt(before, square(`f${rank + 2}`))!.id);
+            assert.equal(captured.pieces.find(piece => piece.id === rights[index].pawnId)?.zone, 'captured');
+            assert.equal(pieceAt(captured, square(`${file}${rank + 2}`)), undefined);
+            assert.equal(pieceAt(captured, square(`${file === 'e' ? 'g' : 'e'}${rank + 2}`))?.id, rights[1 - index].pawnId);
+            assert.deepEqual(captured.enPassant, []);
+            assert.deepEqual(captured.players, reply.players);
+            assert.deepEqual(captured.fen.split(' ').slice(4), ['0', '21']);
+          }
+          // The ordinary move shares the same first/second-rank eligibility.
+          const ordinary = move(before, square(`e${rank}`), square(`e${rank + 2}`));
+          assert.deepEqual(ordinary.enPassant, [rights[0]]);
+          assert.deepEqual(ordinary.players, before.players);
+          assert.equal(pieceAt(move(endTurn(ordinary), square(`f${rank + 2}`), rights[0].target), square(`e${rank + 2}`)), undefined);
+          assert.deepEqual(reply, replySnapshot);
+          assert.deepEqual(before, snapshot);
+        }
+      });
+    }
+  }
+
+  for (const replacement of [false, true]) {
+    it(`expires both first-rank rights after an ${replacement ? 'Annexation' : 'ordinary'} reply`, () => {
+      const before = game({
+        fen: 'p7/8/2K4k/8/8/5p2/8/4P1P1 w - - 0 1',
+        hands: { white: [CARD], black: [CARD] },
+      });
+      const reply = endTurn(ok(play(before, shifts(['e1', 'e3'], ['g1', 'g3']))));
+      assert.equal(reply.enPassant.length, 2);
+      let state = replacement ? ok(play(reply, shifts(['a8', 'a6']))) : move(reply, 'h6', 'h7');
+      assert.equal(state.enPassant.some(right => ['e2', 'g2'].includes(right.target)), false);
+      state = endTurn(move(endTurn(state), 'c6', 'c5'));
+      assert.deepEqual(state.enPassant, []);
+      for (const to of ['e2', 'g2']) {
+        const snapshot = structuredClone(state);
+        const result = applyAction(state, { type: 'move', from: 'f3', to, enPassant: true });
+        assert.equal(result.ok, false);
+        assert.strictEqual(result.state, state);
+        assert.deepEqual(state, snapshot);
+      }
+    });
+  }
+
+  it('uses original owner direction for opponent-owned neutral first-rank Pawns', () => {
+    const before = game({ fen: '4p1p1/8/2K2P1k/8/8/8/8/8 w - - 0 1' });
+    for (const piece of before.pieces) if (piece.originalRole === 'pawn') piece.neutral = true;
+    const snapshot = structuredClone(before);
+    const advanced = ok(play(before, shifts(['e8', 'e6'], ['g8', 'g6'])));
+    assert.deepEqual(advanced.enPassant, ['e', 'g'].map(file => ({ target: `${file}7`, pawnId: pieceAt(before, `${file}8`)!.id })));
+    assert.equal(advanced.fen.split(' ')[3], '-');
+    const reply = endTurn(advanced);
+    for (const file of ['e', 'g']) {
+      const captured = move(reply, 'f6', `${file}7`);
+      assert.equal(pieceAt(captured, `${file}6`), undefined);
+      assert.equal(pieceAt(captured, `${file === 'e' ? 'g' : 'e'}6`)?.zone, 'board');
+      assert.equal(pieceAt(captured, `${file}7`)?.id, pieceAt(before, 'f6')!.id);
+    }
+    assert.deepEqual(before, snapshot);
+  });
+
+  it('captures the selected first-rank Pawn composite and preserves the other Pawn', () => {
+    const before = game({
+      fen: '8/8/2K4k/8/8/5p2/6N1/4P1P1 w - - 0 1',
+      hands: { white: ['confabulation', CARD], black: [] },
+    });
+    const ids = ['e1', 'g2'].map(square => pieceAt(before, square)!.id);
+    const merged = applied(before, { type: 'playCard', cardId: 'confabulation', target: shifts(['g2', 'e1']) } as Action);
+    const ready = endTurn(move(endTurn(merged), 'h6', 'h7'));
+    const reply = endTurn(ok(play(ready, shifts(['e1', 'e3'], ['g1', 'g3']))));
+    const captured = move(reply, 'f3', 'e2');
+    for (const id of ids) assert.equal(captured.pieces.find(piece => piece.id === id)?.zone, 'captured');
+    assert.equal(pieceAt(captured, 'g3')?.id, pieceAt(before, 'g1')!.id);
+    assert.deepEqual(captured.enPassant, []);
+  });
+});
+
 describe('Annexation contract and geometry', () => {
   it('has the complete printed metadata', () => {
     assert.deepEqual(CARD_CATALOG[CARD], {

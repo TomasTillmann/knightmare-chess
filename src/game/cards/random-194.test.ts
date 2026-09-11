@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { replayTrace, type RandomTrace } from './random-campaign.js';
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
@@ -28,7 +28,7 @@ const reasons = `
 17. End Black turn; no White Pawn can capture h6 EP.
 18. d1-d2 is an unobstructed Queen step and expires EP.
 19. Earthquake changes forward to east/west; Black a7 promotes Rook first, White h2 Queen second.
-20. Black Plots uses the opponent response window; none of its other held cards is eligible here.
+20. Black Plots preserves the response after optional Earthquake; Think Again is eligible under FAQ16/37.
 21. End turn, closing the unused Plots allowance.
 22. d8-e7 is an empty diagonal Queen step.
 23. End safe Black turn.
@@ -204,7 +204,7 @@ const previousFenRows = new Set([84,100,105,113,117]);
 // Independent declaration ledger: physical card, original owner, timing row, and exact target.
 const declarations: Record<number, GameAction> = {
   4:{type:'playCard',cardId:'siege',cardInstanceId:'black-hand-4-siege',target:{knight:'a6',rook:'h8'}},
-  19:{type:'playCard',cardId:'earthquake',cardInstanceId:'white-hand-1-earthquake',target:{direction:'clockwise',promotions:[{square:'a7',role:'rook'},{square:'h2',role:'queen'}]}},
+  19:{type:'playCard',cardId:'earthquake',cardInstanceId:'white-hand-1-earthquake',target:{direction:'counterclockwise',promotions:[{square:'a7',role:'rook'},{square:'h2',role:'queen'}]}},
   20:{type:'playCard',cardId:'plots-within-plots',cardInstanceId:'black-hand-2-plots-within-plots',target:{player:'black'}},
   27:{type:'playCard',cardId:'plots-within-plots',cardInstanceId:'white-hand-2-plots-within-plots',target:{player:'white'}},
   30:{type:'playCard',cardId:'think-again',cardInstanceId:'black-hand-1-think-again'},
@@ -222,6 +222,8 @@ const declarations: Record<number, GameAction> = {
   106:{type:'playCard',cardId:'abduction',cardInstanceId:'black-deck-7-abduction',target:'c1'},
 };
 
+// F4 / FAQ p.16: only actions 1–29 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 30; original artifact hashes remain unchanged.
 test('iteration 194 independently reviewed full physical, card, turn, FEN and royal oracle', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/194.json', import.meta.url), 'utf8')) as RandomTrace;
   assert.equal(reasons.length,120);assert.equal(trace.steps.length,120);
@@ -240,7 +242,7 @@ test('iteration 194 independently reviewed full physical, card, turn, FEN and ro
     const parts=saved.fen.split(' ');side=parts[1]==='w'?'white':'black';rights=parts[2]!;half=Number(parts[4]);full=Number(parts[5]);
     expected.turn.phase='beforeMove';expected.turn.moveMade=false;
   };
-  for(const [i,{action}] of trace.steps.entries()) {
+  for(const [i,{action}] of trace.steps.slice(0, 29).entries()) {
     const n=i+1;assert.ok(reasons[i]!.startsWith(`${n}. `));checkpoints.set(n,structuredClone(expected));
     const before=structuredClone(expected),actor=expected.turn.color;
     if(action.type==='move') {
@@ -279,9 +281,9 @@ test('iteration 194 independently reviewed full physical, card, turn, FEN and ro
       const event:GameEvent={type:'cardPlayed',cardId:card.cardId,target:action.target as GameEvent['target'],movement:[],preservePreviousMove:expected.turn.moveMade};
       if(n===4){relocate('a6','a5',owner);relocate('h8','a6',owner);relocate('a5','h8',owner);rights='KQhq';event.movement=[{from:'a6',to:'h8'},{from:'h8',to:'a6'}];}
       else if(n===19){expected.orientation=90;for(const [square,role] of [['a7','rook'],['h2','queen']] as const){at(expected,square)!.role=role;at(expected,square)!.promoted=true;}
-        expected.effects.push({type:'earthquake',owner,card,direction:'clockwise',target:action.target});}
+        expected.effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:action.target});}
       else if(n===20 || n===27){delete event.target;event.player=owner;event.preservePreviousMove=true;
-        expected.plotsAllowances=[{player:owner,remaining:2,eligibleCards:[],window:{phase:'afterMove',moveMade:true,shieldMove:structuredClone(expected.shieldMove),reaction:structuredClone([...expected.history].reverse().find(e=>e.type==='move'))}}];}
+        expected.plotsAllowances=[{player:owner,remaining:2,eligibleCards:n===20?['black-hand-1-think-again']:[],window:{phase:'afterMove',moveMade:true,shieldMove:structuredClone(expected.shieldMove),reaction:structuredClone([...expected.history].reverse().find(e=>e.type==='move'))}}];}
       else if(n===30){restore(29);event.player=owner;delete event.target;event.movement=[{from:'c3',to:'b1'}];
         expected.chaosForbidden={player:'white',movement:'white-knight-b1:b1:c3'};delete expected.shieldMove;expected.plotsAllowances=[];}
       else if([39,63,70,74,101].includes(n)) {
@@ -336,7 +338,7 @@ test('iteration 194 independently reviewed full physical, card, turn, FEN and ro
     assert.equal(!!actual.pendingAbduction,n===106||n===107);
     if(actual.pendingAbduction){assert.equal(actual.pendingAbduction.phase,n===106?'concealment':'recall');assert.equal(actual.pendingAbduction.pieceId,'white-bishop-c1');assert.equal(actual.pendingAbduction.player,'white');assert.equal(actual.pendingAbduction.durationMs,10000);assert.equal(actual.pendingAbduction.requiresPieceId,false);}
     if(n===20 || n===27){const allowance=actual.plotsAllowances![0]!;assert.equal(actual.plotsAllowances!.length,1);
-      assert.equal(allowance.player,n===20?'black':'white');assert.equal(allowance.remaining,2);assert.deepEqual(allowance.eligibleCards,[]);
+      assert.equal(allowance.player,n===20?'black':'white');assert.equal(allowance.remaining,2);assert.deepEqual(allowance.eligibleCards,n===20?['black-hand-1-think-again']:[]);
       assert.equal(allowance.window.phase,'afterMove');assert.equal(allowance.window.moveMade,true);assert.deepEqual(allowance.window.shieldMove,expected.shieldMove);
       assert.deepEqual(allowance.window.reaction,expected.plotsAllowances![0]!.window.reaction);
       assert.equal(allowance.window.capture,undefined);assert.equal(allowance.window.legacyCapture,undefined);
@@ -355,7 +357,8 @@ test('iteration 194 independently reviewed full physical, card, turn, FEN and ro
       assert.equal(result.ok,false);if(!result.ok)assert.equal(result.error.code,'INVALID_TIMING');assert.deepEqual(probe,original);
     }
   }
-  assert.equal(trace.moves,50);assert.equal(actual.fen,trace.finalFen);
+  assert.equal(trace.moves,50);
+  rejectPendingCancellation(actual, trace.steps[29]!.action, [{"type":"playCard","cardId":"charge","cardInstanceId":"white-hand-4-charge","target":[{"from":"c3","to":"e4"}]}]);
   assert.equal(trace.steps.filter(s=>s.action.type==='playCard').length,17);
 });
 
@@ -393,5 +396,5 @@ function verifyCure(state:GameState,row:number):void {
 
 test('iteration 194 deterministic replay', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/194.json', import.meta.url), 'utf8')) as RandomTrace;
-  assert.ok(replayTrace(trace));
+  rejectPendingCancellation(replayTrace(trace, 30), trace.steps[29]!.action, [{"type":"playCard","cardId":"charge","cardInstanceId":"white-hand-4-charge","target":[{"from":"c3","to":"e4"}]}]);
 });

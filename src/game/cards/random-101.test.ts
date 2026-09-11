@@ -89,7 +89,7 @@ const rationale = [
   '75 a2-a3 is an empty one-square Pawn advance.',
   '76 White ends the Pawn move.',
   '77 Ng8-f6 is a vacant Knight jump.',
-  '78 Earthquake rotates forward directions clockwise; opponent h2 promotes Queen, then a6 Knight.',
+  '78 Earthquake rotates forward directions counterclockwise; opponent h2 promotes Queen, then a6 Knight.',
   '79 Black ends with orientation 90 and both promoted identities retained.',
   '80 Kf1-f2 enters an empty unattacked square under the rotated Pawn attacks.',
   '81 White ends with its King safe on f2.',
@@ -255,7 +255,7 @@ test('iteration 101 independently verifies every physical transition and complet
       } else if (step === 78) {
         expected.orientation = 90
         for (const [square, role] of [['h2','queen'],['a6','knight']] as const) { at(square).role=role; at(square).promoted=true }
-        expected.effects.push({type:'earthquake',owner,card:{id:action.cardInstanceId,cardId:'earthquake'},direction:'clockwise',target:{direction:'clockwise',promotions:[{square:'h2',role:'queen'},{square:'a6',role:'knight'}]}})
+        expected.effects.push({type:'earthquake',owner,card:{id:action.cardInstanceId,cardId:'earthquake'},direction:'counterclockwise',target:{direction:'counterclockwise',promotions:[{square:'h2',role:'queen'},{square:'a6',role:'knight'}]}})
       } else if (step === 101) {
         assert.ok(geometry(before, at('e4'), 'c2', false))
         assert.equal(at('c2').owner, owner)

@@ -214,10 +214,10 @@ test('iteration 123 independently reviewed physical, card, timing, and royal ora
         piece('white-pawn-g2').square = 'g4'; piece('white-pawn-h2').square = 'h5'
         ep = [{ target: 'g3', pawnId: 'white-pawn-g2' }]; finishMove(true)
       } else if (n === 54) {
-        const target = { direction: 'clockwise', promotions: [{ square: 'a7', role: 'queen' }, { square: 'h5', role: 'queen' }] }
+        const target = { direction: 'counterclockwise', promotions: [{ square: 'a7', role: 'queen' }, { square: 'h5', role: 'queen' }] }
         assert.deepEqual(action.target, target); rotated = true
         for (const id of ['black-pawn-a7', 'white-pawn-h2']) Object.assign(piece(id), { role: 'queen', promoted: true })
-        effects.push({ type: 'earthquake', owner, card, direction: 'clockwise', target })
+        effects.push({ type: 'earthquake', owner, card, direction: 'counterclockwise', target })
       } else if (n === 81) {
         assert.deepEqual(action.target, { knight: 'a6', bishop: 'a4' })
         assert.equal(piece('black-knight-b8').square, 'a6'); assert.equal(piece('black-bishop-c8').square, 'a4')

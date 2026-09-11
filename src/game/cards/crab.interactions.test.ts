@@ -336,8 +336,8 @@ test('Pacifism prevents an enemy from capturing a transformed Crab', () => {
 });
 
 for (const { direction, orientation, expected } of [
-  { direction: 'clockwise', orientation: 90, expected: ['f3', 'f5'] },
-  { direction: 'counterclockwise', orientation: 270, expected: ['d3', 'd5'] },
+  { direction: 'counterclockwise', orientation: 90, expected: ['f3', 'f5'] },
+  { direction: 'clockwise', orientation: 270, expected: ['d3', 'd5'] },
 ] as const) {
   test(`Earthquake ${direction} rotates the Crab's forward diagonals`, () => {
     const { state } = transformedCrab('e4');

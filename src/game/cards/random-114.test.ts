@@ -7,6 +7,7 @@ import { createGameState } from '../state.js'
 import type { CardInstance, Color, FatalAttractionEffect, DoomsayerEffect, GameState, PieceState, SquareName } from '../types.js'
 
 // Individually reviewed against rules §§8–11, 18.6, 19.3, 20 and the printed catalog metadata.
+// Finding43: rows after the forbidden action 104 describe an unreachable archived branch.
 const rationale = `
 1. White d2-d3 advances one empty square; no capture or check.
 2. After-move Doomsayer retains White's card and offers Black the immediate naming choice.
@@ -111,7 +112,7 @@ const rationale = `
 101. White ends the safe replacement move.
 102. Black king f8-g8 moves to an unattacked empty square.
 103. Black ends its completed move.
-104. Evangelists swaps White's c1 bishop and frozen Black a3 bishop; non-move swaps ignore immobilization and retain identities.
+104. FAQ40 and Fatal Attraction forbid Evangelists: Black's a3 bishop is frozen by the copied a4 magnet; reject atomically.
 105. White ends its bishop-swap replacement move; its a3 bishop is now frozen.
 106. Black rook e2-d2 moves one empty square; the c1 bishop does not attack White's f1 king.
 107. Black ends its completed move.
@@ -131,7 +132,7 @@ const rationale = `
 121. White ends; Black starts with both kings safe and the a4 magnet retained.
 `.trim().split('\n')
 
-test('iteration 114 independent physical, card, clock and royal oracle for every action', () => {
+test('iteration 114 independent oracle through the forbidden Fatal Attraction swap', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/114.json', import.meta.url), 'utf8')) as RandomTrace
   assert.equal(rationale.length, trace.steps.length)
   let state = createGameState(trace.initial)
@@ -183,7 +184,7 @@ test('iteration 114 independent physical, card, clock and royal oracle for every
   const swap = (a:string,b:string) => { const p=at(a)!,q=at(b)!;[p.square,q.square]=[q.square,p.square] }
   let pending: {player:Color;cardInstanceId:string}|null=null
   let moves=0,cards=0
-  for(const [index,{action}] of trace.steps.entries()) {
+  for(const [index,{action}] of trace.steps.slice(0, 103).entries()) {
     const n=index+1, label=rationale[index]!
     assert.ok(label.startsWith(`${n}. `))
     const actor=turn.color
@@ -225,7 +226,6 @@ test('iteration 114 independent physical, card, clock and royal oracle for every
         else if(n===75){assert.equal(byId('white-pawn-b2').zone,'captured');assert.equal(at('e2'),undefined);relocate('white-pawn-b2','e2');consumeMove(true)}
         else if(n===88) swap('c8','h5')
         else if(n===100){relocate('white-king-e1','f1');consumeMove(false)}
-        else if(n===104){swap('c1','a3');consumeMove(false)}
         else assert.fail(`Unreviewed card at ${n}`)
       }
       zone.hand.push(zone.deck.shift()!)
@@ -255,13 +255,23 @@ test('iteration 114 independent physical, card, clock and royal oracle for every
     const fenEp=n>=35&&n<=37?'f3':'-'
     assert.equal(state.fen,`${ranks.join('/')} ${fenColor[0]} ${rights} ${fenEp} ${half} ${full}`,`${label}: complete independently constructed FEN`)
   }
-  assert.equal(moves,50)
-  assert.equal(cards,14)
-  assert.equal(state.fen,'6k1/1n1n4/2r1ppp1/R4pPb/P1P3B1/Bp2P1P1/4rNKP/2b4R b - - 3 28')
+  assert.equal(moves,42)
+  assert.equal(cards,13)
+  assert.equal(state.fen,'3n2k1/3n2p1/2r1pp2/R4p1b/P1P3P1/bp2PBPN/4r2P/2B2K1R w - - 2 24')
+  assert.equal(frozen(at('a3')!),true)
+  const before = structuredClone(state)
+  assert.deepEqual(trace.steps[103].action, { type:'playCard', cardId:'evangelists',
+    cardInstanceId:'white-deck-8-evangelists', target:{own:'c1',opponent:'a3'} })
+  const rejected = applyAction(state, trace.steps[103].action)
+  assert.equal(rejected.ok,false,rationale[103])
+  assert.deepEqual(rejected.state,before)
+  assert.deepEqual(state,before)
 })
 
-test('iteration 114 deterministic replay', () => {
+test('iteration 114 deterministic replay preserves every valid prefix hash', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/114.json', import.meta.url), 'utf8')) as RandomTrace
   assert.ok(trace)
-  replayTrace(trace)
+  const steps = trace.steps.slice(0, 103)
+  replayTrace({ ...trace, steps, moves:steps.filter(step => step.action.type === 'move').length,
+    finalFen:'3n2k1/3n2p1/2r1pp2/R4p1b/P1P3P1/bp2PBPN/4r2P/2B2K1R w - - 2 24' })
 })

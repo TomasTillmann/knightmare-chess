@@ -42,7 +42,7 @@ const review = [
   '25. White Ke1xf1 captures the swapped black c8 Bishop on an unattacked adjacent square; revoke both White castling rights.',
   '26. End White turn; captured Bishop stays off-board and no Hostage was played.',
   '27. Black Ke8-d7 is temporarily attacked by White Bc8; pending rescue prevents ending this turn as legal.',
-  '28. Counterclockwise Earthquake cannot remove Bc8-d7 check. Spend and discard it, draw Plots, restore orientation, unpromoted edge Pawns, Ke8, black rights and clocks; failed rescue returns the Regular Move.',
+  '28. Clockwise Earthquake cannot remove Bc8-d7 check. Spend and discard it, draw Plots, restore orientation, unpromoted edge Pawns, Ke8, black rights and clocks; failed rescue returns the Regular Move.',
   '29. Black Qa5-c5 crosses empty b5 as the legal replacement; card allowance remains spent after the failed rescue.',
   '30. End Black turn; no illegal d7 King position or Earthquake transformation survives.',
   '31. White Ng1-f3 is an ordinary L jump, outside the magnet.',

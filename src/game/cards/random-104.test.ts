@@ -121,7 +121,7 @@ const rationale = [
   '109 c5xb3: Black Knight captures original White b2 Pawn; captor Black.',
   '110 Black ends with unchanged pieces.',
   '111 e3-e2: Rook retreats one; old magnet does not return.',
-  '112 Fireball: latest quiet e2 Rook explodes; d2 Knight/e1 Prince captured by White, royal f1 spared.',
+  '112 Fireball: latest quiet e2 Rook and d2 Knight captured by White; e1 Prince and royal f1 spared (FAQ20).',
   '113 White ends with royal Bishop intact and Coup still retained.',
   '114 b4-c3: Black Bishop diagonal to square vacated by original White e2 Pawn.',
   '115 Black ends fiftieth Regular Move; new White turn and no unresolved obligation.',
@@ -262,7 +262,8 @@ test('iteration 104 independently verifies every physical transition and full in
           replacement = true; break
         case 'fireball':
           assert.equal(action.target, 'e2'); assert.deepEqual(before.history.at(-1), { type: 'move', from: 'e3', to: 'e2' })
-          for (const p of expected.pieces.filter(p => p.square && distance(p.square, 'e2') <= 1 && !p.royal)) take(p)
+          for (const id of ['white-knight-b1', 'white-rook-h1']) take(expected.pieces.find(p => p.id === id)!)
+          assert.equal(at(expected.pieces, 'e1')?.id, 'white-king-e1', 'FAQ20 preserves the adjacent Prince')
           break
         default: throw new Error(`unreviewed card ${action.cardId}`)
       }

@@ -540,7 +540,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "black-deck-0-earthquake",
         "target": {
-          "direction": "clockwise",
+          "direction": "counterclockwise",
           "promotions": [
             {
               "square": "h2",
@@ -553,13 +553,13 @@
           ]
         }
       },
-      "expected": "8e0f14649a84a19db7a17ed3f24074dc8740caa6f7ed505368e81f5c5d7e5b6b"
+      "expected": "0bed15a9292345e4b10bbbd92729c57c4e2610acb2aeae69721bb7dc8b8927e3"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "62c3f2c7575f152c2d389d6fb29fed09df22bb2922866b8acc3273bdca9a47b1"
+      "expected": "daee106dbc1c32afbab0eacb8c8d9ba389cb2e8fbeda880649118024fadc0666"
     },
     {
       "action": {
@@ -567,13 +567,13 @@
         "from": "h3",
         "to": "g1"
       },
-      "expected": "27333ab804df7278bcb68da4a9c66c239717cafd589e8b822fdd1207cbbe96d7"
+      "expected": "0697b1f0f7ab38dde9db1201f94404c144c5628f0e71aca6f969131be9a8576d"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "1199570e79403d9d41898a35ffc9056077b74752646b9418faa8b5cee87ac6a0"
+      "expected": "4e1287bf0bb3f67b57867d326dfc60eb7f0ee0f39a1acc143b4580979c55daf5"
     },
     {
       "action": {
@@ -585,13 +585,13 @@
           "victim": "a2"
         }
       },
-      "expected": "e94d7870cee2abfdd0b6ee15f74c442b98bd181787b47f7e8760eab15ba7cb29"
+      "expected": "b373195c8ae98a8e4d25ca2e402a24d86a619596d2476bb46080d73807b327e8"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "9ede43b3edc9178c8155156e138d63bca6a0c682ff35771f97cd131744fce766"
+      "expected": "79eb2277d754509b0e81da1012397412abca27228943e1f93a3ec8644847311e"
     },
     {
       "action": {
@@ -599,13 +599,13 @@
         "from": "a1",
         "to": "b1"
       },
-      "expected": "31744d6a0ae1d7b821bd48a3edef1a55f4a1bea5b73f48383504e3a397630e4e"
+      "expected": "cb9931de1f449803f61ec9603c9d3c2736012bb33a4eb76d26d893ae034e0b01"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "35e2076621a6b760a34e78a27c70a8c7a5a10f165fdf940961fdfc91f3bf72fe"
+      "expected": "348e23e78acfb57730882cb6147215da99050e850e579a0a172699930c29ac27"
     },
     {
       "action": {
@@ -619,13 +619,13 @@
           }
         ]
       },
-      "expected": "fafab9a0ecfffa3fd57b2c0694ab445682b6f776cde058e4723da847342da036"
+      "expected": "e665ee944bb57f8f5797b36cff098fd6ad1cc146c305bff4cc22041366b31c5e"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "92711b2d90980337244f11a028dbaf1bac7ce3589ebfed108c64bebacc652223"
+      "expected": "79c7d74fcc45dbe2e512937c5ba4fab48b9510577c3447af1fe58fd676c5ef0f"
     },
     {
       "action": {
@@ -633,13 +633,13 @@
         "from": "c3",
         "to": "e4"
       },
-      "expected": "9fc54332afaaa974030b562abbc933b56fba2467451324bd6d588aaa598c526b"
+      "expected": "e12cb253f332233c1d34cb79b499d4615b76abb20934cfcd944579dae0e79203"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "b5d18f01b8fe9d26147181a4183454153eddb910a62b2caf8e5c65d8bdb7e43d"
+      "expected": "2fd3a88131352960b0bd91706774a3614921741a089e538ee0d14ce215e15b80"
     },
     {
       "action": {
@@ -647,13 +647,13 @@
         "from": "a5",
         "to": "a1"
       },
-      "expected": "90dceaa53feb21541d5fe810e5c99273c49543f4c823591d9fa61a0b7bceeec2"
+      "expected": "a8195d095b980db515d1105f1b6e38e666bbeab3a908c64ba7a8352f5383c669"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "c7ece9b66e1a728191733ad8748cfe553b24be24aa071e36de82420784e40b1e"
+      "expected": "96191ef2bdb667b8fdfe76a76fc2d6a4fd69b3b44a894d0f3e06a2a30d35eb68"
     },
     {
       "action": {
@@ -661,7 +661,7 @@
         "from": "g1",
         "to": "h3"
       },
-      "expected": "b17896ae305de67e3c8767c73334031462b2c9bb3fe6e889f6fc81483d3c4d88"
+      "expected": "a66b8debbaf5073abb3f6be0e49757407e48456013f11b98310ca683d64ce104"
     },
     {
       "action": {
@@ -669,7 +669,7 @@
         "cardId": "chaos",
         "cardInstanceId": "black-hand-4-chaos"
       },
-      "expected": "3baec569d4acca0a9f31c3172af8e92fb8ce6e9e4769143b66d3f8fe222f239f"
+      "expected": "282a8223cffbe9fd23db271cda7e30dd9e1ed2ebc038df5bf4023463199b9bfe"
     },
     {
       "action": {
@@ -677,13 +677,13 @@
         "from": "d1",
         "to": "c1"
       },
-      "expected": "fefbe1b22c3dbbb8b553c0691e9f9d1da08bacf283970b33d935eb56a5fede35"
+      "expected": "90d6197ede8c84b5c44c0e5223177992ab07a6d2209c1109d5405eeb47e8521a"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "e574773ecf0d33b80356dfac711391c6fed0070438de39304cdd94ad790204d8"
+      "expected": "5d746804533692fcd7c77bb0bea083f38ae9fae5df4ee827e9851631d6f856b6"
     },
     {
       "action": {
@@ -691,7 +691,7 @@
         "from": "h8",
         "to": "h7"
       },
-      "expected": "1596569141d9a22dfdd5c20ffca9f915039ab5bed2b5bcf51e88382af2ac90d1"
+      "expected": "8580a70663ee2932774d66930aa8ae96ce0d0500c16b6ee6075ae7bef991dde5"
     },
     {
       "action": {
@@ -699,7 +699,7 @@
         "cardId": "think-again",
         "cardInstanceId": "white-deck-1-think-again"
       },
-      "expected": "62f6f5b615a9caff9959d4cd222be58ee2eff0c151ef8c68e470ccacd6563b49"
+      "expected": "449d48195c433387267eb1e270f85d39ef20506c9a7cd10b17bc8aa72ade18f7"
     },
     {
       "action": {
@@ -707,7 +707,7 @@
         "from": "d8",
         "to": "c8"
       },
-      "expected": "198c4eb7a8839df03573c7ca749e51849ee0e4ad31f0fb2f916b65109d66db7c"
+      "expected": "1567f0ea8b621b77d5f0dc71d2fed060f69cb6ec2da5b7cc6505bb337947e674"
     },
     {
       "action": {

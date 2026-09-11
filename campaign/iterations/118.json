@@ -922,7 +922,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "white-deck-0-earthquake",
         "target": {
-          "direction": "counterclockwise",
+          "direction": "clockwise",
           "promotions": [
             {
               "square": "h4",
@@ -935,13 +935,13 @@
           ]
         }
       },
-      "expected": "badc9be599674ad9e2ca1a89da9ffd2b7d02a2b2273810a264fabc01e831be09"
+      "expected": "d21f88eddabc9901ec7854c150ccc73bf467e2ceb4ce6ffd49a8c770fbd2beb1"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "a399bf9040a0783d7e397304bffc9bf2ff36d5fda0667c32240a90103b20ac95"
+      "expected": "2594c3140628b185bceea09c571d8a540b523f9b95b75d2a3d88933fb6ead936"
     },
     {
       "action": {
@@ -949,13 +949,13 @@
         "from": "a6",
         "to": "c7"
       },
-      "expected": "35ae12afd56584c7eeb43a968923e4b0c3bb51bae8b37d0ffe24f78387a1dba7"
+      "expected": "3d5bd402865d37612a6b01a90a1ae454b3a36d5aa5d2881ce8487cc9a63d7e6f"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "8a730ddde82a845c6af2b2bb84191c35e73813888c6dcd6b0331e0aafd0835b9"
+      "expected": "9478470c8fd47dd364780a03fd3db8484ae9828bd883e5fd121dabaad3633116"
     },
     {
       "action": {
@@ -963,13 +963,13 @@
         "from": "a3",
         "to": "a1"
       },
-      "expected": "9c89d961fa82d2eceea3d855086b1a52a326b4830f56864e6712bf799ebfc596"
+      "expected": "c7862faee02b671d72bcd5be13f1dd2896c6479f65edb0888d59fd732f778d68"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "26362f767327430b5be13ba59afd673a03ecce8f454256c513c69e36a5cbe683"
+      "expected": "33a15109b55ab14046fc98e265febba6fb11e8b2f7e5690bd634e45b03e5ac28"
     },
     {
       "action": {
@@ -977,13 +977,13 @@
         "from": "h4",
         "to": "h7"
       },
-      "expected": "623c260f3788c0af15afd762ebb560bbbbadfaf538d4abd942aa2268a1853693"
+      "expected": "159e7f97bcd9f588e8bc84a25742861eccd486b72318c3b7aa994e6f8dbdb942"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "e4962d4aef655d34f70f651971af7d2075b03d91e9170beb2cf9e3563dde7b02"
+      "expected": "632642eaa182d956db4ca057194baeb5f9e209c7fcda9f39cef659a5a14b9d38"
     },
     {
       "action": {
@@ -991,13 +991,13 @@
         "from": "a4",
         "to": "b2"
       },
-      "expected": "b7df7ee78f3ecf2a8f37e3d893cd0bb090441958cb8ce0e160f0cf1d43953b8c"
+      "expected": "c2d43aaa6486280c527d3ee15513087e87f36b410513fe5660a84f5e00d66d86"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "4a1cc86645fab01a0e22b964b069d64c8aa0582a3bb04bf8311d14953a336d5b"
+      "expected": "c23e6965b776c5ee198e1f479aa39d88d4601c47f51a754387cd2ec94fecae4c"
     },
     {
       "action": {
@@ -1005,7 +1005,7 @@
         "from": "h7",
         "to": "h6"
       },
-      "expected": "2e0cd567a00fd0fd76fc4a52650c2cf3ae126fb5f1e1418e6711d4cc8db44c92"
+      "expected": "c28788b42a71aea8dffab455937a5cba3ab20ca070b0a023692c5db8bb9f59b8"
     },
     {
       "action": {
@@ -1013,17 +1013,17 @@
         "cardId": "earthquake",
         "cardInstanceId": "black-deck-2-earthquake",
         "target": {
-          "direction": "counterclockwise",
+          "direction": "clockwise",
           "promotions": []
         }
       },
-      "expected": "444ec25c34b24037294e2b3643300a1e3ceb5cdd8d73fcd6e9bec0df59f276b4"
+      "expected": "0cb6a2f31a99936f60a076c81b083afa4c56764e457b05c0b9a0c1949452558a"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "5a4e2e94ca83367c3cfefe576c80ae24797b1f13e7b5a988bbdfc53c3a48733e"
+      "expected": "e9eb427678e94f6b1955100aa9dbb2feddbf9063ce610a6bf9ccdf1b3b393e80"
     },
     {
       "action": {
@@ -1031,13 +1031,13 @@
         "from": "b2",
         "to": "a4"
       },
-      "expected": "e7367a36ac140ac6f441dcfce5b3ddca0fe790141cbe920bcd49ef0d257624f6"
+      "expected": "e4697ba802a45e5a042a048e09fc772d6f246d04e5b6ccc828a5ca4fa8f07835"
     },
     {
       "action": {
         "type": "endTurn"
       },
-      "expected": "ce1345d7fdd37d39266813e4054489a093461a66077509aa1003d50db6c4703e"
+      "expected": "277b98a53d6cf3d2a50ffc928e43a3ac89493ee0f767958ee89d75cb074a6379"
     }
   ],
   "moves": 50,

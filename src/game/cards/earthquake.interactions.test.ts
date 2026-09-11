@@ -41,14 +41,14 @@ test('rotates orientation while keeping fixed coordinates and piece identities',
   const before = make('4k3/8/8/8/8/2P5/8/4K3 w - - 7 12');
   const ids = before.pieces.map(piece => [piece.id, piece.square]);
   const after = earthquake(before, 'clockwise');
-  assert.equal(after.orientation, 90);
+  assert.equal(after.orientation, 270);
   assert.deepEqual(after.pieces.map(piece => [piece.id, piece.square]), ids);
 });
 
 test('applies both rotation directions from every orientation', () => {
   for (const [start, direction, expected] of [
-    [0, 'clockwise', 90], [90, 'clockwise', 180], [180, 'clockwise', 270], [270, 'clockwise', 0],
-    [0, 'counterclockwise', 270], [270, 'counterclockwise', 180], [180, 'counterclockwise', 90], [90, 'counterclockwise', 0],
+    [0, 'clockwise', 270], [90, 'clockwise', 0], [180, 'clockwise', 90], [270, 'clockwise', 180],
+    [0, 'counterclockwise', 90], [270, 'counterclockwise', 0], [180, 'counterclockwise', 270], [90, 'counterclockwise', 180],
   ] as const) {
     const state = make('4k3/8/8/8/8/8/8/4K3 w - - 0 1');
     state.orientation = start as BoardOrientation;
@@ -58,7 +58,7 @@ test('applies both rotation directions from every orientation', () => {
 
 test('promotes opponent first, then actor, in fixed-square order', () => {
   const state = make('4k3/8/8/8/p6P/8/8/4K3 w - - 0 1');
-  const after = earthquake(state, 'clockwise', [
+  const after = earthquake(state, 'counterclockwise', [
     { square: 'a4', role: 'rook' },
     { square: 'h4', role: 'knight' },
   ]);
@@ -67,7 +67,7 @@ test('promotes opponent first, then actor, in fixed-square order', () => {
 });
 
 test('accepts an empty promotion list when no pawn reaches a new last rank', () => {
-  assert.equal(earthquake(make('4k3/8/8/8/3P4/8/8/4K3 w - - 0 1'), 'clockwise').orientation, 90);
+  assert.equal(earthquake(make('4k3/8/8/8/3P4/8/8/4K3 w - - 0 1'), 'counterclockwise').orientation, 90);
 });
 
 for (const [name, promotions] of [
@@ -78,32 +78,32 @@ for (const [name, promotions] of [
   test(`rejects ${name} promotion declarations atomically`, () => {
     const state = make('4k3/8/8/8/p6P/8/8/4K3 w - - 0 1');
     const snapshot = structuredClone(state);
-    const result = applyAction(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'clockwise', promotions } });
+    const result = applyAction(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'counterclockwise', promotions } });
     assert.equal(result.ok, false);
     assert.deepEqual(state, snapshot);
   });
 }
 
 test('post-rotation pawns move and capture along the rotated axis', () => {
-  const state = beforeMove(earthquake(make('4k3/8/8/8/3p4/2P5/3p4/4K3 w - - 0 1'), 'clockwise'));
+  const state = beforeMove(earthquake(make('4k3/8/8/8/3p4/2P5/3p4/4K3 w - - 0 1'), 'counterclockwise'));
   assert.deepEqual(legalDests(state).get('c3')?.sort(), ['d2', 'd3', 'd4']);
 });
 
 test('post-rotation pawns double only from the rotated starting line', () => {
-  const state = beforeMove(earthquake(make('4k3/8/8/8/8/1P3P2/8/4K3 w - - 0 1'), 'clockwise'));
+  const state = beforeMove(earthquake(make('4k3/8/8/8/8/1P3P2/8/4K3 w - - 0 1'), 'counterclockwise'));
   assert.deepEqual(legalDests(state).get('b3')?.sort(), ['c3', 'd3']);
   assert.deepEqual(legalDests(state).get('f3'), ['g3']);
 });
 
 test('pawn movement cards share the rotated forward direction', () => {
-  const state = earthquake(make('4k3/8/8/8/8/1P6/8/4K3 w - - 0 1'), 'clockwise');
+  const state = earthquake(make('4k3/8/8/8/8/1P6/8/4K3 w - - 0 1'), 'counterclockwise');
   assert.deepEqual(guardianDests(state, 'b3').sort(), ['c3', 'd3']);
   assert.deepEqual(annexationDests(state, 'b3'), ['d3']);
   assert.deepEqual(onslaughtDests(state, 'b3'), ['c3']);
 });
 
 test('Fanatic follows rotated forward without promoting at the edge', () => {
-  let state = earthquake(make('4k3/8/8/8/8/4P3/8/4K3 w - - 0 1'), 'clockwise');
+  let state = earthquake(make('4k3/8/8/8/8/4P3/8/4K3 w - - 0 1'), 'counterclockwise');
   state.players.white.hand.push({ id: 'fanatic', cardId: 'fanatic' });
   state.turn.cardPlays.white = 0;
   state.turn.phase = 'beforeMove';
@@ -133,7 +133,7 @@ test('rotation preserves Doppelganger history coordinates', () => {
 
 test('promotion and rotation clear stale en-passant rights', () => {
   const state = make('4k3/8/8/8/pP6/8/8/4K3 w - b3 0 1');
-  const after = earthquake(state, 'clockwise', [{ square: 'a4', role: 'queen' }]);
+  const after = earthquake(state, 'counterclockwise', [{ square: 'a4', role: 'queen' }]);
   assert.deepEqual(after.enPassant, []);
   assert.equal(at(after, 'a4')?.promoted, true);
 });
@@ -141,7 +141,7 @@ test('promotion and rotation clear stale en-passant rights', () => {
 test('neutral and royal markers survive rotation and promotion', () => {
   const state = make('4k3/8/8/8/7P/8/8/4K3 w - - 0 1');
   Object.assign(at(state, 'h4')!, { neutral: true, royal: true });
-  const after = earthquake(state, 'clockwise', [{ square: 'h4', role: 'bishop' }]);
+  const after = earthquake(state, 'counterclockwise', [{ square: 'h4', role: 'bishop' }]);
   assert.equal(at(after, 'h4')?.neutral, true);
   assert.equal(at(after, 'h4')?.royal, true);
 });
@@ -184,7 +184,7 @@ test('can rescue the actor king from check by rotating attack geometry', () => {
   const reference = structuredClone(state);
   reference.orientation = 90;
   assert.equal(isKingInCheck(reference, 'white'), false);
-  assert.equal(earthquake(state, 'clockwise').orientation, 90);
+  assert.equal(earthquake(state, 'counterclockwise').orientation, 90);
 });
 
 test('continuing rotation may cause mate without mutating the input', () => {
@@ -199,7 +199,7 @@ test('continuing rotation may cause mate without mutating the input', () => {
   assert.equal(isKingInCheck(reference, 'black'), true);
   assert.equal([...legalDests(reference).values()].flat().length, 0);
   const snapshot = structuredClone(state);
-  const result = applyAction(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'clockwise', promotions: [] } });
+  const result = applyAction(state, { type: 'playCard', cardId: 'earthquake', target: { direction: 'counterclockwise', promotions: [] } });
   assert.deepEqual(state, snapshot);
   assert.equal(result.ok, true);
   if (result.ok) {
@@ -235,7 +235,7 @@ for (const role of ['queen', 'rook'] as const) {
         assert.equal(isKingInCheck(reference, 'black'), true);
         assert.equal([...legalDests(reference).values()].flat().length, 0);
       }
-      const after = earthquake(state, 'clockwise', [
+      const after = earthquake(state, 'counterclockwise', [
         { square: 'a6', role: 'rook' }, { square: 'h7', role },
       ]);
 
@@ -289,7 +289,7 @@ test('rotation that exposes the actor king still fizzles and spends the card', (
   const reference = structuredClone(state);
   reference.orientation = 90;
   assert.equal(isKingInCheck(reference, 'white'), true);
-  const after = earthquake(state, 'clockwise');
+  const after = earthquake(state, 'counterclockwise');
   assert.deepEqual(state, snapshot);
   assert.equal(after.orientation, state.orientation);
   assert.deepEqual(after.pieces, state.pieces);

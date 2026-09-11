@@ -93,7 +93,7 @@ const rationales = `
 83 White closes the Queen move.
 84 Black Qd4-g7 crosses empty e5/f6.
 85 Black closes this diagonal move.
-86 White b3-c3 is forward after clockwise Earthquake and does not cross b4-c3.
+86 White b3-c3 is forward after counterclockwise Earthquake and does not cross b4-c3.
 87 White closes the rotated Pawn move.
 88 Long Jump sends Black Nc7-c6 to the opposite square color; no capture, consumes move.
 89 Black closes Long Jump and retains its drawn Evangelists.
@@ -264,7 +264,7 @@ const cardRows: Record<number, { cardId:string; cardInstanceId:string; target?:u
   58:{cardId:'coup',cardInstanceId:'white-deck-0-coup',target:'b1'},
   67:{cardId:'truce',cardInstanceId:'white-hand-0-truce'},
   73:{cardId:'fortification',cardInstanceId:'white-deck-1-fortification',target:{from:'b4',to:'c3'}},
-  76:{cardId:'earthquake',cardInstanceId:'black-deck-2-earthquake',target:{direction:'clockwise',promotions:[{square:'h2',role:'queen'},{square:'a7',role:'rook'}]}},
+  76:{cardId:'earthquake',cardInstanceId:'black-deck-2-earthquake',target:{direction:'counterclockwise',promotions:[{square:'h2',role:'queen'},{square:'a7',role:'rook'}]}},
   88:{cardId:'long-jump',cardInstanceId:'black-deck-3-long-jump',target:[{from:'c7',to:'c6'}]},
   109:{cardId:'charge',cardInstanceId:'black-deck-1-charge',target:[{from:'b5',to:'d6'}]},
   116:{cardId:'curse',cardInstanceId:'white-deck-5-curse',target:'b8'},
@@ -426,7 +426,7 @@ test('iteration 187: every action has an independent semantic oracle and rescue 
         const white=at(expected,'h2')!,black=at(expected,'a7')!
         assert.equal(white.role,'pawn');assert.equal(black.role,'pawn')
         white.role='queen';white.promoted=true;black.role='rook';black.promoted=true
-        expected.effects.push({type:'earthquake',owner,card,direction:'clockwise',target:copy(action.target)})
+        expected.effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:copy(action.target)})
         syncFen(expected);event.movement=[];event.preservePreviousMove=true
       } else if(n===88) {
         const p=at(expected,'c7')!;assert.equal(p.role,'knight');assert.equal(at(expected,'c6'),undefined)

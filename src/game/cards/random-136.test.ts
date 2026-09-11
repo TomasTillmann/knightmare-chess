@@ -148,7 +148,7 @@ test('iteration 136 independent physical, rules and six-field FEN oracle', () =>
   const cardTargets: Record<number, unknown> = {
     2:'e3',19:'white-hand-2-forbidden-city',21:undefined,27:'f5',32:[{from:'f4',to:'f1'}],34:undefined,
     48:[{from:'g3',to:'f3'},{from:'h4',to:'g4'}],55:[{from:'b2',to:'h2'}],64:'h3',79:{from:'f7',to:'g7'},
-    84:{direction:'counterclockwise',promotions:[{square:'h7',role:'rook'},{square:'a2',role:'bishop'}]},88:'e2',
+    84:{direction:'clockwise',promotions:[{square:'h7',role:'rook'},{square:'a2',role:'bishop'}]},88:'e2',
     94:{knight:'d5',targets:['e3','c3']},100:[{from:'g1',to:'d1'}],105:[{from:'c3',to:'e2'}],
     115:[{from:'a4',to:'a8'}],119:[{from:'c6',to:'a4'}],
   };
@@ -278,7 +278,7 @@ test('iteration 136 independent physical, rules and six-field FEN oracle', () =>
         case 55: assert.equal(at('h2'),undefined);relocate('b2','h2','white',false);break;
         case 64: effects.push({type:'curse',owner:actor,card,pieceId:'white-rook-h1'});break;
         case 79: effects.push({type:'fortification',owner:actor,card,from:'f7',to:'g7'});break;
-        case 84: orientation=270;at('h7')!.role='rook';at('h7')!.promoted=true;at('a2')!.role='bishop';at('a2')!.promoted=true;effects.push({type:'earthquake',owner:actor,card,direction:'counterclockwise',target:{direction:'counterclockwise',promotions:[{square:'h7',role:'rook'},{square:'a2',role:'bishop'}]}});break;
+        case 84: orientation=270;at('h7')!.role='rook';at('h7')!.promoted=true;at('a2')!.role='bishop';at('a2')!.promoted=true;effects.push({type:'earthquake',owner:actor,card,direction:'clockwise',target:{direction:'clockwise',promotions:[{square:'h7',role:'rook'},{square:'a2',role:'bishop'}]}});break;
         case 88: for(const s of ['d2','c2','b2'])assert.equal(at(s),undefined);relocate('e2','b2',actor,false);advance(true);break;
         case 94: {
           const savedPieces=structuredClone(pieces);

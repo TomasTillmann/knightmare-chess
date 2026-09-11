@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { replayTrace, type RandomTrace } from './random-campaign.js'
+import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js'
 import { createGameState } from '../state.js'
 import { applyAction } from '../reducer.js'
 import { Chess } from 'chessops/chess'
@@ -145,16 +145,18 @@ const cardMoves: Record<number, [string, string][]> = {
   74: [['c8', 'c7'], ['d2', 'e2'], ['c1', 'd1'], ['d3', 'd4']],
 }
 
+// F4 / FAQ p.16: only actions 1–53 are a legal prefix. Later artifact actions
+// depend on the rejected cancellation at action 54; original artifact hashes remain unchanged.
 test('iteration 037 deterministic trace', () => {
   const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/037.json', import.meta.url), 'utf8')) as RandomTrace
   assert.equal(trace.seed, 860037)
   assert.equal(trace.moves, 50)
   assert.equal(trace.steps.length, 115)
   assert.equal(rationales.length, trace.steps.length)
-  const replayed = replayTrace(trace)
+  const replayed = replayTrace(trace, 54)
   let state = createGameState(trace.initial)
   let restored: GameState | undefined
-  for (const [index, { action }] of trace.steps.entries()) {
+  for (const [index, { action }] of trace.steps.slice(0, 53).entries()) {
     const step = index + 1
     assert.ok(rationales[index]!.startsWith(`${step}. `))
     const before = state
@@ -282,5 +284,5 @@ test('iteration 037 deterministic trace', () => {
   }
   assert.deepEqual(state, replayed)
   assert.equal(trace.steps.filter(s => s.action.type === 'playCard').length, 13)
-  assert.equal(state.fen, 'rn4n1/p1bp1k1b/2pqp3/p3P2P/1Q3p2/N7/PPrB2PR/1N1BK3 w - - 0 27')
+  rejectPendingCancellation(state, trace.steps[53]!.action, [{"type":"playCard","cardId":"anathema","cardInstanceId":"white-hand-4-anathema","target":{"bishop":"f2","rook":"a8"}}]);
 })

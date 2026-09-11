@@ -44,7 +44,7 @@ const rationale = `
 33. Black yields after a2.
 34. White pawn e7xf8 captures the Black Bishop and legally promotes to Bishop by an ordinary move.
 35. Legacy reacts to loss of a non-Pawn Bishop, recovers discarded Holy War, spends Legacy and additionally draws Coup.
-36. Earthquake turns orientation clockwise: White moves east, Black west; a2,a6,h4 pawns promote to Rook,Queen,Rook respectively.
+36. Earthquake turns orientation counterclockwise: White moves east, Black west; a2,a6,h4 pawns promote to Rook,Queen,Rook respectively.
 37. White yields with Earthquake retained as a continuing card.
 38. Black Knight c8-e7 uses an ordinary 2-by-1 leap.
 39. Black yields after Ne7.
@@ -247,7 +247,7 @@ test('iteration 111 independent physical, card, clock, and royal review', () => 
         case 36:
           orientation=90
           for(const [sq,role] of [['a2','rook'],['a6','queen'],['h4','rook']] as const){const p=pieceAt(sq);assert.equal(p.role,'pawn');p.role=role;p.promoted=true}
-          effects.push({type:'earthquake',owner,card,direction:'clockwise',target:{direction:'clockwise',promotions:[{square:'a2',role:'rook'},{square:'a6',role:'queen'},{square:'h4',role:'rook'}]}})
+          effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:{direction:'counterclockwise',promotions:[{square:'a2',role:'rook'},{square:'a6',role:'queen'},{square:'h4',role:'rook'}]}})
           break
         case 43:swap('b1','g8');break
         case 54:{const p=pieceAt('e3');p.square='a1';effects.push({type:'dungeon',owner,player:'black',pieceId:p.id});break}

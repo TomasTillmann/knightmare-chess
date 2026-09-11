@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { applyAction } from '../reducer.js'
+import { applyAction, isKingInCheck } from '../reducer.js'
 import { createGameState } from '../state.js'
 import type { CrabEffect, ConfabulationEffect, ForbiddenCityEffect, PacifismEffect, PieceState, VendettaEffect } from '../types.js'
 
@@ -128,7 +128,8 @@ test('Truce rejects a terminal off-board loss', () => {
   assert.deepEqual(result.state.effects, [effect])
 })
 
-test('Forbidden City rejects a later pushed boundary', () => {
+// Official FAQ 1354–1362: a blocked Force is played without moving any piece.
+test('Forbidden City fizzles a later pushed boundary and spends Force', () => {
   const state = createGameState({
     fen: '7k/8/8/8/4b3/4r3/4P3/K7 w - - 0 1',
     hands: { white: [CARD] },
@@ -149,11 +150,14 @@ test('Forbidden City rejects a later pushed boundary', () => {
     target: [{ from: 'e2', to: 'e3' }],
   })
 
-  assert.equal(result.ok, false)
-  if (result.ok) return
+  assert.ok(result.ok)
   assert.deepEqual(state, before)
-  assert.deepEqual(result.state, before)
+  assert.deepEqual(result.state.pieces, before.pieces)
   assert.deepEqual(result.state.effects, [effect])
+  assert.deepEqual(result.state.players.white.discard, before.players.white.hand)
+  assert.equal(result.state.turn.cardPlays.white, 1)
+  assert.equal(result.state.turn.moveMade, true)
+  assert.equal(result.state.history.at(-1)?.type, 'cardFizzled')
 })
 
 test('Earthquake rotates the entire push direction', () => {
@@ -389,9 +393,10 @@ test('Toll payment keeps the pushed chain', () => {
 
 test('declining Toll restores every pushed piece and the terminal capture', () => {
   const state = createGameState({
-    fen: 'q6k/n7/b7/r7/P7/8/1P6/7K w - - 0 1',
+    fen: 'q6k/n7/b7/r7/P7/8/1P6/4K3 w - - 0 1',
     hands: { white: [CARD], black: ['toll'] },
   })
+  assert.equal(isKingInCheck(state, 'white'), false)
   const original = structuredClone(state)
   const placements = original.pieces.map(({ id, square, zone }) => ({ id, square, zone }))
   const whiteCard = original.players.white.hand[0]!
@@ -428,6 +433,8 @@ test('declining Toll restores every pushed piece and the terminal capture', () =
   assert.equal(declined.state.history[0]?.cardId, 'toll')
   assert.equal(declined.state.history[0]?.player, 'black')
   assert.equal(declined.state.history[0]?.preservePreviousMove, false)
+  assert.equal(isKingInCheck(declined.state, 'white'), false)
+  assert.equal(applyAction(declined.state, { type: 'endTurn' }).ok, true)
   assert.deepEqual(declined.state.history[0]?.movement, [])
   assert.equal(declined.state.turn.phase, 'afterMove')
   assert.equal(declined.state.turn.moveMade, true)

@@ -16,7 +16,7 @@ const rationale = `
 6. White ends safely; f3 opportunity remains until Black moves.
 7. d7-d5 crosses empty d6; fullmove becomes 3 and d6 opportunity is recorded.
 8. Black ends safely; White receives its move and card allowance.
-9. Guardian moves h2-h4 via h3; optional h1 follower is omitted; no en passant, move consumed, Fog drawn.
+9. Guardian moves h2-h4 via h3; optional h1 follower is omitted; h3 en passant opens, move consumed, Fog drawn.
 10. Guardian replacement turn ends with unchanged pieces and both allowances reset.
 11. Ke8-d7 is one diagonal; White pawn attacks reach only rank5, and Bishops have no open d7 ray; Black rights lost.
 12. Black hands over safely, retaining only White castling rights.
@@ -217,7 +217,7 @@ test('iteration 085: independently reviewed deterministic campaign', () => {
           assert.equal(after.turn.cardPlays[color],1);
         }
       }
-      if ([9,13,58].includes(n)) { assert.equal(after.turn.moveMade,true); assert.deepEqual(after.enPassant,[]); }
+      if ([9,13,58].includes(n)) { assert.equal(after.turn.moveMade,true); assert.deepEqual(after.enPassant,n===9?[{target:'h3',pawnId:'white-pawn-h2'}]:[]); }
       else if ([46,91].includes(n)) { assert.equal(after.fen,states[n===46?44:89]!.fen); assert.equal(after.turn.moveMade,false); }
       else { assert.equal(after.turn.phase,before.turn.phase); assert.deepEqual(after.fen.split(' ').slice(4),before.fen.split(' ').slice(4)); assert.deepEqual(after.enPassant,before.enPassant); }
     } else assert.deepEqual(after.players,before.players,`step${n}: no card expenditure`);

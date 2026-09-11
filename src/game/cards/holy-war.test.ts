@@ -338,7 +338,8 @@ describe('Holy War King safety and checkmate rule', () => {
     });
     assert.equal(after.players.white.discard.at(-1)?.cardId, CARD);
     assert.equal(after.players.white.hand.at(-1)?.cardId, 'fanatic');
-    assert.equal(after.outcome, null);
+    // §§8.5/11.5: the restored extra royal remains checked, with move and card allowance spent.
+    assert.deepEqual(after.outcome, { winner: 'black', reason: 'checkmate' });
   });
 
   it('does not blame Holy War for a checkmate already present before the swap', () => {

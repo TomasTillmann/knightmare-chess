@@ -86,7 +86,7 @@ test('Dungeon relocation is legal during an actual Truce and retains Truce', () 
 });
 
 test('Dungeon uses fixed corners after a real Earthquake', () => {
-  const state = prior('earthquake', { direction: 'clockwise', promotions: [] });
+  const state = prior('earthquake', { direction: 'counterclockwise', promotions: [] });
   assert.equal(state.orientation, 90);
   const moved = imprison(state);
   assert.equal(moved.orientation, state.orientation);
@@ -94,15 +94,15 @@ test('Dungeon uses fixed corners after a real Earthquake', () => {
 });
 
 for (const [cardId, to] of [['dubbing', 'c7'], ['masquerade', 'a6'], ['blessing', 'c6'], ['figure-dance', undefined]] as const) {
-  test(`Dungeon prohibits opponent movement through ${cardId}`, () => {
+  test(`a later ${cardId} overrides Dungeon for its authorized movement`, () => {
     let control = createGameState({ fen: 'n3k3/8/5n2/8/8/2N5/8/4K3 b - - 0 1', hands: { black: [cardId] } });
     if (cardId === 'figure-dance') control = act(control, { type: 'move', from: 'f6', to: 'g4' });
     act(control, { type: 'playCard', cardId, target: to ? [{ from: 'a8', to }] : [] });
     let state = opponent(imprison(fixture('n', [cardId])));
     if (cardId === 'figure-dance') state = act(state, { type: 'move', from: 'f6', to: 'g4' });
-    const result = applyAction(state, { type: 'playCard', cardId, target: to ? [{ from: 'a8', to }] : [] });
-    assert.equal(result.ok, false);
-    assert.deepEqual(result.state, state);
+    const result = act(state, { type: 'playCard', cardId, target: to ? [{ from: 'a8', to }] : [] });
+    assert.equal(result.pieces.find(piece => piece.id === 'black-knight-d5')?.square, to ?? 'a1');
+    assert.deepEqual(result.effects, state.effects, 'the ordinary-move ban remains until turn end');
   });
 }
 

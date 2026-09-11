@@ -13,6 +13,7 @@ import { createGameState } from '../state.js';
 import type {
   BoardOrientation,
   Color,
+  ConfabulationEffect,
   GameAction,
   GameState,
   Role,
@@ -20,6 +21,230 @@ import type {
 } from '../types.js';
 
 const WHITE_CRAB_FEN = '7k/8/8/8/3P4/8/8/K7 w - - 0 1';
+
+// FAQ p.20 explicitly resolves Paladin -> Coup; applying that movement
+// conflict ruling and the later-Continuing-Effect rule to Crab is an analogy.
+test('finding44c: later Coup restores an earlier Crab underlying Pawn move', () => {
+  let state = createGameState({
+    fen: '7k/8/8/8/8/2P5/8/7K w - - 0 1',
+    hands: { white: ['crab', 'coup'] },
+  });
+  for (const action of [
+    { type: 'move', from: 'h1', to: 'g1' },
+    { type: 'playCard', cardId: 'crab', target: 'c3' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'h8', to: 'g8' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'g1', to: 'h1' },
+    { type: 'playCard', cardId: 'coup', target: 'c3' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'g8', to: 'h8' },
+    { type: 'endTurn' },
+  ] satisfies GameAction[]) state = expectOk(state, action);
+  const next = expectOk(state, { type: 'move', from: 'c3', to: 'c4' });
+  assert.equal(next.pieces.find(piece => piece.id === 'white-pawn-c3')?.square, 'c4');
+  expectError(state, { type: 'move', from: 'c3', to: 'b4' }, 'ILLEGAL_MOVE');
+});
+
+function coupCrabFixture({
+  color = 'white', order = ['crab', 'coup'], square = 'c3',
+  fen = '7k/8/8/8/8/2P5/8/7K w - - 0 1', extras = [],
+  merge, orientation = 0,
+}: {
+  color?: Color; order?: string[]; square?: SquareName; fen?: string; extras?: string[];
+  merge?: { from: SquareName; to: SquareName }; orientation?: 0 | 90;
+} = {}) {
+  const at = (s: SquareName): SquareName => orientation === 90
+    ? `${String.fromCharCode(96 + Number(s[1]))}${s.charCodeAt(0) - 96}` as SquareName
+    : color === 'white' ? s : `${s[0]}${9 - Number(s[1])}` as SquareName;
+  const mirror = fen.split(' ')[0].split('/').reverse().join('/').replace(/[a-z]/gi,
+    letter => letter === letter.toLowerCase() ? letter.toUpperCase() : letter.toLowerCase());
+  let state = createGameState({
+    fen: color === 'white' ? fen : `${mirror} b - - 0 1`, turn: color,
+    hands: { [color]: [...order, ...extras] },
+  });
+  state.orientation = orientation;
+  const cards = structuredClone(state.players[color].hand);
+  let ownMoves = 0;
+  let rounds = 0;
+  const nextRound = (before: GameState): GameState => {
+    let next = expectOk(before, { type: 'endTurn' });
+    next = expectOk(next, { type: 'move', from: at(rounds % 2 ? 'g8' : 'h8'), to: at(rounds % 2 ? 'h8' : 'g8') });
+    rounds += 1;
+    return expectOk(next, { type: 'endTurn' });
+  };
+  const moveKing = (before: GameState): GameState => {
+    const next = expectOk(before, { type: 'move', from: at(ownMoves % 2 ? 'g1' : 'h1'), to: at(ownMoves % 2 ? 'h1' : 'g1') });
+    ownMoves += 1;
+    return next;
+  };
+  let target = square;
+  for (const cardId of order) {
+    if (cardId !== 'confabulation') state = moveKing(state);
+    state = expectOk(state, { type: 'playCard', cardId, target: cardId === 'confabulation'
+      ? [{ from: at(merge!.from), to: at(merge!.to) }] : at(target) });
+    if (cardId === 'confabulation') target = merge!.to;
+    state = nextRound(state);
+  }
+  return { state, at, cards, nextRound, moveKing, target: at(target) };
+}
+
+for (const color of ['white', 'black'] as const) {
+  for (const order of [['coup'], ['crab', 'coup'], ['coup', 'crab']]) {
+    test(`finding44c: ${color} ${order.join(' then ')} chooses movement without changing captures or royalty`, () => {
+      const { state, at } = coupCrabFixture({ color, order, fen: '7k/8/8/8/1n6/2P5/8/7K w - - 0 1' });
+      const crabWins = order.at(-1) === 'crab';
+      const snapshot = structuredClone(state);
+      assert.equal(legalDests(state).get(at('c3'))?.includes(at('c4')) ?? false, !crabWins);
+      assert.equal(legalDests(state).get(at('c3'))?.includes(at('d4')) ?? false, crabWins);
+      const next = expectOk(state, { type: 'move', from: at('c3'), to: at(crabWins ? 'd4' : 'c4') });
+      assert.equal(pieceAt(next, at(crabWins ? 'd4' : 'c4'))?.royal, true);
+      expectError(state, { type: 'move', from: at('c3'), to: at(crabWins ? 'c4' : 'd4') }, 'ILLEGAL_MOVE');
+      const captured = expectOk(state, { type: 'move', from: at('c3'), to: at('b4') });
+      assert.equal(captured.history.at(-1)?.capturedId, pieceAt(state, at('b4'))!.id);
+      assert.deepEqual(state, snapshot);
+      assert.deepEqual(next.effects, state.effects);
+    });
+  }
+
+  test(`finding44c: ${color} cancelling Coup restores the exact retained Crab`, () => {
+    const { state, at, cards, moveKing, nextRound } = coupCrabFixture({ color, extras: ['peace-talks'] });
+    const crab = cards.find(card => card.cardId === 'crab')!;
+    const coup = cards.find(card => card.cardId === 'coup')!;
+    assert.deepEqual(crabEffect(state)?.card, crab);
+    assert.ok(!state.players[color].discard.some(card => card.id === crab.id));
+    const ready = moveKing(state);
+    assert.ok(cardPlayTargets(ready, 'peace-talks').includes(coup.id));
+    const cancelled = expectOk(ready, { type: 'playCard', cardId: 'peace-talks', target: coup.id });
+    const next = nextRound(cancelled);
+    assert.deepEqual(crabEffect(next)?.card, crab);
+    assert.deepEqual(next.players[color].discard.map(card => card.id).sort(),
+      [coup.id, cards.find(card => card.cardId === 'peace-talks')!.id].sort());
+    assert.equal(pieceAt(next, at('c3'))?.royal, false);
+    expectOk(next, { type: 'move', from: at('c3'), to: at('d4') });
+    expectError(next, { type: 'move', from: at('c3'), to: at('c4') }, 'ILLEGAL_MOVE');
+  });
+
+  test(`finding44c: ${color} preexisting Crab component obeys Coup with either carrier`, () => {
+    for (const hidden of [false, true]) {
+      const { state, at, target, cards, nextRound, moveKing } = coupCrabFixture({ color,
+        fen: hidden ? '7k/8/8/8/3N4/2P5/8/7K w - - 0 1' : '7k/8/8/8/8/2P5/8/1N5K w - - 0 1',
+        order: ['crab', 'confabulation', 'coup'], extras: ['peace-talks'],
+        merge: hidden ? { from: 'c3', to: 'd4' } : { from: 'b1', to: 'c3' },
+      });
+      const forward = at(hidden ? 'd5' : 'c4');
+      assert.ok(legalDests(state).get(target)?.includes(forward));
+      const moved = expectOk(state, { type: 'move', from: target, to: forward });
+      assert.equal(pieceAt(moved, forward)?.royal, true);
+      assert.deepEqual(moved.effects, state.effects);
+      const cancelled = expectOk(moveKing(state), { type: 'playCard', cardId: 'peace-talks',
+        target: cards.find(card => card.cardId === 'coup')!.id });
+      const resumed = nextRound(cancelled);
+      expectError(resumed, { type: 'move', from: target, to: forward }, 'ILLEGAL_MOVE');
+      expectOk(resumed, { type: 'move', from: target, to: at(hidden ? 'e5' : 'd4') });
+    }
+  });
+
+  test(`finding44c: ${color} later Coup restores Dark Mirror and Breakthrough targets and actions`, () => {
+    for (const cardId of ['dark-mirror', 'breakthrough']) {
+      const to = cardId === 'dark-mirror' ? 'b2' : 'c4';
+      for (const order of [['crab', 'coup'], ['coup', 'crab']]) {
+        const { state, at } = coupCrabFixture({ color, order, extras: [cardId],
+          fen: cardId === 'dark-mirror' ? '7k/8/8/8/8/2P5/1n6/7K w - - 0 1'
+            : '7k/8/8/8/2n5/2P5/8/7K w - - 0 1' });
+        const target = [{ from: at('c3'), to: at(to) }];
+        assert.equal(cardPlayTargets(state, cardId).some(value => JSON.stringify(value) === JSON.stringify(target)), order[1] === 'coup');
+        if (order[1] === 'crab') expectError(state, { type: 'playCard', cardId, target }, 'INVALID_TARGET');
+        else {
+          const next = expectOk(state, { type: 'playCard', cardId, target });
+          assert.equal(pieceAt(next, at(to))?.royal, true);
+          assert.equal(next.history.at(-1)?.capturedId, pieceAt(state, at(to))!.id);
+          assert.deepEqual(next.effects, state.effects);
+        }
+      }
+    }
+  });
+
+  test(`finding44c: ${color} Coup restores en-passant but later Crab keeps its quiet route`, () => {
+    for (const order of [['crab', 'coup'], ['coup', 'crab']]) {
+      const { state, at, moveKing } = coupCrabFixture({ color, order, square: 'c5',
+        fen: '7k/3p4/8/2P5/8/8/8/7K w - - 0 1' });
+      let ready = expectOk(moveKing(state), { type: 'endTurn' });
+      ready = expectOk(ready, { type: 'move', from: at('d7'), to: at('d5') });
+      ready = expectOk(ready, { type: 'endTurn' });
+      assert.ok(legalDests(ready).get(at('c5'))?.includes(at('d6')));
+      const next = expectOk(ready, { type: 'move', from: at('c5'), to: at('d6') });
+      assert.equal(Boolean(pieceAt(next, at('d5'))), order[1] === 'crab');
+      assert.equal(pieceAt(next, at('d6'))?.royal, true);
+    }
+  });
+}
+
+test('finding44c: movement priority follows rotated Pawn direction', () => {
+  const { state, at } = coupCrabFixture({ orientation: 90, fen: 'K6k/8/8/8/8/2P5/8/8 w - - 0 1' });
+  expectOk(state, { type: 'move', from: at('c3'), to: at('c4') });
+  expectError(state, { type: 'move', from: at('c3'), to: at('b4') }, 'ILLEGAL_MOVE');
+});
+
+test('finding44c: Coup on another piece cannot suppress an unrelated later Crab', () => {
+  const { state, at, moveKing, nextRound } = coupCrabFixture({ order: ['crab'],
+    fen: '7k/8/8/8/8/2P2N2/8/7K w - - 0 1', extras: ['coup'] });
+  const crowned = expectOk(moveKing(state), { type: 'playCard', cardId: 'coup', target: at('f3') });
+  const next = nextRound(crowned);
+  expectOk(next, { type: 'move', from: at('c3'), to: at('d4') });
+  expectError(next, { type: 'move', from: at('c3'), to: at('c4') }, 'ILLEGAL_MOVE');
+});
+
+test('finding44c: promotion expires Crab while preserving active or suspended Coup', () => {
+  for (const color of ['white', 'black'] as const) {
+    for (const promotion of ['queen', 'rook', 'bishop', 'knight'] as const) {
+      const { state, at, cards } = coupCrabFixture({ color, square: 'c7',
+        fen: '7k/2P5/8/8/8/8/8/7K w - - 0 1' });
+      const next = expectOk(state, { type: 'move', from: at('c7'), to: at('c8'), promotion });
+      const suspended = promotion === 'queen' || promotion === 'rook';
+      assert.equal(pieceAt(next, at('c8'))?.royal, !suspended);
+      assert.equal(pieceAt(next, at('h1'))?.royal, suspended);
+      assert.equal(crabEffect(next), undefined);
+      assert.deepEqual(next.players[color].discard, [cards.find(card => card.cardId === 'crab')!]);
+      const coup = next.effects.find(effect => (effect as { type?: string }).type === 'coup') as { card: unknown; suspended?: boolean };
+      assert.deepEqual(coup.card, cards.find(card => card.cardId === 'coup'));
+      assert.equal(Boolean(coup.suspended), suspended);
+    }
+  }
+});
+
+test('finding44c: cancelling the newest Crab exposes Coup, then the earlier Crab', () => {
+  const { state, at, cards, moveKing, nextRound } = coupCrabFixture({
+    order: ['crab', 'coup', 'crab'], extras: ['peace-talks', 'peace-talks'] });
+  expectOk(state, { type: 'move', from: at('c3'), to: at('d4') });
+  const newestCrab = cards.filter(card => card.cardId === 'crab')[1];
+  const normal = nextRound(expectOk(moveKing(state), { type: 'playCard', cardId: 'peace-talks', target: newestCrab.id }));
+  expectOk(normal, { type: 'move', from: at('c3'), to: at('c4') });
+  expectError(normal, { type: 'move', from: at('c3'), to: at('d4') }, 'ILLEGAL_MOVE');
+  const resumed = nextRound(expectOk(moveKing(normal), { type: 'playCard', cardId: 'peace-talks', target: cards.find(card => card.cardId === 'coup')!.id }));
+  expectOk(resumed, { type: 'move', from: at('c3'), to: at('d4') });
+  assert.deepEqual(crabEffect(resumed)?.card, cards.find(card => card.cardId === 'crab'));
+});
+
+test('finding31: a Crab merger retains its ordinary Pawn component Dark Mirror capture', () => {
+  let state = createGameState({
+    fen: '7k/8/8/4Pn2/3P4/8/8/7K w - - 0 1',
+    hands: { white: ['crab', 'confabulation', 'dark-mirror'] },
+  });
+  for (const action of [
+    { type: 'move', from: 'h1', to: 'g1' },
+    { type: 'playCard', cardId: 'crab', target: 'd4' },
+    { type: 'endTurn' },
+    { type: 'move', from: 'h8', to: 'g8' },
+    { type: 'endTurn' },
+    { type: 'playCard', cardId: 'confabulation', target: [{ from: 'd4', to: 'e5' }] },
+    { type: 'endTurn' },
+    { type: 'move', from: 'f5', to: 'd4' },
+    { type: 'endTurn' },
+    { type: 'playCard', cardId: 'dark-mirror', target: [{ from: 'e5', to: 'd4' }] },
+  ] satisfies GameAction[]) state = expectOk(state, action);
+  assert.equal(state.pieces.find(piece => piece.id === 'black-knight-f5')?.zone, 'captured');
+});
 
 function afterMoveState({
   fen = WHITE_CRAB_FEN,
@@ -61,6 +286,198 @@ function expectError(state: GameState, action: GameAction, code: string): void {
   assert.strictEqual(result.state, state);
   assert.deepEqual(state, snapshot);
 }
+
+function pawnMerger({
+  mode = 'en-passant', color = 'white', crabs = ['d4'], fen,
+  king = ['h1', 'g1'], pacifism = false, vendetta = false, victimMerger = false,
+  orientation = 0, rescue = false,
+}: {
+  mode?: 'en-passant' | 'dark-mirror' | 'breakthrough'; color?: Color; crabs?: SquareName[];
+  fen?: string; king?: [SquareName, SquareName]; pacifism?: boolean;
+  vendetta?: boolean; victimMerger?: boolean; orientation?: 0 | 90; rescue?: boolean;
+} = {}) {
+  const at = (square: SquareName) => orientation === 90
+    ? `${String.fromCharCode(96 + Number(square[1]))}${square.charCodeAt(0) - 96}` as SquareName
+    : color === 'white' ? square : `${square[0]}${9 - Number(square[1])}` as SquareName;
+  const base = fen ?? (orientation === 90 ? 'K6k/8/8/4P3/3P2p1/8/8/8 w - - 0 1' : mode === 'en-passant'
+    ? `${victimMerger ? '2b4k' : '7k'}/3p4/8/4P3/3P4/8/8/7K w - - 0 1`
+    : mode === 'breakthrough' ? '7k/8/8/4P1n1/3P4/8/8/7K w - - 0 1'
+    : '7k/8/8/4Pn2/3P4/8/8/7K w - - 0 1');
+  const mirrored = base.split(' ')[0].split('/').reverse().join('/').replace(/[a-z]/gi,
+    letter => letter === letter.toLowerCase() ? letter.toUpperCase() : letter.toLowerCase());
+  const opponent = color === 'white' ? 'black' : 'white';
+  let state = createGameState({
+    fen: color === 'white' ? base : `${mirrored} b - - 0 1`, turn: color,
+    hands: {
+      [color]: [...crabs.map(() => 'crab'), ...(pacifism ? ['pacifism'] : []), 'confabulation',
+        ...(mode === 'en-passant' ? [] : [mode]), ...(rescue ? ['dungeon'] : [])],
+      [opponent]: [...(vendetta ? ['vendetta'] : []), ...(victimMerger ? ['confabulation'] : [])],
+    },
+  });
+  state.orientation = orientation;
+  const prep = [...crabs.map(target => ({ cardId: 'crab', target })),
+    ...(pacifism ? [{ cardId: 'pacifism', target: 'd4' as SquareName }] : [])];
+  for (const [index, card] of prep.entries()) {
+    if (card.cardId === 'pacifism') state = expectOk(state,
+      { type: 'playCard', cardId: card.cardId, target: at(card.target) });
+    state = expectOk(state, { type: 'move', from: at(king[index % 2]), to: at(king[1 - index % 2]) });
+    if (card.cardId !== 'pacifism') state = expectOk(state,
+      { type: 'playCard', cardId: card.cardId, target: at(card.target) });
+    state = expectOk(state, { type: 'endTurn' });
+    state = expectOk(state, victimMerger && index === 0
+      ? { type: 'playCard', cardId: 'confabulation', target: [{ from: at('c8'), to: at('d7') }] }
+      : { type: 'move', from: at(index % 2 ? 'g8' : 'h8'), to: at(index % 2 ? 'h8' : 'g8') });
+    state = expectOk(state, { type: 'endTurn' });
+  }
+  state = expectOk(state, { type: 'playCard', cardId: 'confabulation', target: [{ from: at('d4'), to: at('e5') }] });
+  state = expectOk(state, { type: 'endTurn' });
+  state = expectOk(state, mode === 'en-passant'
+    ? { type: 'move', from: at('d7'), to: at('d5') }
+    : mode === 'breakthrough' ? { type: 'move', from: at('g5'), to: at('e6') }
+    : { type: 'move', from: at('f5'), to: at('d4') });
+  if (vendetta) state = expectOk(state, { type: 'playCard', cardId: 'vendetta' });
+  state = expectOk(state, { type: 'endTurn' });
+  return { state, at };
+}
+
+for (const color of ['white', 'black'] as const) {
+  for (const crab of ['d4', 'e5'] as const) {
+    test(`finding31: ${color} Dark Mirror survives Crab on ${crab === 'e5' ? 'carrier' : 'hidden component'}`, () => {
+      const { state, at } = pawnMerger({ color, crabs: [crab], mode: 'dark-mirror' });
+      const target = [{ from: at('e5'), to: at('d4') }];
+      assert.ok(cardPlayTargets(state, 'dark-mirror').some(value => JSON.stringify(value) === JSON.stringify(target)));
+      const next = expectOk(state, { type: 'playCard', cardId: 'dark-mirror', target });
+      assert.equal(next.history.at(-1)?.capturedId, pieceAt(state, at('d4'))!.id);
+      assert.equal(pieceAt(next, at('d4'))!.id, pieceAt(state, at('e5'))!.id);
+      assert.deepEqual(next.effects, state.effects);
+      assert.equal(next.fen.split(' ')[4], '0');
+    });
+
+    test(`finding31: ${color} Crab on ${crab} retains both en-passant capture and quiet choices`, () => {
+      const { state, at } = pawnMerger({ color, crabs: [crab] });
+      const action: GameAction = { type: 'move', from: at('e5'), to: at('d6') };
+      const victim = pieceAt(state, at('d5'))!;
+      assert.ok(legalDests(state).get(at('e5'))?.includes(at('d6')));
+      const captured = expectOk(state, action);
+      assert.equal(captured.pieces.find(piece => piece.id === victim.id)?.zone, 'captured');
+      assert.equal(captured.history.at(-1)?.capturedId, victim.id);
+      const quiet = expectOk(state, { ...action, enPassant: false } as GameAction);
+      assert.equal(pieceAt(quiet, at('d5'))?.id, victim.id);
+      assert.equal(quiet.history.at(-1)?.capturedId, undefined);
+      for (const next of [captured, quiet]) {
+        assert.equal(pieceAt(next, at('d6'))?.id, pieceAt(state, at('e5'))?.id);
+        assert.deepEqual(next.effects, state.effects);
+        assert.deepEqual(next.enPassant, []);
+        assert.equal(next.fen.split(' ')[4], '0');
+      }
+    });
+  }
+
+  test(`finding31: ${color} plain Pawns capture while all-Crab controls retain only their quiet move`, () => {
+    for (const crabs of [[], ['d4', 'e5'], ['e5', 'd4']] as SquareName[][]) {
+      const { state, at } = pawnMerger({ color, crabs });
+      const next = expectOk(state, { type: 'move', from: at('e5'), to: at('d6') });
+      assert.equal(Boolean(pieceAt(next, at('d5'))), crabs.length > 0);
+      if (!crabs.length) expectError(state,
+        { type: 'move', from: at('e5'), to: at('d6'), enPassant: false } as GameAction, 'ILLEGAL_MOVE');
+      const mirror = pawnMerger({ color, crabs, mode: 'dark-mirror' });
+      const action: GameAction = { type: 'playCard', cardId: 'dark-mirror', target: [{ from: at('e5'), to: at('d4') }] };
+      // Retain the qualified continuing-effect conflict interpretation for all-Crab Dark Mirror.
+      if (crabs.length) expectError(mirror.state, action, 'INVALID_TARGET');
+      else assert.equal(expectOk(mirror.state, action).history.at(-1)?.capturedId,
+        pieceAt(mirror.state, at('d4'))?.id);
+    }
+  });
+}
+
+test('finding31: Pacifism blocks both captures without blocking the Crab quiet route', () => {
+  const { state } = pawnMerger({ pacifism: true });
+  expectError(state, { type: 'move', from: 'e5', to: 'd6', enPassant: true } as GameAction, 'ILLEGAL_MOVE');
+  const next = expectOk(state, { type: 'move', from: 'e5', to: 'd6', enPassant: false } as GameAction);
+  assert.equal(pieceAt(next, 'd5')?.id, pieceAt(state, 'd5')?.id);
+  const mirror = pawnMerger({ pacifism: true, mode: 'dark-mirror' });
+  expectError(mirror.state, { type: 'playCard', cardId: 'dark-mirror', target: [{ from: 'e5', to: 'd4' }] }, 'INVALID_TARGET');
+});
+
+test('finding31: legal destinations retain a safe quiet choice when en-passant exposes the King', () => {
+  const { state } = pawnMerger({ fen: '7k/3p4/8/r3P3/3P3K/8/8/8 w - - 0 1', king: ['h4', 'h5'] });
+  assert.ok(legalDests(state, false).get('e5')?.includes('d6'));
+  expectError(state, { type: 'move', from: 'e5', to: 'd6' }, 'ILLEGAL_MOVE');
+  const next = expectOk(state, { type: 'move', from: 'e5', to: 'd6', enPassant: false } as GameAction);
+  assert.equal(isKingInCheck(next, 'white'), false);
+});
+
+test('finding31: en-passant can be the legal check escape while the quiet choice is illegal', () => {
+  const { state } = pawnMerger({ fen: '7k/3p4/8/4P3/3P4/4K3/8/8 w - - 0 1', king: ['e3', 'e4'] });
+  assert.equal(isKingInCheck(state, 'white'), true);
+  assert.ok(legalDests(state, false).get('e5')?.includes('d6'));
+  expectError(state, { type: 'move', from: 'e5', to: 'd6', enPassant: false } as GameAction, 'ILLEGAL_MOVE');
+  assert.equal(isKingInCheck(expectOk(state, { type: 'move', from: 'e5', to: 'd6' }), 'white'), false);
+});
+
+test('finding31: Vendetta requires the actual capture, not the identical quiet destination', () => {
+  const { state } = pawnMerger({ vendetta: true });
+  assert.deepEqual(legalDests(state).get('e5'), ['d6']);
+  expectError(state, { type: 'move', from: 'e5', to: 'd6', enPassant: false } as GameAction, 'ILLEGAL_MOVE');
+  assert.equal(expectOk(state, { type: 'move', from: 'e5', to: 'd6' }).history.at(-1)?.capturedId,
+    pieceAt(state, 'd5')?.id);
+});
+
+test('finding31: en-passant removes the whole victim merger and records both physical identities', () => {
+  const { state } = pawnMerger({ victimMerger: true });
+  const victim = state.effects.find((effect): effect is ConfabulationEffect =>
+    typeof effect === 'object' && effect !== null && 'type' in effect && effect.type === 'confabulation'
+    && 'owner' in effect && effect.owner === 'black');
+  assert.ok(victim?.type === 'confabulation');
+  const next = expectOk(state, { type: 'move', from: 'e5', to: 'd6', enPassant: true } as GameAction);
+  assert.deepEqual(next.history.at(-1)?.capturedIds, victim.pieceIds);
+  for (const id of victim.pieceIds) assert.equal(next.pieces.find(piece => piece.id === id)?.zone, 'captured');
+  assert.equal(next.effects.filter(effect => typeof effect === 'object' && effect !== null
+    && 'type' in effect && effect.type === 'confabulation').length, 1);
+});
+
+test('finding31: malformed or stale en-passant selection rejects atomically; quiet ordinary defaults survive', () => {
+  let { state } = pawnMerger();
+  for (const enPassant of [null, 'true', 0, {}, []]) expectError(state,
+    { type: 'move', from: 'e5', to: 'd6', enPassant } as GameAction, 'ILLEGAL_MOVE');
+  expectError(state, { type: 'move', from: 'e5', to: 'f6', enPassant: true } as GameAction, 'ILLEGAL_MOVE');
+  state = expectOk(state, { type: 'move', from: 'g1', to: 'h1' });
+  state = expectOk(state, { type: 'endTurn' });
+  state = expectOk(state, { type: 'move', from: 'g8', to: 'h8' });
+  state = expectOk(state, { type: 'endTurn' });
+  expectError(state, { type: 'move', from: 'e5', to: 'd6', enPassant: true } as GameAction, 'ILLEGAL_MOVE');
+  assert.ok(pieceAt(expectOk(state, { type: 'move', from: 'e5', to: 'd6' }), 'd5'));
+});
+
+test('finding31: rotated mixed Pawn movement retains both en-passant outcomes', () => {
+  const { state, at } = pawnMerger({ orientation: 90 });
+  for (const enPassant of [true, false]) {
+    const next = expectOk(state, { type: 'move', from: at('e5'), to: at('d6'), enPassant });
+    assert.equal(Boolean(pieceAt(next, at('d5'))), !enPassant);
+  }
+});
+
+test('finding31: shared Breakthrough handler preserves the other Pawn component power', () => {
+  for (const crab of ['d4', 'e5'] as SquareName[]) {
+    const { state } = pawnMerger({ mode: 'breakthrough', crabs: [crab] });
+    const target = [{ from: 'e5', to: 'e6' }];
+    assert.ok(cardPlayTargets(state, 'breakthrough').some(value => JSON.stringify(value) === JSON.stringify(target)));
+    const next = expectOk(state, { type: 'playCard', cardId: 'breakthrough', target });
+    assert.equal(next.history.at(-1)?.capturedId, pieceAt(state, 'e6')?.id);
+    assert.deepEqual(next.effects, state.effects);
+  }
+});
+
+test('finding31: quiet choice can await a card rescue while capturing immediately removes check', () => {
+  const { state } = pawnMerger({ fen: '7k/3p4/8/4P3/3P4/4K3/8/8 w - - 0 1', king: ['e3', 'e4'], rescue: true });
+  const capture = expectOk(state, { type: 'move', from: 'e5', to: 'd6' });
+  assert.equal(Boolean(capture.pendingRescue), false);
+  const quiet = expectOk(state, { type: 'move', from: 'e5', to: 'd6', enPassant: false });
+  assert.ok(quiet.pendingRescue);
+  const rescued = expectOk(quiet, { type: 'playCard', cardId: 'dungeon', target: [{ from: 'd5', to: 'a8' }] });
+  assert.equal(Boolean(rescued.pendingRescue), false);
+  assert.equal(isKingInCheck(rescued, 'white'), false);
+});
 
 function transformedCrab({
   fen = WHITE_CRAB_FEN,

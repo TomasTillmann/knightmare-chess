@@ -210,14 +210,19 @@ test('Annexation can replace the move to block an existing check', () => {
   assert.equal(positionFor(state, 'white').isCheck(), false);
 });
 
-test('a first-rank Annexation advance does not grant en passant', () => {
+// Derived from FAQ p. 7: Annexation does not explicitly exempt first-rank advances.
+test('a first-rank Annexation advance grants en passant', () => {
   const before = game({ fen: '7k/8/8/8/8/3p4/8/K3P3 w - - 0 1' });
   const advanced = annex(before, [{ from: 'e1', to: 'e3' }]);
 
-  assert.deepEqual(advanced.enPassant, []);
-  assert.equal(advanced.fen.split(' ')[3], '-');
+  const pawnId = pieceAt(before, 'e1')!.id;
+  assert.deepEqual(advanced.enPassant, [{ target: 'e2', pawnId }]);
+  assert.equal(advanced.fen.split(' ')[3], 'e2');
   const reply = endTurn(advanced);
-  assert.equal(legalDests(reply).get('d3')?.includes('e2'), false);
+  assert.equal(legalDests(reply).get('d3')?.includes('e2'), true);
+  const captured = move(reply, 'd3', 'e2');
+  assert.equal(captured.pieces.find(piece => piece.id === pawnId)?.zone, 'captured');
+  assert.equal(pieceAt(captured, 'e3'), undefined);
 });
 
 test('an unrelated Annexation fizzles in check and leaves the regular move available', () => {

@@ -417,7 +417,7 @@
         "cardId": "earthquake",
         "cardInstanceId": "white-hand-1-earthquake",
         "target": {
-          "direction": "clockwise",
+          "direction": "counterclockwise",
           "promotions": [
             {
               "square": "a5",
@@ -677,13 +677,13 @@
       "action": {
         "type": "revealAbduction"
       },
-      "expected": "174ead8839cee9fa247239945e1e0fdd91dfa5a69f23f597cb5879779e5a114d"
+      "expected": "c8554db0ab9f56d07fde6a30f177cc6eb33805c2235a247cfe63651765cd045c"
     },
     {
       "action": {
         "type": "abductionTimeout"
       },
-      "expected": "1c88e650845f71719f2df058cd7c0c72994406ccca114035bc3bfef04b281517"
+      "expected": "fa15cef0aee282568732ecee44cae1f761f8d93d510f4ba775e41d6bf91ab92f"
     },
     {
       "action": {
@@ -691,7 +691,7 @@
         "from": "a3",
         "to": "f8"
       },
-      "expected": "f94f188579d2eda5a0fe2282f7d796177ed1f3cfdbbb2d7e0cdb57f3cee7c7eb"
+      "expected": "f1f6c32e8fb9aeaf60ef97cf0f952dfb36605860b3c73685568bdc70597d786e"
     },
     {
       "action": {

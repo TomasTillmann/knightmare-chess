@@ -124,12 +124,14 @@ test('Plots additional replacement cancellation preserves its independent first 
   assert.equal(after.pieces.find(p => p.id === 'white-pawn-a2')?.square, 'b4');
 });
 
-test('Plots allowance cannot let the canceled actor play another card', () => {
+// Official FAQ p.52: canceling the second card preserves the committed third card.
+test('Plots allowance preserves the remaining extra after cancellation', () => {
   const before = play(game(['plots-within-plots', 'pacifism', 'dubbing']), 'plots-within-plots');
   const after = cancel(before, play(before, 'pacifism', 'a2'), 'pacifism');
   const result = applyAction(after, { type: 'playCard', cardId: 'dubbing', target: [{ from: 'h2', to: 'g4' }] });
-  assert.equal(result.ok, false);
-  assert.deepEqual(result.state, after);
+  assert.equal(result.ok, true);
+  assert.equal(result.state.turn.cardPlays.white, 3);
+  assert.equal(result.state.turn.moveMade, true);
   act(after, { type: 'move', from: 'e2', to: 'e4' });
 });
 

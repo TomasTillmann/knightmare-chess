@@ -80,18 +80,23 @@ test('Vulture charges the top undrawn card and draws the next replacement', () =
   assert.ok(state.players.black.discard.some(card => card.id === 'black-deck-0-fanatic'));
   assert.ok(state.players.black.hand.some(card => card.id === 'black-deck-1-dubbing'));
 });
-test('Vulture cannot take active Truce', () => {
+test('FAQ 50: Vulture takes active Truce while a proxy stays in play', () => {
   let state = createGameState({ hands: { white: ['truce'], black: ['vulture'] } });
   state = act(state, { type: 'move', from: 'e2', to: 'e4' });
   state = play(state, 'truce');
   const snapshot = structuredClone(state);
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'vulture' }).ok, false);
+  const next = play(state, 'vulture');
+  assert.deepEqual(next.players.black.hand, [{ id: 'white-hand-0-truce', cardId: 'truce' }]);
+  assert.equal(next.effects.length, 1);
+  assert.notEqual((next.effects[0] as { card: { id: string } }).card.id, 'white-hand-0-truce');
   assert.deepEqual(state, snapshot);
 });
-test('Vulture cannot take active Pacifism', () => {
+test('FAQ 50: Vulture takes active Pacifism while a proxy stays in play', () => {
   const state = play(createGameState({ hands: { white: ['pacifism'], black: ['vulture'] } }), 'pacifism', 'a2');
-  assert.equal(applyAction(state, { type: 'playCard', cardId: 'vulture' }).ok, false);
-  assert.equal(state.effects.length, 1);
+  const next = play(state, 'vulture');
+  assert.deepEqual(next.players.black.hand, [{ id: 'white-hand-0-pacifism', cardId: 'pacifism' }]);
+  assert.equal(next.effects.length, 1);
+  assert.notEqual((next.effects[0] as { card: { id: string } }).card.id, 'white-hand-0-pacifism');
 });
 test('Peace Talks is taken rather than the continuing card it discarded', () => {
   let state = createGameState({ hands: { white: ['pacifism', 'vulture'], black: ['peace-talks'] } });
