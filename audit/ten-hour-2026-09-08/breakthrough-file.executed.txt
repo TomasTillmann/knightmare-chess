@@ -1,0 +1,19 @@
+import './pawn-capture-single-domain.js';
+import assert from 'node:assert/strict';
+import {applyAction,breakthroughDests} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+// AUDIT_BASELINE_REQUEST
+const independentStarted = performance.now();
+const independentFindings: string[] = [];
+let independentAssertions = 0;
+const independentState = createGameState({fen:'7k/8/8/8/2n5/8/2P5/K7 w - - 0 1',hands:{white:['breakthrough']}});
+const independentPawn = independentState.pieces.find(p => p.square === 'c2')!;
+const independentVictim = independentState.pieces.find(p => p.square === 'c4')!;
+const independentResult = applyAction(independentState,{type:'playCard',cardId:'breakthrough',target:[{from:'c2',to:'c4'}]});
+const independentCheck = (valid: boolean, message: string) => { independentAssertions++; if (!valid) independentFindings.push(message); };
+independentCheck(independentResult.ok, `FAQ14 home-rank capture c2-c4 rejected: ${independentResult.ok ? '' : JSON.stringify(independentResult.error)}`);
+independentCheck(independentResult.state.pieces.some(p => p.id === independentPawn.id && p.square === 'c4' && p.zone === 'board'), 'Original home-rank pawn identity did not reach c4');
+independentCheck(independentResult.state.pieces.some(p => p.id === independentVictim.id && p.square === null && p.zone === 'captured'), 'Original c4 victim identity was not captured');
+console.log(JSON.stringify({sentinel:'BREAKTHROUGH_INDEPENDENT_DONE',groups:1,probes:1,assertions:independentAssertions,findings:independentFindings,ms:performance.now()-independentStarted}));
+// AUDIT_FINAL_REQUEST

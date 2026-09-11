@@ -1,0 +1,13 @@
+# Coup royal Pawn and en passant: source review
+
+Scope: source text only. No production code, tests, or execution inspected.
+
+The local contract supports treating an otherwise valid immediate en-passant capture of a royal Pawn as a threat to that King. Section 13.1 explicitly makes any Pawn's qualifying first- or second-rank double step subject to ordinary en-passant timing and geometry. Section 15.3 explicitly retains the marked piece's movement and applies all King protection and check/checkmate rules to it. The threat definition (rules.md:124) and the safety paragraph at rules.md:285 define threat by capture capability rather than merely geometric attack on the occupied square. Thus, with an unrestricted Black Pawn c4 and White royal Pawn d2, d2-d4 would expose the physical royal Pawn to c4xd3 en passant. The empty capture destination d3 does not make the victim on d4 safe.
+
+This exact Coup/en-passant combination is an inference from those explicit constituent rules, not a located verbatim publisher ruling. Kings must never actually be captured; the implementation should detect hypothetical capture exposure as check. Under §11.6 a move may temporarily leave the King in check only if a same-turn saving card removes it; consequently the double step must be rejected when no valid same-turn rescue exists, and cannot simply be accepted as a completed safe turn.
+
+Pinned-attacker caution: the unconditional conclusion above requires the opposing Pawn to be unrestricted and able to perform the hypothetical capture without another disqualifying rule. The selected Coup and en-passant text does not itself settle every pinned-en-passant-attacker scenario. Ordinary chess's attacked-square convention and this repository's capture-capability wording should not be silently equated in such cases. Use an unpinned Pawn fixture for a decisive regression; qualify any extension to a pinned attacker separately.
+
+Publisher corroboration in preserved official-faq.txt: lines 220–227 explicitly describe the first/second-rank double and en-passant capture by a Pawn threatening the square behind the moved Pawn. Lines 950–955 prohibit capturing a King without first putting it in check, by extension of the Checkmate Rule. Lines 1577–1586 require ending the King's check before its turn finishes. The Coup card itself (cards.md:157–159) transfers King status while preserving the replacement's standard move. None of these passages expressly names an en-passant-vulnerable Coup King; the conclusion above remains a strong contract composition, with that attribution limit stated.
+
+Executed probe count: 0 (source-only assignment). No engine finding independently reproduced by this review.

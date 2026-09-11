@@ -1,0 +1,15 @@
+# Unique-card copy chains: source contract
+
+Conclusion: an intermediate opposing Haunting Memories does not erase the original unique card's deck provenance. Applying that published principle to A's Vendetta → B's Haunting Memories → A's Haunting Memories makes A's final copy prohibited. This is a strong generalized application of the published Heir example, not an explicit published Vendetta ruling.
+
+Verified sources:
+
+- `cards.md:169–171` (the current file's actual line numbers) identifies Haunting Memories and prohibits copying a unique card from one's own deck while allowing an opponent's unique card.
+- `rules.md:43` defines the asterisk as the unique marker. `rules.md:750–754` restates Haunting Memories' own-deck restriction. The recommendation to copy text/classification rather than ownership-specific physical metadata does not explicitly repeal the own-deck restriction or authorize losing original effect provenance.
+- Official FAQ page 34, `official-faq.pdf`, https://www.sjgames.com/knightmare/KnightmareChess_FAQ.pdf: the Peace Talks → opponent Haunting Memories → original player Haunting Memories or Counterthrust chain has the effect of a third Peace Talks. Copying a copy therefore follows the underlying effect.
+- The following FAQ page-34 Heir example specifically disallows original Heir owner → opponent Haunting Memories → original owner Counterthrust. It gives two independent reasons: the occupied starting square, and the original unique-card prohibition. Moving the first Heir away would eliminate the former but not the latter. Thus the prohibition survives an intermediate opponent's copy. The FAQ says Counterthrust here; applying it to Haunting Memories uses the preceding question's express equivalence for copying copies.
+- Visually inspected `/Users/tomastillmann/Random/knightmare-chess/final_cards/KC4_card1.png`: Vendetta has a prominent asterisk, costs three points, is played after the move, and lasts until a player cannot capture. The `vendetta` entry of `artwork-ocr.json` independently records `unique: true`, `continuing: true`, and `timing: [afterMove]`. `cards.md:49–51` and `rules.md:554–558` describe its effect and expiry.
+
+Expiry qualification: none of those sources explicitly addresses a Vendetta copy chain after the underlying Continuing Effect expires. Nevertheless, the printed restriction is about whose unique card is duplicated, not whether its previous effect remains active. Expiry ends Vendetta's capture obligation; it supplies no express reset of original deck identity. Consequently the same prohibition after expiry is a supported textual inference, not a separately published exact-case ruling. Normal after-move timing, last-card eligibility, and card allowance must independently hold before comparing engine acceptance.
+
+No engine or test sources were read. Only this assigned report was edited. UNIQUE_COPY_CHAIN_SOURCE_DONE. Source review wall time: approximately 52 seconds from task receipt through final patch submission (tool scheduling excluded from precision claims).

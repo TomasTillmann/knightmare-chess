@@ -1,0 +1,26 @@
+{
+  "startedUtc": "2026-09-10T07:59:58Z",
+  "minimumEndUtc": "2026-09-10T11:59:58Z",
+  "source": "/Users/tomastillmann/Random/knightmare-chess",
+  "snapshot": "/tmp/knightmare-engine-audit-20260910",
+  "head": "c7700a5b59954015c5af5aa9bba78bed1e2c8c68",
+  "copied": [
+    "src",
+    "campaign",
+    "rules.md",
+    "cards.md",
+    "AGENTS.md",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "vite.config.ts",
+    "index.html"
+  ],
+  "hashes": {
+    "src/game/reducer.ts": "f9f373beae80ed6aea45e7d9bf419202a2b39cdecebd7739fbe6f461a9adc508",
+    "src/game/types.ts": "9ee05c7047108fe87107c0c4e0fee20b535792d55f7a0a7f05b680eca5ea69c2",
+    "src/game/cards/catalog.ts": "a3d04ab5c741d8eff38795eb7741c4ab51f4a3d79dae2d84b360f8fa9f96180c",
+    "rules.md": "212e0caa2e3a26278fc9d7a2efe0b3bf1e7069706589ac4df277d555fb4cc631",
+    "cards.md": "00cbaf9b46b58b59d121ca4a409ae5f46c72ac078504734b047c9c8cbaeeb0b7"
+  }
+}

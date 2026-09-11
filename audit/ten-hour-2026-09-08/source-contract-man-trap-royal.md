@@ -1,0 +1,13 @@
+# Man-Trap royal and movement contract
+
+Sources inspected: `cards.md` Coup and Man-Trap; `rules.md` §§15.3, 19.1; publisher *Knightmare Chess: Official Rulings* PDF pages 20–21, 40–41, 43–44, 46. No engine or test sources inspected.
+
+- **Coup royal Knight, Bishop, or Pawn:** protected. Coup explicitly makes the marked piece the new King, and local §15.3 explicitly applies all King protections. Man-Trap exempts the enemy King. Applying these two explicit clauses is direct composition, although the inspected FAQ pages do not name this particular interaction.
+- **Prince:** capturable in general, but Man-Trap immunity is unresolved by the bounded sources. Coup calls the Prince capturable and Man-Trap exempts a King, which supports vulnerability on a current-status reading. However, FAQ page 20 explicitly extends Fireball's King exclusion to a Prince despite its loss of royalty. That is concrete evidence against treating loss of royalty alone as sufficient to decide every card's King exclusion. No inspected page directly rules on Prince plus Man-Trap; do not assert either result with high confidence from these pages alone.
+- **Trap consumption by a protected entrant:** a King or Pacifist does **not** spring/consume the trap. This is explicit in FAQ pages 40 and 46, which equate their behavior. The local Man-Trap text merely says the King is unaffected and leaves consumption unspecified. Extending this King behavior to a Coup royal piece follows its current King status. A newly arriving Mystic Shield recipient is captured before the shield begins; a Neutral piece is also captured (same FAQ pages).
+- **Swapping onto the square:** triggering Man-Trap is a supported inference, not an explicit Man-Trap ruling in the inspected pages. FAQ page 40 explicitly classifies swapping as movement; Man-Trap triggers when an opposing piece ends its move on the chosen square. Subject to King/Pacifist immunity, these clauses imply a swap entrant triggers it.
+- **Placement onto the square:** unresolved. The allowed sources neither classify placement as movement generally nor specifically apply Man-Trap to placement. A swap ruling cannot silently be generalized to every placement/return operation.
+
+Local/publisher assessment: the inspected local sections agree on current King protection but omit the explicit non-consumption rule and general swap classification. Prince vulnerability and placement remain source questions, not established implementation defects. FAQ page 20's Prince/Fireball ruling is card-specific and does not itself prove Prince/Man-Trap immunity.
+
+SOURCE_MAN_TRAP_ROYAL_DONE

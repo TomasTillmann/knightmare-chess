@@ -1,0 +1,20 @@
+import './movement.js';
+import './toll-check-continuation-domain.js';
+import assert from 'node:assert/strict';
+import {applyAction,isKingInCheck,legalDests} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+function act(s:GameState,a:GameAction):GameState{const before=JSON.stringify(s),r=applyAction(s,a);assert.ok(r.ok,JSON.stringify({a,fen:s.fen,error:r.ok?null:r.error}));assert.equal(JSON.stringify(s),before);return r.state;}
+// AUDIT_BASELINE_REQUEST
+const started=performance.now();let actions=0,findings=0;
+let s=createGameState({fen:'4r2k/8/8/8/8/1RB5/P3P3/4K3 w - - 0 1',hands:{white:[],black:['toll','haunting-memories']}});
+function go(a:GameAction){s=act(s,a);actions++;}
+try{
+ go({type:'move',from:'b3',to:'b5'});go({type:'playCard',cardId:'toll',target:'a2'});go({type:'endTurn'});
+ go({type:'move',from:'h8',to:'g8'});go({type:'endTurn'});go({type:'move',from:'c3',to:'a5'});
+ go({type:'playCard',cardId:'haunting-memories',target:'e2'});
+ assert.equal(isKingInCheck(s,'white'),true);assert.equal(s.outcome,null);
+ const r=applyAction(s,{type:'endTurn'});actions++;if(!r.ok)findings++;
+ console.log(JSON.stringify({sentinel:'HAUNTING_TOLL_INDEPENDENT_DONE',groups:1,actions,findings,ms:performance.now()-started,result:r,fen:s.fen,turn:s.turn,legalDests:legalDests(s).size}));
+}catch(e){console.log(JSON.stringify({sentinel:'HAUNTING_TOLL_INDEPENDENT_DONE',groups:1,actions,findings:0,harnessError:String(e),ms:performance.now()-started,fen:s.fen,turn:s.turn}));}
+// AUDIT_FINAL_REQUEST

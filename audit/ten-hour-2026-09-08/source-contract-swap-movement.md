@@ -1,0 +1,10 @@
+# Swap movement source contract
+
+**Conclusion:** An explicit general-source conflict exists: local rules §18.6 treat swaps as non-moves, whereas the publisher FAQ (PDF p.40, MEDUSA ruling) explicitly classifies swapping as movement. Its application to Fatal Attraction is an inference; the supplied publisher passage does not name Fatal Attraction.
+
+- **Frozen neighbor swapped:** Local §18.6 expressly permits this. Fatal Attraction's card text forbids adjacent non-Kings from moving. Applying the FAQ's general swap classification and the rulebook's Conflicts priority implies Fatal Attraction normally blocks Holy War from swapping that neighbor: Fatal Attraction is Continuing; Holy War supplies no explicit exception. This is a source-contract discrepancy inferred from an explicit general ruling, not an explicit publisher Fatal Attraction interaction ruling.
+- **Magnet itself swapped:** Local §18.6 expressly preserves its marker after a swap. Fatal Attraction's card text ends the effect when the magnet moves or is captured. Applying the FAQ's movement classification implies a successful swap of the magnet ends its effect. The magnet is not immobilized by its own effect, so this is an expiration question, distinct from permission to swap a frozen neighbor. Another applicable immobilization could still prevent that swap.
+
+The local general Swap definition (rules.md §Swap) says swaps do not capture and do not require a legal ordinary move between exchanged squares; that wording alone need not conflict with swaps counting as movement. The direct contradiction is §18.6's explicit non-move classification and retained magnet duration. Holy War's card text only exchanges a Knight and Bishop; it does not expressly override immobilization or duration.
+
+Sources inspected: rules.md §Swap and §18.6; cards.md Fatal Attraction and Holy War; official-faq.pdf p.40 MEDUSA question; official-rulebook.pdf Conflicts (Continuing Effects take priority; equal categories use the last card). No engine or test sources inspected. No probes executed; this is a source-only review.

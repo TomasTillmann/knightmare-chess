@@ -1,0 +1,10 @@
+# Neutrality / Pacifism / Coup — publisher source review
+
+Evidence: `official-faq.pdf`, printed/PDF pages 20–21 and 42–44. This is a source review only; no engine or test sources were inspected, and no engine correctness claim follows.
+
+- **Express ruling — Coup suspends both effects.** Pages 20 and 43 expressly approve Coup on a Neutral or Pacifist piece and affirm that Neutrality and/or Pacifism are suspended because neither can be played on a King.
+- **Express ruling — promotion changes which effects apply.** Pages 21 and 44 allow a Coup Pawn to promote to any piece. Rook or Queen promotion suspends Coup; for a Rook both previously suspended Neutrality and Pacifism resume, whereas for a Queen only Pacifism resumes. Page 20 adds that Coup stays suspended until the piece is no longer a Rook or Queen. Thus Queen promotion does not reactivate Neutrality in this stated interaction.
+- **Express ruling — opposite-color neutral target is legal and can surrender the King.** Pages 20 and 43–44 explicitly allow Coup on a Neutral piece of the opposite color, acknowledging that suspending Neutrality can surrender the player's King. The stated reason this is permitted is that Coup is a Continuing Effect and the Checkmate Rule does not apply.
+- **Ownership inference, not an explicit transfer rule.** The opposite-color ruling is strong evidence that selecting such a piece for Coup does not transfer its underlying ownership to the Coup player: otherwise suspension of Neutrality would not produce the described surrender. Page 43 separately specifies that a Neutral Pawn moves away from its owner's home row and says Bribery is possible while Neutrality remains in effect. The reviewed pages do not explicitly define an ownership field, royalty representation, or the exact engine outcome/timing of “surrender”; those implementation details remain unestablished by this evidence.
+
+Scope limit: these pages directly settle suspension and resumption for the stated Coup/promotion sequence; they do not independently enumerate every Queen transformation or general suspension interaction.

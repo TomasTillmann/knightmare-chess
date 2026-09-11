@@ -1,0 +1,29 @@
+import './movement.js';
+import './elf-royal-card-restraint-domain.js';
+import assert from 'node:assert/strict';
+import {applyAction,cardPlayTargets} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+function act(s:GameState,a:GameAction){const r=applyAction(s,a);assert.ok(r.ok,JSON.stringify({a,error:r.ok?null:r.error}));return r.state;}
+let awayFixture=createGameState({fen:'7k/8/8/8/2P5/8/8/6K1 w - - 0 1',hands:{white:['coup','under-elf-hill'],black:['peace-talks']}});
+const awayCoup=awayFixture.players.white.hand[0];
+for(const a of [{type:'move',from:'g1',to:'f1'},{type:'playCard',cardId:'coup',target:'c4'},{type:'endTurn'},{type:'move',from:'h8',to:'g8'}] as GameAction[])awayFixture=act(awayFixture,a);
+const cancelControl=act(awayFixture,{type:'playCard',cardId:'peace-talks',target:awayCoup.id});
+assert.equal(cancelControl.effects.some(e=>e.type==='coup'),false);assert.equal(cancelControl.pieces.find(p=>p.id==='white-king-g1')?.royal,true);
+for(const a of [{type:'endTurn'},{type:'playCard',cardId:'under-elf-hill'},{type:'endTurn'},{type:'move',from:'g8',to:'h8'}] as GameAction[])awayFixture=act(awayFixture,a);
+assert.equal(awayFixture.pieces.find(p=>p.id==='white-pawn-c4')?.zone,'away');assert.equal(awayFixture.pieces.find(p=>p.id==='white-king-g1')?.square,'f1');assert.ok(awayFixture.effects.some(e=>e.type==='coup'));
+console.log(JSON.stringify({sentinel:'COUP_AWAY_FIXTURE_READY',actions:9,findings:0}));
+// AUDIT_BASELINE_REQUEST
+{
+ const start=performance.now();
+ assert.ok(awayFixture.effects.some(e=>e.type==='coup'));
+ assert.equal(awayFixture.pieces.find(p=>p.id==='white-king-g1')?.zone,'board');
+ assert.equal(awayFixture.pieces.find(p=>p.id==='white-pawn-c4')?.zone,'away');
+ const before=JSON.stringify(awayFixture);
+ const targets=cardPlayTargets(awayFixture,'peace-talks');
+ const result=applyAction(awayFixture,{type:'playCard',cardId:'peace-talks',target:awayCoup.id});
+ const unchanged=JSON.stringify(awayFixture)===before;
+ assert.ok(unchanged);
+ console.log(JSON.stringify({sentinel:'COUP_AWAY_INDEPENDENT_DONE',groups:1,probes:1,actions:1,findings:result.ok?0:1,accepted:result.ok,targets,error:result.ok?null:result.error,inputUnchanged:unchanged,ms:performance.now()-start}));
+}
+// AUDIT_FINAL_REQUEST

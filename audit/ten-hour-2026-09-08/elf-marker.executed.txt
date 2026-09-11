@@ -1,0 +1,28 @@
+import './movement.js';
+import './elf-composite-control-domain.js';
+import assert from 'node:assert/strict';
+import {applyAction} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+function act(s:GameState,a:GameAction){const r=applyAction(s,a);assert.ok(r.ok,JSON.stringify({a,error:r.ok?null:r.error}));return r.state;}
+let bishopFixture=createGameState({fen:'8/7k/8/8/8/2B5/1P6/6K1 w - - 0 1',hands:{white:['crab','confabulation','coup','under-elf-hill']}});
+const bishopCrab=bishopFixture.players.white.hand[0];
+for(const a of [{type:'move',from:'g1',to:'f1'},{type:'playCard',cardId:'crab',target:'b2'},{type:'endTurn'},{type:'move',from:'h7',to:'g6'},{type:'endTurn'},{type:'playCard',cardId:'confabulation',target:[{from:'b2',to:'c3'}]},{type:'endTurn'},{type:'move',from:'g6',to:'h7'},{type:'endTurn'},{type:'move',from:'f1',to:'g1'},{type:'playCard',cardId:'coup',target:'c3'},{type:'endTurn'},{type:'move',from:'h7',to:'g6'},{type:'endTurn'}] as GameAction[])bishopFixture=act(bishopFixture,a);
+assert.equal(bishopFixture.pieces.find(p=>p.id==='white-bishop-c3')?.royal,true);
+assert.ok(bishopFixture.effects.some(e=>e.type==='crab'&&e.card.id===bishopCrab.id));
+console.log(JSON.stringify({sentinel:'ELF_BISHOP_FIXTURE_READY',actions:14,findings:0}));
+// AUDIT_BASELINE_REQUEST
+const independentStarted=performance.now();
+const beforeIds=bishopFixture.pieces.map(p=>p.id).sort();
+const royalId='white-bishop-c3';
+const hiddenPawnId='white-pawn-b2';
+assert.equal(bishopFixture.pieces.find(p=>p.id===royalId)?.square,'c3');
+assert.ok(bishopFixture.pieces.some(p=>p.id===hiddenPawnId));
+const afterElf=act(bishopFixture,{type:'playCard',cardId:'under-elf-hill'});
+assert.deepEqual(afterElf.pieces.map(p=>p.id).sort(),beforeIds);
+assert.equal(afterElf.pieces.find(p=>p.id===royalId)?.square,null);
+assert.ok(afterElf.pieces.some(p=>p.id===hiddenPawnId));
+const retained=afterElf.effects.filter(e=>e.type==='crab'&&e.card.id===bishopCrab.id).length;
+const discarded=afterElf.players.white.discard.filter(c=>c.id===bishopCrab.id).length;
+console.log(JSON.stringify({sentinel:'ELF_BISHOP_MARKER_INDEPENDENT_DONE',groups:1,probes:1,actions:1,findings:retained===1&&discarded===0?0:1,retained,discarded,royalSquare:afterElf.pieces.find(p=>p.id===royalId)?.square,pawnSquare:afterElf.pieces.find(p=>p.id===hiddenPawnId)?.square,identitiesUnchanged:true,ms:performance.now()-independentStarted}));
+// AUDIT_FINAL_REQUEST

@@ -1,0 +1,13 @@
+# Terminal contract with stable movement modifiers
+
+Source-only review. No engine or test source inspected. Scope: the player is at an ordinary turn-start decision, both hands/decks are empty, there are no pending obligations or temporary turn-skips, and the only effects are stable Coup, Curse, Pacifism, Forbidden City, or Fortification.
+
+**Contract:** if there is no legal ordinary move after applying all current effects, a safe royal means stalemate; a checked royal means checkmate, with the opponent winning. This is explicit at the general-rule level and a direct inference for the stated empty-resource scope, not a separate publisher ruling for every pair of modifiers.
+
+Local `rules.md` §23, line 834, defines stalemate by a safe player with no legal continuation, including legally playable cards. §11.5, lines 264–269, gives the checked player a chance to escape with actual available move/card resources, then ends the game if none exists. Empty hands and decks remove that card escape. §24 requires geometry, restrictions, King safety and consequences to be resolved before judging legality. Continuing Effects may participate in mate and do not expire merely because mate occurs (§11.4, line 260).
+
+Coup explicitly transfers all King protection/check/checkmate rules to its replacement (§15.3, line 455); a capturable Prince is not the royal to test. Pacifism suppresses capture threats (§11.7, line 285). Curse, forbidden squares and wall boundaries therefore belong in legal-move and threat calculations, rather than causing an exception to terminal adjudication.
+
+Publisher FAQ `official-faq.txt`, lines 62–76, supports the escape-turn rule and Continuing Effects delivering mate; lines 137–149 explain why Pacifist pieces do not give check. Lines 207–210 explicitly say that stalemate from lack of legal moves can be escaped by playing a card, at the moving player's option; in the stipulated empty-hand/deck position that escape is unavailable. The FAQ's no-return-square example at lines 190–195 also classifies a safe King with no continuation as stalemate. The broader empty-resource conclusion follows from these rules and the explicit local contract. The Under Elf Hill exception after a successful return appears separately at FAQ lines 2686–2697 and is excluded here.
+
+Do not extend this oracle to Truce (local §23 requires removing it and re-evaluating), Under Elf Hill after a successful return, cards that forfeit a turn, unresolved rescue/cancellation windows, or arbitrary repetition/clock draws. Those cases have additional procedures outside this scope. No modifier-specific exception to the stated stable ordinary-turn case was found in the cited sources.

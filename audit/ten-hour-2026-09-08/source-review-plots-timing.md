@@ -1,0 +1,9 @@
+Conclusion: After an ordinary enemy capture, Plots Within Plots may supply No Quarter plus another after-move card, provided both are legal when Plots is played. The best-supported interpretation retains the original capture as No Quarter's trigger when the other card is played first. This application to No Quarter is an inference, not an explicit No Quarter FAQ ruling.
+
+Evidence:
+- `cards.md:77-79`: No Quarter applies after capturing an enemy piece without using a card and makes that captured piece dead. The ordinary capture satisfies this condition; later card play does not retroactively make that capture card-assisted.
+- `cards.md:249-251`: Plots permits two additional cards legal at that moment. Official FAQ, printed/PDF page 51, expressly permits a normal chess move followed by two after-move cards.
+- Official FAQ, pages 51-52, explicitly says Fireball uses the piece moved before Plots, even if a subsequent Plots card moves another piece. The pre-Plots move supplies Fireball's after-move condition. This establishes preservation of that original move for Fireball; extending the same timing principle to No Quarter is a well-supported analogy.
+- `cards.md:97-99`: Crab changes a pawn's future movement and capture pattern. Nothing in that text changes the identity or nature of an already completed capture, so playing an otherwise-legal Crab first supplies no textual reason to discard No Quarter's original capture trigger. This excerpt alone does not establish Crab's timing classification.
+
+Limits: Eligibility at Plots play does not override other cards' specific conditions or resolve cases where the first card changes the captured piece's status. The sources inspected contain no explicit No Quarter/Plots ordering ruling. Source scope was only the three named card entries and `audit/ten-hour-2026-09-08/official-faq.pdf` pages 51-53; no implementation or test sources were inspected.

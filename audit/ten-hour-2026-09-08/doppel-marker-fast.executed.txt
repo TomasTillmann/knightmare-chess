@@ -1,0 +1,23 @@
+import './doppelganger-transformed-source-domain.js';
+import {applyAction} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction} from '../../src/game/types.js';
+// AUDIT_BASELINE_REQUEST
+const started = Date.now();
+let state = createGameState({fen:'7k/8/8/8/8/8/8/K6R b - - 0 1',hands:{white:['doppelganger'],black:['forbidden-city']}});
+const findings: string[] = [];
+let probes = 0;
+for (const action of [
+  {type:'move',from:'h8',to:'g8'},
+  {type:'playCard',cardId:'forbidden-city',target:'d4'},
+  {type:'endTurn'},
+  {type:'playCard',cardId:'doppelganger',target:[{from:'h1',to:'g1'}]},
+] as GameAction[]) {
+  const result = applyAction(state,action);
+  probes++;
+  console.log('DOPPEL_FAST_PROBE',JSON.stringify(action),JSON.stringify(result));
+  if (!result.ok) { findings.push(JSON.stringify({action,error:result.error})); break; }
+  state=result.state;
+}
+console.log('DOPPEL_FAST_DONE',JSON.stringify({probes,findings,measuredms:Date.now()-started}));
+// AUDIT_FINAL_REQUEST

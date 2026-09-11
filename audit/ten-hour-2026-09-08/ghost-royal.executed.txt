@@ -1,0 +1,24 @@
+import './movement.js';
+import './ghostwalk-friendly-king-parent.js';
+import assert from 'node:assert/strict';
+import {applyAction,cardPlayTargets} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+function act(s:GameState,a:GameAction){const r=applyAction(s,a);assert.ok(r.ok,JSON.stringify({a,error:r.ok?null:r.error}));return r.state;}
+let ghostRoyalFixture=createGameState({fen:'8/7k/8/8/8/8/3N4/2B3K1 w - - 0 1',hands:{white:['coup','ghostwalk'],black:['peace-talks']}});
+const ghostCoup=ghostRoyalFixture.players.white.hand[0];
+for(const a of [{type:'move',from:'g1',to:'f1'},{type:'playCard',cardId:'coup',target:'c1'},{type:'endTurn'},{type:'move',from:'h7',to:'g6'}] as GameAction[])ghostRoyalFixture=act(ghostRoyalFixture,a);
+let ghostPlainControl=act(ghostRoyalFixture,{type:'playCard',cardId:'peace-talks',target:ghostCoup.id});ghostPlainControl=act(ghostPlainControl,{type:'endTurn'});
+ghostPlainControl=act(ghostPlainControl,{type:'playCard',cardId:'ghostwalk',target:[{from:'c1',to:'e3'}]});assert.equal(ghostPlainControl.pieces.find(p=>p.id==='white-bishop-c1')?.square,'e3');assert.equal(ghostPlainControl.history.at(-1)?.type,'cardPlayed');
+ghostRoyalFixture=act(ghostRoyalFixture,{type:'endTurn'});assert.equal(ghostRoyalFixture.pieces.find(p=>p.id==='white-bishop-c1')?.royal,true);assert.equal(ghostRoyalFixture.pieces.find(p=>p.id==='white-knight-d2')?.square,'d2');
+console.log(JSON.stringify({sentinel:'GHOST_ROYAL_FIXTURE_READY',actions:8,findings:0}));
+// AUDIT_BASELINE_REQUEST
+const ghostIndependentStart=performance.now();
+const ghostBefore=JSON.stringify(ghostRoyalFixture);
+const ghostTargets=cardPlayTargets(ghostRoyalFixture,'ghostwalk');
+const ghostResult=applyAction(ghostRoyalFixture,{type:'playCard',cardId:'ghostwalk',target:[{from:'c1',to:'e3'}]});
+assert.equal(JSON.stringify(ghostRoyalFixture),ghostBefore);
+assert.equal(ghostResult.state.pieces.find(p=>p.id==='white-knight-d2')?.square,'d2');
+if(ghostResult.ok){assert.equal(ghostResult.state.pieces.find(p=>p.id==='white-bishop-c1')?.square,'e3');assert.equal(ghostResult.state.pieces.find(p=>p.id==='white-bishop-c1')?.royal,true);}
+console.log(JSON.stringify({sentinel:'GHOST_ROYAL_INDEPENDENT_DONE',groups:1,probes:1,actions:1,findings:ghostResult.ok?0:1,ms:performance.now()-ghostIndependentStart,helper:ghostTargets,result:ghostResult.ok?'accepted royal bishop moved':ghostResult.error}));
+// AUDIT_FINAL_REQUEST

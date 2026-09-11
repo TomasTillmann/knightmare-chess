@@ -1,0 +1,1211 @@
+[
+  {
+    "id": "think-again",
+    "name": "Think Again!",
+    "points": 10,
+    "unique": false,
+    "image": "/KC20_card4.png",
+    "description": "Your opponent's move is canceled. He must make a different move, with the same piece or with another one. If he used a card, he may take it back.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Think Ag\n\nin!\n\nS\u2014\n\nme\n\n|\n\n*S\n\n>\n\n~~\n\nS\n\na\n\n~\u2014\n\naS\n\ni f\n\npa Pee\n\nh\n\nns\n\nGq.\n\nfp\n\nsS\n\nA\n\nKe\n\nYour opponent's move is canceled. He must make\n\na different move, with the same piece or with\n\nanother one. If he used a card, he may take it\n\nback.\n\nPlay after your opponent's move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "riposte",
+    "name": "Riposte",
+    "points": 10,
+    "unique": false,
+    "image": "/KC20_card3.png",
+    "description": "Play this card when your opponent captures one of your pieces without using a card. Your piece stays in its place and your opponent's piece is captured instead. You lose your next move. You cannot take a King or Queen with this card.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Riposte\n\n|\n\nN\n\nKi\n\n.*\n\n\u00bb\n\n\\\n\nih\n\nft\n\nkg\n\n%\n\ni\n\nf\n\n4.\n\n@\n\n&\n\n*\n\nPlay this card when your opponent captures one\n\nof your pieces without using a card. Your piece\n\nstays in its place and your opponent's piece is\n\ncaptured instead. You lose your next move. You\n\ncannot take a King or Queen with this card.\n\nPlay when your piece is captured without a card.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "legacy",
+    "name": "Legacy",
+    "points": 10,
+    "unique": false,
+    "image": "/KC20_card2.png",
+    "description": "When one of your pieces other than a Pawn is captured, retrieve one card from your discard pile and put it in your hand.",
+    "timing": [
+      "afterOpponentMove",
+      "afterOpponentCard"
+    ],
+    "continuing": false,
+    "ocr": "Legacy\n\niF\n\nN\n\nt\n\nWN\n\n\u00a9\n\n4\u00b0\n\n\u201c\n\nus\n\ny Pug\n\nVW\n\naa\n\n7\n\nChoose one card from your discard pile, or from\n\nthe common discard pile in a common-deck\n\ngame, and return it to your hand.\n\nPlay when your non-Pawn piece is captured.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "knightmare",
+    "name": "Knightmare!",
+    "points": 10,
+    "unique": false,
+    "image": "/KC20_card1.png",
+    "description": "Your opponent's move is canceled, He must make a different move, with the same piece or with another one. If he used a card, he may take it back.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Knightmare!\n\n\u2014\n\n\u2014\n\n\u2014\n\n|\n\n-_,\n\n-\n\n4\u00bb\n\nAS\n\nay\n\nYAN\n\n.\n\nDJ\n\nI\n\nYour opponent's move is canceled, He must make\n\na different move, with the same piece or with\n\nanother one. If he used a card, he may take it\n\nback.\n\nPlay after your opponent's move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "fireball",
+    "name": "Fireball",
+    "points": 10,
+    "unique": false,
+    "image": "/KC19_card4.png",
+    "description": "Play this card after any move which does not capture an opposing piece. The piece you moved explodes and is removed from play, along with all the pieces in the eight adjacent squares, whatever their color. The pieces are regarded as captured. Kings are not affected.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Fireball\n\n2 A\n\nre\n\n )\n\n0x\n\nOR\n\nMd\n\n>\n\n4 t\n\nPy\n\ni\n\n~\n\nWS\n\n2\u00b0\n\nA\n\na\n\nZ\n\npe\n\nLE\n\n*\n\nsa\u00ae\n\nPlay this card after any move which does not\n\ncapture an opposing piece. The piece you moved\n\nexplodes and is removed from play, along with all\n\nthe pieces in the eight adjacent squares,\n\nwhatever their color. The pieces are regarded as\n\ncaptured. Kings are not affected.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "hidden-passage",
+    "name": "Hidden Passage",
+    "points": 10,
+    "unique": false,
+    "image": "/KC19_card3.png",
+    "description": "Move your King to any unoccupied square of the chessboard.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Hidden arms\n\nNN\n\nSS\n\n=)\n\nEf!\n\n\u00a5\n\n4\n\nVN\n\na\n\nA\n\n%S)\n\n=)\n\ner\n\n\\ ex?!\n\n\u2014 ey\n\n=\n\nys\n\nad\n\n+s\n\ni\n\nchessboard.\n\nMove your King to any unoccupied square of the\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "fog-of-war",
+    "name": "Fog of War",
+    "points": 10,
+    "unique": false,
+    "image": "/KC19_card2.png",
+    "description": "Cancel any card played by your opponent immediately. Both cards are discarded. If the canceled card was the opponent\u2019s whole move, they may make another move, but may not play another card.",
+    "timing": [
+      "afterOpponentCard"
+    ],
+    "continuing": false,
+    "ocr": "wy\n\neZ\n\n=<\n\nP\n\nUs\n\nay\n\nav\n\nAy\n\na\n\noe\n\nY\n\nWf PP\n\n\u2014.i4\n\na4\n\na\n\nS52.\n\n\u00a5\n\n4\n\neg.\n\nPy\n\nPegs\n\n\u00e9\n\ns\n\nWg\n\n,\n\nte\n\n\u20ac\n\n4p\n\non\n\ni\n\naf\n\nj\n\nMs\n\nSy\n\nore\n\nex\n\nmS\n\ni\n\nae\n\n=\n\nThis card cancels the effect of any other card.\n\nBoth cards are discarded. If the opposing card\n\nconstituted your opponent's whole move, he may\n\nmake another move, but he may not play another\n\ncard.\n\nPlay immediately after your opponent plays a card.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "chaos",
+    "name": "Chaos",
+    "points": 10,
+    "unique": false,
+    "image": "/KC19_card1.png",
+    "description": "Your opponent\u2019s move is canceled. He must make a different move, with the same piece or another piece. If he used a card, he may take it back.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Chaos\n\nVa a\n\naz\n\nUZ,\n\nql\n\nFe\n\nbe\n\nf\n\niag\n\nwy\n\nwg\n\ni\n\n= dy\n\na\n\nAS\n\n=\n\nRew\n\nae\n\n= we\n\nJ\n\nEE ct tf\n\nSe\n\nif\n\na\n\n4\\\n\n)\n\nf\n\nEe:\n\na\n\nKX &\n\nA,\n\n\\\"\n\nYour opponent's move is canceled. He must make\n\na different move, with the same piece or with\n\nanother one. If he used a card, he may take it\n\nback.\n\nPlay after your opponent's move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "neutrality",
+    "name": "Neutrality",
+    "points": 9,
+    "unique": false,
+    "image": "/KC18_card4.png",
+    "description": "One of your opponent\u2019s pieces, except a King or Queen, becomes neutral. Either player may move it on their own turn. It may check either King and capture pieces of either color. This effect lasts until the piece is lost.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Neutrality\n\nSi, <\n\nar\n\nas\n\nM4\n\noe,\n\noe\n\nT_\n\n~ 2\n\n4\n\neon\n\ney\n\n\\W\n\n4\n\nae\n\n\u201cSy\n\n\\ \u00a2\n\nsae\n\nae\n\n4\n\nXj ;\n\n\\\n\ny\n\n?\n\na)\n\nOne of your opponent's pieces, except a King or a\n\nQueen, becomes neutral. It can be moved by\n\neither player on his turn, can check either King,\n\nand can capture pieces of any color any time it is\n\nmoved. Any card which affects either a friendly or\n\nenemy piece can affect a neutral.\n\nApplies: Until the neutral piece is lost.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "mystic-shield",
+    "name": "Mystic Shield",
+    "points": 9,
+    "unique": false,
+    "image": "/KC18_card3.png",
+    "description": "The piece you just moved cannot be captured by your opponent on his next turn. If you moved more than one piece, designate only one to be protected.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Mystic shield\n\nSa\n\n\u2014\n\n\u00bb\n\nxe\n\noY\n\n\"A\n\nfi\n\n+\n\nG\n\n1@4a\n\nThe piece you just moved cannot be captured by\n\nyour opponent on his next turn. If you moved\n\nmore than one piece, you must designate only\n\none to be protected.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "merciless",
+    "name": "Merciless",
+    "points": 9,
+    "unique": false,
+    "image": "/KC18_card2.png",
+    "description": "Play this card when you move a Rook without capturing a piece. The Rook immediately moves one more time.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Me\n\nerciless\n\n-\u2014\u2014?\n\n\\\n\naf\n\nag\n\n>.\n\nZ\n\nN\n\nf,\n\nee\n\n\\\\s\n\nBe  )\n\nAw\n\nfe\n\n\\\n\nf\\\n\n\"\n\ni}!\n\nPlay this card when you move a Rook without\n\none more time.\n\ncapturing a piece. The Rook immediately moves\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "man-of-straw",
+    "name": "Man of Straw",
+    "points": 9,
+    "unique": false,
+    "image": "/KC18_card1.png",
+    "description": "Play this card when your King is in check (even check-mate). It swaps positions with any one of your Pawns, as long as the new position does not place it in check.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Man of Straw ~\n\nF\n\na\n\n{ Ts hi\n\nAy\u2019\n\nao\n\nnae\n\nWwe\n\n4,\n\nnl p\n\n'\u20ac8\n\ney\n\n\u2018\\\n\nPs\n\nhes\n\na\n\n>\n\naS\n\nxy\n\noe\n\n/ }\n\nhe\n\noi\n\nPlay this card when your King is in check (even\n\ncheck-mate). It swaps positions with any one of\n\nyour Pawns, as long as the new position does not\n\nplace it in check.\n\nPlay before your move\n",
+    "exit": 0,
+    "diagnostic": "Detected 55 diacritics\n"
+  },
+  {
+    "id": "hostage",
+    "name": "Hostage",
+    "points": 9,
+    "unique": false,
+    "image": "/KC17_card4.png",
+    "description": "Immediately after your opponent captures one of your pieces, capture one of your Pawns instead and return the captured piece to that Pawn\u2019s square.",
+    "timing": [
+      "afterOpponentMove",
+      "afterOpponentCard"
+    ],
+    "continuing": false,
+    "ocr": "| Hostage | ~*~\n\nigs\n\nsi\n\nyy\n\n\u00ab\n\n/\n\nhey\n\nBh,\n\n4\n\nKa\n\nes\n\niy\n\n> >\n\nit\n\nte\u201d\n\n2\n\n>. ey\n\ni\n\nUO\n\nON\n\nPlay this card when your Opponent captures one\n\nof your pieces. Choose one of your Pawns to be\n\ncaptured instead. Return your original captured\n\npiece to the board in the Pawn's square.\n\n-\n\ne\n\ni\n\n>*\n\n\u00bb\n\nPlay immediately after your piece is captured.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "crusade",
+    "name": "Crusade",
+    "points": 9,
+    "unique": false,
+    "image": "/KC17_card2.png",
+    "description": "One of your Bishops can make two moves in a row, as long as it does not capture anything with its first move.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "LD\n\n|=\n\nVea\n\nwR\n\nfesalel\n\no>\n\nA\n\nRh\n\na \u20182\n\n)\n\n\u2018ey\n\n\\&\n\nra\n\nwe\n\nmf\n\nQi\n\na Ses\n\nSe\n\n~ LS\n\n= as\n\n>\n\nV\n\nSoy\n\ncm\n\nBR\n\n$\n\n*.\n\nae\n\nee { |\n\ni\n\nme\n\nwes\n\nPla\n\nhen\n\nve a Bis\n\nop without\n\ncap\n\nva a piece. This atin imme\n\nnoves\n\n\u201cpe\n\n\u00a5\n\nne ak RN\n\n= ae.\n\n\u2018A\n\nSait\n",
+    "exit": 0,
+    "diagnostic": "Detected 179 diacritics\n"
+  },
+  {
+    "id": "resurrection",
+    "name": "Resurrection",
+    "points": 8,
+    "unique": false,
+    "image": "/KC16_card4.png",
+    "description": "Return one of your captured pieces, except a King or Queen, to a vacant square it could have occupied at the beginning of the game.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Resu rection\n\nee el E\n\nan\n\nWd\n\nfS\n\n\\\n\n<4\n\n&\n\nan\n\n\\\\\n\n=\n\nim\n\nya\n\ntind\n\nim)\n\ncA\n\nK\\\n\n\u201cZ\n\nay -\n\nFe\n\na ay\n\nxj\n\n, ie\n\no\n\ndaae\n\nReturn one of your captured pieces, except a King\n\nor Queen, to the board. You must place it on a\n\nvacant square it could have occupied at the\n\nbeginning of the game.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "plots-within-plots",
+    "name": "Plots Within Plots",
+    "points": 8,
+    "unique": false,
+    "image": "/KC16_card3.png",
+    "description": "Immediately play up to two additional cards that you could legally play when this card was played.",
+    "timing": [
+      "beforeMove",
+      "afterMove",
+      "afterOpponentMove",
+      "afterOpponentCard"
+    ],
+    "continuing": false,
+    "ocr": "Plots pis Plots\n\nA\n\nyp\n\n= a\n\nSs\n\nft\n\n=\n\nwis\n\nyy\n\ny\n\n<a\n\nTai\n\nA)\n\noY\n\nwey!\n\nrs\n\n\u00bb\n\n@\n\nNi\n\npb\u2019,\n\n+h\n\nSA\n\n\u2018\n\n(;\n\ns&s\n\n\\\\\n\nZ\n\n,\n\nve\n\nts\n\n!\n\nq\n\ni\n\nian |\n\ny\n\nAft\n\nyi\n\nHit\n\nee | /\n\n==\n\naa\n\nier, *\n\nne\n\na\n\ni\n\nI\n\ni=\n\n\u2014\n\n>\n\n\u2014\n\ni\n\nB\n\ni=\n\ncos\n\nSSeS. a\n\nYou may play two more cards that are legal to\n\nplay in this moment immediately, ignoring the\n\nnormal prohibition against playing more than one\n\ncard per move! You may not make two moves\n\nunless each of the cards says it replaces a move.\n\nPlay at any time.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "fatal-attraction",
+    "name": "Fatal Attraction",
+    "points": 8,
+    "unique": false,
+    "image": "/KC16_card2.png",
+    "description": "Choose one of your pieces. Adjacent pieces other than Kings cannot move or capture until the chosen piece moves or is captured.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Fatal ALEACTION\n\n:\n\n(A\n\ni <\n\n\\\n\ny\n\n=A\n\nA)\n\nA\n\nGY\n\nyy\n\n>\n\naN\n\nChoose one of your pieces to become a magnet.\n\nUntil it moves or is captured, no piece of any color\n\n(except Kings) in the eight adjacent squares can\n\nmove. A piece may pass through these squares\n\nwithout effect, but one that stops there (whether\n\nor not it makes a capture) becomes trapped.\n\nApplies: Until the magnet moves or is captured.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "bombard",
+    "name": "Bombard",
+    "points": 8,
+    "unique": false,
+    "image": "/KC16_card1.png",
+    "description": "One of your Rooks moves in a straight line, optionally jumping one piece or obstruction, and may capture at its destination.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Bombard\n\nay\n\ni\n\nA\n\n|\n\nORD oe\n\ner.\n\not\n\nwes\n\n};\n\n% Fi\n\nOn this move, one of your Rooks can move in its\n\nnormal straight line, jump over any one piece or\n\none obstruction on the board, and continue ina\n\nstraight line. The piece or obstruction is not\n\naffected by being jumped. At the end of its move,\n\nthe Rook may make a normal capture.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "abduction",
+    "name": "Abduction",
+    "points": 8,
+    "unique": false,
+    "image": "/KC15_card4.png",
+    "description": "Your opponent looks away for ten seconds while you remove an opposing piece other than its King, then has ten seconds to recall the piece and its square or it is captured.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Abduction\n\nie\n\n<4\n\n&\n\n(|\n\ni\n\n=\n\n~\n\nffi\n\n\u00a5\n\nWe\n\nat\n\nKe |\n\n\\\u00a5\n\naa,\n\nae ||\n\ni\n\nwe\n\nie\n\nb\n\n|\n\na\n\na\n\ney,\n\nSS\n\nes\n\nyA\n\nae\n\nWe ==\n\n\u2014|\n\na |\n\n*\n\na\n\nae\n\nYour opponent must look away from the board\n\nfor ten seconds, as you remove any one of his\n\npieces except the King. He then has ten seconds\n\nto look at the board and state what piece you\n\nremoved and which square it occupied. If he\n\nremembers correctly, the piece is put back in its\n\nplace, If not, it is captured\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 35 diacritics\n"
+  },
+  {
+    "id": "under-elf-hill",
+    "name": "Under Elf Hill",
+    "points": 7,
+    "unique": false,
+    "image": "/KC15_card3.png",
+    "description": "Remove your King until the beginning of your next turn, then return it to a safe empty edge square. It cannot move or capture that turn.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Under Elf Hill |\n\nop foe\n\n4.\n\n-\u2014*\n\nLt\n\nSX\n\n<a\n\n=)\n\nBe\n\nA\n\niS\n\n4\n\n<a\n\nete\n\nee\n\nan\n\n\\ Se,\n\n\u00a3\n\n\u2014 -\n\nLf\n\nrs\n\n\\e\n\npe?\n\n~=\n\nbe\n\n$s\n\ny )\n\noF / 2\n\nne\n\na\n\n\u2014w\n\nRemove your King from the chessboard. At the\n\nbeginning of your next turn, he reappears on any\n\nvacant square on any edge of the board. He may\n\nnot appear in check, and may not move that turn,\n\nbut otherwise, you may take a normal turn after\n\nreplacing the King.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "fortification",
+    "name": "Fortification",
+    "points": 7,
+    "unique": false,
+    "image": "/KC13_card4.png",
+    "description": "Place a wall between two adjacent squares. No piece may cross this boundary for the rest of the game, except Knights and other jumping pieces.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Fortification\n\ni\n\na\n\nae\n\na WA\n\nan\n\nos\n\n\u2014\u2014\n\noo\n\nx\n\n\u201c2\n\n\u2014 #\n\n>\n\naw\n\nJ\n\n\u2014\"\n\nTADS\n\nZ\n\n=\n\n=\n\n-\n\nid\n\nCreate a wall between two directly or diagonally\n\nneighboring squares anywhere on the\n\nchessboard. No pieces can cross the wall unless\n\nthey have a Knight-style jumping move, or unless\n\nyou use a card which \"jumps\" them.\n\nApplies: Until the end of the game.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "dungeon",
+    "name": "Dungeon",
+    "points": 7,
+    "unique": false,
+    "image": "/KC13_card3.png",
+    "description": "Move an opposing piece other than its King to any empty corner. Your opponent cannot move that piece on the following turn.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Dun\n\non\n\na\n\na cath\n\niti:\n\n\u00a5\n\nhe\n\nSz\n\nred\n\n\\* ce\n\nBi\n\n=\n\na a\n\nee.\n\nce\n\ni)\n\noe\n\nee\n\nSe\n\n@.\n\n\u00e9\n\nChoose one of your opponent's pieces, except a\n\nKing, and move it to any unoccupied corner of the\n\nchessboard. Your opponent cannot move this\n\npiece on his following turn.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "betrayal",
+    "name": "Betrayal",
+    "points": 7,
+    "unique": false,
+    "image": "/KC13_card1.png",
+    "description": "Replace an opposing Pawn on your half of the board with one of your captured Pawns. The opposing Pawn is dead.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Betrayal\n\npS.\n\nThs\n\noS\n\n\u00a2\n\n~\n\n1\n\n8\n\na\n\n~~\n\n\u00a3\n\na\n\na\n\nb\n\n\u201cte \\\n\nOne of your opponent's Pawns on your half of the\n\nboard switches allegiance. Replace it with one of\n\nyour own captured Pawns. His Pawn is considered\n\ndead. It cannot return to play.\n\nPlay before your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "winged-victory",
+    "name": "Winged Victory",
+    "points": 6,
+    "unique": false,
+    "image": "/KC12_card4.png",
+    "description": "Take a Pawn your opponent captured and return it on any empty central square (d4, e4, d5, or e5).",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Win\n\nd Vic\n\neH\n\nBe\n\nI\n\n4%\n\nji\n\n~\n\n\u2018v4 7\n\nWW\n\niy\n\nren\n\nN i\n\naA\n\nA)\n\nLe)\n\nte\n\nsy\n\nwt\n\nty\n\na\n\nTake a Pawn which your opponent has captured,\n\nand return it to play by placing it on any of the\n\nfour squares in the middle of the chessboard. The\n\ntarget square must be empty!\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "passing-in-the-night",
+    "name": "Passing in the Night",
+    "points": 6,
+    "unique": false,
+    "image": "/KC12_card2.png",
+    "description": "Swap the positions of one of your Pawns with one opposing Pawn, or two of your Pawns with two opposing Pawns.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Passing in the Night\n\n\u2018SS\n\na\n\ny en \u00a9\n\nJ \\\n\n\u00ae\n\n&\n\n\u2018y\n\ni \\y\n\na\n\n=\n\na\n\naT\n\na ;\n\nSwap the positions of one of your Pawns and one\n\nof your opponent's Pawns, or swap two of your\n\nPawns with two of your opponent's Pawns.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "man-trap",
+    "name": "Man-Trap",
+    "points": 6,
+    "unique": false,
+    "image": "/KC11_card4.png",
+    "description": "Secretly choose a square occupied by one of your pieces. The next opposing piece to end its move there is captured after completing its own capture. A King springs the trap but is unaffected.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "\u2014\n\n_ Man-Tra\n\n>\n\n\u2014\u2014\n\n\u00a5\n\n,\n\nve\n\nite\n\nNe\n\nee\n\n\u2014\n\nee\n\nep\n\niru k\n\nee\n\nar\n\ng.\n\n%\n\nPa\n\nSm\n\nVy,\n\nat\n\nRy\n\n\u2014\u2014\u2014\u2014\n\nkA\n\n=e\n\n\u2014\u2014\n\ncr\n\nbe.\n\no\n\nas\n\nad\n\nSecretly write down ge cinate fa square\n\n\u00a5\n\n_which currently contains one of oe Thes\n\n\u201cnext opposing piece to end i\n\nmove in this square\n\nis GI\n\nred. Any capture it made with that move is\n\nalid. If the enemy King springs the tr.\n\nee\n\n~\n\nhe is\n\n4\n\nApplies Until piece springs e trap.\n\n\u00bb\n\nwu a oe ee a\n\n~\n\n.\n\n>\n\nf\n\na,\n\n_\n\n_\n\nBaers\n",
+    "exit": 0,
+    "diagnostic": "Detected 86 diacritics\n"
+  },
+  {
+    "id": "haunting-memories",
+    "name": "Haunting Memories",
+    "points": 6,
+    "unique": false,
+    "image": "/KC11_card3.png",
+    "description": "This card has the same effect as the last card played. You cannot duplicate a unique card from your own deck, but you may duplicate one from your opponent\u2019s deck. Play when the copied card could be played.",
+    "timing": [
+      "beforeMove",
+      "afterMove",
+      "afterOpponentMove",
+      "afterOpponentCard"
+    ],
+    "continuing": false,
+    "ocr": "ie\n\n> \\\n\n:\n\nHaunting Me mories. }\n\n* |\n\nbak\n\n!\n\n24\n\ng :\n\na\n\nes\n\n~~\n\n\u2122\n\n-\n\n\u00bb\n\n&\n\nThis card has the same effect as haee: card\n\nplayed. It cannot be used to duplicate a unique\n\ncard from your deck. It can duplicate a unique\n\ncard of your opponent's!\n\n\u00bb\n\n~~\n\nPlay when fh copied card could be played. 2\n\n\\\n\nta\"\n\n=\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "curse",
+    "name": "Curse",
+    "points": 6,
+    "unique": false,
+    "image": "/KC11_card1.png",
+    "description": "Choose an opposing Queen, Bishop, or Rook and mark it. It can only move one or two squares at a time. This effect lasts until the affected piece is captured.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Curse\n\no\n\nN\n\nt fa SO\n\n1a\n\n\\\n\n4,\n\n\\ >\n\n{ ~\n\n4\n\ne\n\n\u00bb\n\n/ \\)\n\n\u2018ey\n\n_.\n\nAh\n\n\u2014.\n\nSE\n\njh\n\n\\\n\nmaf!\n\nPA\n\nY a4\n\n-\n\n@ i\n\nChoose one of your opponent's Queens, Bishops\n\nor Rooks, and place a marker on it. This piece can\n\nonly move one or two squares at a time for the\n\nrest of the game.\n\nApplies: Until the affected piece is captured.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "blessing",
+    "name": "Blessing",
+    "points": 6,
+    "unique": false,
+    "image": "/KC9_card4.png",
+    "description": "On this move, any one of your pieces may move any distance diagonally, as though it were a Bishop. You cannot capture with this move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "tease\n\n>\n\nTg\n\n_\n\ng\n\nK\n\nJ\n\n(fite.\n\nG\n\np\n\n.\n\n~\n\nAls: 7\n\noh\n\na)\n\n<<a\n\nvy;\n\nit!\n\n\\\\\n\neV\n\n|\n\ntg\n\nwil\n\ntas\n\nuy re}\n\n4X4}\n\ni\n\n4/\n\nhy\n\nOn this move, any one of your pieces may move\n\nany distance diagonally, as though it were a\n\nBishop. You cannot capture with this move\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 68 diacritics\n"
+  },
+  {
+    "id": "vulture",
+    "name": "Vulture",
+    "points": 5,
+    "unique": false,
+    "image": "/KC9_card3.png",
+    "description": "Take the last card played by your opponent and put it in your hand. If each player has his own deck of cards, you must also discard your top undrawn card.",
+    "timing": [
+      "afterOpponentCard"
+    ],
+    "continuing": false,
+    "ocr": "Vulture\n\n+\n\nDir\n\ni\n\nee F\n\n\\\n\n\u2014\u00a2)\n\nSS\n\nwhl\n\nA\n\naS\n\nfi\n\nQV\n\nie\u2019\n\nhe\n\nGan\n\n-\\\n\nyo\n\nfi\n\n\u2014\u2014\n\nc~ >\n\ncg\n\n| se\n\nSN\n\nSo\n\nos\n\n=\n\net\n\noS\n\nA\n\n(ia\n\n4)\n\nwee\n\n\u201c\n\n==\n\n=\n\na:\n\n<=\n\new\n\n\u2014\n\nee\n\nod\n\nSS\n\nY~\n\na\n\nge\n\nIP\n\nTake the last card played by your opponent and\n\nput it in your hand. If each player has his own\n\ndeck of cards, you must also discard your top\n\nundrawn card.\n\nPlay immediately after your opponent plays a card.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "truce",
+    "name": "Truce",
+    "points": 5,
+    "unique": false,
+    "image": "/KC9_card2.png",
+    "description": "Capture is now forbidden. This effect lasts until a King is in check or a stalemate occurs. If a stalemate occurs, discard this card and start counting moves again for the purpose of determining stalemate.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Truce\n\n=\n\n4 af\n\ncea\n\nWN\n\nIX\n\na\n\n\u2018ss\n\nI\n\nSS\n\nSS\n\n4\n\n( \\\n\nwe\"\n\n\\X\n\nry\n\ny\n\n|e\n\nCapture is now forbidden. This effect lasts until a\n\nKing is in check or a stalemate occurs. If a\n\nstalemate occurs, discard this card and start\n\ncounting moves again for the purpose of\n\ndetermining stalemate.\n\nApplies: Until a King is in check or a stalemate\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "forbidden-city",
+    "name": "Forbidden City",
+    "points": 5,
+    "unique": false,
+    "image": "/KC7_card3.png",
+    "description": "Place a marker in any unoccupied square. No pieces can enter this square, or pass through it, for the rest of the game. Knights and other \"jumping\" pieces may still pass over it.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Forbidden City eo\n\nlo\n\nte\n\nst\n\n=\n\ni)\n\n'' y!\n\nre\n\nee\n\nROS\n\no>\n\nee tet\n\n1 i -- nceaaainagiaee\n\nSee\n\nog ee\n\ne*\n\nSt eh\n\n/ Cea\n\nSa\n\nStes\n\n3\n\nPlace a marker in any unoccupied square. No\n\npieces can enter this square, or pass through it\n\nfor the rest of the game. Knights and other\n\n\"jumping\" pieces may still pass over it\n\nApplies: Until the end of the game\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 8 diacritics\n"
+  },
+  {
+    "id": "confabulation",
+    "name": "Confabulation",
+    "points": 5,
+    "unique": false,
+    "image": "/KC7_card4.png",
+    "description": "Make a legal move which puts two of your pieces (other than Kings) on the same square. These two pieces \"merge\" into a new piece. It can move, capture, and be affected by cards like either one of them. Move the two pieces together. Confabulated Pawns cannot promote.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": true,
+    "ocr": "Confabulation <&\n\n\u2014\n\nLL\n\n|. ee. S\n\nan\n\nwh\n\neae\n\na\n\n4a4ae\n\nMake a legal move which puts two of your pieces\n\n(other than Kings) on the same square. These two\n\npieces \"merge\" into a new piece. It can move,\n\ncapture, and be affected by cards like either one\n\nof them. Move the two pieces together.\n\nConfabulated Pawns cannot promote.\n\nApplies: Until the combined piece is lost.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "ghostwalk",
+    "name": "Ghostwalk",
+    "points": 5,
+    "unique": false,
+    "image": "/KC8_card1.png",
+    "description": "On this move, one of your pieces gains the ability to pass through your own pieces. It may not pass through enemy pieces, and must end its move on an empty square, without capturing. Its move must be otherwise legal.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Ghostwalk\n\nyk\n\na\n\n\"ng\n\n+e\n\nwih Pings\n\nA\n\nil\n\nooane\n\nOn this move, one of your pieces gains the ability\n\nto pass through your own pieces. It may not pass\n\nthrough enemy pieces, and must end its move on\n\nan empty square, without capturing. Its move\n\nmust be otherwise legal\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 18 diacritics\n"
+  },
+  {
+    "id": "irresistible-force",
+    "name": "Irresistible Force",
+    "points": 5,
+    "unique": false,
+    "image": "/KC8_card2.png",
+    "description": "Move one of your Pawns to the occupied square in front of it, by pushing the piece occupying that square to the next square. If that square is occupied, the piece there is pushed to the next square, and so on. If a piece is pushed from the last rank off the chessboard, it is taken! A King cannot be pushed.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Irresistible eens\n\n=\n\nSs\n\nf\n\n\\\n\n=\n\nWy:\n\nYN\n\nN\n\n+e\n\na\n\n\u201c>\n\n1)\n\n)\n\nYue\n\nAwe\n\nWe\n\ni.\n\n\u2018M)\n\nay)\n\nGS \u2018\n\nA,\n\nfa.\n\nAo\n\nSa,\n\nMove one of your Pawns to the occupied square\n\nin front of it, by pushing the piece occupying that\n\nsquare to the next square. If that square is\n\noccupied, the piece there is pushed to the next\n\nsquare, and so on. If a piece is pushed from the\n\nlast rank off the chessboard, it is taken! A King\n\ncannot be pushed.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "masquerade",
+    "name": "Masquerade",
+    "points": 5,
+    "unique": false,
+    "image": "/KC8_card3.png",
+    "description": "Move one of your pieces, except a Pawn, as if it were a Queen. You cannot capture a piece with this move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Ma\n\nsquerade\n\nvee\n\n47\n\ndh\n\nva\n\na\n\na<\n\n&\n\nA,\n\nBSe\n\na\n\nSING\n\n7 Tie\n\ny\n\n&\n\np*\n\nyy,\n\ngg\n\n&\n\n\u2014_\n\nMove one of your pieces, except a Pawn, as if it\n\nwere a Queen. You cannot capture a piece with\n\nthis move.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "assassin",
+    "name": "Assassin",
+    "points": 2,
+    "unique": false,
+    "image": "/KC1_card1.png",
+    "description": "Move one of your pieces and capture another of your own pieces with it.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Assassin\n\nif\n\n\\\n\n(fe\n\ni\n\nea\n\n=a\n\nX\n\nean\n\nye\n\nMove one of your pieces and capture another of\n\nyour own pieces with it.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "disintegration",
+    "name": "Disintegration",
+    "points": 2,
+    "unique": false,
+    "image": "/KC1_card2.png",
+    "description": "Remove one of your own Pawns from the chessboard, and set it aside. It is now *dead*, and cannot be brought back into play with another card.",
+    "timing": [
+      "beforeMove",
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Disintegration\n\n&\n\n49,\n\nSe\n\n\u2014\u2014\u2014\n\n>.\n\n~\n\nbe\n\nLi\n\na\n\naan.\n\nwg\n\ne\"\n\nFi\n\n&\n\n&\n\n\u00a32\n\nwe 2\n\n|\n\ni >\n\nRemove one of your own Pawns from the\n\nchessboard, and set it aside. It is now dead, and\n\ncannot be brought back into play with another\n\ncard\n\nPlay before or after your move\n",
+    "exit": 0,
+    "diagnostic": "Detected 5 diacritics\n"
+  },
+  {
+    "id": "doomsayer",
+    "name": "Doomsayer",
+    "points": 2,
+    "unique": false,
+    "image": "/KC1_card3.png",
+    "description": "The next player who pronounces the name of a piece, except \"King,\" loses one piece of that type. If he doesn't own a piece of that type, this card remains in effect. When you play this card, your opponent has the option to name a piece immediately.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Doomsayer\n\n|*\n\n7\n\nBISH@\n\nbd?\n\nee\n\n4\n\n7 a\n\nPe\n\nae\n\ni\n\noa //\n\nof\n\n| ae\n\n= \\\n\ng\n\nB)\n\nAY\n\nrae\n\na4ae\n\nThe next player who pronounces the name of a\n\npiece, except \"King,\" loses one piece of that type.\n\nIf he doesn't own a piece of that type, this card\n\nremains in effect. When you play this card, your\n\nopponent has the option to name a piece\n\nimmediately.\n\nApplies: Until a piece is lost to this card's effect.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "fanatic",
+    "name": "Fanatic",
+    "points": 2,
+    "unique": false,
+    "image": "/KC1_card4.png",
+    "description": "Move one of your Pawns forward three squares, provided the path is clear. It may not capture on this move, or be captured *en passant*.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Fanatic\n\nSas\n\nAi\n\nA Cae\n\nFG.\n\nan <\n\n7\n\nih\n\nLe\n\n4\n\nbf\n\nSS\n\n.&\n\nvy\n\nmag\n\n4\"?\n\na\n\nMeL (i\n\nWi\n\n\\>\n\nRA\n\nMW\n\nee. |\n\no\n\n- |\n\n2 AS\n\nMove one of your Pawns forward three squares,\n\nprovided the path is clear. It may not capture on\n\nthis move, or be captured en passant.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "annexation",
+    "name": "Annexation",
+    "points": 3,
+    "unique": false,
+    "image": "/KC2_card1.png",
+    "description": "Move one or two of your Pawns forward, two squares each. Neither one may make a capture. A Pawn which was on its starting square may still be captured *en passant* after this move, if an enemy Pawn is in position to do so.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Annexation\n\n\u2014\n\noe\n\n\u2014\n\n<3\n\n(ij\n\n7\n\n/\\\n\nit\n\n4)\n\n2\n\nvA\n\n|\n\n\u2014s\n\nAr\n\ni\n\nFk\n\nHy\n\n$4]\n\npi\n\n3\n\n\u00abll!\n\n4%\n\n\u2018\n\nI\u2019\n\nill\n\n| is\n\nje\n\nwth.\n\na\n\n:\n\neS eek\n\nae\n\nAly\n\nMove one or two of your Pawns forward, two\n\nsquares each. Neither one may make a capture. A\n\nPawn which was on its starting square may still\n\nbe captured en passant after this move, if an\n\nenemy Pawn is in position to do so.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "forced-march",
+    "name": "Forced March",
+    "points": 3,
+    "unique": false,
+    "image": "/KC2_card2.png",
+    "description": "Move one or two of your Pawns sideways, in either direction, one square each.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Forced March\n\nlif?\n\nAK\n\nVe\n\nad\n\n)\n\nAy\n\nif\n\n%\n\nTE 4)\n\n(1\n\nval\n\nKD?\n\nMove one or two of your Pawns sideways, in\n\neither direction, one square each.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "guardian",
+    "name": "Guardian",
+    "points": 3,
+    "unique": true,
+    "image": "/KC2_card3.png",
+    "description": "Move one of your Pawns forward (you may move two squares if it the Pawn is second rank). Your piece which was just behind the Pawn may follow, so it remains directly behind. Your Pawn is thus protected from capture *en passant*. Play this card on your move, instead of making a regular move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Guardian\n\nLig\n\na Ss\n\n\\e\n\nYU\n\nAe\n\nTm\n\n\u00a5,\n\n\u2018\n\nNy\n\na\n\n\\\n\nLSS\n\nVy,\n\nASS\n\neu\n\nofa\n\nPe\n\naS\n\ne\n\n|\n\n\\\n\n,\n\nMs\n\nif\n\n4)\n\n|\n\nKe\n\nmet\n\n\\\n\nNY\n\nf\n\nWH\n\nSSS\n\new\n\nvr\n\nrf.\n\n\u2014\u2014\n\na%\n\nwt L-\n\nigh\n\nig Airy\n\n\u2014\n\n4k\n\nJel\n\nPa\n\nP Me\n\nFF\n\nMove one of your Pawns forward (you may move\n\ntwo squares if it the Pawn is second rank). Your\n\npiece which was just behind the Pawn may follow,\n\nso it remains directly behind. Your Pawn is thus\n\nprotected from capture en passant. Play this card\n\non your move, instead of making a regular move.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "heresy",
+    "name": "Heresy",
+    "points": 3,
+    "unique": false,
+    "image": "/KC2_card4.png",
+    "description": "Each Bishop that can do so must be moved to an adjacent empty square by its owner, thus changing the color of the squares it moves on. Your opponent must move his Bishops first.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Heresy\n\n=\n\n28\n\n.)\n\nBy di\n\n\u201cA\n\nOe\n\ns\n\nes\n\nAS\n\n| {\n\n: f-\n\n\u2018\n\ni\n\nN\n\nEach Bishop that can do so must be moved to an\n\nadjacent empty square by its owner, thus\n\nchanging the color of the squares it moves on.\n\nYour opponent must move his Bishops first.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "cowardice",
+    "name": "Cowardice",
+    "points": 4,
+    "unique": false,
+    "image": "/KC4_card3.png",
+    "description": "Move one of your opponent's Pawns one or two squares backward. It may not enter or cross an occupied square.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "=\n\n.\n\n4 OF\n\n~ Cowardi\n\n= thie\n\nee\n\nry: 4\n\ni:\n\n G\n\n_\n\n..\n\na4\n\nw\n\na\n\nLS\n\n=\n\nLs\n\n4\n\nVW\n\nJN\n\nWz\n\n4\n\n>\n\nnN\n\nW\n\n\u00a35\n\nSN\n\na ae\n\naN\n\nSS\n\nSS OSS\n\noe\n\nsa\n\nAh in\n\nAS\n\n\u2014\n\nLo LL\n\nSe\n\n><\n\na /\n\na\n\neal\n\nto,\n\nMove\n\none of your \u2018opponent's s Pawns one or two\n\n7\n\nsquares backward. It may not enter or cross an\n\nccupied square. _\n\noo A\n\n~\n\n<etN\n\nen\n\nGOO\n\n\u20ac\n\n7\n\n...\n\n,\n\noe\n\nany\n\nsl Ni PO ar\u201d\n\n2\n\n\u2014? a\n\na \u2014\n\naw mak\n",
+    "exit": 0,
+    "diagnostic": "Detected 94 diacritics\n"
+  },
+  {
+    "id": "doppelganger",
+    "name": "Doppelganger",
+    "points": 4,
+    "unique": false,
+    "image": "/KC4_card4.png",
+    "description": "Move one of your pieces (except a Pawn) as if it were a piece of the same kind as the one your opponent has just moved. You cannot capture a piece with this move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Doppelganger ~\n\n<9\n\nSe\n\nky\n\nnb\n\nay\n\nEe\n\nN\n\nee\n\nat\n\n 4@ |\n\nFP\n\noe\n\nmY\n\nA\n\nY\n\nMove one of your pieces (except a Pawn) as if it\n\nwere a piece of the same kind as the one your\n\nopponent has just moved. You cannot capture a\n\npiece with this move.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "rebirth",
+    "name": "Rebirth",
+    "points": 4,
+    "unique": true,
+    "image": "/KC6_card1.png",
+    "description": "Move one enemy piece to any square it could have occupied at the beginning of the game. The square must be empty or contain one of your pieces. If one of your pieces is in the square, it is captured.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Rebirth\n\n|\n\nor\n\noR:\n\n\u2014=. 3\n\nWS\n\nwi\n\nMe\n\nay\n\nes\n\ni.\n\n2 a\n\n=\n\nE\n\n~~\n\n=\n\n>\n\nREE\n\nsf\n\nRe\n\nv.\n\nmee\n\nLee\n\nvhf\n\na?\n\nhs\n\nee\n\n=\n\n1\n\nx\n\n7\n\nMove one enemy piece to any square it could\n\nhave occupied at the beginning of the game. The\n\nsquare must be empty or contain one of your\n\npieces. If one of your pieces is in the square, it is\n\ncaptured.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "revenge",
+    "name": "Revenge",
+    "points": 4,
+    "unique": false,
+    "image": "/KC6_card2.png",
+    "description": "Remove one of your opponent's Pawns from the chessboard. It is regarded as captured.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Revenge\n\nea\n\n\u00a34,\n\nNES\n\njl\n\n!\n\n4\n\n\u2018\n\na\n\nuk\n\nys\n\nPk SS\n\n=:\n\n\\8\n\nRoe\n\n=~\n\ncd\n\n2\n\nY\n\nRemove one of your opponent's Pawns from the\n\nchessboard. It is regarded as captured.\n\nPlay when your Pawn is captured without a card.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "toll",
+    "name": "Toll",
+    "points": 4,
+    "unique": false,
+    "image": "/KC6_card3.png",
+    "description": "Play this card when your opponent has just moved a piece toward you across the \"frontier\" - the line separating your half of the board from his. He must \"pay\" by choosing a Pawn to lose. If he does not wish to pay, his turn is canceled. He gets back any card he used, but he cannot make another move.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Toll\n\nSAN\n\n\\*\n\n\\f4\n\nv5\n\nAS\n\n\\*\n\nWi\n\nAS\n\ni)\n\ni\n\ns!\n\n\\\\\n\niy!\n\n<=\n\n\\)\n\nj\n\nss\n\n\\ eZ\n\nf\n\n|\n\n\u2014\u2014\n\nPlay this card when your opponent has just\n\nmoved a piece toward you across the \"frontier\" -\n\nthe line separating your half of the board from\n\nhis. He must \"pay\" by choosing a Pawn to lose. If\n\nhe does not wish to pay, his turn is canceled. He\n\ngets back any card he used, but he cannot make\n\nanother move.\n\nPlay after your opponent's move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "bog",
+    "name": "Bog",
+    "points": 4,
+    "unique": false,
+    "image": "/KC4_card2.png",
+    "description": "Play this card after your opponent moves a Rook, Bishop or Queen two squares or more. His piece cannot make the planned move; it stops after moving one square in the chosen direction.",
+    "timing": [
+      "afterOpponentMove"
+    ],
+    "continuing": false,
+    "ocr": "Bog\n\nif\n\nhe j\n\na\n\nLe aL\n\neat\n\na -\n\n\u2014\n\n\u201c=\n\n4\n\na\n\nPd\n\na |\n\nod\n\nPlay this card after your opponent moves a Rook,\n\nBishop or Queen two squares or more. His piece\n\ncannot make the planned move; it stops after\n\nmoving one square in the chosen direction.\n\nPlay after your opponent's move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "holy-war",
+    "name": "Holy War",
+    "points": 3,
+    "unique": false,
+    "image": "/KC3_card1.png",
+    "description": "Swap the positions of one of your Knights and one of your Bishops.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Holy War\n\n\u2014\n\nal;\n\nwe Le\n\nees\n\n\"=\n\nfe\n\ne\n\noy\n\ncy\n\na\n\nee\n\nx\n\n\u00abfe\n\n4\n\nAY\n\n%&\n\n=\n\n=<\n\n* bee\n\nn= Ka\n\nbo\u00bb\n\n|\n\n\\\n\n~ sy\n\n\u2018GS\n\n\u00a5\n\n\\\n\n\u00a3\n\nSwap the positions of one of your Knights and\n\none of your Bishops\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 5 diacritics\n"
+  },
+  {
+    "id": "madman",
+    "name": "Madman",
+    "points": 3,
+    "unique": false,
+    "image": "/KC3_card2.png",
+    "description": "For this move, one of your pawns can move like a King in a game of checkers, by jumping diagonally over pieces from either side. It may make as many jumps as it can, in any direction. However, the pieces it jumps are not captured.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Mad man\n\n=\n\nSa\n\nEe\n\nJ\n\ni)\n\na\n\n?\n\n{[_ean_\n\nSS\n\na\n\nSSR,\n\n~~\n\noe\n\nNS\n\nA\n\nA 4\n\nweg J\n\nA 4,\n\n~\n\nFor this move, one of your pawns can move like a\n\nKing in a game of checkers, by jumping\n\ndiagonally over pieces from either side. It may\n\nmake as many jumps as it can, in any direction.\n\nHowever, the pieces it jumps are not captured.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "pacifism",
+    "name": "Pacifism",
+    "points": 3,
+    "unique": false,
+    "image": "/KC3_card3.png",
+    "description": "One of your pieces, except your King, becomes non-violent for the rest of the game. Place a marker on it. It can no longer capture another piece, nor may it be captured.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": true,
+    "ocr": "Pacifism\n\n=\n\nPZ\n\n\u00a9\n\naan\n\nOne of your pieces, except your King, becomes\n\nnon-violent for the rest of the game. Place a\n\nmarker on it. It can no longer capture another\n\npiece, nor may it be captured.\n\nApplies: Until the piece is removed from play.\n\nPlay before your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "vendetta",
+    "name": "Vendetta",
+    "points": 3,
+    "unique": true,
+    "image": "/KC4_card1.png",
+    "description": "Each player must now use his move to capture one of his opponent's pieces, if he can do so. This effect lasts until one of the players cannot make a capture. You are not required to play a card to make a capture, even if you have a card that would let you capture.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Vend etta\n\na\n\nZL\n\nay\n\nif\n\nyo\n\nme\n\nBAW\n\nWS\n\n(A A,\n\nSs :\n\n~~\n\n\u2018\n\nwe\n\nV\n\ny\n\nme yg\n\n&\n\n*\n\n\u201cos\n\n| a\n\na7\n\nee;\n\nEach player must now use his move to capture\n\none of his opponent's pieces, if he can do so. This\n\neffect lasts until one of the players cannot make a\n\ncapture. You are not required to play a card to\n\nmake a capture, even if you have a card that\n\nwould let you capture.\n\nApplies: Until one player cannot make a capture.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "anathema",
+    "name": "Anathema",
+    "points": 5,
+    "unique": false,
+    "image": "/KC6_card4.png",
+    "description": "Swap the positions of a Bishop and a Rook belonging to your opponent.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Anathema\n\nMy\n\nN=\n\nKy\n\na\n\n|\n\nA\n\nit\n\n\\\n\nH\n\n4\n\n\u00bb\n\na\n\nia\n\nSwap the positions of a Bishop and a Rook\n\nbelonging to your opponent.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "crab",
+    "name": "Crab",
+    "points": 5,
+    "unique": false,
+    "image": "/KC7_card1.png",
+    "description": "One of your Pawns becomes a Crab for the rest of the game. Place a marker underneath it as a reminder. A Crab moves and captures diagonally, like a Bishop, but only forward and only one square at a time. If a Crab reaches the last rank, it is promoted like a regular Pawn.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Crab\n\n==.\n\n~~\n\nse\n\n=\n\noS\n\n#,\n\nSI\n\nfF\n\n&\n\ngt\n\n\u00ab\n\noe\n\nake\n\nee\n\nKe\n\nA\n\n4\n\nA\n\nSs\n\n| vy &\n\n\u2014\n\n|\n\n\u2014\u2014~\n\nf\n\n~~\n\nwi \u00bb\n\nOne of your Pawns becomes a Crab for the rest of\n\nthe game. Place a marker underneath it as a\n\nreminder. A Crab moves and captures diagonally,\n\nlike a Bishop, but only forward and only one\n\nsquare at a time. If a Crab reaches the last rank, it\n\nis promoted like a regular Pawn.\n\nApplies: Until the Crab is captured or promoted.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "dark-mirror",
+    "name": "Dark Mirror",
+    "points": 5,
+    "unique": false,
+    "image": "/KC7_card2.png",
+    "description": "On this move, one of your Pawns can capture by moving diagonally backward instead of forward.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "OF\n\npoe ae\n\n9\n\n\\\n\nse\n\nee\n\nAl!\n\n\u00a2\n\naN\n\n=)\n\nr\\\n\nri\n\n\\\n\nae\n\nSs)\n\nhed\n\nVS\n\n=\n\nOn this move, one of your Pawns can capture by\n\nmoving diagonally backward instead of forward.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "breakthrough",
+    "name": "Breakthrough",
+    "points": 6,
+    "unique": false,
+    "image": "/KC10_card1.png",
+    "description": "On this move, one of your Pawns can capture by moving forward. It cannot move forward unless it captures. If for any reason this Pawn could already capture by a forward move, this card lets it capture with a diagonal move instead.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Breakthrough >\n\n=\n\n\"if\n\nvo\n\naay\n\nf\n\nyt\n\n$\n\nph\n\nw\n\na\n\nat\n\nVis\n\nWF\n\n(We\n\neK\n\ne~\n\n2\u00a5\n\nys\n\nJ.\n\nsh\n\nBN\n\nJZ\n\nNia\n\nRY\n\n\u201cek\n\n=\n\nOn this move, one of your Pawns can capture by\n\nmoving forward. It cannot move forward unless it\n\ncaptures. If for any reason this Pawn could\n\nalready capture by a forward move, this card lets\n\nit capture with a diagonal move instead\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 4 diacritics\n"
+  },
+  {
+    "id": "challenge",
+    "name": "Challenge",
+    "points": 6,
+    "unique": false,
+    "image": "/KC10_card2.png",
+    "description": "Choose a piece of your opponent (except King or Queen). On his next move, your opponent must use that piece, or lose his turn. You may not name a piece your opponent does not possess or cannot legally move.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Challenge\n\nJ\n\n&)\n\nba\n\n$\n\na\n\nCop\n\n(=\n\n~*~\n\nA\n\nJo\n\n\u2014_~\n\n1\n\nSe\n\nioe\n\nChoose a piece of your opponent (except King or\n\nQueen). On his next move, your opponent must\n\nuse that piece, or lose his turn. You may not name\n\na piece vour opponent does not possess or\n\ncannot legally move\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 7 diacritics\n"
+  },
+  {
+    "id": "charge",
+    "name": "Charge!",
+    "points": 6,
+    "unique": false,
+    "image": "/KC10_card3.png",
+    "description": "One of your Knights can make two moves in a row, as long as it does not capture anything with its first move.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Charge\n\nCal\n\nwe\n\ny 7\n\nIp\n\nA\n\n-\n\nPa\n\n\u2014\n\nge ee\n\n=)\n\nmee eee\n\nOne of your Knights can make two moves in a\n\nrow, as long as it does not capture anything with\n\nits first move.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "coup",
+    "name": "Coup",
+    "points": 6,
+    "unique": false,
+    "image": "/KC10_card4.png",
+    "description": "Your King becomes a Prince for the remainder of the game. A Prince moves like a King but can be captured. Choose one of your pieces, except a Rook or a Queen, and mark it. This piece keeps its standard move, but is the new King, and your opponent will win if he checkmates it.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Coup\n\na\n\nOo\n\nCe ail\n\n=\n\nJA)\n\nS\n\neS\n\narson\n\nW\n\naN\n\ngod.\n\n\u2014~\n\nSS\n\n1, \u00a2\n\nv\n\n&\n\naN\n\n\\\n\na\n\nSS &\n\n=\u2014 \u00bb\n\nJ\n\nare\n\n\u2014\n\n'?\n\n=&\n\nN\n\n\u2014\n\nA\n\nax\n\nYour King becomes a Prince for the remainder of\n\nthe game. A Prince moves like a King but can be\n\ncaptured. Choose one of your pieces, except a\n\nRook or a Queen, and mark it. This piece keeps its\n\nstandard move, but is the new King, and your\n\nopponent will win if he checkmates it.\n\nApplies: Until the end of the game.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "evangelists",
+    "name": "Evangelists",
+    "points": 6,
+    "unique": false,
+    "image": "/KC11_card2.png",
+    "description": "Swap the positions of one of your Bishops and one of your opponent's Bishops.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Evangelists\n\n>\n\n7\n\n2\n\nI,\n\na\n\nith\n\nial\n\n4\n\na\n\naed\n\nby\n\n\\\n\nSwap the positions of one of your Bishops and\n\none of your opponent's Bishops.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "tournament",
+    "name": "Tournament",
+    "points": 6,
+    "unique": false,
+    "image": "/KC12_card3.png",
+    "description": "Swap the positions of one of your Knights and one of your opponent's Knights.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Tournament\n\n=\n\n>\n\n_\n\ngm\n\nag\n\nA\n\nat\n\nfe\n\nf\n\na\n\nSy\n\nae\n\nMi\n\ni,\n\nM\n\n\\\n\na\n\n\\e\n\nSwap the positions of one of your Knights and\n\none of your opponent's Knights.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "cathedral",
+    "name": "Cathedral",
+    "points": 7,
+    "unique": false,
+    "image": "/KC13_card2.png",
+    "description": "Swap the positions of one of your Rooks and one of your Bishops.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Oa\n\nrae ite\n\n= Oe\n\n\u2014 Cathe\n\n~~\n\n7 ee\n\nVia |\n\n\u2018a\n\nhe.\n\nAy\n\nTe a\n\nmn!\n\npa\n\n\\\n\n\\\n\n|\n\naN\n\n|\n\n_ a\n\nf |\n\nSS a.\n\nR |\n\nYY\n\nSwap\n\nions\n\nf your R\n\nof your Bishops.\n\nsand ore\n\nBS\n\n\u2018sz\n\npe Me\n\nak\n\ncad us\n\nwe\n\nSo\n\nhe]\n\n&\n\ner.\n\nove. er i Pn\n\nfash\n\ner?\n\n\u2014) i\n\n._ =\u2014_ -\n",
+    "exit": 0,
+    "diagnostic": "Detected 27 diacritics\n"
+  },
+  {
+    "id": "lost-castle",
+    "name": "Lost Castle",
+    "points": 7,
+    "unique": false,
+    "image": "/KC14_card3.png",
+    "description": "Swap the positions of one of your Rooks and one of your opponent's Rooks.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Lost Castle\n\n>\n\n|\n\n\"=\n\nSwap the positions of one of your Rooks and one\n\nof your opponent's Rooks.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "split-knight",
+    "name": "Split Knight",
+    "points": 7,
+    "unique": false,
+    "image": "/KC15_card2.png",
+    "description": "Capture two or more opposing pieces that one of your Knights could legally capture. The Knight is then captured too. Play instead of making a regular move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Split Knight\n\nP gow\n\n\u00e9s\n\nsel\n\nae\n\noe\n\nae\n\n* e,|\n\naS\n\nae,\n\nSA\n\n~~\n\nat\n\nhi 2\n\nDr\n\ni\n\n7%\n\nasx\n\n> gen oer\n\n\u00a7\n\nae,\n\na a\n\nSZ\n\nae\n\ne\n\nae |\n\nee\n\n\u2014-\n\n\\\n\nne\n\nbes\n\n<a\n\nata,\n\nal\n\nyp\n\nPlay this card when one of your Knights has the\n\nchoice of taking two or more of your opponent's\n\npieces. Capture as many of these pieces as you\n\nwant (at least two). Your Knight is removed from\n\nplay and regarded as captured\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": "Detected 7 diacritics\n"
+  },
+  {
+    "id": "evil-eye",
+    "name": "Evil Eye",
+    "points": 9,
+    "unique": false,
+    "image": "/KC17_card3.png",
+    "description": "Capture one opposing piece that a piece you control could legally capture, without moving the attacker. Play instead of making a regular move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "oN\n\n: Evil wih ill\n\nxy\n\n&\n\nsh,\n\n) |\n\nVg\n\n\\\n\nAy\n\n\\\n\n\u2014\n\n> os\n\nse?\n\nww\n\na =:\n\nLa\n\n2,\n\n\u201ciS\n\nFN\n\nroll FR\n\nox\n\nNe\n\n\u201cSK\n\noe\n\nvie,\n\n\u2014\n\n|\n\nSE\n\n\u2014\u2014\n\nwa\n\nRemove one of your opponent's pieces which is\n\nthreatened by one of yours. It is considered\n\ncaptured. However, your \"capturing\" piece does\n\nnot move, it remains where it is.\n\n-\n\ne\n\ni\n\n>*\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "siege",
+    "name": "Siege",
+    "points": 7,
+    "unique": false,
+    "image": "/KC15_card1.png",
+    "description": "Swap the positions of one of your Knights and one of your Rooks.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Si\n\ni\n\n|\n\n>\n\nKf\n\n\u2018a\n\nee\n\ney\n\nSS\n\nia\n\nie\n\n\\!\n\nion.\n\n. wef\n\nv7) a= *-\n\nFe\n\n\u2018Say\n\nWy\n\nSse\n\ni\n\nip \u20184.\n\nee\n\n=\n\n\\\\\n\nSwap the positions of one of your Knights and\n\none of your Rooks.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "holy-quest",
+    "name": "Holy Quest",
+    "points": 7,
+    "unique": false,
+    "image": "/KC14_card1.png",
+    "description": "Swap the positions of a Bishop and a Knight belonging to your opponent.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Holy\n\n\u2014\n\noe\n\nine!\n\ney\n\na ey\n\nNe\n\n=~\n\nie\n\nNY\n\nNY\n\n~\n\nfs\n\nLY,\n\nt\n\ng\n\n44\n\n4\n\nSS\n\n)\n\nFa\n\nSS\n\nKe\n\nSe ASX\n\n\u2014\n\n\u00bb Atay\n\nTP\n\nSwap the positions of a Bishop and a Knight\n\nbelonging to your opponent.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "treason",
+    "name": "Treason",
+    "points": 8,
+    "unique": false,
+    "image": "/KC17_card1.png",
+    "description": "Swap the positions of a Rook and a Knight belonging to your opponent.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Treason\n\na\u201d,\n\n@\n\nP\n\n7\n\nNW\n\n\u00ae SS\n\nMY)\n\n%\n\nAN\n\nZante\n\nwe\u201c\n\n&\n\n\u20ac\n\nab\n\n*),\n\nI Lm\n\nes\n\n\\\n\n\u00ab\n\nAN\n\n;\n\n=\n\na\n\nJ)\n\nSe\n\ne\n\nRY\n\ns 34\n\noh\n\n4\\\\-\n\nhs\n\nfi\n\np |\n\nwy\n\nfy\n\noe\n\nt,%.\n\na\n\nSwap the positions of a Rook and a Knight\n\nbelonging to your opponent.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "onslaught",
+    "name": "Onslaught",
+    "points": 6,
+    "unique": false,
+    "image": "/KC12_card1.png",
+    "description": "Any number of your Pawns which can legally move may all move one square forward. None of them may make a capture.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Onslaught\n\n>\n\nLe\n\nie\n\nen\n\n&\n\na\n\nZN\n\n\\\n\nWw\n\n%\n\na\n\n~\n\nSS\n\n=\n\nWA\n\n7/1) al\n\noa\n\nKR\n\n\\\n\na\n\nBS\n\ntgs\n\n=\n\noe\n\nBh\n\nB\n\nPR\n\n~ NX\n\noe\n\nAny number of your Pawns which can legally\n\nmove may all move one square forward. None of\n\nthem may make a capture.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "long-jump",
+    "name": "Long Jump",
+    "points": 7,
+    "unique": false,
+    "image": "/KC14_card2.png",
+    "description": "Move one of your Knights to any square whose color is different from the one it currently occupies. You cannot capture a piece with this move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Long Jump\n\n>\n\nmee\n\n\u2018i\n\n1\n\n4\n\nf\n\nA\n\nSs j\n\nae\n\ni\n\nMove one of your Knights to any square whose\n\ncolor is different from the one it currently\n\noccupies. You cannot capture a piece with this\n\nmove.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "dubbing",
+    "name": "Dubbing",
+    "points": 4,
+    "unique": false,
+    "image": "/KC5_card1.png",
+    "description": "For this turn, one of your pieces may move as if it were a Knight. You cannot capture a piece with this move.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "pene ie ,\n\nge\n\n=\n\noe\n\n4\n\noe\n\nae\n\n\u2014\n\n|\n\noad\n\nCL\n\nFor this turn, one of your pieces may move as if it\n\nwere a Knight. You cannot capture a piece with\n\nthis move.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "earthquake",
+    "name": "Earthquake",
+    "points": 4,
+    "unique": false,
+    "image": "/KC5_card2.png",
+    "description": "Turn the chessboard 90 degrees in any direction. Pawns move away from their owner, any in the new last rank is promoted, your opponent promoting first. Pawns in the first rank can move one or two squares forward. If undone, the rotation is reversed with the same rules.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": true,
+    "ocr": "Earthquake\n\n>\n\nox\n\nMY\n\nv4\n\ntt\n\nvy\n\ndp\n\nps\n\n5\n\n4\n\n~\n\noa\n\nii\n\nZt,\n\n=)\n\njag\n\n7)\n\n4 ia\n\n\"\n\nNeus\n\nGY\n\n|\n\nSe\n\nae\n\n.F\n\nPN\n\nse, 3!\n\n=.\n\noo \\ a\n\n(ze\n\nby\n\nTurn the chessboard 90 degrees in any direction.\n\nPawns move away from their owner, any in the\n\nnew last rank is promoted, your opponent\n\npromoting first. Pawns in the first rank can move\n\none or two squares forward. If undone, the\n\nrotation is reversed with the same rules.\n\nApplies: Until the end of the game.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "figure-dance",
+    "name": "Figure Dance",
+    "points": 4,
+    "unique": false,
+    "image": "/KC5_card3.png",
+    "description": "Move every piece on a corner square one corner counterclockwise. Pawns reaching their last rank are promoted.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Figure Dance\n\n>\n\nA.\n\nSS\n\nY}\n\nx\n\nEach piece in any corner of the chessboard moves\n\ncounterclockwise to the next corner. These moves\n\nhappen at the same time; no pieces are captured,\n\nPawns which reach the last rank are promoted.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "squaring-the-circle",
+    "name": "Squaring the Circle",
+    "points": 3,
+    "unique": false,
+    "image": "/KC3_card4.png",
+    "description": "You may play this Card Only when three of the four corners of the chessboard are occupied. Move any one of your pieces to the empty corner.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Squaring the Circle\n\nBe a.\n\nae\n\nez\n\n7\n\nrw\n\niz\n\n& 4}\n\n=\n\nhe\n\n4\n\noh}. \\\n\n~\n\na\n\nhd\n\n\u00bb\n\n,/\n\nFe |\n\nse\n\ntd\n\np\n\nol\n\n&\n\n\u2018es\n\nee 2\n\nTavs\n\nAN\n\na\n\nfp\n\n4\n\nSS\n\nRa, ss\n\nYou may play this Card Only when three of the\n\nfour corners of the chessboard are occupied.\n\nMove any one of your pieces to the empty corner.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "no-quarter",
+    "name": "No Quarter",
+    "points": 4,
+    "unique": false,
+    "image": "/KC5_card4.png",
+    "description": "Play this card after you capture any enemy piece without using a card. The captured piece is now dead and cannot be brought back into play with another card.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "No Quarter\n\njl 2\n\nip 7\n\nvd\n\nSZ\n\n*\n\nuN\n\nIf\n\na,\n\n7\n\nY\n\nw\n\n/ fj\n\nA\n\ni\\\n\n4\n\nVa\n\n\\\n\nah\n\n\\\n\nJ Me\n\nSH\n\na\n\nsy\n\nA\n\n2 /\n\n\u2014]\n\nAS\n\nBa\n\nS\n\nPlay this card after you capture any enemy piece\n\nwithout using a card. The captured piece is now\n\ndead and cannot be brought back into play with\n\nanother card.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "sanctuary",
+    "name": "Sanctuary",
+    "points": 7,
+    "unique": false,
+    "image": "/KC14_card4.png",
+    "description": "Castle with your King and a Rook on the same rank or file, with no pieces between them, regardless of previous moves. The King jumps two squares toward the Rook and the Rook moves beside its starting square.",
+    "timing": [
+      "beforeMove"
+    ],
+    "continuing": false,
+    "ocr": "Sanctuary\n\n4\n\n\u2018.\n\nKS\n\nwy!\n\n\\\n\nvi, 7\n\n~\n\nA, a\n\nan\n\nbe\n\n4 |\n\n\u2014_\u2014\n\noe / Za\n\ntg\n\n\u201cz\n\nNo matter what has happened before this card is\n\nplayed, if your King and one of your Rooks are in\n\nthe same rank or file with no pieces between\n\nthem, you can \"castle\". Move the Rook up to your\n\nKing and then have your King jump over the\n\nRook, to the first square on the other side.\n\nPlay instead of your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "panic",
+    "name": "Panic",
+    "points": 5,
+    "unique": false,
+    "image": "/KC8_card4.png",
+    "description": "Your opponent has 15 seconds to make his next move. If he has not moved within this time, he loses his turn.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Panic\n\n.*\n\n= eS\n\nas\n\ntm\n\nVi\n\na)\n\ni\n\ngf\n\na9\n\n-\n\n\u2018\n\n/\n\n\\\n\n&\n\nif\n\nD:\n\n\\ Ss\n\nSS\n\n|\n\nLa\n\nbas\n\n>\n\n\u2014-\n\nee\n\nBie\n\n~~\n\nYour opponent has 15 seconds to make his next\n\nmove. If he has not moved within this time, he\n\nloses his turn.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  },
+  {
+    "id": "peace-talks",
+    "name": "Peace Talks",
+    "points": 5,
+    "unique": false,
+    "image": "/KC9_card1.png",
+    "description": "Remove any one \"continuing effect\" card from play, placing it in the owner's discard pile. The effect of that card is immediately cancelled. If any piece is left in an illegal situation, its owner must correct the problem on his next move or lose that piece.",
+    "timing": [
+      "afterMove"
+    ],
+    "continuing": false,
+    "ocr": "Peace Talks\n\n>\n\nae\n\n4\n\nve\n\nLrg\n\ngt\n\n\u2014\n\nF\n\nRemove any one \"continuing effect\" card from\n\nplay, placing it in the owner's discard pile. The\n\neffect of that card is immediately cancelled. If any\n\npiece is left in an illegal situation, its owner must\n\ncorrect the problem on his next move or lose that\n\npiece.\n\nPlay after your move.\n",
+    "exit": 0,
+    "diagnostic": ""
+  }
+]

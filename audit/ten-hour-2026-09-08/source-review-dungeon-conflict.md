@@ -1,0 +1,13 @@
+# Dungeon and later movement cards: source review
+
+Conclusion: **Yes, the general conflict rule supports moving the Dungeon-bound piece with a later regular movement card on its owner's following turn, provided that card's own movement conditions are met.** This is an application of explicit general rules backed by a closely analogous official ruling; the inspected sources do not give a Dungeon-specific ruling.
+
+The official rulebook, physical PDF page 2, under **Conflicts**, gives Continuing Effects priority over regular cards. Where both cards have the same status, the later card takes precedence. It also defines a move to include displacement specified by a regular card, so card movement is not exempt from an immobilization prohibition merely because it is not the regular chess move. The Checkmate Rule remains superior to all cards. Source: `official-rulebook.pdf`, page 2.
+
+The official FAQ, physical PDF page 27, explicitly permits ESCAPE! to move a Queen forbidden to move by an earlier FALSE ORDERS. Its reason is that both are non-continuing cards with conflicting effects, and the later card wins. It expressly rejects distinguishing card movement from a regular move, and treats the earlier restriction as relevant despite FALSE ORDERS already having been discarded. This is a direct precedent for overriding a regular card's lingering next-turn immobilization. Source: `official-faq.pdf`, page 27, first question and answer.
+
+Dungeon's inspected artwork (`final_cards/KC13_card3.png`) says to play it after the player's move and has **no Continuing Effect label**. Its text agrees with `cards.md:201-203`: send an opposing non-King to an unoccupied corner and prohibit its owner from moving it on the following turn. On that evidence Dungeon is a regular card, even though one part of its effect lasts into the next turn.
+
+The later movement permissions in `cards.md` are explicit: Dubbing permits one piece to move as a Knight for this turn without capture (lines 65-67); Blessing permits one piece to move diagonally as a Bishop without capture (lines 141-143); Long Jump moves a Knight to a differently colored square without capture (lines 213-215). Applying the general rule, each later regular card can prevail over Dungeon's movement prohibition for the movement it authorizes. The sources do not establish that doing so erases every remaining Dungeon restriction for arbitrary subsequent movement.
+
+Confidence: high in the general precedence rule and FALSE ORDERS analogy; no explicit Dungeon-specific FAQ was inspected or claimed. Scope: only the four permitted card sections, the two specified PDF pages, and Dungeon artwork were read; no engine or test source content was read. Source review only, not an engine audit.

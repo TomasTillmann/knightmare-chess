@@ -1,0 +1,23 @@
+import './movement.js';
+import './haunting-unique-control-domain.js';
+import assert from 'node:assert/strict';
+import {applyAction} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+function act(s:GameState,a:GameAction):GameState{const r=applyAction(s,a);assert.ok(r.ok,JSON.stringify({a,fen:s.fen,error:r.ok?null:r.error}));return r.state;}
+// AUDIT_BASELINE_REQUEST
+{
+ const started=performance.now(); let actions=0;
+ let s=createGameState({fen:'7k/5p2/8/8/8/8/1P6/K7 w - - 0 1',hands:{white:['guardian','haunting-memories'],black:['haunting-memories']}});
+ const step=(a:GameAction)=>{s=act(s,a);actions++;};
+ step({type:'playCard',cardId:'guardian',target:[{from:'b2',to:'b4'}]});
+ step({type:'endTurn'});
+ step({type:'playCard',cardId:'haunting-memories',target:[{from:'f7',to:'f5'}]});
+ step({type:'endTurn'});
+ const before=JSON.stringify(s);
+ const r=applyAction(s,{type:'playCard',cardId:'haunting-memories',target:[{from:'b4',to:'b5'}]});actions++;
+ assert.equal(JSON.stringify(s),before);
+ if(!r.ok)assert.deepEqual(r.state,s);
+ console.log(JSON.stringify({sentinel:'UNIQUE_CHAIN_INDEPENDENT_DONE',groups:1,actions,findings:r.ok?1:0,ms:performance.now()-started,beforeFen:s.fen,afterFen:r.state.fen,error:r.ok?null:r.error,history:r.state.history.slice(-8),scope:'White original Guardian is unique even when copied through Black Haunting Memories'}));
+}
+// AUDIT_FINAL_REQUEST

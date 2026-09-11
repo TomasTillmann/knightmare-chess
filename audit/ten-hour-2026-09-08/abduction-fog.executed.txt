@@ -1,0 +1,18 @@
+import './movement.js';
+import './abduction-recall-control-domain.js';
+import assert from 'node:assert/strict';
+import {applyAction} from '../../src/game/reducer.js';
+import {createGameState} from '../../src/game/state.js';
+import type {GameAction,GameState} from '../../src/game/types.js';
+function act(s:GameState,a:GameAction){const r=applyAction(s,a);assert.ok(r.ok,JSON.stringify({a,error:r.ok?null:r.error}));return r.state;}
+// AUDIT_BASELINE_REQUEST
+{
+  const started=performance.now(); let actions=0;
+  let s=createGameState({fen:'6k1/8/2b5/8/8/8/8/2K5 w - - 0 1',hands:{white:['abduction'],black:['fog-of-war']}});
+  for(const a of [{type:'move',from:'c1',to:'d1'},{type:'playCard',cardId:'abduction',target:'c6'},{type:'revealAbduction'},{type:'abductionTimeout'}] as GameAction[]){s=act(s,a);actions++;}
+  assert.equal(s.pendingAbduction,null);
+  assert.equal(s.pieces.find(p=>p.id==='black-bishop-c6')?.zone,'captured');
+  const r=applyAction(s,{type:'playCard',cardId:'fog-of-war'});actions++;
+  console.log(JSON.stringify({sentinel:'ABDUCTION_FOG_INDEPENDENT_DONE',groups:1,actions,probes:1,findings:r.ok?0:1,ms:performance.now()-started,fogAccepted:r.ok,error:r.ok?null:r.error,cardResponse:!!s.cardResponse,fogCheckpoint:!!s.fogCheckpoint}));
+}
+// AUDIT_FINAL_REQUEST

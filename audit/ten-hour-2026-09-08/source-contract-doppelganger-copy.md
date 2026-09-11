@@ -1,0 +1,22 @@
+# Doppelganger copy-source contract
+
+Direct card wording: Doppelganger moves one non-Pawn piece as the same kind as the opponent's last-moved piece and forbids capture. The heading is at `cards.md:61`; the actual text is at `cards.md:63`. The artwork transcription agrees and adds replacement-move timing (`artwork-ocr.json:697`, image `KC4_card4.png`). Neither text expressly defines copying temporary powers or a merged piece.
+
+Local recommendation: `rules.md:668` explicitly recommends the named/base movement type, excluding temporary powers granted by the preceding move's card unless the source is permanently transformed. This is labeled a recommendation, not a quotation from the publisher. `rules.md:672` separately limits "as if" effects to movement geometry and excludes unrelated status, promotion, castling rights, ownership, and immunity.
+
+Stronger publisher evidence, from `official-faq.pdf` extracted with `pdftotext -layout`:
+
+- Page 12, Specific Cards - B, the question about Bog against a Knight using Masquerade: the answer says Masquerade leaves the Knight's identity intact while changing how it moves, and generalizes that distinction to all cards allowing movement as another piece. This directly supports the identity-versus-temporary-movement distinction; applying it to Doppelganger's source remains an inference.
+- Page 8, Section 2: Specific Pieces, the Doomsayer question about Prince and Crab: the answer treats them as distinct piece names while retaining eligibility under cards naming the original type. This directly identifies Crab as a named transformed kind, rather than merely an ordinary Pawn with a one-move permission.
+- Page 18, Specific Cards - C, the question about continuing effects before Confabulation: effects generally apply to the whole merged piece, but a transformation into a named piece, specifically Crab, applies only to its original component. The same ruling is repeated on page 49.
+- Page 16, Specific Cards - C, the Queen/Knight Confabulation question: Challenge may target its Knight identity, while Riposte's Queen exclusion still protects it. This directly establishes that both component identities matter to card eligibility; it does not expressly prescribe Doppelganger's copied geometry.
+
+The related artwork strengthens those distinctions: Crab makes a Pawn a Crab for the rest of the game, gives a single forward diagonal step, and ends on capture or promotion (`artwork-ocr.json:847`, image `KC7_card1.png`). Confabulation creates a merged piece able to move, capture, and be affected by cards as either component; it lasts until the combined piece is lost (`artwork-ocr.json:501`, image `KC7_card4.png`). Both are continuing effects, so "permanently transformed" in the local recommendation should not be assumed to mean an effect that cannot later end.
+
+Source-derived contract: ordinary temporary movement such as Masquerade does not change the source kind; Crab supplies Crab movement while its transformation applies; a Confabulated source plausibly supplies the movement kinds of both components, including Crab movement only for its Crab component. The first proposition has strong general publisher support. The latter two applications to Doppelganger are reasoned interpretations, not an explicit Doppelganger FAQ answer. The FAQ's Doppelganger mentions on pages 23-24 and 34-35 address moving a King through check, not copied powers.
+
+The permitted production excerpt is consistent in structure with those interpretations: `src/game/reducer.ts:1243` obtains physical components; lines 1256-1258 iterate their roles and query a Crab effect per component; lines 1260-1268 provide a separate Crab movement branch; lines 1279-1281 use each ordinary role's geometry. No generic temporary movement-power lookup appears in this excerpt. This is a static observation only: helper semantics, effect lifecycle, and runtime behavior were not inspected or executed.
+
+Remaining ambiguity: no inspected publisher sentence explicitly states whether Doppelganger copies every Confabulated component, selects only one kind, or how a later transformation of the just-moved source affects copying. The local recommendation also leaves "permanently transformed" imprecise for cancellable continuing transformations. These are contract questions, not demonstrated engine defects.
+
+Review complete. Production inspected only at `src/game/reducer.ts:1200-1295`; no test sources, UI, engine execution, or temporary harnesses were accessed or created. This report is the only file changed.

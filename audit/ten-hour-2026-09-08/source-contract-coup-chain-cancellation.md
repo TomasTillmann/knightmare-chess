@@ -1,0 +1,21 @@
+# Coup chain cancellation source contract
+
+Initial source finding: `cards.md` lines 157–159 define Coup by demoting the current King to a capturable Prince and promoting a selected piece other than a Rook or Queen to King while preserving its standard movement. Lines 129–131 define Peace Talks as immediately cancelling one Continuing Effect; a resulting illegal situation must be corrected by that piece's owner on its next move or the piece is lost. Those clauses alone do not specify whether cancelling one Coup in a chain cancels later Coups. Publisher rulings and the local Coup rule section are being checked for that dependency rule and any captured-Prince protection.
+
+## Verified explicit rules
+
+- `rules.md:447`: the original King becomes a capturable Prince, the replacement retains ordinary movement, and King safety attaches to the replacement. `rules.md:449` forbids Peace Talks cancellation after the Prince is lost when cancellation would leave no King.
+- `rules.md:746–748`: Peace Talks cancels one Continuing Effect; a resulting illegal piece situation has a next-move correction requirement, but immediate illegal King loss remains forbidden.
+- `rules.md:215`: if an effect's initial condition stops being true, the default is suspension rather than discard. An inferred Coup-chain dependency therefore does not by itself justify discarding later Coup cards; the explicit Confabulation ruling is a specific removal exception.
+- Official FAQ, printed pages 19 and 50, repeats one specific dependency: cancelling Confabulation also removes a Coup placed on that composite and restores the Prince to King. If that Prince was captured, both cards are protected from Peace Talks. This is explicit Confabulation→Coup dependency, not a published general statement that cancelling any earlier Coup removes every later Coup.
+- FAQ pages 20–21 and 43–44: Coup suspends earlier Pacifism/Neutrality on its replacement; Rook/Queen promotion suspends Coup and revives applicable suspended effects. Page 20 also demonstrates chronological priority for movement conflicts: Coup overrides an older Paladin's movement, and newer Warlord overrides Coup's movement instruction. These rulings do not directly specify cancellation of a chain of Coups.
+
+## Chain conclusions and limits
+
+The requested pages contain **no explicit ruling for two or more same-player Coups**, nor a first/middle/latest removal algorithm. The local phrase “original King” also does not explicitly identify whether each later Coup snapshots the current royal piece or always refers to the original physical King; the supplied card description uses the current King. Do not label either wholesale cascading cancellation or independent retained-card recalculation as directly mandated by these sources.
+
+A coherent inference is to evaluate remaining effects in chronological order, preserving the latest applicable royal replacement and restoring an earlier Prince only when no surviving later Coup supersedes it. Under that interpretation, deleting the latest Coup returns royalty to the preceding applicable replacement; deleting an earlier or middle Coup does not automatically delete otherwise valid later Coups. This is an inference requiring a specified engine contract, **not an explicit FAQ answer**. Another implementation may model later Coup cards as dependent on the predecessor they demoted; the examined source does not resolve that choice.
+
+Captured-Prince protection is explicit when cancellation would eliminate the player's King, and explicit for the named Confabulation+Coup pair. Extending immunity to every ancestor card of a multi-Coup chain regardless of a surviving valid royal piece is unsupported by these pages. Conversely, restoring a captured predecessor as a new on-board King is not authorized. For cancellation probes, a missing King, two simultaneously royal pieces where only one is authorized, or a resurrected captured piece can be independently suspicious; the precise chain-dependency expectation must remain qualified.
+
+Sources inspected: only the supplied card clauses, narrowly relevant local Coup/Continuing Effect/Peace Talks rule lines, and `official-faq.pdf` printed pages 19, 20, 21, 43, 44, 50. No production or test sources were opened. COUP_CHAIN_SOURCE_DONE.
