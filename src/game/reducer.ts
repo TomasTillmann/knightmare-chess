@@ -4318,8 +4318,13 @@ function capturedBy(state: GameState, piece: PieceState): Color | undefined {
 }
 
 function restoreCapturedPawn(state: GameState, pawn: PieceState, to: SquareName): void {
-  if (!pawn.promoted && pawn.role !== pawn.originalRole && !recentlyCaptured(state, pawn)) {
-    pawn.role = pawn.originalRole;
+  if (!recentlyCaptured(state, pawn)) {
+    if (!pawn.promoted) pawn.role = pawn.originalRole;
+    state.effects = state.effects.filter(effect => {
+      if (!isCrabEffect(effect) || effect.pieceId !== pawn.id) return true;
+      discardEffectCard(state, effect);
+      return false;
+    });
   }
   delete pawn.capturedAtPly;
   delete pawn.capturedBy;
