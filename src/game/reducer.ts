@@ -1560,7 +1560,7 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
   const before = checkpoint.before;
   const attacker = before.pieces.find(piece => piece.zone === 'board' && piece.square === event.from);
   const victim = before.pieces.find(piece => piece.id === event.capturedId && piece.zone === 'board');
-  if (!attacker || !victim || victim.owner !== reactor
+  if (!attacker || !victim || !physicalPieces(before, victim).some(component => component.owner === reactor)
     || !state.pieces.some(piece => piece.id === attacker.id && piece.zone === 'board' && piece.square === event.to)
     || !physicalPieces(before, victim).every(component => state.pieces.some(piece =>
       piece.id === component.id && piece.zone === 'captured' && piece.square === null))) {
