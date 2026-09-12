@@ -1524,8 +1524,11 @@ function hostageCaptureEvent(state: GameState, includeIndirect = false): GameSta
   let event = state.plotsExecution
     ? state.plotsExecution.window.capture ?? (includeIndirect ? state.plotsExecution.window.reaction : undefined)
     : state.history.at(-1);
-  if (event?.type !== 'move' && event?.type !== 'cardPlayed') return undefined;
+  if (event?.type !== 'move' && event?.type !== 'cardPlayed'
+    && !(includeIndirect && event?.type === 'pieceNamed')) return undefined;
   const capture = state.plotsExecution ? state.plotsExecution.window.legacyCapture : state.legacyCapture;
+  if (event.type === 'pieceNamed' && (!capture
+    || (!state.plotsExecution && capture.historyLength !== state.history.length))) return undefined;
   if (includeIndirect && event.type === 'move' && capture
     && (state.plotsExecution || capture.historyLength === state.history.length)) {
     event = { ...event, capturedIds: [...new Set([...(event.capturedIds ?? []), ...capture.pieceIds])] };
@@ -1652,7 +1655,7 @@ function playHostage(state: GameState, target: unknown, cardInstanceId?: unknown
   if (error) return error;
   const event = hostageCaptureEvent(state, true);
   const response = state.plotsExecution ? state.plotsExecution.window.cardResponse : state.cardResponse;
-  const captor = event?.type === 'move'
+  const captor = event?.type === 'move' || event?.type === 'pieceNamed'
     ? returned.capturedBy ?? event.player ?? state.turn.color : event?.player ?? response?.player;
   if (!event || captor !== opposite(reactor)
     || (event.capturedId !== returned.id && !event.capturedIds?.includes(returned.id))) {
@@ -6828,6 +6831,9 @@ function namePiece(
     capturedIds,
     resolvedEffectIds: consumed.map(effect => effect.card.id),
   });
+  if (capturedIds.length) {
+    resolved.legacyCapture = { historyLength: resolved.history.length, pieceIds: capturedIds };
+  }
 
   if (state.pendingDoomsayer && state.pendingRescue) {
     return recordCardTransition(state, settlePendingRescue(state, { ok: true, state: resolved },
