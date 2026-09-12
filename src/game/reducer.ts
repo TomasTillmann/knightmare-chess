@@ -1916,8 +1916,8 @@ function tollMovement(state: GameState): CardMove[] | undefined {
     event = state.history.at(-2);
   }
   if (event?.type === 'move' && event.from && event.to) return [{ from: event.from, to: event.to }];
-  if (event?.type === 'cardPlayed' && event.cardId === 'irresistible-force' && Array.isArray(event.target)) {
-    return event.target as CardMove[];
+  if (event?.type === 'cardPlayed' && (event.copiedCardId ?? event.cardId) === 'irresistible-force') {
+    return event.movement;
   }
   const checkpoint = state.chaosCheckpoint;
   if (event?.type === 'cardPlayed' && ['charge', 'crusade', 'merciless'].includes(event.copiedCardId ?? event.cardId ?? '')
