@@ -86,7 +86,7 @@ test('Masquerade composes with movement effects and rejects pawn-derived or forc
     { effect: { type: 'pacifism', owner: 'white', card: { id: 'effect-pacifism', cardId: 'pacifism' }, pieceId: 'white-knight-d4' }, ok: true },
     { effect: { type: 'truce', owner: 'white', card: { id: 'effect-truce', cardId: 'truce' } }, ok: true },
     { effect: { type: 'forbidden-city', owner: 'white', card: { id: 'effect-forbidden', cardId: 'forbidden-city' }, square: 'd5' }, ok: false },
-    { effect: { type: 'earthquake', owner: 'white', card: { id: 'effect-earthquake', cardId: 'earthquake' }, direction: 'clockwise' }, orientation: 90, ok: true },
+    { effect: { type: 'earthquake', owner: 'white', card: { id: 'effect-earthquake', cardId: 'earthquake' }, direction: 'clockwise' } as unknown as GameState['effects'][number], orientation: 90, ok: true },
   ] as const;
   for (const entry of cases) {
     const state = createGameState({ fen: '7k/8/8/8/3N4/8/8/4K3 w - - 0 1', hands: { white: ['masquerade'] } });

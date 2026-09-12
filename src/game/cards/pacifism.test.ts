@@ -178,7 +178,7 @@ describe('Pacifism targets one controlled non-royal physical piece', () => {
 
 describe('Pacifism with an active Truce Continuing Effect', () => {
   it('can be played without replacing Truce, while preserving the regular move and surviving Truce ending', () => {
-    const truce = { type: 'truce', owner: 'black', card: { id: 'black-truce-0', cardId: 'truce' } };
+    const truce: State['effects'][number] = { type: 'truce', owner: 'black', card: { id: 'black-truce-0', cardId: 'truce' } };
     const before = { ...game({
       fen: '4k3/8/8/8/8/3p4/4P3/4K3 w - - 0 1',
       hands: { white: [CARD], black: [] },

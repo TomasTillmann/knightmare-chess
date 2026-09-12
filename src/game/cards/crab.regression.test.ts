@@ -50,7 +50,7 @@ function validate(state: GameState): void {
   }
   for (const effect of state.effects) {
     assert.ok(effect && typeof effect === 'object')
-    const record = effect as Record<string, unknown>
+    const record = effect as unknown as Record<string, unknown>
     assert.equal(typeof record.type, 'string')
     assert.ok(record.owner === 'white' || record.owner === 'black')
     const card = record.card as { id?: unknown; cardId?: unknown }

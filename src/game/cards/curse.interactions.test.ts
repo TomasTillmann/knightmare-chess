@@ -26,7 +26,7 @@ function step(state: GameState, action: GameAction): GameState {
   return result.state;
 }
 
-function curse(fen = '7k/8/8/3r4/8/8/8/K7 w - - 0 1', black: string[] = [], effects: unknown[] = []): GameState {
+function curse(fen = '7k/8/8/3r4/8/8/8/K7 w - - 0 1', black: string[] = [], effects: GameState['effects'] = []): GameState {
   const state = createGameState({ fen, phase: 'afterMove', moveMade: true,
     hands: { white: ['curse'], black } });
   state.effects = effects;

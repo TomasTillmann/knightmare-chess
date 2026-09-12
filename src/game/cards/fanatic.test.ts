@@ -633,7 +633,7 @@ describe('Fanatic card lifecycle and replacement-move semantics', () => {
       decks: { white: [], black: ['guardian'] },
     });
     const marker = { cardId: 'pacifism', target: 'h7' };
-    const before: State = { ...seeded, effects: [marker] };
+    const before: State = { ...seeded, effects: [marker as unknown as State['effects'][number]] };
     const after = expectOk(play(before));
     assert.deepEqual(after.players.black, before.players.black);
     assert.deepEqual(after.effects, before.effects);

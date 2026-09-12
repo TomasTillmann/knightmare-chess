@@ -241,7 +241,7 @@ test('iteration 172: independent physical, card, geometry and obligation oracle'
       if(n===34){at(expected.pieces,'d7')!.royal=false;at(expected.pieces,'e7')!.royal=true;expected.effects.push({type:'coup',owner:actor,card,princeId:'black-king-e8',kingId:'black-knight-g8',princeRole:'king'});}
       if(n===63)expected.effects.push({type:'vendetta',owner:actor,card});
       if(n===86){at(expected.pieces,'e8')!.royal=true;at(expected.pieces,'e7')!.royal=false;expected.effects=[];player.discard.push({id:'black-hand-2-coup',cardId:'coup'});}
-      if(n===91||n===100){const wall=n===91?{from:'g7',to:'h7'}:{from:'a1',to:'b2'};walls.push(wall);expected.effects.push({type:'fortification',owner:actor,card,...wall});}
+      if(n===91||n===100){const wall: {from:SquareName;to:SquareName}=n===91?{from:'g7',to:'h7'}:{from:'a1',to:'b2'};walls.push(wall);expected.effects.push({type:'fortification',owner:actor,card,...wall});}
       let event: GameEvent={type:'cardPlayed',cardId:id,movement,preservePreviousMove:![21,42,56].includes(n)};
       if(target!==undefined && n!==86)event.target=target as GameEvent['target'];
       if(n===91)event={type:'cardPlayed',cardId:id,target:{from:'g7',to:'h7'}};

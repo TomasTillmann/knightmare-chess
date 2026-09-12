@@ -251,16 +251,16 @@ test('iteration 101 independently verifies every physical transition and complet
         clocks = checkpoint.fen.split(' ').slice(1)
         expected.turn.phase = 'beforeMove'; expected.turn.moveMade = false
       } else if (step === 27) {
-        expected.effects.push({type:'curse',owner,card:{id:action.cardInstanceId,cardId:'curse'},pieceId:'black-queen-d8'})
+        expected.effects.push({type:'curse',owner,card:{id:action.cardInstanceId as string,cardId:'curse'},pieceId:'black-queen-d8'})
       } else if (step === 78) {
         expected.orientation = 90
         for (const [square, role] of [['h2','queen'],['a6','knight']] as const) { at(square).role=role; at(square).promoted=true }
-        expected.effects.push({type:'earthquake',owner,card:{id:action.cardInstanceId,cardId:'earthquake'},direction:'counterclockwise',target:{direction:'counterclockwise',promotions:[{square:'h2',role:'queen'},{square:'a6',role:'knight'}]}})
+        expected.effects.push({type:'earthquake',owner,card:{id:action.cardInstanceId as string,cardId:'earthquake'},direction:'counterclockwise',target:{direction:'counterclockwise',promotions:[{square:'h2',role:'queen'},{square:'a6',role:'knight'}]}})
       } else if (step === 101) {
         assert.ok(geometry(before, at('e4'), 'c2', false))
         assert.equal(at('c2').owner, owner)
         const bishop = at('e4'); bishop.zone='away'; bishop.square=null
-        expected.effects.push({type:'confabulation',owner,card:{id:action.cardInstanceId,cardId:'confabulation'},pieceIds:['white-pawn-c2','white-bishop-f1']})
+        expected.effects.push({type:'confabulation',owner,card:{id:action.cardInstanceId as string,cardId:'confabulation'},pieceIds:['white-pawn-c2','white-bishop-f1']})
         completeMove(false)
       } else {
         const movement: Record<number,[string,string,boolean]> = {7:['e7','h4',false],18:['h4','e7',false],31:['b2','c4',false],45:['f5','h3',false],47:['f3','f6',false],84:['g4','h4',true],99:['d1','a1',false],115:['b7','a7',false]}

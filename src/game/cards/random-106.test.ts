@@ -4,7 +4,7 @@ import test from 'node:test';
 import { replayTrace, type RandomTrace } from './random-campaign.js';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { Color, PieceState, SquareName } from '../types.js';
+import type { Color, GameEffect, PieceState, SquareName } from '../types.js';
 
 // Independently reviewed in order against rules §§8–11, 13.6, 13.11,
 // 14.1, 15.1, 16.2, 18.1, 18.6, 20, 22.5 and printed card metadata.
@@ -256,7 +256,8 @@ test('iteration 106 independently verifies every identity, rule transition, and 
           Object.assign(expected.pieces.find(p => p.id === 'white-pawn-a2')!, { role: 'rook', promoted: true });
           Object.assign(expected.pieces.find(p => p.id === 'black-pawn-h7')!, { role: 'knight', promoted: true });
         } else assert.ok(card.cardId === 'truce' || card.cardId === 'vendetta', label);
-        expected.effects.push(effect);
+        // This trace model assembles the effect fields across the branches above.
+        expected.effects.push(effect as unknown as GameEffect);
       }
     } else assert.fail(`unreviewed action ${action.type}`);
     // This trace has no captures, deaths, absence, replacement identities, or promotions other than Earthquake.

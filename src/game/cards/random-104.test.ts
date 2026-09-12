@@ -132,7 +132,7 @@ const xy = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1
 const distance = (a: string, b: string) => Math.max(...xy(a).map((v, i) => Math.abs(v - xy(b)[i]!)))
 const square = (value: string): SquareName => { assert.match(value, /^[a-h][1-8]$/); return value as SquareName }
 const at = (pieces: PieceState[], s: string) => pieces.find(p => p.zone === 'board' && p.square === s)
-const effectsOf = (state: GameState) => state.effects as Effect[]
+const effectsOf = (state: GameState) => state.effects as (Effect & GameState['effects'][number])[]
 
 function canReach(state: GameState, piece: PieceState, to: string, capture: boolean): boolean {
   if (!piece.square) return false

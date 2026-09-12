@@ -210,7 +210,7 @@ describe('Rebirth interactions', () => {
     const state = game();
     state.orientation = 90;
     const effect = { type: 'earthquake', owner: 'white', card: { id: 'earthquake-card', cardId: 'earthquake' } } as const;
-    state.effects.push(effect);
+    state.effects.push(effect as unknown as (typeof state.effects)[number]);
     state.history.push({ type: 'cardPlayed', cardId: 'earthquake' });
     const priorHistory = structuredClone(state.history);
 

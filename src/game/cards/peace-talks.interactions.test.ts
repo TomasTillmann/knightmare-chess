@@ -16,13 +16,13 @@ const withEffect = (
   const state = createGameState({ hands: { white: ['peace-talks'] }, phase: 'afterMove', moveMade: true });
   const base = { type, owner, card };
   state.effects.push(
-    type === 'pacifism' || type === 'crab'
+    (type === 'pacifism' || type === 'crab'
       ? { ...base, pieceId: `${owner}-pawn-${owner === 'white' ? 'e2' : 'e7'}` }
       : type === 'forbidden-city'
         ? { ...base, square: 'd4' }
         : type === 'confabulation'
           ? { ...base, pieceIds: [`${owner}-knight-${owner === 'white' ? 'b1' : 'b8'}`, `${owner}-bishop-${owner === 'white' ? 'c1' : 'c8'}`] as [string, string] }
-          : base,
+          : base) as unknown as GameState['effects'][number],
   );
   return state;
 };
@@ -50,7 +50,7 @@ test('Peace Talks removes only the targeted duplicate Continuing Effect', () => 
 test('Peace Talks targets list contains only exact Continuing Effect instance ids', () => {
   const state = withEffect('crab');
   state.effects.push({ type: 'panic', owner: 'black', player: 'white', durationMs: 15000 });
-  state.effects.push(null, { type: 'pacifism', owner: 'black' });
+  state.effects.push(null as unknown as GameState['effects'][number], { type: 'pacifism', owner: 'black' } as unknown as GameState['effects'][number]);
   assert.deepEqual(cardPlayTargets(state, 'peace-talks'), ['black-effect-crab']);
   for (const target of ['missing-effect', null, 'black-effect-panic']) {
     const result = peaceTalks(state, target);
@@ -104,7 +104,7 @@ test('Peace Talks reverses the rotation when it cancels Earthquake', () => {
 
 test('Peace Talks can remove a suspended Continuing Effect', () => {
   const state = withEffect('pacifism');
-  (state.effects[0] as Record<string, unknown>).suspended = true;
+  (state.effects[0] as unknown as Record<string, unknown>).suspended = true;
   const result = peaceTalks(state, 'black-effect-pacifism');
   assert.equal(result.ok, true);
   if (result.ok) assert.deepEqual(result.state.effects, []);
@@ -142,7 +142,7 @@ test('Peace Talks cannot cancel Coup when its lost Prince would leave no King', 
   state.effects[0] = {
     type: 'coup', owner: 'white', card: { id: 'white-effect-coup', cardId: 'coup' },
     princeId: 'white-king-e1', kingId: 'white-knight-g1',
-  };
+  } as unknown as GameState['effects'][number];
   const prince = state.pieces.find(piece => piece.id === 'white-king-e1')!;
   prince.zone = 'captured';
   prince.square = null;

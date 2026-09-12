@@ -5,7 +5,7 @@ import { replayTrace, type RandomTrace } from './random-campaign.js';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
-import type { Color, PieceState, SquareName } from '../types.js';
+import type { Color, GameEffect, PieceState, SquareName } from '../types.js';
 
 const trace = JSON.parse(readFileSync(new URL('../../../campaign/iterations/108.json', import.meta.url), 'utf8')) as RandomTrace;
 
@@ -137,7 +137,7 @@ test('iteration 108 independently models every physical state and all 113 action
   const xy = (square: string) => [square.charCodeAt(0) - 97, Number(square[1]) - 1] as const;
   const square = (value: string): SquareName => { assert.match(value, /^[a-h][1-8]$/); return value as SquareName; };
   type Effect = { type: string; owner: Color; card: { id: string; cardId: string }; pieceId: string };
-  const effects = () => expected.effects as Effect[];
+  const effects = () => expected.effects as (Effect & GameEffect)[];
   const pacifist = (p: PieceState) => effects().some(e => e.type === 'pacifism' && e.pieceId === p.id);
   const frozen = (p: PieceState) => !p.royal && effects().some(e => {
     const magnet = expected.pieces.find(q => e.type === 'fatal-attraction' && q.id === e.pieceId && q.square);
@@ -246,7 +246,7 @@ test('iteration 108 independently models every physical state and all 113 action
       switch(step) {
         case 19: case 53: case 98: {
           assert.ok(typeof action.target==='string'); const p=piece(action.target)!; assert.ok(p&&!p.royal);
-          expected.effects.push({type:action.cardId,owner,card,pieceId:p.id});
+          expected.effects.push({type:action.cardId as 'pacifism' | 'fatal-attraction' | 'neutrality',owner,card,pieceId:p.id});
           if(step===98) { assert.equal(p.owner,'white'); assert.equal(p.role,'rook'); p.neutralBeforeEffects=false; p.neutral=true; }
           else assert.equal(p.owner,owner);
           break;

@@ -160,7 +160,7 @@ test('ordinary seeded move preserves prior Earthquake state before seeded Rebirt
     hands: { white: ['rebirth'] }, decks: { white: ['rebirth'] },
   });
   state.orientation = 90;
-  const earthquake = {
+  const earthquake: GameState['effects'][number] = {
     type: 'earthquake', owner: 'white',
     card: { id: 'earthquake-effect', cardId: 'earthquake' },
     direction: 'clockwise', target: { direction: 'clockwise', promotions: [] },

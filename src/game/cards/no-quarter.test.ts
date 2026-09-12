@@ -435,7 +435,7 @@ describe('No Quarter contract', () => {
     assert.ok(victim);
     const before: State = {
       ...moved,
-      effects: [{ retained: true }],
+      effects: [{ retained: true } as unknown as State['effects'][number]],
       enPassant: [{ target: 'd6', pawnId: 'retained-opportunity' }],
     };
     const after = ok(play(before));

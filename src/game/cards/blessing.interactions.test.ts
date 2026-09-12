@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { applyAction } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { GameState, SquareName } from '../types.js';
+import type { GameEffect, GameState, SquareName } from '../types.js';
 
 const fixture = () => createGameState({ fen: '7k/8/8/8/8/8/2N5/K7 w - - 0 1', hands: { white: ['blessing'] } });
 const play = (state: GameState, from: SquareName = 'c2', to: SquareName = 'f5') => applyAction(state, { type: 'playCard', cardId: 'blessing', target: [{ from, to }] });
@@ -27,14 +27,14 @@ test('Blessing may leave Forbidden City', () => {
 
 test('Blessing is noncapturing under Pacifism and preserves its marker', () => {
   const state = fixture();
-  const effect = { type: 'pacifism', owner: 'black', card: { id: 'peace', cardId: 'pacifism' }, pieceId: state.pieces.find(p => p.square === 'c2')!.id };
+  const effect: GameEffect = { type: 'pacifism', owner: 'black', card: { id: 'peace', cardId: 'pacifism' }, pieceId: state.pieces.find(p => p.square === 'c2')!.id };
   state.effects.push(effect);
   assert.deepEqual(moved(state).effects, [effect]);
 });
 
 test('Blessing preserves Crab and its piece identity', () => {
   const state = fixture();
-  const effect = { type: 'crab', owner: 'white', card: { id: 'crab', cardId: 'crab' }, pieceId: state.pieces.find(p => p.square === 'c2')!.id };
+  const effect: GameEffect = { type: 'crab', owner: 'white', card: { id: 'crab', cardId: 'crab' }, pieceId: state.pieces.find(p => p.square === 'c2')!.id };
   state.effects.push(effect);
   assert.deepEqual(moved(state).effects, [effect]);
 });
@@ -77,7 +77,7 @@ test('Blessing diagonal is unchanged by board orientation', () => {
 test('Blessing noncapture remains available under Truce', () => {
   const state = fixture();
   const piece = state.pieces.find(p => p.square === 'c2')!;
-  const effect = { type: 'truce', owner: 'white', card: { id: 'truce', cardId: 'truce' } };
+  const effect: GameEffect = { type: 'truce', owner: 'white', card: { id: 'truce', cardId: 'truce' } };
   state.effects.push(effect);
   const next = moved(state);
   assert.deepEqual(next.pieces.find(p => p.id === piece.id), { ...piece, square: 'f5' });

@@ -85,7 +85,7 @@ test('Evil Eye captures an actual magnet and discards its retained card', () => 
 
 test('Evil Eye leaves its own magnet attached', () => {
   const s = base();
-  const marker = { type: 'fatal-attraction', owner: 'white', card: { id: 'white-magnet', cardId: 'fatal-attraction' }, pieceId: at(s, 'a4').id };
+  const marker: GameState['effects'][number] = { type: 'fatal-attraction', owner: 'white', card: { id: 'white-magnet', cardId: 'fatal-attraction' }, pieceId: at(s, 'a4').id };
   s.effects.push(marker);
   const next = played(s);
   assert.ok(next.effects.some(e => (e as { pieceId: string }).pieceId === marker.pieceId));

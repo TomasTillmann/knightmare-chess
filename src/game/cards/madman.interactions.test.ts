@@ -99,7 +99,7 @@ test('Madman leaves active continuing effects and piece-bound markers untouched'
   const before = game({ fen: '7k/8/8/8/3r4/2P5/8/K7 w - - 0 1' });
   const obstacle = pieceAt(before, 'd4')! as typeof before.pieces[number] & { pacifist?: boolean };
   obstacle.pacifist = true;
-  before.effects.push({ type: 'pacifism', active: true, pieceId: obstacle.id, marker: 'red' });
+  before.effects.push({ type: 'pacifism', active: true, pieceId: obstacle.id, marker: 'red' } as unknown as State['effects'][number]);
   const effects = structuredClone(before.effects);
   const identity = structuredClone(obstacle);
 
@@ -137,7 +137,7 @@ test('Madman composes deterministically after every implemented card/effect', as
         }
         : id === 'vendetta'
           ? { type: id, owner: 'white', card: { id: `white-active-${id}`, cardId: id } }
-        : { type: id, active: true, marker: `${id}-marker` });
+        : { type: id, active: true, marker: `${id}-marker` } as unknown as State['effects'][number]);
     }
     const snapshot = structuredClone(initial);
     const action = {

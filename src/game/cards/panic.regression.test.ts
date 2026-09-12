@@ -59,7 +59,7 @@ test('a legal move consumes only the applicable Panic', () => {
 
 test('seeded illegal actions reject atomically and retain Panic', () => {
   const state = createGameState();
-  const panic = { type: 'panic', owner: 'black', player: 'white', durationMs: 15000 };
+  const panic: GameState['effects'][number] = { type: 'panic', owner: 'black', player: 'white', durationMs: 15000 };
   state.effects = [panic];
   const snapshot = structuredClone(state);
   const next = random(0xbadc0de);

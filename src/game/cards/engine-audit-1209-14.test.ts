@@ -14,7 +14,7 @@ function play(state: GameState, ...actions: GameAction[]): GameState {
 }
 
 function hasEffect(state: GameState, type: string): boolean {
-  return state.effects.some(effect => (effect as Record<string, unknown>).type === type);
+  return state.effects.some(effect => (effect as unknown as Record<string, unknown>).type === type);
 }
 
 test('audit14: Riposte cannot restore a completed Challenge', () => {

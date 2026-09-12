@@ -167,9 +167,9 @@ test("Revenge rejections leave state reusable for a later valid play", () => {
   const target = state.pieces.find((piece) => piece.square === "a2");
   assert.ok(target);
   const protection = [
-    { type: "pacifism", owner: "white", card: { id: "guard", cardId: "pacifism" }, pieceId: target.id },
-    { type: "truce", owner: "white", card: { id: "guard", cardId: "truce" } },
-    { type: "mysticShield", owner: "white", card: { id: "guard", cardId: "mystic-shield" }, pieceId: target.id },
+    { type: "pacifism", owner: "white", card: { id: "guard", cardId: "pacifism" }, pieceId: target.id } as const,
+    { type: "truce", owner: "white", card: { id: "guard", cardId: "truce" } } as const,
+    { type: "mysticShield", owner: "white", card: { id: "guard", cardId: "mystic-shield" }, pieceId: target.id } as unknown as GameState['effects'][number],
   ][Math.floor(random() * 3)];
   state.effects.push(protection);
   invariant(state);

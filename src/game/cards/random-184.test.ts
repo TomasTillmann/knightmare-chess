@@ -283,7 +283,7 @@ test('iteration 184 independent physical, card, history, clocks, royal and oblig
         assert.equal(knight.role, 'knight'); assert.equal(pawn.role, 'pawn');
         assert.ok(geometry(expected.pieces, knight, 'd7', false, false));
         knight.zone = 'away'; knight.square = null;
-        expected.effects.push({ type: id, owner, card, pieceIds: [pawn.id, knight.id] });
+        expected.effects.push({ type: id as 'confabulation', owner, card, pieceIds: [pawn.id, knight.id] });
         complete(false, [knight.id]); event.movement = [{ from: 'f6', to: 'd7' }];
         expected.plotsAllowances![0]!.remaining = 1; expected.plotsAllowances![0]!.eligibleCards = ['black-hand-3-long-jump'];
       } else if (n === 33) {
@@ -292,7 +292,7 @@ test('iteration 184 independent physical, card, history, clocks, royal and oblig
         p.square = 'f5'; complete(false, [p.id]); event.movement = [{ from: 'b8', to: 'f5' }];
       } else if (n === 40) {
         const p = piece('c8'); assert.equal(p.owner, 'black'); assert.equal(p.role, 'bishop');
-        expected.effects.push({ type: id, owner, card, pieceId: p.id });
+        expected.effects.push({ type: id as 'curse', owner, card, pieceId: p.id });
       } else if (n === 56) {
         const p = piece('g2'), victim = piece('f2');
         assert.equal(victim.owner, owner); assert.ok(geometry(expected.pieces, p, 'f2', true, false));
@@ -342,7 +342,7 @@ test('iteration 184 independent physical, card, history, clocks, royal and oblig
       } else if (n === 114) {
         const prince = piece('e1'), king = piece('b3'); assert.equal(king.role, 'pawn');
         prince.royal = false; king.royal = true;
-        expected.effects.push({ type: id, owner, card, princeId: prince.id, kingId: king.id, princeRole: 'king' });
+        expected.effects.push({ type: id as 'coup', owner, card, princeId: prince.id, kingId: king.id, princeRole: 'king' });
       } else throw new Error(`unreviewed card ${n}`);
       const player = expected.players[owner];
       player.hand = player.hand.filter(c => c.id !== card.id);

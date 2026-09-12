@@ -6,7 +6,7 @@ import { makeBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import { applyAction, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { GameState, GameAction, PieceState, Color, SquareName, GameEvent } from '../types.js';
+import type { GameState, GameAction, GameEffect, PieceState, Color, SquareName, GameEvent } from '../types.js';
 import { CARD_CATALOG } from './catalog.js';
 import { type RandomTrace } from './random-campaign.js';
 
@@ -246,7 +246,8 @@ test('random campaign iteration 204', () => {
       if ([14,24,33,100,111].includes(n)) {
         const extra = a.cardId === 'man-trap' || a.cardId === 'forbidden-city' ? {square:a.target}
           : n === 111 ? {pieceId:'black-pawn-d7'} : {};
-        expected.effects.push({type:a.cardId,owner,card:physical,...extra});
+        // The historical trace supplies the card identity and its conditional target fields.
+        expected.effects.push({type:a.cardId,owner,card:physical,...extra} as unknown as GameEffect);
         if (n === 111) Object.assign(at(expected,'f3')!,{neutral:true,neutralBeforeEffects:false});
       }
       if (n === 51) { assert.deepEqual(a.target,{pieceId:'black-pawn-e7',to:'b7'}); const p=expected.pieces.find(p=>p.id==='black-pawn-e7')!; assert.equal(p.zone,'captured'); assert.equal(at(expected,'b7'),undefined); p.zone='board'; p.square='b7'; delete p.capturedBy; }

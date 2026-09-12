@@ -239,7 +239,7 @@ const confabulations = (state: GameState) => state.effects.filter((effect): effe
   card: { id: string; cardId: string };
   pieceIds: [string, string];
 } => {
-  const value = effect as Record<string, unknown>;
+  const value = effect as unknown as Record<string, unknown>;
   return value?.type === "confabulation";
 });
 

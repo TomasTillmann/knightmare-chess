@@ -5,7 +5,7 @@ import { replayTrace, rejectPendingCancellation, type RandomTrace } from './rand
 import { applyAction, cardPlayTargets, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
 import { CARD_CATALOG } from './catalog.js';
-import type { Color, GameAction, GameEvent, GameState, PieceState, SquareName } from '../types.js';
+import type { Color, EarthquakeTarget, GameAction, GameEvent, GameState, PieceState, SquareName } from '../types.js';
 
 // Read in order against rules §§8–15,17,19–22 and the printed catalog timing.
 const reasons = `
@@ -281,7 +281,7 @@ test('iteration 194 independently reviewed full physical, card, turn, FEN and ro
       const event:GameEvent={type:'cardPlayed',cardId:card.cardId,target:action.target as GameEvent['target'],movement:[],preservePreviousMove:expected.turn.moveMade};
       if(n===4){relocate('a6','a5',owner);relocate('h8','a6',owner);relocate('a5','h8',owner);rights='KQhq';event.movement=[{from:'a6',to:'h8'},{from:'h8',to:'a6'}];}
       else if(n===19){expected.orientation=90;for(const [square,role] of [['a7','rook'],['h2','queen']] as const){at(expected,square)!.role=role;at(expected,square)!.promoted=true;}
-        expected.effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:action.target});}
+        expected.effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:action.target as EarthquakeTarget});}
       else if(n===20 || n===27){delete event.target;event.player=owner;event.preservePreviousMove=true;
         expected.plotsAllowances=[{player:owner,remaining:2,eligibleCards:n===20?['black-hand-1-think-again']:[],window:{phase:'afterMove',moveMade:true,shieldMove:structuredClone(expected.shieldMove),reaction:structuredClone([...expected.history].reverse().find(e=>e.type==='move'))}}];}
       else if(n===30){restore(29);event.player=owner;delete event.target;event.movement=[{from:'c3',to:'b1'}];
@@ -298,7 +298,7 @@ test('iteration 194 independently reviewed full physical, card, turn, FEN and ro
         expected.shieldMove={player:owner,pieceIds:[p.id],capturedOpponent:!!victim && victim.owner!==owner};
       } else if(n===54 || n===88 || n===92) {
         const p=at(expected,action.target as string)!;assert.ok(p);
-        expected.effects.push({type:card.cardId,owner,card,pieceId:p.id});
+        expected.effects.push({type:card.cardId as 'crab' | 'pacifism' | 'neutrality',owner,card,pieceId:p.id});
         if(n===92){p.neutral=true;p.neutralBeforeEffects=false;}
       } else if(n===57){
         const victims=['white-pawn-h2','black-pawn-g7','black-queen-d8'];

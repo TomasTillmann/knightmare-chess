@@ -4,7 +4,7 @@ import test from 'node:test';
 import { replayTrace, rejectPendingCancellation, type RandomTrace } from './random-campaign.js';
 import { applyAction, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { Color, GameAction, GameState, PieceState, SquareName } from '../types.js';
+import type { Color, CoupEffect, CurseEffect, GameAction, GameState, PieceState, SquareName } from '../types.js';
 
 // Read in order against rules §§8–13, 15.3, 17.1–2, 20–21, 22.3/7 and
 // artwork KC17/1, KC11/1, KC20/4, KC8/3, KC11/3, KC10/4, KC8/1, KC15/2, KC19/2.
@@ -182,8 +182,8 @@ function spend(expected: GameState, owner: Color, cardId: string, instance: stri
   player.hand.push(player.deck.shift()!);
   expected.turn.cardPlays[owner]++;
 }
-const curse = { type: 'curse', owner: 'black', card: { id: 'black-hand-1-curse', cardId: 'curse' }, pieceId: 'white-queen-d1' };
-const coup = { type: 'coup', owner: 'black', card: { id: 'black-hand-0-coup', cardId: 'coup' }, princeId: 'black-king-e8', kingId: 'black-bishop-c8', princeRole: 'king' };
+const curse: CurseEffect = { type: 'curse', owner: 'black', card: { id: 'black-hand-1-curse', cardId: 'curse' }, pieceId: 'white-queen-d1' };
+const coup: CoupEffect = { type: 'coup', owner: 'black', card: { id: 'black-hand-0-coup', cardId: 'coup' }, princeId: 'black-king-e8', kingId: 'black-bishop-c8', princeRole: 'king' };
 function crown(expected: GameState) {
   spend(expected, 'black', 'coup', 'black-hand-0-coup', true);
   expected.pieces.find(p => p.id === 'black-king-e8')!.royal = false;

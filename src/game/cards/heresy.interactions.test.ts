@@ -240,7 +240,7 @@ test('Heresy composes deterministically with every implemented card/effect', asy
       phase: 'afterMove', moveMade: true,
       hands: { white: [HERESY], black: [] },
     });
-    initial.effects.push({ type: id, active: true });
+    initial.effects.push({ type: id, active: true } as unknown as State['effects'][number]);
     initial.history.push({ type: 'cardPlayed', cardId: id });
     const snapshot = structuredClone(initial);
     const action = { type: 'playCard', cardId: HERESY, target: [{ from: 'e2', to: 'd2' }] } as Action;

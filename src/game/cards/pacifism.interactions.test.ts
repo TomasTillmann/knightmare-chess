@@ -55,8 +55,8 @@ const endTurn = (state: GameState) => applied(state, { type: 'endTurn' } as Acti
 const pieceAt = (state: GameState, square: string) =>
   state.pieces.find(piece => piece.zone === 'board' && piece.square === square);
 const effects = (state: GameState) => state.effects.filter(effect =>
-  effect && typeof effect === 'object' && (effect as Effect).type === PACIFISM,
-) as Effect[];
+  effect && typeof effect === 'object' && (effect as unknown as Effect).type === PACIFISM,
+) as unknown as Effect[];
 const nextWhiteTurn = (state: GameState, whiteMove: readonly [string, string], blackMove: readonly [string, string]) =>
   endTurn(move(endTurn(move(state, ...whiteMove)), ...blackMove));
 
@@ -145,7 +145,7 @@ test('Doomsayer excludes a Pacifist but can remove another piece of that type', 
   state = play(move(state, 'h7', 'h6'), 'doomsayer');
   assert.equal(doomsayerTargets(state, 'white', 'pawn').some(piece => piece.id === protectedId), false);
   const victim = pieceAt(state, 'b3')!;
-  const doom = state.effects.find(effect => (effect as Effect).type === 'doomsayer') as Effect;
+  const doom = state.effects.find(effect => (effect as unknown as Effect).type === 'doomsayer') as unknown as Effect;
   const card = doom.card as Effect;
   state = applied(state, {
     type: 'namePiece', speaker: 'white', name: 'pawn',
@@ -293,7 +293,7 @@ test('Pacifism composes deterministically and immutably with every existing card
     const initial = game({ fen: '7k/8/8/8/8/8/R7/4K3 w - - 9 4' });
     initial.history.push({ type: 'cardPlayed', cardId });
     if (CARD_CATALOG[cardId]?.continuing) {
-      initial.effects.push({ type: cardId, owner: 'black', card: { id: `black-active-${cardId}`, cardId } });
+      initial.effects.push({ type: cardId, owner: 'black', card: { id: `black-active-${cardId}`, cardId } } as unknown as GameState['effects'][number]);
     }
     const snapshot = structuredClone(initial);
     const action = { type: 'playCard', cardId: PACIFISM, target: 'a2' } as Action;

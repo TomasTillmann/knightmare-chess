@@ -363,8 +363,8 @@ test('iteration 135 independent physical, card, turn, royal and cancellation ora
       }
     }
     expected.effects = [
-      ...(shield ? [{ type: 'mystic-shield', owner: 'white', player: 'white', pieceId: 'white-pawn-e2' }] : []),
-      ...(vendetta ? [{ type: 'vendetta', owner: 'white', card: { id: 'white-deck-2-vendetta', cardId: 'vendetta' } }] : []),
+      ...(shield ? [{ type: 'mystic-shield', owner: 'white', player: 'white', pieceId: 'white-pawn-e2' } satisfies GameState['effects'][number]] : []),
+      ...(vendetta ? [{ type: 'vendetta', owner: 'white', card: { id: 'white-deck-2-vendetta', cardId: 'vendetta' } } satisfies GameState['effects'][number]] : []),
     ];
     expected.fen = `${placement(expected.pieces)} ${fenSide[0]} ${rights || '-'} - ${half} ${full}`;
     const result = applyAction(actual, action);

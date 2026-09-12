@@ -169,7 +169,7 @@ test('seeded duplicate physical effect IDs and malformed or stale targets reject
     { type: 'pacifism', owner: 'white', card: { id: 'duplicate-effect', cardId: 'pacifism' }, pieceId: 'white-pawn-a2' },
     { type: 'forbidden-city', owner: 'black', card: { id: 'duplicate-effect', cardId: 'forbidden-city' }, square: 'd4' },
     { type: 'crab', owner: 'white', card: { id: 'eligible-effect', cardId: 'crab' }, pieceId: 'white-pawn-b2' },
-    { type: 'pacifism', owner: 'nobody', card: { id: 'malformed-effect', cardId: 'pacifism' }, pieceId: 'white-pawn-c2' },
+    { type: 'pacifism', owner: 'nobody', card: { id: 'malformed-effect', cardId: 'pacifism' }, pieceId: 'white-pawn-c2' } as unknown as GameState['effects'][number],
   ];
   assert.deepEqual(cardPlayTargets(state, 'peace-talks'), ['eligible-effect']);
   const snapshot = structuredClone(state);
@@ -194,10 +194,10 @@ test('cancellation across either owner and suspended state preserves unrelated e
     const targetCard = { id: `${owner}-suspended-pacifism`, cardId: 'pacifism' };
     const unrelatedCard = { id: `${owner}-unrelated-city`, cardId: 'forbidden-city' };
     const unrelated = {
-      type: 'forbidden-city', owner: owner === 'white' ? 'black' : 'white', card: unrelatedCard, square: pick(0x410210 + index, ['d4', 'e5']),
+      type: 'forbidden-city', owner: owner === 'white' ? 'black' : 'white', card: unrelatedCard, square: pick(0x410210 + index, ['d4', 'e5'] as const),
     } as const;
     state.effects = [
-      { type: 'pacifism', owner, card: targetCard, pieceId: `${owner}-pawn-a${owner === 'white' ? '2' : '7'}`, active: false, suspended: true },
+      { type: 'pacifism', owner, card: targetCard, pieceId: `${owner}-pawn-a${owner === 'white' ? '2' : '7'}`, active: false, suspended: true } as unknown as GameState['effects'][number],
       unrelated,
     ];
     const snapshot = structuredClone(state);
@@ -235,7 +235,7 @@ test('Earthquake reversal is canonical and unsafe Coup cancellation cannot expos
   coup.effects = [{
     type: 'coup', owner: 'black', card: { id: 'black-coup', cardId: 'coup' },
     princeId: prince.id, kingId: replacement.id,
-  }];
+  } as unknown as GameState['effects'][number]];
   const staged = applied(coup, { type: 'move', from: 'b1', to: 'c3' });
   const snapshot = structuredClone(staged);
 

@@ -561,7 +561,7 @@ test('royal, capture-immune, Pacifist, shielded, and Truce Pawns are protected',
     }]; }],
     ['mystic shield', (state, pawn) => { state.effects = [{
       type: 'mystic-shield', owner: 'white', card: { id: 's', cardId: 'mystic-shield' }, pieceId: pawn.id,
-    }]; }],
+    } as unknown as GameState['effects'][number]]; }],
     ['truce', (state) => { state.effects = [{
       type: 'truce', owner: 'white', card: { id: 't', cardId: 'truce' },
     }]; }],

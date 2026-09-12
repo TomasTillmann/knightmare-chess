@@ -184,7 +184,7 @@ test('Mystic Shield protects its Pawn from Toll payment', () => {
       owner: 'white',
       card: { id: 'fixture-shield', cardId: 'mystic-shield' },
       pieceId: pawn.id,
-    },
+    } as unknown as GameState['effects'][number],
   ];
   state = apply(state, { type: 'move', from: 'e4', to: 'e5' });
   const targets = cardPlayTargets(state, 'toll');

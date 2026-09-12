@@ -181,7 +181,7 @@ test("29 seeded malformed, stale, and unsafe plays reject atomically", () => {
     },
     () => {
       const state = edge();
-      state.effects.push({ type: "pacifism", target: "a8", active: true });
+      state.effects.push({ type: "pacifism", target: "a8", active: true } as unknown as GameState['effects'][number]);
       return play(edgeMove, state);
     },
     () => {
@@ -202,7 +202,7 @@ test("29 seeded malformed, stale, and unsafe plays reject atomically", () => {
     () => {
       const state = edge();
       const terminal = state.pieces.find((piece) => piece.square === "a8")!;
-      state.effects.push({ type: "mystic-shield", card: { id: "shield", cardId: "mystic-shield" }, pieceId: terminal.id });
+      state.effects.push({ type: "mystic-shield", card: { id: "shield", cardId: "mystic-shield" }, pieceId: terminal.id } as unknown as GameState['effects'][number]);
       return play(edgeMove, state);
     },
     () => {

@@ -178,8 +178,8 @@ test("Fanatic, turn change, black move, and seeded Earthquake preserve history a
 test("inverse Earthquakes restore orientation without disturbing existing effects or history", () => {
   const random = rng(seeds[4]);
   let state = ready("4k3/8/8/8/3P4/8/8/4K3 w - - 7 12", "white", ["earthquake", "earthquake"]);
-  const doomsayer = { type: "doomsayer", owner: "black", card: { id: "old-doomsayer", cardId: "doomsayer" } };
-  const vendetta = { type: "vendetta", owner: "black", card: { id: "old-vendetta", cardId: "vendetta" } };
+  const doomsayer: GameState['effects'][number] = { type: "doomsayer", owner: "black", card: { id: "old-doomsayer", cardId: "doomsayer" } };
+  const vendetta: GameState['effects'][number] = { type: "vendetta", owner: "black", card: { id: "old-vendetta", cardId: "vendetta" } };
   state.effects.push(doomsayer, vendetta);
   state.history.push({ type: "cardPlayed", cardId: "doomsayer" }, { type: "cardPlayed", cardId: "vendetta" });
   const oldHistory = structuredClone(state.history);

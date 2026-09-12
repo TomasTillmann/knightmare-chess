@@ -766,7 +766,7 @@ describe('Guardian malformed actions and atomic rejection', () => {
       fen: '7k/8/8/8/8/8/4P3/K7 w - - 0 1',
       decks: { white: ['fanatic'], black: ['annexation'] },
     });
-    const before: State = { ...seeded, effects: [marker], orientation: 180 };
+    const before: State = { ...seeded, effects: [marker as unknown as State['effects'][number]], orientation: 180 };
     const target = convoy(['e2', 'e1']);
     const after = ok(play(before, target));
     assert.deepEqual(after.history, [{

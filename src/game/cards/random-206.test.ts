@@ -4,7 +4,7 @@ import test from 'node:test';
 import { replayTrace, type RandomTrace } from './random-campaign.js';
 import { applyAction, isKingInCheck, legalDests } from '../reducer.js';
 import { createGameState } from '../state.js';
-import type { Color, GameEvent, PieceState, SquareName } from '../types.js';
+import type { Color, EarthquakeTarget, GameEvent, PieceState, SquareName } from '../types.js';
 import { CARD_CATALOG } from './catalog.js';
 
 // Explicitly reviewed commands and rationales; no rationale is produced from a digest.
@@ -299,7 +299,7 @@ test('random campaign iteration 206: independent physical, timing, card and roya
         const white = at(expected.pieces, 'h2')!, black = at(expected.pieces, 'a7')!;
         assert.equal(white.originalRole, 'pawn'); assert.equal(black.originalRole, 'pawn');
         white.role = 'knight'; white.promoted = true; black.role = 'bishop'; black.promoted = true;
-        expected.effects.push({ type: 'earthquake', owner: actor, card, direction: 'counterclockwise', target: spec.target });
+        expected.effects.push({ type: 'earthquake', owner: actor, card, direction: 'counterclockwise', target: spec.target as EarthquakeTarget });
       }
       if (n === 63) {
         assert.equal(at(expected.pieces, 'e7')!.id, 'black-pawn-f7');

@@ -178,7 +178,7 @@ test('a successful cancellation removes only the selected effect and its exact p
   const state = readyState('black');
   const spentPeaceTalks = state.players.white.hand[0]!;
   const replacement = state.players.white.deck[0]!;
-  const untouched = { type: 'doomsayer', owner: 'white', card: continuingCard('doomsayer', 'doomsayer-2') };
+  const untouched: GameState['effects'][number] = { type: 'doomsayer', owner: 'white', card: continuingCard('doomsayer', 'doomsayer-2') };
   state.effects.push(untouched);
   const before = structuredClone(state);
   const result = play(state);
@@ -276,7 +276,7 @@ test('a missing or stale physical target is rejected atomically', () => {
 
 test('a regular card and malformed target shapes are rejected atomically', () => {
   const regular = readyState();
-  regular.effects[0] = { type: 'panic', owner: 'black', card: continuingCard('panic', 'panic-1') };
+  regular.effects[0] = { type: 'panic', owner: 'black', card: continuingCard('panic', 'panic-1') } as unknown as GameState['effects'][number];
   assertAtomicRejection(regular, 'panic-1', 'INVALID_TARGET');
 
   for (const target of [null, 1, {}, [], { cardInstanceId: 'doomsayer-1' }]) {
@@ -292,7 +292,7 @@ test('an effect with malformed physical-card identity is not targetable', () => 
     { type: 'doomsayer', owner: 'green', card: continuingCard() },
   ]) {
     const state = readyState();
-    state.effects = [effect];
+    state.effects = [effect as unknown as GameState['effects'][number]];
     assert.deepEqual(cardPlayTargets(state, 'peace-talks'), []);
     assertAtomicRejection(state, 'doomsayer-1', 'INVALID_TARGET');
   }
@@ -380,7 +380,7 @@ test('Coup cannot be cancelled after the original Prince is lost', () => {
     card: continuingCard('coup', 'coup-3'),
     princeId: 'black-king-e8',
     kingId: 'black-rook-a8',
-  };
+  } as unknown as GameState['effects'][number];
   const prince = state.pieces.find(piece => piece.id === 'black-king-e8');
   assert.ok(prince);
   prince.zone = 'dead';
@@ -402,7 +402,7 @@ test('cancelling Coup is allowed while restoring the living original King', () =
     card: continuingCard('coup', 'coup-3'),
     princeId: 'black-king-e8',
     kingId: 'black-rook-a8',
-  };
+  } as unknown as GameState['effects'][number];
   const prince = state.pieces.find(piece => piece.id === 'black-king-e8');
   const replacement = state.pieces.find(piece => piece.id === 'black-rook-a8');
   assert.ok(prince && replacement);

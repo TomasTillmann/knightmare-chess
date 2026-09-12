@@ -5,7 +5,7 @@ import { createGameState } from '../state.js';
 
 type State = ReturnType<typeof createGameState>;
 type Action = Parameters<typeof applyAction>[1];
-type Confabulation = { type: 'confabulation'; owner: 'white' | 'black'; card: { id: string }; pieceIds: string[] };
+type Confabulation = Extract<State['effects'][number], { type: 'confabulation' }>;
 const action = (type: string, extra: Record<string, unknown> = {}) => ({ type, ...extra }) as Action;
 const ok = (result: ReturnType<typeof applyAction>): State => {
   assert.equal(result.ok, true, result.ok ? '' : `${result.error.code}: ${result.error.message}`);

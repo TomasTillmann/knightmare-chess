@@ -4,7 +4,7 @@ import test from 'node:test'
 import { replayTrace, type RandomTrace } from './random-campaign.js'
 import { applyAction, isKingInCheck, legalDests } from '../reducer.js'
 import { createGameState } from '../state.js'
-import type { GameAction, GameEvent, GameState, PieceState, Color, SquareName } from '../types.js'
+import type { EarthquakeTarget, GameAction, GameEvent, GameState, PieceState, Color, SquareName } from '../types.js'
 
 // Independently read against rules §§8–14,19 and the fifteen relevant card artworks.
 const rationales = `
@@ -426,7 +426,7 @@ test('iteration 187: every action has an independent semantic oracle and rescue 
         const white=at(expected,'h2')!,black=at(expected,'a7')!
         assert.equal(white.role,'pawn');assert.equal(black.role,'pawn')
         white.role='queen';white.promoted=true;black.role='rook';black.promoted=true
-        expected.effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:copy(action.target)})
+        expected.effects.push({type:'earthquake',owner,card,direction:'counterclockwise',target:copy(action.target) as EarthquakeTarget})
         syncFen(expected);event.movement=[];event.preservePreviousMove=true
       } else if(n===88) {
         const p=at(expected,'c7')!;assert.equal(p.role,'knight');assert.equal(at(expected,'c6'),undefined)

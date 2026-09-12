@@ -167,13 +167,13 @@ describe('Revenge interactions', () => {
   });
 
   for (const [name, effect] of [
-    ['Pacifism', (pieceId: string) => ({
+    ['Pacifism', (pieceId: string): GameState['effects'][number] => ({
       type: 'pacifism',
       owner: 'white',
       card: { id: 'pacifism-effect', cardId: 'pacifism' },
       pieceId,
     })],
-    ['Truce', () => ({
+    ['Truce', (): GameState['effects'][number] => ({
       type: 'truce',
       owner: 'white',
       card: { id: 'truce-effect', cardId: 'truce' },
@@ -183,7 +183,7 @@ describe('Revenge interactions', () => {
       owner: 'white',
       card: { id: 'mystic-shield-effect', cardId: 'mystic-shield' },
       pieceId,
-    })],
+    } as unknown as GameState['effects'][number])],
   ] as const) {
     it(`respects ${name} capture protection`, () => {
       const moved = ordinaryPawnCapture();

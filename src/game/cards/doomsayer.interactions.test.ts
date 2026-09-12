@@ -77,8 +77,8 @@ const pieceAt = (state: State, square: string) =>
 const activeDoomsayers = (state: State): Effect[] => state.effects.filter(effect =>
   Boolean(effect)
   && typeof effect === 'object'
-  && (effect as Effect).type === DOOMSAYER,
-) as Effect[];
+  && (effect as unknown as Effect).type === DOOMSAYER,
+) as unknown as Effect[];
 const effectInstanceId = (effect: Effect) => effect.cardInstanceId
   ?? (effect.card && typeof effect.card === 'object' ? (effect.card as Effect).id : undefined);
 const totalCards = (state: State) => (['white', 'black'] as const).reduce(
@@ -173,7 +173,7 @@ test('Coup suspends Neutrality and excludes the royal Knight from Doomsayer', ()
   state = playDoomsayer(move(state, 'h7', 'h8'));
   assert.equal(pieceAt(state, 'c6')!.neutral, false);
   assert.equal(pieceAt(state, 'c6')!.royal, true);
-  assert.ok(state.effects.some(effect => (effect as Effect).type === 'neutrality'));
+  assert.ok(state.effects.some(effect => (effect as unknown as Effect).type === 'neutrality'));
   for (const speaker of ['white', 'black'] as const) {
     assert.deepEqual(doomsayerTargets(state, speaker, 'knight'), []);
     rejected(speaker === 'white' ? state : declineDoomsayer(state), {

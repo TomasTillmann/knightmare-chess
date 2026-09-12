@@ -77,7 +77,7 @@ test('Truce allows on-board displacement and stays active', () => {
     fen: '7k/8/8/8/4b3/4r3/K3P3/8 w - - 0 1',
     hands: { white: [CARD] },
   })
-  const effect = {
+  const effect: (typeof state.effects)[number] = {
     type: 'truce',
     owner: 'black',
     card: { id: 'black-effect-truce', cardId: 'truce' },
@@ -106,7 +106,7 @@ test('Truce rejects a terminal off-board loss', () => {
     fen: '4b2k/4r3/4P3/8/8/8/8/K7 w - - 0 1',
     hands: { white: [CARD] },
   })
-  const effect = {
+  const effect: (typeof state.effects)[number] = {
     type: 'truce',
     owner: 'black',
     card: { id: 'black-effect-truce', cardId: 'truce' },
@@ -168,7 +168,7 @@ test('Earthquake rotates the entire push direction', () => {
   state.orientation = 90
   const pawn = state.pieces.find((piece) => piece.role === 'pawn' && piece.square === 'd4')!
   const rook = state.pieces.find((piece) => piece.role === 'rook' && piece.square === 'e4')!
-  const effect = {
+  const effect: (typeof state.effects)[number] = {
     type: 'earthquake',
     owner: 'white',
     card: { id: 'white-effect-earthquake', cardId: 'earthquake' },

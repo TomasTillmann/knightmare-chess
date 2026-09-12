@@ -27,9 +27,9 @@ function reject(state: GameState, action: GameAction) {
   assert.deepEqual(state, before);
   assert.deepEqual(result.state, before);
 }
-function marker(state: GameState, type: string, square?: SquareName) {
+function marker(state: GameState, type: 'pacifism' | 'truce', square?: SquareName) {
   state.effects.push({ type, owner: 'black', card: { id: `effect-${type}`, cardId: type },
-    ...(square ? { pieceId: state.pieces.find(piece => piece.square === square)!.id } : {}) });
+    ...(square ? { pieceId: state.pieces.find(piece => piece.square === square)!.id } : {}) } as Extract<GameState['effects'][number], { type: 'pacifism' | 'truce' }>);
 }
 test('Charge cannot be played before the regular move', () => {
   const state = setup();
@@ -69,7 +69,7 @@ test('Charge cannot substitute a different Knight', () => {
   const state = ready(setup('7k/8/8/8/8/8/8/KN4N1 w - - 0 1'));
   reject(state, charge(state, 'g1', 'f3'));
 });
-for (const type of ['pacifism', 'truce']) {
+for (const type of ['pacifism', 'truce'] as const) {
   test(`Charge allows a quiet second move under ${type}`, () => {
     const initial = setup();
     marker(initial, type, type === 'pacifism' ? 'b1' : undefined);

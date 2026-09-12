@@ -12,13 +12,13 @@ function moved(fen = FEN, from: SquareName = 'c1', to: SquareName = 'd2', prepar
   assert.equal(result.ok, true);
   return result.state;
 }
-function pieceEffect(state: GameState, type: string, square: SquareName) {
+function pieceEffect(state: GameState, type: 'pacifism' | 'curse' | 'fatal-attraction' | 'crab', square: SquareName) {
   const piece = state.pieces.find(piece => piece.square === square)!;
   const owner = type === 'curse' ? (piece.owner === 'white' ? 'black' : 'white') : piece.owner;
   state.effects.push({ type, owner, card: { id: `effect-${type}`, cardId: type }, pieceId: piece.id });
 }
-function locationEffect(state: GameState, type: string, location: object) {
-  state.effects.push({ type, owner: 'white', card: { id: `effect-${type}`, cardId: type }, ...location });
+function locationEffect(state: GameState, type: 'forbidden-city' | 'fortification' | 'confabulation', location: { square: SquareName } | { from: SquareName; to: SquareName } | { pieceIds: [string, string] }) {
+  state.effects.push({ type, owner: 'white', card: { id: `effect-${type}`, cardId: type }, ...location } as Extract<GameState['effects'][number], { type: 'forbidden-city' | 'fortification' | 'confabulation' }>);
 }
 function extra(state: GameState, to: SquareName, from: SquareName = 'd2') {
   return applyAction(state, { type: 'playCard', cardId: 'crusade', target: [{ from, to }] });

@@ -175,7 +175,7 @@ function checked(model: GameState, color: Color): boolean {
   const king = model.pieces.find(p => p.royal && p.owner === color && p.zone === 'board');
   if (!king?.square) return false;
   const actor = opposite(color);
-  const challenge = model.effects.find((e): e is { type: string; player: Color; pieceId: string } =>
+  const challenge = model.effects.find((e): e is Extract<GameState['effects'][number], { type: 'challenge' }> =>
     typeof e === 'object' && e !== null && 'type' in e && e.type === 'challenge');
   return model.pieces.some(p => p.zone === 'board' && p.owner === actor
     && !(challenge?.player === actor && challenge.pieceId !== p.id)

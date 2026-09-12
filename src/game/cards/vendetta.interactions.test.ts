@@ -11,7 +11,7 @@ const card = (id: string, cardId = 'vendetta') => ({ id, cardId });
 function game(options: Options = {}): GameState { return createGameState(options); }
 function active(options: Options = {}, extraEffects: unknown[] = []): GameState {
   const state = game(options);
-  return { ...state, effects: [...state.effects, { type: 'vendetta', owner: 'white', card: card('white-v') }, ...extraEffects] };
+  return { ...state, effects: [...state.effects, { type: 'vendetta', owner: 'white', card: card('white-v') }, ...extraEffects as GameState['effects']] };
 }
 function result(state: GameState, action: Action) { return applyAction(state, action); }
 function move(state: GameState, from: string, to: string, promotion?: 'queen' | 'rook' | 'bishop' | 'knight') {
@@ -28,12 +28,12 @@ test('the qualifying capture succeeds and Vendetta remains active', () => {
   if (r.ok) assert.equal(r.state.effects.some(e => (e as { type?: string }).type === 'vendetta'), true);
 });
 test('Pacifism on attacker removes the capture', () => {
-  const base = game({ fen: FEN }); const s = { ...base, effects: [{ type: 'vendetta', owner: 'white', card: card('white-v') }, { type: 'pacifism', owner: 'white', card: card('p', 'pacifism'), pieceId: at(base, 'e2').id }] };
+  const base = game({ fen: FEN }); const s: GameState = { ...base, effects: [{ type: 'vendetta', owner: 'white', card: card('white-v') }, { type: 'pacifism', owner: 'white', card: card('p', 'pacifism'), pieceId: at(base, 'e2').id }] };
   expectExpired(move(s, 'e2', 'e3'));
 });
 test('playing Pacifism on the attacker expires an opponent Vendetta immediately', () => {
   const base = game({ fen: FEN, hands: { white: ['pacifism'], black: [] } });
-  const state = { ...base, effects: [{ type: 'vendetta', owner: 'black', card: card('black-v') }] };
+  const state: GameState = { ...base, effects: [{ type: 'vendetta', owner: 'black', card: card('black-v') }] };
   const before = structuredClone(state);
   const pacifism = state.players.white.hand[0]!;
   const r = result(state, { type: 'playCard', cardId: 'pacifism', cardInstanceId: pacifism.id, target: 'e2' } as Action);
@@ -58,9 +58,9 @@ test('neutral victim is excluded but an opponent-owned neutral victim is include
   const opponent: GameState = { ...base, pieces: base.pieces.map(p => p.square === 'd3' ? { ...p, neutral: true, owner: 'black' as const } : p), effects: [{ type: 'vendetta', owner: 'white', card: card('white-v') }] }; assert.equal(move(opponent, 'e2', 'd3').ok, true);
 });
 test('a neutral mover may capture an opponent', () => { rejected(active({ fen: FEN }), { type: 'move', from: 'e2', to: 'e3' }); const base = game({ fen: FEN }); const s: GameState = { ...active({ fen: FEN }), pieces: base.pieces.map(p => p.square === 'e2' ? { ...p, neutral: true } : p) }; assert.equal(move(s, 'e2', 'd3').ok, true); });
-test('transformed mover still has the capture obligation', () => { const base = game({ fen: '7k/8/8/8/8/2p5/4P3/4K3 w - - 0 1' }); const s = { ...base, pieces: base.pieces.map(p => p.square === 'e2' ? { ...p, role: 'knight' as const } : p), effects: [{ type: 'vendetta', owner: 'white', card: card('white-v') }] }; rejected(s, { type: 'move', from: 'e2', to: 'g1' }); });
+test('transformed mover still has the capture obligation', () => { const base = game({ fen: '7k/8/8/8/8/2p5/4P3/4K3 w - - 0 1' }); const s: GameState = { ...base, pieces: base.pieces.map(p => p.square === 'e2' ? { ...p, role: 'knight' as const } : p), effects: [{ type: 'vendetta', owner: 'white', card: card('white-v') }] }; rejected(s, { type: 'move', from: 'e2', to: 'g1' }); });
 test('multiple Vendetta effects survive a qualifying capture', () => { rejected(active({ fen: FEN }), { type: 'move', from: 'e2', to: 'e3' }); const s = active({ fen: FEN }, [{ type: 'vendetta', owner: 'black', card: card('black-v') }]); const r = move(s, 'e2', 'd3'); assert.equal(r.ok, true); if (r.ok) assert.equal(r.state.effects.filter(e => (e as { type?: string }).type === 'vendetta').length, 2); });
-test('multiple effects discard exact owner cards when no capture exists', () => { const s = game({ fen: '7k/8/8/8/8/8/4P3/4K3 w - - 0 1' }); const w = card('white-v'), b = card('black-v'); const state = { ...s, effects: [{ type: 'vendetta', owner: 'white', card: w }, { type: 'vendetta', owner: 'black', card: b }] }; const r = move(state, 'e2', 'e3'); assert.equal(r.ok, true); if (r.ok) { assert.ok(r.state.players.white.discard.some(c => c.id === w.id)); assert.ok(r.state.players.black.discard.some(c => c.id === b.id)); } });
+test('multiple effects discard exact owner cards when no capture exists', () => { const s = game({ fen: '7k/8/8/8/8/8/4P3/4K3 w - - 0 1' }); const w = card('white-v'), b = card('black-v'); const state: GameState = { ...s, effects: [{ type: 'vendetta', owner: 'white', card: w }, { type: 'vendetta', owner: 'black', card: b }] }; const r = move(state, 'e2', 'e3'); assert.equal(r.ok, true); if (r.ok) { assert.ok(r.state.players.white.discard.some(c => c.id === w.id)); assert.ok(r.state.players.black.discard.some(c => c.id === b.id)); } });
 test('no legal capture lets an ordinary move expire Vendetta with cards in hand', () => { const r = move(active({ fen: '7k/8/8/8/8/8/4P3/4K3 w - - 0 1', hands: { white: ['fanatic'] } }), 'e2', 'e3'); assert.equal(r.ok, true); if (r.ok) { assert.equal(r.state.effects.some(e => (e as { type?: string }).type === 'vendetta'), false); assert.ok(r.state.players.white.discard.some(c => c.id === 'white-v')); } });
 test('self-check pseudo-capture is not legal', () => { const s = active({ fen: '4r1k1/8/8/8/3p4/8/4N3/4K3 w - - 0 1' }); assert.equal(isKingInCheck(s, 'white'), false); assert.equal(legalDests(s).get('e2')?.includes('d4') ?? false, false); expectExpired(move(s, 'e1', 'f1')); });
 test('en passant is a qualifying capture', () => { rejected(active({ fen: '7k/8/8/3pP3/8/8/8/K7 w - d6 0 2' }), { type: 'move', from: 'e5', to: 'e6' }); assert.equal(move(active({ fen: '7k/8/8/3pP3/8/8/8/K7 w - d6 0 2' }), 'e5', 'd6').ok, true); });

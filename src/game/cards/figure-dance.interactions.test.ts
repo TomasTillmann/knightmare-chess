@@ -142,7 +142,7 @@ test('carries neutral, royal, and Pacifism identity with the moved piece', () =>
 
 test('keeps a Forbidden City marker bound to its fixed corner square', () => {
   const state = afterMove('7b/8/8/3k4/8/4K3/8/8 w - - 0 1');
-  const forbiddenCity = {
+  const forbiddenCity: GameState['effects'][number] = {
     type: 'forbidden-city',
     owner: 'black',
     card: { id: 'black-forbidden-city', cardId: 'forbidden-city' },

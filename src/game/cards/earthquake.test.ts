@@ -164,7 +164,7 @@ for (const role of ['queen', 'rook', 'bishop', 'knight'] as const) {
 function reversal(fen = '5P2/8/k7/8/8/7K/8/8 w - - 7 12', owner: Color = 'white'): GameState {
   const state = createGameState({ fen, turn: owner, phase: 'afterMove', moveMade: true, hands: { [owner]: ['peace-talks'] }, decks: { [owner]: ['panic'] } })
   state.orientation = 90
-  state.effects.push({ type: 'earthquake', owner, card: { id: 'rotation', cardId: 'earthquake' }, direction: 'counterclockwise' })
+  state.effects.push({ type: 'earthquake', owner, card: { id: 'rotation', cardId: 'earthquake' }, direction: 'counterclockwise' } as unknown as GameState['effects'][number])
   return state
 }
 
@@ -225,7 +225,7 @@ test('reversal cancels only the selected physical rotation and keeps earlier pro
   const state = reversal('8/8/k7/8/1P6/7K/8/5P2 w - - 7 12')
   state.orientation = 270
   Object.assign(piece(state, 'b4'), { role: 'bishop', promoted: true })
-  state.effects.push({ type: 'earthquake', owner: 'black', card: { id: 'retained', cardId: 'earthquake' }, direction: 'counterclockwise' }, { type: 'earthquake', owner: 'white', card: { id: 'retained2', cardId: 'earthquake' }, direction: 'counterclockwise' })
+  state.effects.push({ type: 'earthquake', owner: 'black', card: { id: 'retained', cardId: 'earthquake' }, direction: 'counterclockwise' } as unknown as GameState['effects'][number], { type: 'earthquake', owner: 'white', card: { id: 'retained2', cardId: 'earthquake' }, direction: 'counterclockwise' } as unknown as GameState['effects'][number])
   const next = cancel(state, [{ square: 'f1', role: 'knight' }])
   assert.ok(next.ok)
   assert.equal(next.state.orientation, 180)
@@ -247,7 +247,7 @@ test('reversal promotion refreshes Neutrality eligibility without discarding its
     const state = reversal()
     const pawn = piece(state, 'f8')
     pawn.neutral = true
-    state.effects.push({ type: 'neutrality', owner: 'white', card: { id: 'neutral', cardId: 'neutrality' }, pieceId: pawn.id, wasNeutral: false })
+    state.effects.push({ type: 'neutrality', owner: 'white', card: { id: 'neutral', cardId: 'neutrality' }, pieceId: pawn.id, wasNeutral: false } as unknown as GameState['effects'][number])
     const result = cancel(state, [{ square: 'f8', role }])
     assert.ok(result.ok)
     assert.equal(piece(result.state, 'f8').neutral, role !== 'queen')

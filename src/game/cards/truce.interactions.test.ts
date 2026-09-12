@@ -71,7 +71,7 @@ test('Truce blocks Doomsayer targets of either owner', () => {
 
 test('Naming a protected piece preserves Doomsayer and all pieces', () => {
   const state = protectedState();
-  const doom = { type: 'doomsayer', owner: 'white', card: { id: 'prior-doom', cardId: 'doomsayer' } };
+  const doom: GameState['effects'][number] = { type: 'doomsayer', owner: 'white', card: { id: 'prior-doom', cardId: 'doomsayer' } };
   state.effects.push(doom);
   const next = act(state, { type: 'namePiece', speaker: 'black', name: 'pawn', losses: [] });
   assert.deepEqual(next.pieces, state.pieces);
@@ -105,7 +105,7 @@ test('Peace Talks cancels Truce and restores capture destinations', () => {
 
 test('Canceling Truce leaves a separate Pacifism protection intact', () => {
   const state = protectedState(undefined, ['peace-talks']);
-  const pacifism = { type: 'pacifism', owner: 'black', card: { id: 'prior-pacifism', cardId: 'pacifism' }, pieceId: 'black-pawn-a2' };
+  const pacifism: GameState['effects'][number] = { type: 'pacifism', owner: 'black', card: { id: 'prior-pacifism', cardId: 'pacifism' }, pieceId: 'black-pawn-a2' };
   state.effects.push(pacifism);
   state.turn.cardPlays.white = 0;
   const next = act(state, { type: 'playCard', cardId: 'peace-talks', target: 'white-hand-0-truce' });
