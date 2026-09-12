@@ -6095,16 +6095,19 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
 export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
   if ((state.outcome || state.pendingAbduction || pendingElfReturn(state)) && cardId !== 'fog-of-war') return [];
   if (state.plotsExecution) return cardPlayTargetsUnchecked(state, cardId);
-  const targets = cardPlayTargetsUnchecked(state, cardId);
+  const targets = new Map(cardPlayTargetsUnchecked(state, cardId).map(target => [JSON.stringify(target), target]));
   for (const allowance of state.plotsAllowances ?? []) {
     if (allowance.remaining <= 0 || state.pendingDoomsayer) continue;
     const card = state.players[allowance.player].hand.find(candidate => candidate.cardId === cardId
       && allowance.eligibleCards.includes(candidate.id));
     if (!card) continue;
     const view = plotsView(state, allowance.player, allowance.window);
-    targets.push(...cardPlayTargetsUnchecked(view, cardId).filter(target => playCard(state, cardId, target, card.id).ok));
+    for (const target of cardPlayTargetsUnchecked(view, cardId)) {
+      const key = JSON.stringify(target);
+      if (targets.has(key) || playCard(state, cardId, target, card.id).ok) targets.set(key, target);
+    }
   }
-  return [...new Map(targets.map(target => [JSON.stringify(target), target])).values()]
+  return [...targets.values()]
     .filter(target => !state.chaosForbidden || playCard(state, cardId, target).ok);
 }
 
