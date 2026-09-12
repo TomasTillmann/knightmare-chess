@@ -5659,6 +5659,10 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
     resolved.turn.cardPlays[state.turn.color] = state.turn.cardPlays[state.turn.color];
     resolved.playedCards.push(...structuredClone((state.playedCards ?? [])
       .slice(checkpoint.before.playedCards?.length ?? 0).filter(card => card.player === state.turn.color)));
+    const occupied = resolved.pieces.filter(piece => piece.zone === 'board').map(piece => piece.square);
+    if (new Set(occupied).size !== occupied.length) {
+      return reject(state, 'ILLEGAL_MOVE', 'The retained card conflicts with the restored move.');
+    }
     syncFen(resolved);
     if (optional.pieces.some(previous => previous.zone !== 'captured'
       && state.pieces.some(current => current.id === previous.id && current.zone === 'captured'))) {
