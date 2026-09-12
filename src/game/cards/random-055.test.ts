@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { replayTrace, type RandomTrace } from './random-campaign.js';
-import { applyAction } from '../reducer.js';
+import { applyAction, isKingInCheck } from '../reducer.js';
 import { createGameState } from '../state.js';
 import type { GameState, PieceState, SquareName } from '../types.js';
 
@@ -61,7 +61,7 @@ const rationales = `
 48. White closes Annexation's replacement turn without an extra ordinary move.
 49. Black's swapped e-pawn captures Rf1 from g2 and promotes to Queen, checking Ke1; the captured rook's right disappears.
 50. Black ends the checking promotion; White receives its escape turn.
-51. e2-e3 cannot answer Qf1's check, so it is only provisional under §11.6 pending an after-move rescue.
+51. e2-e3 cannot answer Qf1's check, so it is provisional under §11.6: after-move Fortification could wall e1-f1 and rescue the King.
 52. Rebirth c5-d7 cannot cure Qf1-e1 check; spend/draw it, restore c5, rewind e3-e2, and restore White's move while keeping its card spent.
 53. Ke1xf1 captures the undefended promoted Queen, escapes check, and revokes White's remaining castling right.
 54. White closes its replacement escape move with Rebirth still spent.
@@ -194,6 +194,14 @@ test('iteration 055: 115 independently reasoned actions and 50 move commands', (
       assert.equal(state.turn.phase, 'afterMove', why);
       assert.equal(state.turn.moveMade, true, why);
       assert.equal(Boolean(state.pendingRescue), step === 51, why);
+      if (step === 51) {
+        const rescue = applyAction(state, { type: 'playCard', cardId: 'fortification', target: { from: 'e1', to: 'f1' } });
+        assert.ok(rescue.ok, why);
+        assert.equal(rescue.state.pendingRescue, null, why);
+        assert.equal(isKingInCheck(rescue.state, 'white'), false, why);
+        assert.equal(at(rescue.state, 'e3')?.id, mover.id, why);
+        assert.ok(applyAction(rescue.state, { type: 'endTurn' }).ok, why);
+      }
     } else if (action.type === 'playCard') {
       const owner = before.turn.color;
       const player = before.players[owner];
