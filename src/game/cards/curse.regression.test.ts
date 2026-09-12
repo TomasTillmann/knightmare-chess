@@ -71,18 +71,22 @@ for (const cardId of ['masquerade', 'blessing']) {
   });
 }
 
-test('later Confabulation grants the unmarked bishop movement alongside a cursed rook', () => {
+test('Curse restricts the whole piece after later Confabulation', () => {
   let state = createGameState({ fen: '7k/7p/8/8/3r1b2/8/P7/K7 w - - 0 1', phase: 'afterMove', moveMade: true, hands: { white: ['curse'], black: ['confabulation'] } });
   state = act(state, { type: 'playCard', cardId: 'curse', target: 'd4' });
+  const marker = state.effects[0] as CurseEffect;
   state = act(state, { type: 'endTurn' });
   state = act(state, { type: 'playCard', cardId: 'confabulation', target: [{ from: 'd4', to: 'f4' }] });
   assert.ok(state.effects.some(effect => (effect as { type?: string }).type === 'confabulation'));
   state = act(state, { type: 'endTurn' });
   state = act(state, { type: 'move', from: 'a2', to: 'a3' });
   state = act(state, { type: 'endTurn' });
-  assert.ok(legalDests(state).get('f4')?.includes('b8'));
+  assert.ok(state.effects.some(effect => (effect as CurseEffect).card?.id === marker.card.id));
   assert.ok(legalDests(state).get('f4')?.includes('e5'));
+  assert.ok(legalDests(state).get('f4')?.includes('d6'));
   assert.ok(!legalDests(state).get('f4')?.includes('f8'));
+  assert.ok(!legalDests(state).get('f4')?.includes('b8'));
+  assert.equal(applyAction(state, { type: 'move', from: 'f4', to: 'b8' }).ok, false);
 });
 
 test('Siege carries a Curse marker with its rook through a swap', () => {
