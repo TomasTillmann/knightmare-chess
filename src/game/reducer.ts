@@ -5660,6 +5660,12 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
     resolved.playedCards.push(...structuredClone((state.playedCards ?? [])
       .slice(checkpoint.before.playedCards?.length ?? 0).filter(card => card.player === state.turn.color)));
     syncFen(resolved);
+    if (optional.pieces.some(previous => previous.zone !== 'captured'
+      && state.pieces.some(current => current.id === previous.id && current.zone === 'captured'))) {
+      const setup = parseFen(resolved.fen).unwrap();
+      setup.halfmoves = 0;
+      resolved.fen = makeFen(setup);
+    }
   } else if (checkpoint.card && choice?.returnCard === false) {
     const execution = resolved.plotsExecution;
     delete resolved.plotsExecution;
