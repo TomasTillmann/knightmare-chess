@@ -833,7 +833,7 @@ function expireVendettaIfBlocked(state: GameState): GameState {
 }
 
 function turnView(state: GameState, color: Color): GameState {
-  const view = structuredClone(state);
+  const view = { ...state };
   if (setupFor(state).turn !== color) view.enPassant = [];
   view.turn = {
     color,
@@ -2348,7 +2348,6 @@ function fizzleCard(
   spendCard(fizzled, cardId, cardInstanceId, true, spendColor);
   if (consumesMove) completeReplacementMove(fizzled, state.turn.color, false);
   fizzled.history.push({ type: 'cardFizzled', cardId, reason });
-  if (cardId !== 'hostage') settleBlockedBeforeMove(fizzled, state.turn.color);
   return { ok: true, state: fizzled };
 }
 
@@ -3687,7 +3686,7 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
   return { ok: true, state: resolved };
 }
 
-function playAbduction(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+function playAbduction(state: GameState, target: unknown, cardInstanceId?: unknown, validateOnly = false): ApplyResult {
   const color = state.turn.color;
   if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card => card.cardId === 'abduction'
@@ -3705,6 +3704,7 @@ function playAbduction(state: GameState, target: unknown, cardInstanceId?: unkno
   const components = physicalPieces(state, piece);
   if (components.some(component => component.royal)) return reject(state, 'WRONG_ROLE', 'Abduction cannot remove a King.');
   if (captureImmune(state, piece)) return reject(state, 'ILLEGAL_MOVE', 'That piece is protected from capture.');
+  if (validateOnly) return { ok: true, state };
   const next = structuredClone(state);
   next.pendingAbduction = {
     phase: 'concealment', player: opposite(color), durationMs: 10000, pieceId: piece.id,
@@ -5223,7 +5223,7 @@ function playCurse(state: GameState, target: unknown, cardInstanceId?: unknown):
   return { ok: true, state: resolved };
 }
 
-function playManTrap(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
+function playManTrap(state: GameState, target: unknown, cardInstanceId?: unknown, validateOnly = false): ApplyResult {
   const color = state.turn.color;
   if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
     || !state.players[color].hand.some(card => card.cardId === 'man-trap'
@@ -5236,6 +5236,7 @@ function playManTrap(state: GameState, target: unknown, cardInstanceId?: unknown
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
   if (!piece) return reject(state, 'INVALID_TARGET', 'The target square is empty.');
   if (piece.owner !== color && !piece.neutral) return reject(state, 'WRONG_OWNER', 'Choose a piece you control.');
+  if (validateOnly) return { ok: true, state };
   const resolved = structuredClone(state);
   const card = spendCard(resolved, 'man-trap', cardInstanceId, false);
   resolved.effects.push({ type: 'man-trap', owner: color, card, square: target as SquareName } satisfies ManTrapEffect);
@@ -6594,6 +6595,9 @@ export function cardPlayTargets(state: GameState, cardId: string): unknown[] {
 }
 
 function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
+  if (['masquerade', 'blessing', 'doppelganger'].includes(cardId)
+    && (state.turn.phase !== 'beforeMove' || state.turn.moveMade
+      || cardAllowanceUsed(state, state.turn.color))) return [];
   if (cardId === 'riposte') {
     const result = playRiposte(state, undefined);
     return result.ok && result.state.history.at(-1)?.type === 'cardPlayed' ? [undefined] : [];
@@ -6660,7 +6664,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
   if (cardId === 'abduction') {
     if (state.outcome) return [];
     return state.pieces.flatMap(piece => piece.zone === 'board' && piece.square
-      && playAbduction(state, piece.square).ok ? [piece.square] : []);
+      && playAbduction(state, piece.square, undefined, true).ok ? [piece.square] : []);
   }
   if (pendingElfReturn(state)) return [];
   if (cardId === 'hidden-passage') {
@@ -6795,7 +6799,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
     });
   }
   if (cardId === 'man-trap') return state.outcome ? [] : state.pieces.flatMap(piece =>
-    piece.zone === 'board' && piece.square && playManTrap(state, piece.square).ok ? [piece.square] : []);
+    piece.zone === 'board' && piece.square && playManTrap(state, piece.square, undefined, true).ok ? [piece.square] : []);
   if (cardId === 'haunting-memories') {
     if (state.outcome) return [];
     return (['white', 'black'] as const).flatMap(player => state.players[player].hand.flatMap(card => {
@@ -6820,10 +6824,16 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
     });
   }
   if (cardId === 'charge' || cardId === 'crusade' || cardId === 'merciless') {
+    if (state.turn.phase !== 'afterMove' || !state.turn.moveMade
+      || cardAllowanceUsed(state, state.turn.color)) return [];
     const mover = additionalMovePiece(state, cardId === 'charge' ? 'knight' : cardId === 'crusade' ? 'bishop' : 'rook');
     if (state.outcome || !mover?.square) return [];
+    const view = turnView(state, state.turn.color);
     return Array.from({ length: 64 }, (_, square) => [{ from: mover.square!, to: makeSquare(square) }])
       .filter(target => {
+        // A self-checking extra move cannot be a target, whatever its fizzle reason.
+        const moved = movePiece(view, { type: 'move', ...target[0] }, 'defer', false, true);
+        if (!moved.ok || moveLeavesRoyalInCheck(moved.state, state.turn.color, physicalPieces(state, mover))) return false;
         const result = playCard(state, cardId, target);
         return result.ok && result.state.history.at(-1)?.type === 'cardPlayed';
       });
@@ -7312,7 +7322,8 @@ function hasAfterMoveRescue(
   // candidate board; a stale target falls back to the complete rescue search.
   if (knownRescues?.some(card => rescues(card.cardId, card.target, card.cardInstanceId))) return true;
   return state.players[color].hand.some(card =>
-    cardPlayTargets(state, card.cardId).some(target => {
+    // Man-Trap only marks a future capture; it cannot remove the current check.
+    card.cardId !== 'man-trap' && cardPlayTargets(state, card.cardId).some(target => {
       if (!rescues(card.cardId, target, card.id)) return false;
       knownRescues?.push({ type: 'playCard', cardId: card.cardId, cardInstanceId: card.id, target });
       return true;
@@ -8202,6 +8213,10 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
   if (!result.ok || !action) return result;
   const event = result.state.history.at(-1);
   const cardId = event?.copiedCardId ?? event?.cardId;
+  // Candidate fizzles cannot escape check; settle only the completed public action.
+  if (action.type === 'playCard' && event?.type === 'cardFizzled' && cardId !== 'hostage') {
+    settleBlockedBeforeMove(result.state, result.state.turn.color);
+  }
   const captured = result.state.pieces.filter(piece => piece.zone === 'captured'
     && (boardCarrier(state, piece.id)
       || state.pendingAbduction?.before.pieces.some(before => before.id === piece.id && before.zone === 'board')));
