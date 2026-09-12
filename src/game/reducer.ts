@@ -5623,13 +5623,15 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
   if (cardAllowanceUsed(state, player)) return reject(state, 'CARD_ALREADY_PLAYED', 'The card allowance is already used.');
   // The existing card snapshot still holds the real move before an optional card.
   const afterCard = state.plotsExecution?.window.fogCheckpoint ?? state.fogCheckpoint;
+  const beforeOptional = afterCard?.before.chaosCheckpoint;
   const optionalMove = afterCard?.player === state.turn.color && afterCard.before.turn.moveMade
-    && afterCard.before.chaosCheckpoint?.historyLength === afterCard.before.history.length
+    && beforeOptional && afterCard.before.history.slice(beforeOptional.historyLength).every(event =>
+      (event.copiedCardId ?? event.cardId) === 'plots-within-plots')
     && state.history.slice(afterCard.historyLength).every(event =>
       (event.copiedCardId ?? event.cardId) === 'plots-within-plots')
     && !['plots-within-plots', 'fog-of-war'].includes(state.history[afterCard.historyLength - 1]?.copiedCardId
       ?? state.history[afterCard.historyLength - 1]?.cardId ?? '')
-    ? afterCard.before.chaosCheckpoint : undefined;
+    ? beforeOptional : undefined;
   const checkpoint = state.chaosCheckpoint ?? (optionalMove && {
     ...optionalMove, card: optionalMove.card ?? afterCard!.card, historyLength: afterCard!.historyLength,
   });
@@ -5658,6 +5660,21 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
     ...(resolved.plotsAllowances ?? []).filter(allowance => allowance.player !== player),
     ...structuredClone(reactorAllowances),
   ];
+  if (optional && afterCard!.before.plotsAllowances?.some(allowance => allowance.player === state.turn.color)) {
+    const retained = choice?.returnCard === false ? state : afterCard!.before;
+    resolved.players[state.turn.color] = structuredClone(retained.players[state.turn.color]);
+    resolved.turn.cardPlays[state.turn.color] = retained.turn.cardPlays[state.turn.color];
+    resolved.plotsAllowances = [
+      ...structuredClone((retained.plotsAllowances ?? []).filter(allowance => allowance.player === state.turn.color)),
+      ...resolved.plotsAllowances.filter(allowance => allowance.player !== state.turn.color),
+    ];
+    resolved.history.push(...structuredClone(retained.history.slice(optionalMove!.historyLength)
+      .filter(event => event.player === state.turn.color)));
+    if (choice?.returnCard !== false) {
+      resolved.playedCards.push(...structuredClone((retained.playedCards ?? [])
+        .slice(checkpoint.before.playedCards?.length ?? 0).filter(card => card.player === state.turn.color)));
+    }
+  }
   if (state.plotsExecution) {
     resolved.plotsExecution = structuredClone(state.plotsExecution);
     if (resolved.plotsExecution.allowanceIndex !== undefined) {
