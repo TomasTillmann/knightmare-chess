@@ -19,6 +19,42 @@ function position(owner:Color,file:'a'|'e'='a',trap=true){
  return act(s,{type:'move',from:v.knight,to:v.trap});
 }
 const rescue=(s:GameState,owner:Color,file:'a'|'e'='a')=>act(s,{type:'playCard',cardId:'hostage',target:{pieceId:knightId(owner),pawn:pawnSquare(owner,file)}});
+const doomKnightId=(owner:Color)=>`${owner}-knight-${owner==='white'?'c3':'c6'}`;
+function doomCapture(owner:Color,immediate=true,withHostage=true){
+ const opponent=owner==='white'?'black':'white',v=views[owner];
+ let s=createGameState({fen:owner==='white'?'7k/8/8/8/8/2N5/P7/7K b - - 0 1':'7k/p7/2n5/8/8/8/8/7K w - - 0 1',hands:{[opponent]:['doomsayer'],[owner]:withHostage?['hostage']:[]}});
+ s=act(s,{type:'move',from:v.opponentKing[0],to:v.opponentKing[1]});s=act(s,{type:'playCard',cardId:'doomsayer'});
+ if(!immediate){s=act(s,{type:'declineDoomsayer'});s=act(s,{type:'endTurn'});}
+ return act(s,{type:'namePiece',speaker:owner,name:'knight',losses:[{effectId:`${opponent}-hand-0-doomsayer`,pieceId:doomKnightId(owner)}]});
+}
+// 12.09.2026: §§19.3, 22.11 allow Hostage after an opponent's resolved Doomsayer capture;
+// immediate responses currently fail INVALID_TIMING and omit the public rescue target.
+for(const owner of ['white','black'] as const){
+ for(const immediate of [true,false]){
+  const window=immediate?'immediate response':'later beforeMove speech';
+  test(`Hostage rescues ${owner} Knight after Doomsayer ${window}`,()=>{
+   const s=doomCapture(owner,immediate),pawn=s.pieces.find(p=>p.square===pawnSquare(owner,'a'))!;
+   const captured=s.pieces.find(p=>p.id===doomKnightId(owner))!;
+   assert.equal(captured.zone,'captured');assert.equal(captured.capturedBy,owner==='white'?'black':'white');
+   const next=act(s,{type:'playCard',cardId:'hostage',target:{pieceId:doomKnightId(owner),pawn:pawnSquare(owner,'a')}});
+   const knight=next.pieces.find(p=>p.id===doomKnightId(owner))!;
+   assert.equal(knight.zone,'board');assert.equal(knight.square,pawnSquare(owner,'a'));assert.equal(knight.owner,owner);
+   assert.equal(next.pieces.find(p=>p.id===pawn.id)!.zone,'captured');assert.equal(next.pieces.find(p=>p.id===pawn.id)!.square,null);
+   assert.equal(next.turn.color,s.turn.color);assert.equal(next.turn.phase,s.turn.phase);assert.equal(next.turn.moveMade,s.turn.moveMade);
+  });
+  test(`${owner} Doomsayer ${window} records opponent capture without Hostage`,()=>{
+   const s=doomCapture(owner,immediate,false),knight=s.pieces.find(p=>p.id===doomKnightId(owner))!;
+   assert.equal(knight.zone,'captured');assert.equal(knight.square,null);assert.equal(knight.owner,owner);
+   assert.equal(knight.capturedBy,owner==='white'?'black':'white');
+   assert.equal(s.turn.color,immediate?(owner==='white'?'black':'white'):owner);
+   assert.equal(s.turn.phase,immediate?'afterMove':'beforeMove');assert.equal(s.turn.moveMade,immediate);
+  });
+ }
+ test(`Hostage offers exact ${owner} immediate Doomsayer rescue target`,()=>{
+  const s=doomCapture(owner);
+  assert.ok(cardPlayTargets(s,'hostage').some(target=>typeof target==='object'&&target!==null&&'pieceId' in target&&'pawn' in target&&target.pieceId===doomKnightId(owner)&&target.pawn===pawnSquare(owner,'a')));
+ });
+}
 // 12.09.2026: §22.11 permits rescue from an opponent's capture during the owner's turn.
 for(const owner of ['white','black'] as const){
  for(const file of ['a','e'] as const)test(`Hostage rescues ${owner} Knight from opponent trap onto ${file} Pawn`,()=>{
