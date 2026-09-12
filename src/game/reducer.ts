@@ -2980,7 +2980,7 @@ function playUnderElfHill(state: GameState, target: unknown, cardInstanceId?: un
   departed.zone = 'away';
   departed.square = null;
   (next.underElfHill ??= []).push({ pieceId: king.id, player: color, returning: false });
-  completeReplacementMove(next, color, king.originalRole === 'pawn' && !king.promoted, [], [king]);
+  completeReplacementMove(next, color, hasUnpromotedPawn(state, king), [], [king]);
   const defender = opposite(color);
   if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(next, defender)) {
     return fizzleCard(state, 'under-elf-hill', 'DIRECT_MATE', cardInstanceId, !isKingInCheck(state, color));
@@ -3318,7 +3318,7 @@ function playHiddenPassage(state: GameState, target: unknown, cardInstanceId?: u
   }
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === king.id)!.square = move.to;
-  completeReplacementMove(resolved, color, king.originalRole === 'pawn' && !king.promoted, [], [king]);
+  completeReplacementMove(resolved, color, hasUnpromotedPawn(state, king), [], [king]);
   expireFatalAttractions(state, resolved);
   const consumesMove = !isKingInCheck(state, color);
   if (moveLeavesRoyalInCheck(resolved, color, [king])) return fizzleCard(state, 'hidden-passage', 'SELF_CHECK', cardInstanceId, consumesMove);
