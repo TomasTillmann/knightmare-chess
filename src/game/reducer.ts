@@ -5652,6 +5652,8 @@ function playChaos(state: GameState, target: unknown, cardInstanceId?: unknown, 
         if (Object.hasOwn(current, key)) Object.assign(piece, { [key]: structuredClone(current[key]) });
         else Reflect.deleteProperty(piece, key);
       }
+      // A retained lifecycle change also retains its placement, even if the square was already null.
+      if (previous.zone !== current.zone) piece.square = current.square;
     }
     resolved.players[state.turn.color] = structuredClone(state.players[state.turn.color]);
     resolved.turn.cardPlays[state.turn.color] = state.turn.cardPlays[state.turn.color];
