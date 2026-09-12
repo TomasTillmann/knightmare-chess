@@ -3104,7 +3104,7 @@ function splitKnightVictims(state: GameState, knight: PieceState): SquareName[] 
   const destinations = legalDests(state, false).get(knight.square) ?? [];
   return state.pieces.flatMap(victim => victim.zone === 'board' && victim.square
     && victim.id !== knight.id
-    && (knight.neutral || victim.neutral || victim.owner !== knight.owner)
+    && (victim.neutral || victim.owner !== state.turn.color)
     && !physicalPieces(state, victim).some(piece => piece.royal)
     && destinations.includes(victim.square) ? [victim.square] : []);
 }
