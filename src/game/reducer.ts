@@ -1571,13 +1571,24 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
   }
   if (cardAllowanceUsed(state, reactor)) return reject(state, 'CARD_ALREADY_PLAYED', 'The card allowance is already used.');
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Riposte takes no target.');
-  const checkpoint = state.chaosCheckpoint;
   const event = reactionEvent(state);
+  const same = (left: unknown, right: unknown) => JSON.stringify(left) === JSON.stringify(right);
+  let captured = state;
+  let checkpoint = captured.chaosCheckpoint;
+  if (state.plotsExecution) {
+    let preceding = state.fogCheckpoint;
+    while ((!checkpoint || checkpoint.card || !same(captured.history[checkpoint.historyLength - 1], event)) && preceding) {
+      captured = preceding.before;
+      checkpoint = captured.chaosCheckpoint;
+      preceding = preceding.plots?.previous;
+    }
+  }
   if (!checkpoint || checkpoint.card || checkpoint.before.turn.moveMade
     || state.turn.phase !== 'afterMove' || !state.turn.moveMade
     || (!state.plotsExecution && checkpoint.historyLength !== state.history.length)
     || event?.type !== 'move' || !event.capturedId || !event.from || !event.to
-    || chaosMovement(checkpoint.before, state) !== checkpoint.movement) {
+    || !same(captured.history[checkpoint.historyLength - 1], event)
+    || chaosMovement(checkpoint.before, captured) !== checkpoint.movement) {
     return reject(state, 'INVALID_TIMING', 'Riposte immediately follows an opposing regular capture.');
   }
   const before = checkpoint.before;
@@ -1598,6 +1609,25 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
   let resolved = structuredClone(state);
   resolved.pieces = structuredClone(before.pieces);
   resolved.effects = structuredClone(before.effects);
+  if (captured !== state) {
+    // Retain independent Plots consequences while reversing only the original capture.
+    resolved.effects = [
+      ...resolved.effects.filter(effect => !captured.effects.some(previous => same(previous, effect))
+        || state.effects.some(current => same(current, effect))),
+      ...structuredClone(state.effects.filter(effect => !captured.effects.some(previous => same(previous, effect)))),
+    ];
+    for (const piece of resolved.pieces) {
+      const previous = captured.pieces.find(candidate => candidate.id === piece.id);
+      const current = state.pieces.find(candidate => candidate.id === piece.id);
+      if (!previous || !current) continue;
+      for (const key of new Set([...Object.keys(previous), ...Object.keys(current)]) as Set<keyof PieceState>) {
+        if (same(previous[key], current[key])) continue;
+        if (Object.hasOwn(current, key)) Object.assign(piece, { [key]: structuredClone(current[key]) });
+        else Reflect.deleteProperty(piece, key);
+      }
+      if (previous.zone !== current.zone) piece.square = current.square;
+    }
+  }
   clearChallenge(resolved, state.turn.color);
   clearCompletedPanic(before, { ok: true, state: resolved });
   resolved.enPassant = [];
