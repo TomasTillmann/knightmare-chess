@@ -6945,6 +6945,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
     );
   }
   if (cardId === 'earthquake') {
+    if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return [];
     return (['clockwise', 'counterclockwise'] as const).flatMap(direction => earthquakeTargets(state, direction));
   }
   if (cardId === 'peace-talks') return peaceTalksTargets(state);
