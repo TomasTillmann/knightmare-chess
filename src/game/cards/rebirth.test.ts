@@ -279,10 +279,11 @@ test("Rebirth preserves physical identity, transformations, promotion state, and
       card: { id: "black-effect-pacifism", cardId: "pacifism" },
       pieceId: source.id,
     });
-    const identity = { ...source, square: "g8" as SquareName };
+    const destination = promoted ? "h5" : "g8";
+    const identity = { ...source, square: destination as SquareName };
     const effects = structuredClone(state.effects);
-    const next = accepted(play(state, [{ from: "d4", to: "g8" }]));
-    assert.deepEqual(pieceAt(next, "g8"), identity);
+    const next = accepted(play(state, [{ from: "d4", to: destination }]));
+    assert.deepEqual(pieceAt(next, destination), identity);
     assert.deepEqual(next.effects, effects);
   }
 });

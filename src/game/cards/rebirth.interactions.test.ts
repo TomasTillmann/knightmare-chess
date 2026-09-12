@@ -90,19 +90,19 @@ describe('Rebirth interactions', () => {
     assert.deepEqual(result.state, before);
   });
 
-  it('uses a promoted pawn\'s original role and preserves its identity and state', () => {
+  it('uses a promoted pawn\'s promoted role and preserves its identity and state', () => {
     const state = game('4k3/8/8/8/3p4/8/4K3/8 w - - 0 1');
     const pawn = state.pieces.find(piece => piece.square === 'd4')!;
     pawn.role = 'queen';
     pawn.promoted = true;
     const before = { ...pawn };
 
-    const result = play(state, 'd4', 'a7');
+    const result = play(state, 'd4', 'd8');
 
     assert.equal(result.ok, true);
     if (result.ok) {
       const moved = result.state.pieces.find(piece => piece.id === pawn.id);
-      assert.deepEqual(moved, { ...before, square: 'a7' });
+      assert.deepEqual(moved, { ...before, square: 'd8' });
       assert.equal(moved?.role, 'queen');
       assert.equal(moved?.promoted, true);
     }
