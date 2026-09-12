@@ -1268,7 +1268,7 @@ export function blessingDests(state: GameState, from: SquareName): SquareName[] 
 function doppelgangerCopy(state: GameState): PieceState | undefined {
   if (state.plotsExecution) {
     const id = state.plotsExecution.window.doppelgangerPieceId;
-    return id ? boardCarrier(state, id) : undefined;
+    return id ? state.pieces.find(piece => piece.id === id) : undefined;
   }
   let movement: CardMove[] | undefined;
   let ordinaryMove = false;
