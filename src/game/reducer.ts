@@ -5454,7 +5454,7 @@ function hauntingCopy(state: GameState, cardInstanceId?: unknown, target?: unkno
         && (cardInstanceId === undefined || card.id === cardInstanceId)))) : undefined;
   const color = legacyOwner ?? ((cardId === 'vulture' || cardId === 'hostage' || cardId === 'fog-of-war') && state.cardResponse
     ? opposite(state.cardResponse.player)
-    : ['bog', 'revenge', 'toll', 'chaos', 'knightmare', 'think-again', 'riposte'].includes(cardId) ? opposite(state.turn.color) : state.turn.color);
+    : ['bog', 'revenge', 'toll', 'chaos', 'knightmare', 'think-again', 'riposte', 'hostage'].includes(cardId) ? opposite(state.turn.color) : state.turn.color);
   const card = state.players[color].hand.find(candidate => candidate.cardId === 'haunting-memories'
     && (cardInstanceId === undefined || candidate.id === cardInstanceId));
   if (!card) return undefined;
