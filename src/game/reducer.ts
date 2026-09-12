@@ -753,7 +753,7 @@ export function legalDests(
         || target.owner !== piece.owner
         || target.zone !== 'board'
         || !target.square
-        || !pieceAttacksSquare(state, piece, target.square, position.board.occupied)
+        || !pieceAttacksSquare(state, piece, target.square, position.board.occupied, state.turn.color)
       ) continue;
       if (moveIsLegal(piece, target.square)) {
         if (stopAfterFirst) return new Map([[piece.square, [target.square]]]);
@@ -1394,7 +1394,7 @@ export function assassinDests(state: GameState, from: SquareName): SquareName[] 
       && victim.square
       && !hasRole(state, victim, 'king')
       && (victim.owner === state.turn.color || victim.neutral)
-      && pieceAttacksSquare(state, mover, victim.square, occupied)
+      && pieceAttacksSquare(state, mover, victim.square, occupied, state.turn.color)
       ? [victim.square]
       : [],
   );
@@ -2071,7 +2071,7 @@ function pieceAttacksSquare(
   controller = piece.owner,
 ): boolean {
   if (!dungeonAllowsMove(state, piece, controller)) return false;
-  if (!challengeAllows(state, [piece], piece.owner)) return false;
+  if (!challengeAllows(state, [piece], controller)) return false;
   const victim = state.pieces.find(candidate =>
     candidate.zone === 'board' && candidate.square === target && candidate.id !== piece.id,
   );
@@ -7225,7 +7225,7 @@ function movePiece(
     const board = setupFor(state).board;
     if (
       promotion !== undefined
-      || !pieceAttacksSquare(state, moving, toName, board.occupied)
+      || !pieceAttacksSquare(state, moving, toName, board.occupied, state.turn.color)
     ) return reject(state, 'ILLEGAL_MOVE', 'That is not a legal chess move.');
 
     const next = structuredClone(state);
