@@ -6875,6 +6875,7 @@ function finishRegularMove(
   allowAfterMoveRescue: boolean | 'defer',
   byCard = false,
   rescueSearch: typeof hasAfterMoveRescue = hasAfterMoveRescue,
+  castlingRook?: PieceState,
 ): ApplyResult {
   refreshCoups(next);
   if (before.pieces.some(piece => {
@@ -6917,7 +6918,7 @@ function finishRegularMove(
     event.movedRoles = [...new Set(movedPieces.flatMap(piece =>
       piece.promoted ? [piece.role] : [piece.role, piece.originalRole]))];
   }
-  if (!challengeAllows(before, movedPieces)) return reject(before, 'ILLEGAL_MOVE', 'Challenge requires moving the named piece.');
+  if (!challengeAllows(before, castlingRook ? [...movedPieces, castlingRook] : movedPieces)) return reject(before, 'ILLEGAL_MOVE', 'Challenge requires moving the named piece.');
   clearChallenge(next, before.turn.color);
   if (allowAfterMoveRescue === 'defer') return { ok: true, state: next };
   if (!moveLeavesRoyalInCheck(next, before.turn.color, movedPieces)) {
@@ -7332,7 +7333,7 @@ function movePiece(
     ...(promotion ? { promotion } : {}),
     ...(captured ? { capturedId: captured.id } : {}),
   });
-  return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch);
+  return finishRegularMove(state, next, [moving], allowAfterMoveRescue, byCard, rescueSearch, castlingRook);
 }
 
 function settlePendingRescue(
