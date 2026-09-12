@@ -694,7 +694,7 @@ export function legalDests(
       false,
       false,
       rescueSearch,
-    ).ok) || (!capturesOnly && Boolean(confabulationForPiece(state, piece.id))
+    ).ok) || (!capturesOnly
       && Boolean(enPassantCapture(state, piece.square!, to))
       && movePiece(state, { type: 'move', from: piece.square!, to, enPassant: false },
         allowAfterMoveRescue, false, false, rescueSearch).ok);
