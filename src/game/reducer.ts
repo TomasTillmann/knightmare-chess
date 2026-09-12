@@ -1642,7 +1642,7 @@ function playHostage(state: GameState, target: unknown, cardInstanceId?: unknown
   if (pawn.owner !== reactor && !pawn.neutral) return reject(state, 'WRONG_OWNER', 'Choose a Pawn you control.');
   if (!hasUnpromotedPawn(state, pawn)) return reject(state, 'WRONG_ROLE', 'Choose an unpromoted original Pawn.');
   const components = physicalPieces(state, pawn);
-  if (components.some(piece => piece.royal) || captureImmune(state, pawn)
+  if (components.some(piece => piece.royal) || captureImmune(state, pawn, captor)
     || forbiddenCitySquares(state).has(pawn.square!)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be exchanged.');
   }
@@ -1859,7 +1859,7 @@ function revengeTargets(state: GameState): SquareName[] {
       && (piece.owner === mover || piece.neutral)
       && revengePawn(piece)
       && !hasRole(state, piece, 'king')
-      && !captureImmune(state, piece)
+      && !captureImmune(state, piece, opposite(mover))
       ? [piece.square]
       : [],
   );
@@ -1883,7 +1883,7 @@ function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown
     return reject(state, 'WRONG_OWNER', "Choose one of your opponent's Pawns.");
   }
   if (!revengePawn(pawn)) return reject(state, 'WRONG_ROLE', 'Revenge can target only a Pawn.');
-  if (hasRole(state, pawn, 'king') || captureImmune(state, pawn)) {
+  if (hasRole(state, pawn, 'king') || captureImmune(state, pawn, reactor)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be captured.');
   }
 
@@ -1954,7 +1954,7 @@ function tollTargets(state: GameState): Array<SquareName | undefined> {
       && (piece.owner === mover || piece.neutral)
       && hasRole(state, piece, 'pawn')
       && !hasRole(state, piece, 'king')
-      && !captureImmune(state, piece)
+      && !captureImmune(state, piece, opposite(mover))
       ? [piece.square]
       : [],
   ).sort((left, right) => parseSquare(left) - parseSquare(right));
@@ -2017,7 +2017,7 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
     return reject(state, 'WRONG_OWNER', "Choose one of your opponent's Pawns.");
   }
   if (!hasRole(state, pawn, 'pawn')) return reject(state, 'WRONG_ROLE', 'Toll can target only a Pawn.');
-  if (hasRole(state, pawn, 'king') || captureImmune(state, pawn)) {
+  if (hasRole(state, pawn, 'king') || captureImmune(state, pawn, reactor)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be captured.');
   }
   const resolved = structuredClone(state);
