@@ -6047,7 +6047,8 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
     const used = state.pieces.filter(piece => {
       const after = result.state.pieces.find(candidate => candidate.id === piece.id);
       return after && (after.square !== piece.square || after.zone !== piece.zone
-        || (cardId === 'evil-eye' && piece.square === effectRecord(target)?.attacker));
+        || (cardId === 'evil-eye' && piece.square === effectRecord(target)?.attacker)
+        || (cardId === 'sanctuary' && piece.square === effectRecord(target)?.rook));
     });
     if (!challengeAllows(state, used)) {
       return reject(state, 'ILLEGAL_MOVE', 'Challenge requires using the named piece.');
