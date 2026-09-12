@@ -2050,8 +2050,8 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
 function settleBlockedBeforeMove(state: GameState, color: Color): void {
   if (state.turn.phase !== 'beforeMove') return;
   if (isOrdinaryCheckmate(state, color)) {
-    state.outcome = { winner: opposite(color), reason: 'checkmate' };
-  } else if (isOrdinaryStalemate(state, color)) {
+    if (!hasTurnEscape(state)) state.outcome = { winner: opposite(color), reason: 'checkmate' };
+  } else if (isOrdinaryStalemate(state, color) && !hasTurnEscape(state)) {
     state.outcome = { reason: 'stalemate' };
   }
 }
