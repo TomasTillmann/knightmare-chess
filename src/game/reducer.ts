@@ -1703,11 +1703,15 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
   if ((!movementCard && move?.type !== 'move') || !move?.from || !move.to || move.promotion) {
     return reject(state, 'INVALID_TIMING', "Bog must immediately follow your opponent's move.");
   }
+  const arrivalVictim = checkpoint?.pieces.find(candidate =>
+    candidate.zone === 'board' && candidate.square === move.from
+    && moved.pieces.some(current => current.id === candidate.id && current.zone === 'captured'));
+  const movementState = arrivalVictim ? checkpoint! : moved;
   const piece = moved.pieces.find(candidate =>
     candidate.zone === 'board' && candidate.square === move.to,
-  );
+  ) ?? arrivalVictim;
   if (!piece || (piece.owner !== mover && !piece.neutral)
-    || !(['rook', 'bishop', 'queen'] as const).some(role => hasRole(moved, piece, role))) {
+    || !(['rook', 'bishop', 'queen'] as const).some(role => hasRole(movementState, piece, role))) {
     return reject(state, 'WRONG_ROLE', 'Bog follows only a Rook, Bishop, or Queen move.');
   }
   if (fireball && (latest?.target !== piece.square || !fireballPieces(moved).some(center => center.id === piece.id))) {
@@ -1751,9 +1755,9 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     spendCard(resolved, fireball.card.cardId, fireball.card.id, true, fireball.player);
     resolved.history = structuredClone(state.history);
   }
-  const before = captured ? checkpoint : undefined;
-  if (captured) {
-    const victim = before?.pieces.find(candidate => candidate.id === captured.id);
+  const before = captured || arrivalVictim ? checkpoint : undefined;
+  if (captured || arrivalVictim) {
+    const victim = before?.pieces.find(candidate => candidate.id === (captured || arrivalVictim)!.id);
     const components = before && victim ? physicalPieces(before, victim) : [];
     if (before && components.length) {
       resolved.pieces = structuredClone(before.pieces);
@@ -1768,7 +1772,7 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
           resolved.players[player].discard = resolved.players[player].discard.filter(entry => entry.id !== card.id);
         }
       }
-    } else {
+    } else if (captured) {
       const restored = resolved.pieces.find(candidate => candidate.id === captured.id)!;
       restored.square = move.to;
       restored.zone = 'board';
@@ -1794,7 +1798,7 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     if (mover === 'black') setup.fullmoves = Math.max(1, setup.fullmoves - 1);
     resolved.fen = makeFen(setup);
   }
-  const movedComponents = physicalPieces(moved, piece);
+  const movedComponents = physicalPieces(movementState, piece);
   completeReplacementMove(resolved, mover,
     movedComponents.some(component => resetsHalfmoveClock(component, Boolean(move.capturedId && first === move.to))),
     [], movedComponents);
