@@ -2971,7 +2971,7 @@ function playUnderElfHill(state: GameState, target: unknown, cardInstanceId?: un
     return reject(state, 'INVALID_TIMING', 'Under Elf Hill replaces the regular move.');
   }
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Under Elf Hill takes no target.');
-  const king = state.pieces.find(piece => piece.owner === color && piece.royal && piece.zone === 'board' && piece.square);
+  const king = state.pieces.find(piece => piece.owner === color && hasRole(state, piece, 'king') && piece.zone === 'board' && piece.square);
   if (!king || !dungeonAllowsMove(state, king, color, true)) return reject(state, 'ILLEGAL_MOVE', 'Your King cannot leave the board.');
   const next = structuredClone(state);
   const departed = next.pieces.find(piece => piece.id === king.id)!;
@@ -3306,7 +3306,7 @@ function playHiddenPassage(state: GameState, target: unknown, cardInstanceId?: u
   const king = state.pieces.find(piece => piece.zone === 'board' && piece.square === move.from);
   if (!king) return reject(state, 'INVALID_TARGET', 'Choose an on-board King.');
   if (king.owner !== color) return reject(state, 'WRONG_OWNER', 'Choose your own King.');
-  if (!king.royal) return reject(state, 'WRONG_ROLE', 'Choose your royal piece.');
+  if (!hasRole(state, king, 'king')) return reject(state, 'WRONG_ROLE', 'Choose your royal piece.');
   if (move.from === move.to || state.pieces.some(piece => piece.zone === 'board' && piece.square === move.to)
     || forbiddenCityBlocksMove(state, move.from, move.to, true)
     || !dungeonAllowsMove(state, king, color, true)
@@ -4548,7 +4548,7 @@ function playManOfStraw(state: GameState, target: unknown, cardInstanceId?: unkn
   if (king.owner !== color || (pawn.owner !== color && !pawn.neutral)) {
     return reject(state, 'WRONG_OWNER', 'Choose your King and a Pawn you control.');
   }
-  if (!king.royal || !manOfStrawPawn(state, pawn)) {
+  if (!hasRole(state, king, 'king') || !manOfStrawPawn(state, pawn)) {
     return reject(state, 'WRONG_ROLE', 'Choose a royal King and a nonroyal unpromoted original Pawn.');
   }
   if (!isRoyalInCheck(state, king)) return reject(state, 'INVALID_TIMING', 'The selected King must be in check.');
@@ -6158,7 +6158,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
       || cardAllowanceUsed(state, state.turn.color)
       || !state.players[state.turn.color].hand.some(card => card.cardId === cardId)) return [];
     return state.pieces.filter(king => king.zone === 'board' && king.square
-      && king.owner === state.turn.color && king.royal && isRoyalInCheck(state, king))
+      && king.owner === state.turn.color && hasRole(state, king, 'king') && isRoyalInCheck(state, king))
       .flatMap(king => state.pieces.filter(pawn => pawn.zone === 'board' && pawn.square && manOfStrawPawn(state, pawn))
         .map(pawn => ({ king: king.square!, pawn: pawn.square! })))
       .filter(target => {
@@ -6203,7 +6203,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
       || cardAllowanceUsed(state, state.turn.color)
       || !state.players[state.turn.color].hand.some(card => card.cardId === cardId)) return [];
     return state.pieces.filter(piece => piece.zone === 'board' && piece.square
-      && piece.owner === state.turn.color && piece.royal).flatMap(king =>
+      && piece.owner === state.turn.color && hasRole(state, piece, 'king')).flatMap(king =>
       Array.from({ length: 64 }, (_, square) => [{ from: king.square!, to: makeSquare(square) }])
         .filter(target => {
           const result = playCard(state, cardId, target);
