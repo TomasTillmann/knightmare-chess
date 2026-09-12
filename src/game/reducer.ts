@@ -1977,6 +1977,14 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
     card.cardId === 'toll' && (cardInstanceId === undefined || card.id === cardInstanceId),
   )!;
   if (target === undefined) {
+    if (!state.pieces.some(piece => piece.zone === 'board' && piece.square
+      && (piece.owner === mover || piece.neutral) && hasRole(state, piece, 'pawn'))) {
+      const resolved = structuredClone(state);
+      spendCard(resolved, 'toll', selected.id, true, reactor);
+      delete resolved.turnCheckpoint;
+      resolved.history.push({ type: 'cardPlayed', cardId: 'toll', player: reactor });
+      return { ok: true, state: resolved };
+    }
     const checkpoint = state.turnCheckpoint;
     if (!checkpoint || !checkpoint.players[reactor].hand.some(card => card.id === selected.id)) {
       return reject(state, 'INVALID_TIMING', 'The canceled turn cannot be reconstructed.');
