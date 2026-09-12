@@ -8301,8 +8301,10 @@ export function applyAction(state: GameState, action: GameAction | null | undefi
   // Resolve exhausted escape resources only after a real own-turn card and any staged-move rollback.
   if (action.type === 'playCard' && next.playedCards?.at(-1)?.player === next.turn.color
     && !next.outcome && !next.pendingRescue && !next.pendingAbduction && !next.pendingDoomsayer
-    && !pendingElfReturn(next) && isKingInCheck(next, next.turn.color) && !hasTurnEscape(next)) {
-    next.outcome = { winner: opposite(next.turn.color), reason: 'checkmate' };
+    && !pendingElfReturn(next)
+    && (isKingInCheck(next, next.turn.color)
+      || !next.turn.moveMade && next.chaosForbidden?.player !== next.turn.color)) {
+    result.state = adjudicateTurn(next);
   }
   return result;
 }
