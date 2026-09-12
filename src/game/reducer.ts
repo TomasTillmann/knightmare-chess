@@ -1912,7 +1912,7 @@ function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown
 function tollMovement(state: GameState): CardMove[] | undefined {
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return undefined;
   let event = state.plotsExecution?.window.reaction ?? state.history.at(-1);
-  if (event?.type === 'cardPlayed' && event.cardId === 'panic') {
+  if (event?.type === 'cardPlayed' && (event.copiedCardId ?? event.cardId) === 'panic') {
     event = state.history.at(-2);
   }
   if (event?.type === 'move' && event.from && event.to) return [{ from: event.from, to: event.to }];
