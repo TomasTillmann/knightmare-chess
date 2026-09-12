@@ -8074,7 +8074,7 @@ function adjudicateTurn(state: GameState): GameState {
     next = expireTruce(next, true);
   }
   const canEscape = hasTurnEscape(next);
-  if (isOrdinaryCheckmate(next, color) && !canEscape) {
+  if (isKingInCheck(next, color) && !canEscape) {
     next.outcome = { winner: opposite(color), reason: 'checkmate' };
   } else if (isOrdinaryStalemate(next, color) && !canEscape) {
     next.outcome = { reason: 'stalemate' };
