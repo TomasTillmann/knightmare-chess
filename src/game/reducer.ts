@@ -456,17 +456,15 @@ function componentHasCrabMovement(state: GameState, pieceId: string): boolean {
   return false;
 }
 
-function curseAllowsMove(state: GameState, piece: PieceState, from: SquareName, to: SquareName, component?: PieceState): boolean {
+function curseAllowsMove(state: GameState, piece: PieceState, from: SquareName, to: SquareName): boolean {
   const source = parseSquare(from);
   const destination = parseSquare(to);
   if (Math.max(Math.abs(squareFile(destination) - squareFile(source)), Math.abs(squareRank(destination) - squareRank(source))) <= 2) return true;
   const components = physicalPieces(state, piece);
-  const merged = confabulationForPiece(state, piece.id);
-  return !state.effects.some((effect, index) => {
+  return !state.effects.some(effect => {
     const record = effectRecord(effect);
-    if (effectKind(effect) !== 'curse' || record?.active === false || record?.suspended === true
-      || !components.some(candidate => candidate.id === record?.pieceId)) return false;
-    return !component || !merged || index > state.effects.indexOf(merged) || record?.pieceId === component.id;
+    return effectKind(effect) === 'curse' && record?.active !== false && record?.suspended !== true
+      && components.some(candidate => candidate.id === record?.pieceId);
   });
 }
 
@@ -2072,7 +2070,7 @@ function pieceAttacksSquare(
   const source = parseSquare(piece.square!);
   const destination = parseSquare(target);
   return physicalPieces(state, piece).some(component => {
-    if (!curseAllowsMove(state, piece, piece.square!, target, component)) return false;
+    if (!curseAllowsMove(state, piece, piece.square!, target)) return false;
     const crab = componentHasCrabMovement(state, component.id);
     const jumping = component.role === 'knight' && !crab;
     if (forbiddenCityBlocksMove(state, piece.square!, target, jumping)) return false;
@@ -2099,7 +2097,7 @@ function componentCanMove(
   allowFriendly: boolean,
 ): boolean {
   if (!carrier.square || carrier.square === to) return false;
-  if (!curseAllowsMove(state, carrier, carrier.square, to, component)) return false;
+  if (!curseAllowsMove(state, carrier, carrier.square, to)) return false;
   const target = state.pieces.find(piece => piece.zone === 'board' && piece.square === to);
   if (
     target
