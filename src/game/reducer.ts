@@ -1551,6 +1551,8 @@ function playRiposte(state: GameState, target: unknown, cardInstanceId?: unknown
   let resolved = structuredClone(state);
   resolved.pieces = structuredClone(before.pieces);
   resolved.effects = structuredClone(before.effects);
+  clearChallenge(resolved, state.turn.color);
+  clearCompletedPanic(before, { ok: true, state: resolved });
   resolved.enPassant = [];
   const restored = parseFen(before.fen).unwrap();
   const completed = parseFen(state.fen).unwrap();
@@ -1743,6 +1745,8 @@ function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): A
     if (before && components.length) {
       resolved.pieces = structuredClone(before.pieces);
       resolved.effects = structuredClone(before.effects);
+      clearChallenge(resolved, mover);
+      clearCompletedPanic(before, { ok: true, state: resolved });
       // Retained cards return with their effects when the distant capture is undone.
       for (const effect of resolved.effects) {
         const card = effectRecord(effectRecord(effect)?.card);
