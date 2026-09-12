@@ -11,7 +11,7 @@ import { CARD_CATALOG } from './catalog.js';
 export interface RandomTrace {
   seed: number;
   maxMoves?: number;
-  digestVersion?: 1 | 2;
+  digestVersion?: 1 | 2 | 3;
   initial: CreateGameOptions;
   steps: Array<{ action: GameAction; expected: string }>;
   moves: number;
@@ -20,9 +20,10 @@ export interface RandomTrace {
   failure?: string;
 }
 
-// Version 1 is only for comparing historical reviewed snapshots.
-export const digest = (state: GameState, version: 1 | 2 = 2): string => createHash('sha256')
-  .update(JSON.stringify(state, (key, value) => version === 1 && key === 'capturedBy' ? undefined : value)).digest('hex');
+// Versions 1 and 2 preserve historical reviewed snapshots; version 3 includes all metadata.
+export const digest = (state: GameState, version: 1 | 2 | 3 = 3): string => createHash('sha256')
+  .update(JSON.stringify(state, (key, value) => (version === 1 && key === 'capturedBy'
+    || version < 3 && (key === 'doppelgangerPieceId' || key === 'doppelgangerMove')) ? undefined : value)).digest('hex');
 
 const unresolved = (state: GameState): boolean => !state.outcome && !!(state.turn.moveMade
   || state.pendingRescue || state.pendingAbduction || state.pendingDoomsayer
@@ -125,7 +126,7 @@ export function replayTrace(trace: RandomTrace, stopBefore?: number): GameState 
   const maxMoves = trace.maxMoves ?? 50;
   checkMoveBound(maxMoves);
   const version = trace.digestVersion ?? 1;
-  assert.ok(version === 1 || version === 2, 'unsupported trace digest version');
+  assert.ok(version === 1 || version === 2 || version === 3, 'unsupported trace digest version');
   let state = createGameState(trace.initial);
   checkState(state);
   for (const [index, step] of trace.steps.entries()) {
@@ -180,7 +181,7 @@ export function generateTrace(
   const initial = { hands: { white: white.slice(0, 5), black: black.slice(0, 5) },
     decks: { white: white.slice(5), black: black.slice(5) } };
   let state = createGameState(initial);
-  const trace: RandomTrace = { seed, maxMoves, digestVersion: 2, initial, steps: [], moves: 0, finalFen: state.fen, sampledCards: {} };
+  const trace: RandomTrace = { seed, maxMoves, digestVersion: 3, initial, steps: [], moves: 0, finalFen: state.fen, sampledCards: {} };
   const lines = [`Seed ${seed}; standard starting board; shuffled catalog house-variant decks (rules §4.3).`,
     'Each row must be independently reviewed against rules.md/cards.md; hashes alone are not an oracle.'];
   for (let index = 0; !state.outcome && (trace.moves < maxMoves || unresolved(state)); index++) {
