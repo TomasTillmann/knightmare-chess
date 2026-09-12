@@ -8,13 +8,10 @@ import type { GameState, SquareName } from './game/types.js';
 
 interface Props {
   state: GameState;
-  targeting: boolean;
-  selectedTarget?: SquareName | null;
   onMove: (from: SquareName, to: SquareName) => boolean;
-  onTarget: (square: SquareName) => void;
 }
 
-export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget }: Props) {
+export function ChessBoard({ state, onMove }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const api = useRef<Api>(null);
   const latest = state.history.at(-1);
@@ -59,12 +56,12 @@ export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget 
       coordinates: true,
       highlight: { custom: checkedRoyals },
       animation: { enabled: true, duration: 180 },
-      draggable: { enabled: !targeting },
+      draggable: { enabled: true },
       selectable: { enabled: true },
-      selected: targeting ? selectedTarget ?? undefined : undefined,
+      selected: undefined,
       movable: {
-        color: targeting ? undefined : 'both',
-        dests: targeting ? new Map() : legalDests(state),
+        color: 'both',
+        dests: legalDests(state),
         free: false,
         showDests: true,
         rookCastle: true,
@@ -85,20 +82,13 @@ export function ChessBoard({ state, targeting, selectedTarget, onMove, onTarget 
     });
     ground.set({ lastMove });
     if (!lastMove) ground.redrawAll();
-  }, [onMove, onTarget, selectedTarget, state, targeting]);
+  }, [onMove, state]);
 
   return (
     <div
       className="cg-wrap"
       data-orientation="white"
       data-testid="chessboard"
-      onClickCapture={event => {
-        if (!targeting) return;
-        const box = event.currentTarget.getBoundingClientRect();
-        const file = Math.min(7, Math.max(0, Math.floor(((event.clientX - box.left) * 8) / box.width)));
-        const rank = 7 - Math.min(7, Math.max(0, Math.floor(((event.clientY - box.top) * 8) / box.height)));
-        onTarget(`${String.fromCharCode(97 + file)}${rank + 1}` as SquareName);
-      }}
       ref={element}
     />
   );
