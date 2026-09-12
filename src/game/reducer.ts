@@ -5363,6 +5363,9 @@ function playIrresistibleForce(state: GameState, target: unknown, cardInstanceId
     }
   }
   const terminal = terminalOffBoard ? chain.at(-1)! : undefined;
+  if (terminal && !dungeonAllowsMove(state, terminal, color, true)) {
+    return reject(state, 'ILLEGAL_MOVE', 'The last piece cannot be pushed off the board.');
+  }
   if (terminal && (captureForbidden(state, mover) || captureImmune(state, terminal))) {
     return reject(state, 'INVALID_TARGET', 'The last piece cannot be taken.');
   }
