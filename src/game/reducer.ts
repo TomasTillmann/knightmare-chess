@@ -1008,19 +1008,22 @@ export function cowardiceDests(state: GameState, from: SquareName): SquareName[]
   ) return [];
 
   const source = parseSquare(from);
-  const [forwardFile, forwardRank] = pawnForward(state, pawn.owner);
   const board = setupFor(state).board;
-  const destinations: SquareName[] = [];
-  for (const distance of [1, 2]) {
-    const file = squareFile(source) - forwardFile * distance;
-    const rank = squareRank(source) - forwardRank * distance;
-    if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
-    const destination = rank * 8 + file;
-    if (board.has(destination)) break;
-    const square = makeSquare(destination);
-    if (!isEnPassantTarget(enPassant, square)) destinations.push(square);
-  }
-  return destinations;
+  return [...new Set(physicalPieces(state, pawn).flatMap(component => {
+    if (component.originalRole !== 'pawn' || component.promoted) return [];
+    const [forwardFile, forwardRank] = pawnForward(state, component.owner);
+    const destinations: SquareName[] = [];
+    for (const distance of [1, 2]) {
+      const file = squareFile(source) - forwardFile * distance;
+      const rank = squareRank(source) - forwardRank * distance;
+      if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
+      const destination = rank * 8 + file;
+      if (board.has(destination)) break;
+      const square = makeSquare(destination);
+      if (!isEnPassantTarget(enPassant, square)) destinations.push(square);
+    }
+    return destinations;
+  }))];
 }
 
 function startingSquares(state: GameState, owner: Color, role: Role): SquareName[] {
@@ -1097,19 +1100,22 @@ export function annexationDests(state: GameState, from: SquareName): SquareName[
   ) return [];
 
   const square = parseSquare(from);
-  const [fileStep, rankStep] = pawnForward(state, pawn.owner);
   const board = setupFor(state).board;
-  const middleFile = squareFile(square) + fileStep;
-  const middleRank = squareRank(square) + rankStep;
-  const targetFile = squareFile(square) + fileStep * 2;
-  const targetRank = squareRank(square) + rankStep * 2;
-  if (
-    middleFile < 0 || middleFile > 7 || middleRank < 0 || middleRank > 7
-    || targetFile < 0 || targetFile > 7 || targetRank < 0 || targetRank > 7
-  ) return [];
-  const middle = middleRank * 8 + middleFile;
-  const target = targetRank * 8 + targetFile;
-  return board.has(middle) || board.has(target) ? [] : [makeSquare(target)];
+  return [...new Set(physicalPieces(state, pawn).flatMap(component => {
+    if (component.originalRole !== 'pawn' || component.promoted) return [];
+    const [fileStep, rankStep] = pawnForward(state, component.owner);
+    const middleFile = squareFile(square) + fileStep;
+    const middleRank = squareRank(square) + rankStep;
+    const targetFile = squareFile(square) + fileStep * 2;
+    const targetRank = squareRank(square) + rankStep * 2;
+    if (
+      middleFile < 0 || middleFile > 7 || middleRank < 0 || middleRank > 7
+      || targetFile < 0 || targetFile > 7 || targetRank < 0 || targetRank > 7
+    ) return [];
+    const middle = middleRank * 8 + middleFile;
+    const target = targetRank * 8 + targetFile;
+    return board.has(middle) || board.has(target) ? [] : [makeSquare(target)];
+  }))];
 }
 
 export function onslaughtDests(state: GameState, from: SquareName): SquareName[] {
@@ -1121,12 +1127,16 @@ export function onslaughtDests(state: GameState, from: SquareName): SquareName[]
   ) return [];
 
   const square = parseSquare(from);
-  const [fileStep, rankStep] = pawnForward(state, pawn.owner);
-  const file = squareFile(square) + fileStep;
-  const rank = squareRank(square) + rankStep;
-  if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
-  const target = rank * 8 + file;
-  return setupFor(state).board.has(target) ? [] : [makeSquare(target)];
+  const board = setupFor(state).board;
+  return [...new Set(physicalPieces(state, pawn).flatMap(component => {
+    if (component.originalRole !== 'pawn' || component.promoted) return [];
+    const [fileStep, rankStep] = pawnForward(state, component.owner);
+    const file = squareFile(square) + fileStep;
+    const rank = squareRank(square) + rankStep;
+    if (file < 0 || file > 7 || rank < 0 || rank > 7) return [];
+    const target = rank * 8 + file;
+    return board.has(target) ? [] : [makeSquare(target)];
+  }))];
 }
 
 export function guardianDests(state: GameState, from: SquareName): SquareName[] {
@@ -1138,19 +1148,22 @@ export function guardianDests(state: GameState, from: SquareName): SquareName[] 
   ) return [];
 
   const source = parseSquare(from);
-  const [fileStep, rankStep] = pawnForward(state, pawn.owner);
   const board = setupFor(state).board;
-  const destinations: SquareName[] = [];
-  for (const distance of [1, 2]) {
-    if (distance === 2 && pawnHomeDistance(state, pawn.owner, from) !== 1) break;
-    const file = squareFile(source) + fileStep * distance;
-    const rank = squareRank(source) + rankStep * distance;
-    if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
-    const target = rank * 8 + file;
-    if (board.has(target)) break;
-    destinations.push(makeSquare(target));
-  }
-  return destinations;
+  return [...new Set(physicalPieces(state, pawn).flatMap(component => {
+    if (component.originalRole !== 'pawn' || component.promoted) return [];
+    const [fileStep, rankStep] = pawnForward(state, component.owner);
+    const destinations: SquareName[] = [];
+    for (const distance of [1, 2]) {
+      if (distance === 2 && pawnHomeDistance(state, component.owner, from) !== 1) break;
+      const file = squareFile(source) + fileStep * distance;
+      const rank = squareRank(source) + rankStep * distance;
+      if (file < 0 || file > 7 || rank < 0 || rank > 7) break;
+      const target = rank * 8 + file;
+      if (board.has(target)) break;
+      destinations.push(makeSquare(target));
+    }
+    return destinations;
+  }))];
 }
 
 function madmanJumpOptions(
@@ -2540,15 +2553,17 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   }
 
   const from = parseSquare(targetSquare);
-  const [forwardFile, forwardRank] = FANATIC_FORWARD[state.orientation];
-  const ownerDirection = pawn.owner === 'white' ? 1 : -1;
-  const path = [1, 2, 3].map(distance => {
-    const file = squareFile(from) + forwardFile * ownerDirection * distance;
-    const rank = squareRank(from) + forwardRank * ownerDirection * distance;
-    return file < 0 || file > 7 || rank < 0 || rank > 7 ? -1 : rank * 8 + file;
-  });
   const board = setupFor(state).board;
-  if (path.some(square => square < 0 || square > 63 || board.has(square))) {
+  const path = physicalPieces(state, pawn).flatMap(component => {
+    if (component.originalRole !== 'pawn' || component.promoted) return [];
+    const [forwardFile, forwardRank] = pawnForward(state, component.owner);
+    return [[1, 2, 3].map(distance => {
+      const file = squareFile(from) + forwardFile * distance;
+      const rank = squareRank(from) + forwardRank * distance;
+      return file < 0 || file > 7 || rank < 0 || rank > 7 ? -1 : rank * 8 + file;
+    })];
+  }).find(candidate => candidate.every(square => square >= 0 && !board.has(square)));
+  if (!path) {
     return reject(state, 'ILLEGAL_MOVE', 'The Pawn needs three clear forward squares.');
   }
   if (forbiddenCityBlocksMove(state, targetSquare, makeSquare(path[2]))) {
@@ -2734,7 +2749,11 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
   }
 
   const enPassant = moves.flatMap((move, index) =>
-    doubleStepEnPassant(state, pawns[index], move.from, move.to),
+    physicalPieces(state, pawns[index]).flatMap(component =>
+      component.originalRole === 'pawn'
+        ? doubleStepEnPassant(state, component, move.from, move.to)
+        : [],
+    ),
   );
   if (moves.some(move => isEnPassantTarget(enPassant, move.to))) {
     return reject(state, 'ILLEGAL_MOVE', "A Pawn cannot occupy another Pawn's en-passant target.");
@@ -2812,7 +2831,8 @@ function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknow
       const followerMove = moves[1 - index];
       const source = parseSquare(pawnMove.from);
       const destination = parseSquare(pawnMove.to);
-      const [fileStep, rankStep] = pawnForward(state, pieces[index]!.owner);
+      const fileStep = Math.sign(squareFile(destination) - squareFile(source));
+      const rankStep = Math.sign(squareRank(destination) - squareRank(source));
       return guardianDests(state, pawnMove.from).includes(pawnMove.to)
         && followerMove.from === makeSquare((squareRank(source) - rankStep) * 8 + squareFile(source) - fileStep)
         && followerMove.to === makeSquare((squareRank(destination) - rankStep) * 8 + squareFile(destination) - fileStep);
@@ -2837,7 +2857,8 @@ function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknow
   if (followerMove) {
     const source = parseSquare(pawnMove.from);
     const destination = parseSquare(pawnMove.to);
-    const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+    const fileStep = Math.sign(squareFile(destination) - squareFile(source));
+    const rankStep = Math.sign(squareRank(destination) - squareRank(source));
     const expectedFrom = makeSquare(
       (squareRank(source) - rankStep) * 8 + squareFile(source) - fileStep,
     );
@@ -6578,7 +6599,8 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
         const pawnMove = { from: pawn.square!, to };
         const source = parseSquare(pawn.square!);
         const destination = parseSquare(to);
-        const [fileStep, rankStep] = pawnForward(state, pawn.owner);
+        const fileStep = Math.sign(squareFile(destination) - squareFile(source));
+        const rankStep = Math.sign(squareRank(destination) - squareRank(source));
         const followerFrom = makeSquare(
           (squareRank(source) - rankStep) * 8 + squareFile(source) - fileStep,
         );
