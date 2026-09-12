@@ -6014,6 +6014,9 @@ function playCard(state: GameState, cardId: string, target: unknown, cardInstanc
 }
 
 function playCardCore(state: GameState, cardId: string, target: unknown, cardInstanceId?: unknown): ApplyResult {
+  if (typeof cardId !== 'string' || !Object.hasOwn(CARD_CATALOG, cardId)) {
+    return reject(state, 'CARD_NOT_IN_HAND', 'That card is not implemented.');
+  }
   if (state.riposteSkipped === state.turn.color && (['charge', 'crusade', 'merciless'].includes(cardId)
     || CARD_CATALOG[cardId]?.timing.length === 1 && CARD_CATALOG[cardId].timing[0] === 'beforeMove')) {
     return reject(state, 'INVALID_TIMING', 'The forfeited regular move cannot be replaced or extended.');
