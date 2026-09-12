@@ -588,7 +588,7 @@ export function doomsayerTargets(
     (piece.owner === player || piece.neutral)
     && piece.zone === 'board'
     && piece.square
-    && !piece.royal
+    && !hasRole(state, piece, 'king')
     && (role === 'crab' ? hasCrabEffect(state, piece.id)
       : role === 'prince' ? physicalPieces(state, piece).some(component => component.role === 'king' && !component.royal)
         : hasRole(state, piece, role))
@@ -910,7 +910,7 @@ export function darkMirrorDests(state: GameState, from: SquareName): SquareName[
       return victim
         && (pawn.neutral || victim.neutral || victim.owner !== pawn.owner)
         && (!vendettaRequired || victim.owner === opposite(state.turn.color))
-        && !victim.royal
+        && !hasRole(state, victim, 'king')
         && !captureImmune(state, victim)
         ? [to]
         : [];
@@ -1042,7 +1042,7 @@ function rebirthDests(state: GameState, from: SquareName): SquareName[] {
       const occupant = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === square);
       return !occupant || (
         (occupant.owner === state.turn.color || occupant.neutral)
-        && !occupant.royal
+        && !hasRole(state, occupant, 'king')
         && !captureImmune(state, occupant)
       ) ? [square] : [];
     });
@@ -1379,7 +1379,7 @@ export function assassinDests(state: GameState, from: SquareName): SquareName[] 
   return state.pieces.flatMap(victim =>
     victim.zone === 'board'
       && victim.square
-      && !victim.royal
+      && !hasRole(state, victim, 'king')
       && (victim.owner === state.turn.color || victim.neutral)
       && pieceAttacksSquare(state, mover, victim.square, occupied)
       ? [victim.square]
@@ -1840,7 +1840,7 @@ function revengeTargets(state: GameState): SquareName[] {
       && piece.square
       && (piece.owner === mover || piece.neutral)
       && revengePawn(piece)
-      && !piece.royal
+      && !hasRole(state, piece, 'king')
       && !captureImmune(state, piece)
       ? [piece.square]
       : [],
@@ -1872,7 +1872,7 @@ function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown
     return reject(state, 'WRONG_OWNER', "Choose one of your opponent's Pawns.");
   }
   if (!revengePawn(pawn)) return reject(state, 'WRONG_ROLE', 'Revenge can target only a Pawn.');
-  if (pawn.royal || captureImmune(state, pawn)) {
+  if (hasRole(state, pawn, 'king') || captureImmune(state, pawn)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be captured.');
   }
 
@@ -2155,20 +2155,22 @@ function legallyAttacksRoyal(
   if (!pieceAttacksSquare(state, attacker, royal.square!, setupFor(state).board.occupied, controller)) return false;
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === attacker.id)!.square = royal.square;
-  const captured = resolved.pieces.find(piece => piece.id === royal.id)!;
-  captured.square = null;
-  captured.zone = 'captured';
+  for (const captured of physicalPieces(resolved, resolved.pieces.find(piece => piece.id === royal.id)!)) {
+    captured.square = null;
+    captured.zone = 'captured';
+  }
   return !resolved.pieces.some(piece =>
     piece.royal
-    && piece.zone === 'board'
-    && piece.square
+    && boardCarrier(resolved, piece.id)
     && (piece.owner === controller || (piece.id === attacker.id && piece.neutral))
     && isRoyalInCheck(resolved, piece)
   );
 }
 
 function isRoyalInCheck(state: GameState, piece: PieceState): boolean {
-  if (piece.zone !== 'board' || !piece.square) return false;
+  const carrier = boardCarrier(state, piece.id);
+  if (!carrier?.square) return false;
+  piece = { ...piece, square: carrier.square };
   // Royal threats include the next opposing turn, when a newly played Shield protects its target.
   const hostileControllers: readonly Color[] = (piece.neutral
     ? ['white', 'black'] as const
@@ -2196,7 +2198,7 @@ function isRoyalInCheck(state: GameState, piece: PieceState): boolean {
 
 export function isKingInCheck(state: GameState, color: Color): boolean {
   const royals = state.pieces.filter(
-    piece => piece.owner === color && piece.royal && piece.zone === 'board' && piece.square,
+    piece => piece.owner === color && piece.royal && boardCarrier(state, piece.id),
   );
   if (!royals.length && state.underElfHill?.some(entry => entry.player === color && !entry.returned)) return false;
   return royals.length
@@ -2283,17 +2285,18 @@ function isRoyalEnPassantThreatened(
   controller: Color,
 ): boolean {
   if (setupFor(state).turn !== controller) return false;
+  const carrier = boardCarrier(state, royal.id);
+  if (!carrier) return false;
   return state.enPassant.some(opportunity =>
-    opportunity.pawnId === royal.id
+    boardCarrier(state, opportunity.pawnId)?.id === carrier.id
     && state.pieces.some(attacker => {
       if (attacker.zone !== 'board' || !attacker.square) return false;
       const capture = enPassantCapture(state, attacker.square, opportunity.target, controller);
-      if (capture?.victim.id !== royal.id) return false;
-      const resolved = resolveEnPassant(state, attacker.id, royal.id, opportunity.target);
+      if (capture?.victim.id !== carrier.id) return false;
+      const resolved = resolveEnPassant(state, attacker.id, carrier.id, opportunity.target);
       return !resolved.pieces.some(piece =>
         piece.royal
-        && piece.zone === 'board'
-        && piece.square
+        && boardCarrier(resolved, piece.id)
         && (piece.owner === controller || (piece.id === attacker.id && piece.neutral))
         && isRoyalInCheck(resolved, piece)
       );
@@ -2463,7 +2466,7 @@ function playDisintegration(state: GameState, target: unknown, cardInstanceId?: 
   if (!hasUnpromotedPawn(state, pawn)) {
     return reject(state, 'WRONG_ROLE', 'Disintegration can target only a Pawn.');
   }
-  if (pawn.royal) return reject(state, 'INVALID_TARGET', 'A King can never be made dead.');
+  if (hasRole(state, pawn, 'king')) return reject(state, 'INVALID_TARGET', 'A King can never be made dead.');
 
   const resolved = structuredClone(state);
   losePiece(resolved, resolved.pieces.find(piece => piece.id === pawn.id)!, 'dead');
@@ -3571,7 +3574,7 @@ function playAssassin(state: GameState, target: unknown, cardInstanceId?: unknow
   if (!victim || (victim.owner !== color && !victim.neutral)) {
     return reject(state, 'WRONG_OWNER', 'Choose another piece you control to capture.');
   }
-  if (victim.royal) return reject(state, 'INVALID_TARGET', 'A King can never be captured.');
+  if (hasRole(state, victim, 'king')) return reject(state, 'INVALID_TARGET', 'A King can never be captured.');
   if (!assassinDests(state, move.from).includes(move.to)) {
     return reject(state, 'ILLEGAL_MOVE', 'The selected piece cannot capture that piece normally.');
   }
@@ -3647,7 +3650,7 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
   if (!pawn.neutral && !victim.neutral && victim.owner === pawn.owner) {
     return reject(state, 'WRONG_OWNER', 'The Pawn must capture an opponent piece.');
   }
-  if (victim.royal) return reject(state, 'INVALID_TARGET', 'A King can never be captured.');
+  if (hasRole(state, victim, 'king')) return reject(state, 'INVALID_TARGET', 'A King can never be captured.');
   if (captureForbidden(state, pawn) || captureImmune(state, victim)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot capture or the target cannot be captured.');
   }
@@ -7191,7 +7194,7 @@ function namePiece(
   if (selected.some(piece => piece.owner !== speaker && !piece.neutral)) {
     return reject(state, 'WRONG_OWNER', 'The named player can lose only an owned or neutral piece.');
   }
-  if (selected.some(piece => piece.royal || captureImmune(state, piece))) {
+  if (selected.some(piece => hasRole(state, piece, 'king') || captureImmune(state, piece))) {
     return reject(state, 'INVALID_TARGET', 'That piece cannot be captured by Doomsayer.');
   }
   if (selected.some(piece => !candidates.includes(piece))) {
@@ -7467,7 +7470,7 @@ function movePiece(
     const enPassantCaptureResult = selectedEnPassant;
     const target = occupant ?? enPassantCaptureResult?.victim;
     if (promotion !== undefined) return reject(state, 'ILLEGAL_MOVE', 'Confabulated pieces cannot promote.');
-    if (target?.royal) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
+    if (target && hasRole(state, target, 'king')) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
     if (
       target
       && !moving.neutral
@@ -7537,8 +7540,8 @@ function movePiece(
   const target = state.pieces.find(piece => piece.zone === 'board' && piece.square === toName);
   const enPassant = doubleStepEnPassant(state, moving, fromName, toName);
   if (
-    (target?.royal && target.id !== moving.id)
-    || customEnPassant?.victim.royal
+    (target && target.id !== moving.id && hasRole(state, target, 'king'))
+    || (customEnPassant && hasRole(state, customEnPassant.victim, 'king'))
   ) {
     return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
   }
@@ -7750,7 +7753,7 @@ function movePiece(
     : state.pieces.find(
         piece => piece.zone === 'board' && piece.square === makeSquare(capturedSquare) && piece.owner !== state.turn.color,
       );
-  if (captured?.royal) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
+  if (captured && hasRole(state, captured, 'king')) return reject(state, 'ILLEGAL_MOVE', 'Kings are never captured.');
   if (captured && (captureForbidden(state, moving) || captureImmune(state, captured))) {
     return reject(state, 'ILLEGAL_MOVE', 'That piece cannot capture or be captured.');
   }
