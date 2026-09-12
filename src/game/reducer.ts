@@ -1266,14 +1266,24 @@ export function blessingDests(state: GameState, from: SquareName): SquareName[] 
 }
 
 function doppelgangerCopy(state: GameState): PieceState | undefined {
+  if (state.plotsExecution) {
+    const id = state.plotsExecution.window.doppelgangerPieceId;
+    return id ? boardCarrier(state, id) : undefined;
+  }
   let movement: CardMove[] | undefined;
   let ordinaryMove = false;
+  let movedPieceId: string | undefined;
+  let player: Color | undefined;
   for (let index = state.history.length - 1; index >= 0; index -= 1) {
     const event = state.history[index];
     const candidate = event.type === 'move' && event.from && event.to
       ? [{ from: event.from, to: event.to }]
       : event.movement;
     if (candidate?.length) {
+      const recorded = state.doppelgangerMove?.historyLength === index + 1 ? state.doppelgangerMove : undefined;
+      player = recorded?.player ?? event.player;
+      if (player && player !== opposite(state.turn.color)) return undefined;
+      movedPieceId = recorded?.pieceId ?? event.movedPieceId;
       movement = candidate;
       ordinaryMove = event.type === 'move';
       break;
@@ -1286,11 +1296,12 @@ function doppelgangerCopy(state: GameState): PieceState | undefined {
     ) return undefined;
   }
   if (movement?.length !== 1) return undefined;
-  const copied = state.pieces.find(candidate =>
+  const copied = movedPieceId ? boardCarrier(state, movedPieceId) : state.pieces.find(candidate =>
     candidate.zone === 'board' && candidate.square === movement![0].to,
   );
   if (
     !copied
+    || (!player && copied.owner !== opposite(state.turn.color))
     || (ordinaryMove
       && copied.royal
       && copied.role === 'king'
@@ -5897,11 +5908,15 @@ function plotsPlayer(state: GameState, target: unknown): Color | undefined {
 function plotsWindow(state: GameState): NonNullable<GameState['plotsAllowances']>[number]['window'] {
   const revengePawnIds = revengePawns(state)
     .filter(piece => piece.owner !== opposite(state.turn.color) && !piece.neutral).map(piece => piece.id);
+  const doppelgangerPieceId = ((['white', 'black'] as const).some(player =>
+    state.players[player].hand.some(card => card.cardId === 'doppelganger'))
+    || hauntingCopy(state)?.cardId === 'doppelganger') ? doppelgangerCopy(state)?.id : undefined;
   return structuredClone(state.plotsExecution?.window ?? {
     phase: state.turn.phase,
     moveMade: state.turn.moveMade,
     shieldMove: state.shieldMove,
     reaction: reactionEvent(state),
+    ...(doppelgangerPieceId ? { doppelgangerPieceId } : {}),
     ...(revengePawnIds.length ? { revengePawnIds } : {}),
     capture: hostageCaptureEvent(state),
     legacyCapture: state.legacyCapture?.historyLength === state.history.length ? state.legacyCapture : undefined,
@@ -6845,6 +6860,9 @@ function finishRegularMove(
       && !dungeonAllowsMove(before, piece, before.turn.color, byCard);
   })) return reject(before, 'ILLEGAL_MOVE', 'Dungeon prevents moving that piece this turn.');
   const event = next.history.at(-1)!;
+  next.doppelgangerMove = {
+    player: before.turn.color, pieceId: movedPieces[0].id, historyLength: next.history.length,
+  };
   next.shieldMove = {
     player: before.turn.color,
     pieceIds: before.pieces.filter(piece => {
@@ -7410,6 +7428,12 @@ function recordCardTransition(before: GameState, result: ApplyResult): ApplyResu
   event.preservePreviousMove ??= before.turn.phase === 'afterMove'
     && before.turn.moveMade
     && !(before.pendingRescue && event.type === 'cardFizzled');
+  if (event.movement.length === 1) {
+    const moved = before.pieces.find(piece => piece.zone === 'board' && piece.square === event.movement![0].from);
+    if (moved) result.state.doppelgangerMove = {
+      player: event.player ?? before.turn.color, pieceId: moved.id, historyLength: result.state.history.length,
+    };
+  }
   return result;
 }
 

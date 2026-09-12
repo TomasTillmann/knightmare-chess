@@ -311,6 +311,7 @@ export interface GameEvent {
 }
 
 export interface GameState {
+  doppelgangerMove?: { player: Color; pieceId: string; historyLength: number };
   riposteLostMoves?: Color[];
   riposteSkipped?: Color;
   riposteCheckDeferred?: Color;
@@ -335,6 +336,7 @@ export interface GameState {
       moveMade: boolean;
       shieldMove?: GameState['shieldMove'];
       reaction?: GameEvent;
+      doppelgangerPieceId?: string;
       revengePawnIds?: string[];
       capture?: GameEvent;
       legacyCapture?: GameState['legacyCapture'];
