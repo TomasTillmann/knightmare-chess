@@ -1857,7 +1857,7 @@ function revengeTargets(state: GameState): SquareName[] {
     piece.zone === 'board'
       && piece.square
       && (piece.owner === mover || piece.neutral)
-      && revengePawn(piece)
+      && hasRole(state, piece, 'pawn')
       && !hasRole(state, piece, 'king')
       && !captureImmune(state, piece, opposite(mover))
       ? [piece.square]
@@ -1882,7 +1882,7 @@ function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown
   if (pawn.owner !== mover && !pawn.neutral) {
     return reject(state, 'WRONG_OWNER', "Choose one of your opponent's Pawns.");
   }
-  if (!revengePawn(pawn)) return reject(state, 'WRONG_ROLE', 'Revenge can target only a Pawn.');
+  if (!hasRole(state, pawn, 'pawn')) return reject(state, 'WRONG_ROLE', 'Revenge can target only a Pawn.');
   if (hasRole(state, pawn, 'king') || captureImmune(state, pawn, reactor)) {
     return reject(state, 'INVALID_TARGET', 'That Pawn cannot be captured.');
   }
