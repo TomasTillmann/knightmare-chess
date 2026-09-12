@@ -4,7 +4,7 @@ import { createGameState } from '../state';
 import { applyAction, legalDests } from '../reducer';
 import type { Color, GameAction, GameState, SquareName } from '../types';
 
-type PawnCard = 'guardian' | 'annexation' | 'onslaught' | 'fanatic';
+type PawnCard = 'guardian' | 'annexation' | 'onslaught' | 'fanatic' | 'cowardice';
 function act(state: GameState, action: GameAction): GameState {
   const before = structuredClone(state);
   const result = applyAction(state, action);
@@ -44,7 +44,7 @@ function compositeWindow(owner: Color, cardId: PawnCard, mixed = true) {
 // REGRESSION_TESTS: Pawn powers keep the original Pawn component's direction after a mixed-owner merge.
 // Sources: rules 13.4, 13.5, 13.7; Guardian's card text; rules 15.1 and 15.4.
 // Symptom: these Pawn powers follow the carrier's color instead of the original Pawn's owner.
-const distances: Record<PawnCard, number> = { guardian: 1, annexation: 2, onslaught: 1, fanatic: 3 };
+const distances: Record<PawnCard, number> = { guardian: 1, annexation: 2, onslaught: 1, fanatic: 3, cowardice: 1 };
 for (const owner of ['white', 'black'] as const) {
   for (const cardId of ['guardian', 'annexation', 'onslaught', 'fanatic'] as const) {
     for (const mixed of [true, false]) {
@@ -83,3 +83,34 @@ for (const owner of ['white', 'black'] as const) {
     });
   }
 }
+
+// REGRESSION_TESTS: Cowardice must retreat according to the original Pawn owner's direction.
+// Sources: rule 13.11 (backward movement), 15.1 (Neutrality), and 15.4 (composites).
+// Symptom: a mixed-owner composite incorrectly retreats according to its carrier's color.
+for (const owner of ['white', 'black'] as const) {
+  test(`cowardice: ${owner} Pawn retreats with a mixed-owner carrier`, () => {
+    const f = compositeWindow(owner, 'cowardice');
+    let state = act(f.state, { type: 'move', from: owner === 'white' ? 'g1' : 'g8', to: owner === 'white' ? 'h1' : 'h8' });
+    state = act(state, { type: 'playCard', cardId: 'cowardice', target: [{ from: f.from, to: f.forward(-1) }] });
+    const carrier = state.pieces.find(piece => piece.id === f.carrierId);
+    const pawn = state.pieces.find(piece => piece.id === f.pawnId);
+    assert.ok(carrier);
+    assert.ok(pawn);
+    assert.equal(carrier.zone, 'board');
+    assert.equal(carrier.square, f.forward(-1));
+    assert.equal(pawn.owner, owner);
+    assert.notEqual(pawn.zone, 'board', 'the Pawn remains a hidden component');
+    assert.equal(pawn.square, null);
+  });
+}
+
+test('cowardice: White retreats an ordinary Black Pawn in the Black backward direction', () => {
+  let state = createGameState({ fen: '7k/8/8/2p5/8/8/8/7K w - - 0 1', hands: { white: ['cowardice'] } });
+  state = act(state, { type: 'move', from: 'h1', to: 'g1' });
+  state = act(state, { type: 'playCard', cardId: 'cowardice', target: [{ from: 'c5', to: 'c6' }] });
+  const pawn = state.pieces.find(piece => piece.id === 'black-pawn-c5');
+  assert.ok(pawn);
+  assert.equal(pawn.owner, 'black');
+  assert.equal(pawn.zone, 'board');
+  assert.equal(pawn.square, 'c6');
+});
