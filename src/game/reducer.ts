@@ -26,6 +26,7 @@ import type {
   ChallengeEffect,
   Color,
   ConfabulationEffect,
+  CoupEffect,
   CrabEffect,
   CurseEffect,
   DoomsayerEffect,
@@ -40,6 +41,7 @@ import type {
   FortificationEffect,
   GameAction,
   GameErrorCode,
+  GameEffect,
   GameState,
   HolyWarTarget,
   ManTrapEffect,
@@ -49,6 +51,7 @@ import type {
   PieceState,
   PromotionDeclaration,
   PeaceTalksTarget,
+  RetainedEffect,
   Role,
   SanctuaryTarget,
   SiegeTarget,
@@ -378,7 +381,7 @@ function springManTraps(before: GameState, next: GameState): void {
   }
 }
 
-function isFatalAttractionEffect(effect: unknown): effect is FatalAttractionEffect & Record<string, unknown> {
+function isFatalAttractionEffect(effect: GameEffect): effect is FatalAttractionEffect {
   return isRetainedContinuingEffect(effect) && effect.type === 'fatal-attraction'
     && typeof effect.pieceId === 'string';
 }
@@ -1414,6 +1417,22 @@ function cardAllowanceUsed(state: GameState, player: Color): boolean {
     || state.turn.cardPlays[player] >= 1 && state.plotsExecution?.player !== player;
 }
 
+function cardPlayError(
+  state: GameState,
+  cardId: string,
+  cardInstanceId?: unknown,
+  color = state.turn.color,
+): ApplyResult | undefined {
+  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
+    || !state.players[color].hand.some(card => card.cardId === cardId
+      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
+    return reject(state, 'CARD_NOT_IN_HAND', `${CARD_CATALOG[cardId].name} is not in your hand.`);
+  }
+  if (cardAllowanceUsed(state, color)) {
+    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  }
+}
+
 function spendCard(
   state: GameState,
   cardId: string,
@@ -1491,12 +1510,8 @@ function playLegacy(state: GameState, target: unknown, cardInstanceId?: unknown)
   const reactor = (['white', 'black'] as const).find(player =>
     typeof target === 'string' && state.players[player].discard.some(card => card.id === target));
   if (!reactor) return reject(state, 'INVALID_TARGET', 'Choose a physical card in your discard pile.');
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[reactor].hand.some(card => card.cardId === 'legacy'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Legacy is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, reactor)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'legacy', cardInstanceId, reactor);
+  if (error) return error;
   const capture = state.plotsExecution ? state.plotsExecution.window.legacyCapture : state.legacyCapture;
   if (!capture || (!state.plotsExecution && capture.historyLength !== state.history.length)
     || !state.pieces.some(piece => piece.owner === reactor && piece.zone === 'captured'
@@ -1602,12 +1617,8 @@ function playHostage(state: GameState, target: unknown, cardInstanceId?: unknown
     return reject(state, 'INVALID_TARGET', 'Choose a captured nonroyal physical piece.');
   }
   const reactor = returned.owner;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[reactor].hand.some(card => card.cardId === 'hostage'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Hostage is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, reactor)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'hostage', cardInstanceId, reactor);
+  if (error) return error;
   const event = hostageCaptureEvent(state);
   const response = state.plotsExecution ? state.plotsExecution.window.cardResponse : state.cardResponse;
   const captor = event?.type === 'move' ? event.player ?? state.turn.color : event?.player ?? response?.player;
@@ -1649,15 +1660,8 @@ function playHostage(state: GameState, target: unknown, cardInstanceId?: unknown
 function playBog(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const mover = state.turn.color;
   const reactor = opposite(mover);
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[reactor].hand.some(card =>
-      card.cardId === 'bog' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Bog is not in your hand.');
-  if (cardAllowanceUsed(state, reactor)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'bog', cardInstanceId, reactor);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', "Bog must immediately follow your opponent's move.");
   }
@@ -1853,15 +1857,8 @@ function revengeTargets(state: GameState): SquareName[] {
 function playRevenge(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const mover = state.turn.color;
   const reactor = opposite(mover);
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[reactor].hand.some(card =>
-      card.cardId === 'revenge' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Revenge is not in your hand.');
-  if (cardAllowanceUsed(state, reactor)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'revenge', cardInstanceId, reactor);
+  if (error) return error;
   if (!revengePawns(state).length) {
     return reject(state, 'INVALID_TIMING', 'Revenge immediately follows capture of a Pawn you control.');
   }
@@ -1956,15 +1953,8 @@ function tollTargets(state: GameState): Array<SquareName | undefined> {
 function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const mover = state.turn.color;
   const reactor = opposite(mover);
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[reactor].hand.some(card =>
-      card.cardId === 'toll' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Toll is not in your hand.');
-  if (cardAllowanceUsed(state, reactor)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'toll', cardInstanceId, reactor);
+  if (error) return error;
   if (!tollCrossedFrontier(state)) {
     return reject(state, 'INVALID_TIMING', "Toll must immediately follow an opponent's move across the frontier.");
   }
@@ -2357,17 +2347,32 @@ function fizzleCard(
   return { ok: true, state: fizzled };
 }
 
+function finishMovementCard(
+  state: GameState,
+  resolved: GameState,
+  event: GameState['history'][number] & { cardId: string },
+  cardInstanceId: unknown,
+  movedPieces: readonly PieceState[],
+  consumesMove = false,
+): ApplyResult {
+  const color = state.turn.color;
+  expireFatalAttractions(state, resolved);
+  const defender = opposite(color);
+  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
+    return fizzleCard(state, event.cardId, 'DIRECT_MATE', cardInstanceId, consumesMove);
+  }
+  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
+    return fizzleCard(state, event.cardId, 'SELF_CHECK', cardInstanceId, consumesMove);
+  }
+  spendCard(resolved, event.cardId, cardInstanceId);
+  resolved.history.push(event);
+  return { ok: true, state: resolved };
+}
+
 function playConfabulation(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'confabulation' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Confabulation is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'confabulation', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Confabulation is played instead of the regular move.');
   }
@@ -2439,17 +2444,8 @@ function playConfabulation(state: GameState, target: unknown, cardInstanceId?: u
 
 function playDisintegration(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'disintegration' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Disintegration is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'disintegration', cardInstanceId);
+  if (error) return error;
   if (
     (state.turn.phase === 'beforeMove' && state.turn.moveMade)
     || (state.turn.phase === 'afterMove' && !state.turn.moveMade)
@@ -2491,17 +2487,8 @@ function playDisintegration(state: GameState, target: unknown, cardInstanceId?: 
 
 function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'fanatic' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Fanatic is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'fanatic', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Fanatic is played instead of the regular move.');
   }
@@ -2540,30 +2527,16 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   resolvedPawn.square = makeSquare(path[2]);
   completeReplacementMove(resolved, color, true, [], [pawn]);
 
-  expireFatalAttractions(state, resolved);
-  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
-    return fizzleCard(state, 'fanatic', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [pawn])) {
-    return fizzleCard(state, 'fanatic', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'fanatic', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'fanatic', target: targetSquare });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'fanatic', target: targetSquare },
+    cardInstanceId, [pawn], !wasInCheck,
+  );
 }
 
 function playMadman(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'madman' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Madman is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'madman', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Madman is played instead of the regular move.');
   }
@@ -2623,18 +2596,10 @@ function playMadman(state: GameState, target: unknown, cardInstanceId?: unknown)
   const resolvedPawn = resolved.pieces.find(piece => piece.id === pawn.id)!;
   resolvedPawn.square = current;
   completeReplacementMove(resolved, color, true, [], [resolvedPawn]);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'madman', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [resolvedPawn])) {
-    return fizzleCard(state, 'madman', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'madman', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'madman', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'madman', target: moves },
+    cardInstanceId, [resolvedPawn], !wasInCheck,
+  );
 }
 
 function parseCardMoves(target: unknown, maximum = 2): CardMove[] | undefined {
@@ -2653,17 +2618,8 @@ function parseCardMoves(target: unknown, maximum = 2): CardMove[] | undefined {
 
 function playForcedMarch(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'forced-march' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Forced March is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'forced-march', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Forced March is played instead of the regular move.');
   }
@@ -2702,32 +2658,16 @@ function playForcedMarch(state: GameState, target: unknown, cardInstanceId?: unk
   });
   completeReplacementMove(resolved, color, true, [], pawns);
 
-  expireFatalAttractions(state, resolved);
-  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
-    return fizzleCard(state, 'forced-march', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, pawns)) {
-    return fizzleCard(state, 'forced-march', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'forced-march', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'forced-march', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'forced-march', target: moves },
+    cardInstanceId, pawns, !wasInCheck,
+  );
 }
 
 function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'annexation' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Annexation is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'annexation', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Annexation is played instead of the regular move.');
   }
@@ -2789,17 +2729,8 @@ function playAnnexation(state: GameState, target: unknown, cardInstanceId?: unkn
 
 function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'guardian' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Guardian is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'guardian', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Guardian is played instead of the regular move.');
   }
@@ -2916,33 +2847,17 @@ function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknow
   );
   completeReplacementMove(resolved, color, true, enPassant, movedPieces);
 
-  expireFatalAttractions(state, resolved);
-  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
-    return fizzleCard(state, 'guardian', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, 'guardian', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
   const canonicalMoves = followerMove ? [pawnMove, followerMove] : [pawnMove];
-  spendCard(resolved, 'guardian', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'guardian', target: canonicalMoves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'guardian', target: canonicalMoves },
+    cardInstanceId, movedPieces, !wasInCheck,
+  );
 }
 
 function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'onslaught' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Onslaught is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'onslaught', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Onslaught is played instead of the regular move.');
   }
@@ -2981,32 +2896,16 @@ function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unkno
   });
   completeReplacementMove(resolved, color, true, [], pawns);
 
-  expireFatalAttractions(state, resolved);
-  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
-    return fizzleCard(state, 'onslaught', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, pawns)) {
-    return fizzleCard(state, 'onslaught', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'onslaught', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'onslaught', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'onslaught', target: moves },
+    cardInstanceId, pawns, !wasInCheck,
+  );
 }
 
 function playLongJump(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'long-jump' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Long Jump is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'long-jump', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Long Jump is played instead of the regular move.');
   }
@@ -3034,18 +2933,10 @@ function playLongJump(state: GameState, target: unknown, cardInstanceId?: unknow
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === knight.id)!.square = move.to;
   completeReplacementMove(resolved, color, false, [], [knight]);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'long-jump', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [knight])) {
-    return fizzleCard(state, 'long-jump', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'long-jump', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'long-jump', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'long-jump', target: moves },
+    cardInstanceId, [knight], !wasInCheck,
+  );
 }
 
 function pendingElfReturn(state: GameState) {
@@ -3054,12 +2945,8 @@ function pendingElfReturn(state: GameState) {
 
 function playUnderElfHill(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'under-elf-hill'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Under Elf Hill is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'under-elf-hill', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Under Elf Hill replaces the regular move.');
   }
@@ -3147,12 +3034,8 @@ function evilEyeVictims(state: GameState, attacker: PieceState): SquareName[] {
 
 function playEvilEye(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'evil-eye'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Evil Eye is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'evil-eye', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Evil Eye replaces the regular move.');
   }
@@ -3206,12 +3089,8 @@ function splitKnightVictims(state: GameState, knight: PieceState): SquareName[] 
 
 function playSplitKnight(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'split-knight'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Split Knight is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'split-knight', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Split Knight replaces the regular move.');
   }
@@ -3254,17 +3133,8 @@ function playSplitKnight(state: GameState, target: unknown, cardInstanceId?: unk
 
 function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'dubbing' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Dubbing is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'dubbing', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Dubbing is played instead of the regular move.');
   }
@@ -3295,34 +3165,17 @@ function playDubbing(state: GameState, target: unknown, cardInstanceId?: unknown
     [],
     [piece],
   );
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'dubbing', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [piece])) {
-    return fizzleCard(state, 'dubbing', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'dubbing', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'dubbing', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'dubbing', target: moves },
+    cardInstanceId, [piece], !wasInCheck,
+  );
 }
 
 function playSlidingMoveCard(state: GameState, cardId: 'masquerade' | 'blessing', target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
   const name = CARD_CATALOG[cardId].name;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', `${name} is not in your hand.`);
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', `${name} is played instead of the regular move.`);
   }
@@ -3369,33 +3222,16 @@ function playSlidingMoveCard(state: GameState, cardId: 'masquerade' | 'blessing'
     [],
     movedPieces,
   );
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, cardId, cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId, target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId, target: moves },
+    cardInstanceId, movedPieces, !wasInCheck,
+  );
 }
 
 function playDoppelganger(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'doppelganger' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Doppelganger is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'doppelganger', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Doppelganger is played instead of the regular move.');
   }
@@ -3423,28 +3259,16 @@ function playDoppelganger(state: GameState, target: unknown, cardInstanceId?: un
   const resolved = structuredClone(state);
   resolved.pieces.find(candidate => candidate.id === piece.id)!.square = move.to;
   completeReplacementMove(resolved, color, false, [], [piece]);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'doppelganger', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [piece])) {
-    return fizzleCard(state, 'doppelganger', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'doppelganger', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'doppelganger', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'doppelganger', target: moves },
+    cardInstanceId, [piece], !wasInCheck,
+  );
 }
 
 function playHiddenPassage(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'hidden-passage'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Hidden Passage is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'hidden-passage', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Hidden Passage replaces the regular move.');
   }
@@ -3486,17 +3310,8 @@ function playHiddenPassage(state: GameState, target: unknown, cardInstanceId?: u
 
 function playSquaringTheCircle(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'squaring-the-circle' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Squaring the Circle is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'squaring-the-circle', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Squaring the Circle is played instead of the regular move.');
   }
@@ -3533,33 +3348,16 @@ function playSquaringTheCircle(state: GameState, target: unknown, cardInstanceId
     [],
     [piece],
   );
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'squaring-the-circle', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [piece])) {
-    return fizzleCard(state, 'squaring-the-circle', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'squaring-the-circle', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'squaring-the-circle', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'squaring-the-circle', target: moves },
+    cardInstanceId, [piece], !wasInCheck,
+  );
 }
 
 function playAssassin(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'assassin' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Assassin is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'assassin', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Assassin is played instead of the regular move.');
   }
@@ -3587,37 +3385,19 @@ function playAssassin(state: GameState, target: unknown, cardInstanceId?: unknow
   resolved.pieces.find(piece => piece.id === mover.id)!.square = move.to;
   losePiece(resolved, resolved.pieces.find(piece => piece.id === victim.id)!, 'captured');
   completeReplacementMove(resolved, color, true, [], [mover, victim]);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'assassin', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [mover])) {
-    return fizzleCard(state, 'assassin', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'assassin', cardInstanceId);
-  resolved.history.push({
+  return finishMovementCard(state, resolved, {
     type: 'cardPlayed',
     cardId: 'assassin',
     target: moves,
     capturedId: victim.id,
-  });
-  return { ok: true, state: resolved };
+  }, cardInstanceId, [mover], !wasInCheck);
 }
 
 function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unknown, cardId = 'dark-mirror'): ApplyResult {
   const color = state.turn.color;
   const name = CARD_CATALOG[cardId].name;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', `${name} is not in your hand.`);
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', `${name} is played instead of the regular move.`);
   }
@@ -3672,34 +3452,19 @@ function playDarkMirror(state: GameState, target: unknown, cardInstanceId?: unkn
   const capturedPieces = physicalPieces(state, victim);
   const capturedIds = losePiece(resolved, resolved.pieces.find(piece => piece.id === victim.id)!, 'captured');
   completeReplacementMove(resolved, color, true, [], [...movedPieces, ...capturedPieces]);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, cardId, 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, cardId, 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, cardId, cardInstanceId);
-  resolved.history.push({
+  return finishMovementCard(state, resolved, {
     type: 'cardPlayed',
     cardId,
     target: moves,
     capturedId: victim.id,
     ...(capturedIds.length > 1 ? { capturedIds } : {}),
-  });
-  return { ok: true, state: resolved };
+  }, cardInstanceId, movedPieces, !wasInCheck);
 }
 
 function playAbduction(state: GameState, target: unknown, cardInstanceId?: unknown, validateOnly = false): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'abduction'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Abduction is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'abduction', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade || state.pendingDoomsayer) {
     return reject(state, 'INVALID_TIMING', 'Abduction is played after the regular move.');
   }
@@ -3804,14 +3569,8 @@ function abductionResponse(state: GameState, action: GameAction): ApplyResult {
 
 function playDungeon(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'dungeon'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Dungeon is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'dungeon', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Dungeon is played after the regular move.');
   }
@@ -3834,30 +3593,16 @@ function playDungeon(state: GameState, target: unknown, cardInstanceId?: unknown
   resolved.pieces.find(candidate => candidate.id === piece.id)!.square = move.to;
   resolved.effects.push({ type: 'dungeon', owner: color, player: opposite(color), pieceId: piece.id } satisfies DungeonEffect);
   syncFen(resolved, components);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'dungeon', 'DIRECT_MATE', cardInstanceId);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, components)) return fizzleCard(state, 'dungeon', 'SELF_CHECK', cardInstanceId);
-  spendCard(resolved, 'dungeon', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'dungeon', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'dungeon', target: moves },
+    cardInstanceId, components,
+  );
 }
 
 function playCowardice(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'cowardice' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Cowardice is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'cowardice', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Cowardice is played after the regular move.');
   }
@@ -3884,31 +3629,16 @@ function playCowardice(state: GameState, target: unknown, cardInstanceId?: unkno
   const resolved = structuredClone(state);
   resolved.pieces.find(piece => piece.id === pawn.id)!.square = move.to;
   syncFen(resolved);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'cowardice', 'DIRECT_MATE', cardInstanceId);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [pawn])) {
-    return fizzleCard(state, 'cowardice', 'SELF_CHECK', cardInstanceId);
-  }
-
-  spendCard(resolved, 'cowardice', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'cowardice', target: moves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'cowardice', target: moves },
+    cardInstanceId, [pawn],
+  );
 }
 
 function playRebirth(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'rebirth' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Rebirth is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'rebirth', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Rebirth is played after the regular move.');
   }
@@ -3962,36 +3692,18 @@ function playRebirth(state: GameState, target: unknown, cardInstanceId?: unknown
     setup.halfmoves = 0;
     resolved.fen = makeFen(setup);
   }
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'rebirth', 'DIRECT_MATE', cardInstanceId);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, [piece])) {
-    return fizzleCard(state, 'rebirth', 'SELF_CHECK', cardInstanceId);
-  }
-
-  spendCard(resolved, 'rebirth', cardInstanceId);
-  resolved.history.push({
+  return finishMovementCard(state, resolved, {
     type: 'cardPlayed',
     cardId: 'rebirth',
     target: [move],
     ...(victim ? { capturedId: victim.id } : {}),
-  });
-  return { ok: true, state: resolved };
+  }, cardInstanceId, [piece]);
 }
 
 function playHeresy(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'heresy' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Heresy is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'heresy', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Heresy is played after the regular move.');
   }
@@ -4089,18 +3801,10 @@ function playHeresy(state: GameState, target: unknown, cardInstanceId?: unknown)
 
   resolved.enPassant = resolved.enPassant.filter(opportunity => !movedIds.has(opportunity.pawnId));
   syncFen(resolved, movedPieces);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'heresy', 'DIRECT_MATE', cardInstanceId);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, 'heresy', 'SELF_CHECK', cardInstanceId);
-  }
-
-  spendCard(resolved, 'heresy', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'heresy', target: parsedMoves });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'heresy', target: parsedMoves },
+    cardInstanceId, movedPieces,
+  );
 }
 
 function figureDanceMoves(state: GameState) {
@@ -4122,15 +3826,8 @@ function figureDancePromotionMoves(state: GameState) {
 
 function playFigureDance(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'figure-dance' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Figure Dance is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'figure-dance', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Figure Dance is played after the regular move.');
   }
@@ -4198,22 +3895,11 @@ function playFigureDance(state: GameState, target: unknown, cardInstanceId?: unk
   }
   syncFen(resolved, moves.map(move => move.piece));
 
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'figure-dance', 'DIRECT_MATE', cardInstanceId);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, moves.map(move => move.piece))) {
-    return fizzleCard(state, 'figure-dance', 'SELF_CHECK', cardInstanceId);
-  }
-
-  spendCard(resolved, 'figure-dance', cardInstanceId);
-  resolved.history.push({
+  return finishMovementCard(state, resolved, {
     type: 'cardPlayed',
     cardId: 'figure-dance',
     target: promotions,
-  });
-  return { ok: true, state: resolved };
+  }, cardInstanceId, moves.map(move => move.piece));
 }
 
 function earthquakeOrientation(
@@ -4289,15 +3975,8 @@ function earthquakeTargets(state: GameState, direction: EarthquakeDirection): Ea
 
 function playEarthquake(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'earthquake' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Earthquake is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'earthquake', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Earthquake is played after the regular move.');
   }
@@ -4343,13 +4022,7 @@ function playEarthquake(state: GameState, target: unknown, cardInstanceId?: unkn
   return { ok: true, state: resolved };
 }
 
-type RetainedEffect = Record<string, unknown> & {
-  type: string;
-  owner: Color;
-  card: CardInstance;
-};
-
-function isRetainedContinuingEffect(effect: unknown): effect is RetainedEffect {
+function isRetainedContinuingEffect(effect: GameEffect): effect is RetainedEffect {
   const record = effectRecord(effect);
   const card = effectRecord(record?.card);
   if (
@@ -4374,7 +4047,7 @@ function peaceTalksEffects(state: GameState, effect: RetainedEffect): RetainedEf
       && ((candidate.type === 'coup'
         && typeof candidate.kingId === 'string'
         && effect.pieceIds.includes(candidate.kingId))
-        || (index > effectIndex
+        || (index > effectIndex && 'pieceId' in candidate
           && typeof candidate.pieceId === 'string'
           && effect.pieceIds.includes(candidate.pieceId))),
   )];
@@ -4419,10 +4092,10 @@ function peaceTalksTargets(state: GameState): (string | PeaceTalksTarget)[] {
   });
 }
 
-function restoreCoupPieces(state: GameState, effect: RetainedEffect, cancelled: RetainedEffect[]): void {
+function restoreCoupPieces(state: GameState, effect: CoupEffect, cancelled: RetainedEffect[]): void {
   if (cancelled.length && !cancelled.some(candidate =>
     candidate.type === 'coup' && candidate.owner === effect.owner && !candidate.suspended)) return;
-  const coups = state.effects.filter((candidate): candidate is RetainedEffect =>
+  const coups = state.effects.filter((candidate): candidate is CoupEffect =>
     isRetainedContinuingEffect(candidate) && candidate.type === 'coup' && candidate.owner === effect.owner,
   );
   for (const coup of [...coups].reverse()) {
@@ -4431,7 +4104,7 @@ function restoreCoupPieces(state: GameState, effect: RetainedEffect, cancelled: 
     const king = state.pieces.find(piece => piece.id === coup.kingId);
     if (!prince || !king) continue;
     prince.royal = prince.zone === 'board' || prince.zone === 'away';
-    if (prince.role === 'king' && typeof coup.princeRole === 'string') prince.role = coup.princeRole as Role;
+    if (prince.role === 'king' && typeof coup.princeRole === 'string') prince.role = coup.princeRole;
     king.royal = false;
   }
   // A captured Prince still anchors the succession; a retained Coup can crown its surviving replacement.
@@ -4458,7 +4131,7 @@ function restoreCoupPieces(state: GameState, effect: RetainedEffect, cancelled: 
 
 function refreshCoups(state: GameState): void {
   for (const owner of ['white', 'black'] as const) {
-    const changed = state.effects.find((effect): effect is RetainedEffect => {
+    const changed = state.effects.find((effect): effect is CoupEffect => {
       if (!isRetainedContinuingEffect(effect) || effect.type !== 'coup' || effect.owner !== owner) return false;
       const king = state.pieces.find(piece => piece.id === effect.kingId);
       return Boolean(king && (hasRole(state, king, 'queen') || hasRole(state, king, 'rook'))) !== Boolean(effect.suspended);
@@ -4469,7 +4142,7 @@ function refreshCoups(state: GameState): void {
   refreshNeutrality(state);
 }
 
-function safeCoupPieces(state: GameState, effect: RetainedEffect, cancelled: RetainedEffect[]): [PieceState, PieceState] | undefined {
+function safeCoupPieces(state: GameState, effect: CoupEffect, cancelled: RetainedEffect[]): [PieceState, PieceState] | undefined {
   const prince = typeof effect.princeId === 'string'
     ? state.pieces.find(piece => piece.id === effect.princeId)
     : undefined;
@@ -4497,15 +4170,8 @@ function safeCoupPieces(state: GameState, effect: RetainedEffect, cancelled: Ret
 
 function playPeaceTalks(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'peace-talks' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Peace Talks is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'peace-talks', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Peace Talks is played after the regular move.');
   }
@@ -4528,7 +4194,7 @@ function playPeaceTalks(state: GameState, target: unknown, cardInstanceId?: unkn
   if (fields && effect.type !== 'earthquake') {
     return reject(state, 'INVALID_TARGET', 'Promotion declarations apply only to Earthquake cancellation.');
   }
-  const direction = effect.direction === 'clockwise' ? 'counterclockwise' : 'clockwise';
+  const direction = effect.type === 'earthquake' && effect.direction === 'clockwise' ? 'counterclockwise' : 'clockwise';
   const required = effect.type === 'earthquake' ? earthquakePromotionPieces(state, direction) : [];
   const promotions = earthquakePromotions(required, fields ? fields.promotions : []);
   if (!promotions) return reject(state, 'INVALID_TARGET', 'Promote every qualifying Pawn, opponent first and in square order.');
@@ -4537,7 +4203,7 @@ function playPeaceTalks(state: GameState, target: unknown, cardInstanceId?: unkn
   const resolved = structuredClone(state);
   spendCard(resolved, 'peace-talks', cardInstanceId);
   for (const owner of ['white', 'black'] as const) {
-    const coup = cancelled.find(candidate => candidate.type === 'coup' && candidate.owner === owner);
+    const coup = cancelled.find((candidate): candidate is CoupEffect => candidate.type === 'coup' && candidate.owner === owner);
     if (coup) restoreCoupPieces(resolved, coup, cancelled);
   }
   resolved.effects = resolved.effects.filter(candidate =>
@@ -4546,7 +4212,7 @@ function playPeaceTalks(state: GameState, target: unknown, cardInstanceId?: unkn
   if (isConfabulationEffect(effect)) {
     // FAQ 18 retains pre-merge attachments, without specifying an absent component's return placement.
     for (const marker of resolved.effects) {
-      if (isRetainedContinuingEffect(marker) && ['pacifism', 'crab', 'curse'].includes(marker.type)
+      if (isRetainedContinuingEffect(marker) && (marker.type === 'pacifism' || marker.type === 'crab' || marker.type === 'curse')
         && typeof marker.pieceId === 'string' && effect.pieceIds.includes(marker.pieceId)
         && resolved.pieces.some(piece => piece.id === marker.pieceId && piece.zone === 'away')) {
         marker.confabulationEnded = true;
@@ -4645,12 +4311,8 @@ function restoreCapturedPawn(state: GameState, pawn: PieceState, to: SquareName)
 function playBetrayal(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const cardId = 'betrayal';
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === cardId
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Betrayal is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Betrayal is played before the regular move.');
   }
@@ -4700,12 +4362,8 @@ function playBetrayal(state: GameState, target: unknown, cardInstanceId?: unknow
 function playWingedVictory(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const cardId = 'winged-victory';
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === cardId
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Winged Victory is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Winged Victory is played instead of the regular move.');
   }
@@ -4750,12 +4408,8 @@ function playWingedVictory(state: GameState, target: unknown, cardInstanceId?: u
 function playResurrection(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const cardId = 'resurrection';
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === cardId
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Resurrection is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Resurrection is played instead of the regular move.');
   }
@@ -4801,15 +4455,8 @@ function playResurrection(state: GameState, target: unknown, cardInstanceId?: un
 function playPassingInTheNight(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const cardId = 'passing-in-the-night';
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Passing in the Night is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Passing in the Night is played instead of the regular move.');
   }
@@ -4858,12 +4505,8 @@ function manOfStrawPawn(state: GameState, piece: PieceState): boolean {
 
 function playManOfStraw(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'man-of-straw'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Man of Straw is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'man-of-straw', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Man of Straw is played before the regular move.');
   }
@@ -4909,12 +4552,8 @@ function playManOfStraw(state: GameState, target: unknown, cardInstanceId?: unkn
 
 function playSanctuary(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'sanctuary'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Sanctuary is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'sanctuary', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Sanctuary is played instead of the regular move.');
   }
@@ -4967,17 +4606,10 @@ function playSanctuary(state: GameState, target: unknown, cardInstanceId?: unkno
   completeReplacementMove(resolved, color,
     movedPieces.some(piece => piece.originalRole === 'pawn' && !piece.promoted), [], movedPieces);
   const consumesMove = !isKingInCheck(state, color);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'sanctuary', 'DIRECT_MATE', cardInstanceId, consumesMove);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, 'sanctuary', 'SELF_CHECK', cardInstanceId, consumesMove);
-  }
-  spendCard(resolved, 'sanctuary', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'sanctuary', target: parsedTarget });
-  return { ok: true, state: resolved };
+  return finishMovementCard(
+    state, resolved, { type: 'cardPlayed', cardId: 'sanctuary', target: parsedTarget },
+    cardInstanceId, movedPieces, consumesMove,
+  );
 }
 
 function playSwapCard(
@@ -4990,17 +4622,8 @@ function playSwapCard(
   const config = SWAP_CARDS[cardId];
   const firstName = config.firstRole[0].toUpperCase() + config.firstRole.slice(1);
   const secondName = config.secondRole[0].toUpperCase() + config.secondRole.slice(1);
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === cardId && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', `${config.name} is not in your hand.`);
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   if (
     config.replacesMove
       ? state.turn.phase !== 'beforeMove' || state.turn.moveMade
@@ -5099,17 +4722,8 @@ function playSwapCard(
 
 function playDoomsayer(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'doomsayer' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Doomsayer is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'doomsayer', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Doomsayer is played after the regular move.');
   }
@@ -5131,12 +4745,8 @@ function playDoomsayer(state: GameState, target: unknown, cardInstanceId?: unkno
 
 function playFatalAttraction(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'fatal-attraction'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Fatal Attraction is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'fatal-attraction', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Fatal Attraction is played after the regular move.');
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose a piece on the board.');
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
@@ -5152,12 +4762,8 @@ function playFatalAttraction(state: GameState, target: unknown, cardInstanceId?:
 
 function playNeutrality(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'neutrality'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Neutrality is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'neutrality', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Neutrality is played after the regular move.');
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose an opposing piece.');
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
@@ -5178,15 +4784,8 @@ function playNeutrality(state: GameState, target: unknown, cardInstanceId?: unkn
 
 function playPacifism(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'pacifism' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Pacifism is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'pacifism', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Pacifism must be played before the regular move.');
   }
@@ -5211,11 +4810,8 @@ function playPacifism(state: GameState, target: unknown, cardInstanceId?: unknow
 
 function playCurse(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'curse' && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Curse is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'curse', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Curse is played after the regular move.');
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose an opposing Queen, Bishop, or Rook.');
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
@@ -5231,12 +4827,8 @@ function playCurse(state: GameState, target: unknown, cardInstanceId?: unknown):
 
 function playManTrap(state: GameState, target: unknown, cardInstanceId?: unknown, validateOnly = false): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'man-trap'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Man-Trap is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'man-trap', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Man-Trap is played after the regular move.');
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose a square occupied by your piece.');
   const piece = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === target);
@@ -5252,8 +4844,8 @@ function playManTrap(state: GameState, target: unknown, cardInstanceId?: unknown
 
 function playForbiddenCity(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string') || !state.players[color].hand.some(card => card.cardId === 'forbidden-city' && (cardInstanceId === undefined || card.id === cardInstanceId))) return reject(state, 'CARD_NOT_IN_HAND', 'Forbidden City is not in your hand.');
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'forbidden-city', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Forbidden City is played after the regular move.');
   if (typeof target !== 'string' || !SQUARE.test(target)) return reject(state, 'INVALID_TARGET', 'Choose an unoccupied square.');
   const square = target as SquareName;
@@ -5267,8 +4859,8 @@ function playForbiddenCity(state: GameState, target: unknown, cardInstanceId?: u
 
 function playFortification(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string') || !state.players[color].hand.some(card => card.cardId === 'fortification' && (cardInstanceId === undefined || card.id === cardInstanceId))) return reject(state, 'CARD_NOT_IN_HAND', 'Fortification is not in your hand.');
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'fortification', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Fortification is played after the regular move.');
   const edge = effectRecord(target);
   if (!edge || Object.getPrototypeOf(edge) !== Object.prototype || Reflect.ownKeys(edge).length !== 2
@@ -5285,15 +4877,8 @@ function playFortification(state: GameState, target: unknown, cardInstanceId?: u
 
 function playCrab(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'crab' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Crab is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'crab', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Crab is played after the regular move.');
   }
@@ -5320,15 +4905,8 @@ function playCrab(state: GameState, target: unknown, cardInstanceId?: unknown): 
 
 function playVendetta(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'vendetta' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Vendetta is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'vendetta', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Vendetta is played after the regular move.');
   }
@@ -5343,17 +4921,8 @@ function playVendetta(state: GameState, target: unknown, cardInstanceId?: unknow
 
 function playNoQuarter(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'no-quarter' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'No Quarter is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'no-quarter', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'No Quarter must immediately follow your capturing move.');
   }
@@ -5423,12 +4992,8 @@ function playAdditionalMove(state: GameState, cardId: 'charge' | 'crusade' | 'me
   const color = state.turn.color;
   const role = cardId === 'charge' ? 'knight' : cardId === 'crusade' ? 'bishop' : 'rook';
   const name = CARD_CATALOG[cardId].name;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === cardId
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', `${name} is not in your hand.`);
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, cardId, cardInstanceId);
+  if (error) return error;
   const previous = reactionEvent(state);
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade
     || previous?.type !== 'move' || previous.capturedId || previous.capturedIds?.length) {
@@ -5471,12 +5036,8 @@ function playAdditionalMove(state: GameState, cardId: 'charge' | 'crusade' | 'me
 
 function playCoup(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'coup'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Coup is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'coup', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Coup is played after your move.');
   }
@@ -5514,12 +5075,8 @@ function playChallenge(
   opponentDests = () => legalDests(turnView(state, opposite(state.turn.color)), false),
 ): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'challenge'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Challenge is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'challenge', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Challenge is played after your move.');
   }
@@ -5548,15 +5105,8 @@ function playChallenge(
 
 function playPanic(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'panic' && (cardInstanceId === undefined || card.id === cardInstanceId)
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Panic is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'panic', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Panic is played after your move.');
   }
@@ -5576,12 +5126,8 @@ function playPanic(state: GameState, target: unknown, cardInstanceId?: unknown):
 
 function playBombard(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'bombard'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Bombard is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'bombard', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Bombard is played instead of the regular move.');
   }
@@ -5637,31 +5183,16 @@ function playBombard(state: GameState, target: unknown, cardInstanceId?: unknown
   const capturedIds = victim ? losePiece(resolved, resolved.pieces.find(piece => piece.id === victim.id)!, 'captured') : [];
   completeReplacementMove(resolved, color, hasUnpromotedPawn(state, mover) || Boolean(victim), [], [...components, ...captured]);
   const consumesMove = !isKingInCheck(state, color);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'bombard', 'DIRECT_MATE', cardInstanceId, consumesMove);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, components)) {
-    return fizzleCard(state, 'bombard', 'SELF_CHECK', cardInstanceId, consumesMove);
-  }
-  spendCard(resolved, 'bombard', cardInstanceId);
-  resolved.history.push({ type: 'cardPlayed', cardId: 'bombard', target: moves, movement: moves,
-    preservePreviousMove: false, ...(victim ? { capturedId: victim.id, capturedIds } : {}) });
-  return { ok: true, state: resolved };
+  return finishMovementCard(state, resolved, {
+    type: 'cardPlayed', cardId: 'bombard', target: moves, movement: moves,
+    preservePreviousMove: false, ...(victim ? { capturedId: victim.id, capturedIds } : {}),
+  }, cardInstanceId, components, consumesMove);
 }
 
 function playGhostwalk(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'ghostwalk' && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Ghostwalk is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'ghostwalk', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Ghostwalk is played instead of the regular move.');
   }
@@ -5725,38 +5256,19 @@ function playGhostwalk(state: GameState, target: unknown, cardInstanceId?: unkno
     enPassant,
     components,
   );
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'ghostwalk', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, components)) {
-    return fizzleCard(state, 'ghostwalk', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'ghostwalk', cardInstanceId);
-  resolved.history.push({
+  return finishMovementCard(state, resolved, {
     type: 'cardPlayed',
     cardId: 'ghostwalk',
     target: moves,
     movement: moves,
     preservePreviousMove: false,
-  });
-  return { ok: true, state: resolved };
+  }, cardInstanceId, components, !wasInCheck);
 }
 
 function playIrresistibleForce(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if (
-    (cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card =>
-      card.cardId === 'irresistible-force'
-      && (cardInstanceId === undefined || card.id === cardInstanceId),
-    )
-  ) return reject(state, 'CARD_NOT_IN_HAND', 'Irresistible Force is not in your hand.');
-  if (cardAllowanceUsed(state, color)) {
-    return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
-  }
+  const error = cardPlayError(state, 'irresistible-force', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'beforeMove' || state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Irresistible Force is played instead of the regular move.');
   }
@@ -5847,35 +5359,20 @@ function playIrresistibleForce(state: GameState, target: unknown, cardInstanceId
     }
   }
   completeReplacementMove(resolved, color, true, [], movedPieces);
-  expireFatalAttractions(state, resolved);
-  const defender = opposite(color);
-  if (!isOrdinaryCheckmate(state, defender) && isOrdinaryCheckmate(resolved, defender)) {
-    return fizzleCard(state, 'irresistible-force', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
-  }
-  if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
-    return fizzleCard(state, 'irresistible-force', 'SELF_CHECK', cardInstanceId, !wasInCheck);
-  }
-
-  spendCard(resolved, 'irresistible-force', cardInstanceId);
-  resolved.history.push({
+  return finishMovementCard(state, resolved, {
     type: 'cardPlayed',
     cardId: 'irresistible-force',
     target: moves,
     ...(terminal ? { capturedId: terminal.id } : {}),
     ...(capturedIds.length > 1 ? { capturedIds } : {}),
     preservePreviousMove: false,
-  });
-  return { ok: true, state: resolved };
+  }, cardInstanceId, movedPieces, !wasInCheck);
 }
 
 function playTruce(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'truce'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Truce is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'truce', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) return reject(state, 'INVALID_TIMING', 'Truce is played after the regular move.');
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Truce does not take a target.');
   const resolved = structuredClone(state);
@@ -5891,12 +5388,8 @@ function playVulture(state: GameState, target: unknown, cardInstanceId?: unknown
     return reject(state, 'INVALID_TIMING', 'Vulture immediately follows an opponent card.');
   }
   const color = opposite(response.player);
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'vulture'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Vulture is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'vulture', cardInstanceId, color);
+  if (error) return error;
   if (target !== undefined) return reject(state, 'INVALID_TARGET', 'Vulture does not take a target.');
   const discard = state.players[response.player].discard;
   const played = state.playedCards?.slice().reverse().find(entry => entry.player === response.player);
@@ -6010,12 +5503,8 @@ function explodeFireball(state: GameState, center: PieceState): { state: GameSta
 
 function playFireball(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'fireball'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Fireball is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'fireball', cardInstanceId);
+  if (error) return error;
   const move = state.plotsExecution ? state.plotsExecution.window.shieldMove : state.shieldMove;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade || move?.player !== color
     || move.capturedOpponent !== false) {
@@ -6039,12 +5528,8 @@ function playFireball(state: GameState, target: unknown, cardInstanceId?: unknow
 
 function playMysticShield(state: GameState, target: unknown, cardInstanceId?: unknown): ApplyResult {
   const color = state.turn.color;
-  if ((cardInstanceId !== undefined && typeof cardInstanceId !== 'string')
-    || !state.players[color].hand.some(card => card.cardId === 'mystic-shield'
-      && (cardInstanceId === undefined || card.id === cardInstanceId))) {
-    return reject(state, 'CARD_NOT_IN_HAND', 'Mystic Shield is not in your hand.');
-  }
-  if (cardAllowanceUsed(state, color)) return reject(state, 'CARD_ALREADY_PLAYED', 'Only one card may be played per turn.');
+  const error = cardPlayError(state, 'mystic-shield', cardInstanceId);
+  if (error) return error;
   if (state.turn.phase !== 'afterMove' || !state.turn.moveMade) {
     return reject(state, 'INVALID_TIMING', 'Mystic Shield follows your move.');
   }

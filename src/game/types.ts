@@ -134,6 +134,7 @@ export interface PacifismEffect {
   owner: Color;
   card: CardInstance;
   pieceId: string;
+  confabulationEnded?: boolean;
 }
 
 export interface FatalAttractionEffect {
@@ -141,6 +142,8 @@ export interface FatalAttractionEffect {
   owner: Color;
   card: CardInstance;
   pieceId: string;
+  active?: boolean;
+  suspended?: boolean;
 }
 
 export interface CrabEffect {
@@ -148,6 +151,7 @@ export interface CrabEffect {
   owner: Color;
   card: CardInstance;
   pieceId: string;
+  confabulationEnded?: boolean;
 }
 
 export interface CurseEffect {
@@ -155,6 +159,7 @@ export interface CurseEffect {
   owner: Color;
   card: CardInstance;
   pieceId: string;
+  confabulationEnded?: boolean;
 }
 
 export interface ManTrapEffect {
@@ -162,6 +167,8 @@ export interface ManTrapEffect {
   owner: Color;
   card: CardInstance;
   square: SquareName;
+  active?: boolean;
+  suspended?: boolean;
 }
 
 export interface ForbiddenCityEffect {
@@ -212,6 +219,52 @@ export interface ConfabulationEffect {
   card: CardInstance;
   pieceIds: [string, string];
 }
+
+export interface CoupEffect {
+  type: 'coup';
+  owner: Color;
+  card: CardInstance;
+  princeId: string;
+  kingId: string;
+  princeRole: Role;
+  suspended?: boolean;
+}
+
+export interface EarthquakeEffect {
+  type: 'earthquake';
+  owner: Color;
+  card: CardInstance;
+  direction: EarthquakeDirection;
+  target: EarthquakeTarget;
+}
+
+export interface NeutralityEffect {
+  type: 'neutrality';
+  owner: Color;
+  card: CardInstance;
+  pieceId: string;
+}
+
+export interface TruceEffect {
+  type: 'truce';
+  owner: Color;
+  card: CardInstance;
+}
+
+export interface MysticShieldEffect {
+  type: 'mystic-shield';
+  owner: Color;
+  player: Color;
+  pieceId: string;
+}
+
+/** Canonical effects created by the engine; untrusted input is validated separately. */
+export type GameEffect = DoomsayerEffect | PacifismEffect | FatalAttractionEffect
+  | CrabEffect | CurseEffect | ManTrapEffect | ForbiddenCityEffect | FortificationEffect
+  | VendettaEffect | PanicEffect | ChallengeEffect | DungeonEffect | ConfabulationEffect
+  | CoupEffect | EarthquakeEffect | NeutralityEffect | TruceEffect | MysticShieldEffect;
+
+export type RetainedEffect = Extract<GameEffect, { card: CardInstance }>;
 
 export interface PendingDoomsayerState {
   player: Color;
@@ -313,7 +366,7 @@ export interface GameState {
     moveMade: boolean;
     cardPlays: Record<Color, number>;
   };
-  effects: unknown[];
+  effects: GameEffect[];
   history: GameEvent[];
   playedCards?: Array<{ player: Color; cardInstanceId: string }>;
   cardResponse?: { player: Color; historyLength: number };
