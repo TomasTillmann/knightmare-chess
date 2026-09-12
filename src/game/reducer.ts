@@ -4078,7 +4078,7 @@ function playHeresy(state: GameState, target: unknown, cardInstanceId?: unknown)
     phaseMoves.forEach((move, index) => {
       resolved.pieces.find(piece => piece.id === bishops[index].id)!.square = move.to;
     });
-    expireFatalAttractions(phase, resolved);
+    springManTraps(phase, resolved);
     movedPieces.push(...bishops);
     bishops.forEach(bishop => movedIds.add(bishop.id));
     offset += phaseMoves.length;
@@ -7070,7 +7070,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
         const bishop = afterOpponent.pieces.find(piece => piece.zone === 'board' && piece.square === move.from)!;
         bishop.square = move.to;
       }
-      expireFatalAttractions(state, afterOpponent);
+      springManTraps(state, afterOpponent);
       return phasePlans(afterOpponent, state.turn.color).map(ownMoves => [...opponentMoves, ...ownMoves]);
     });
   }
