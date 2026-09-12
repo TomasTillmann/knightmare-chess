@@ -1344,7 +1344,7 @@ export function doppelgangerDests(state: GameState, from: SquareName): SquareNam
 
 export function heresyDests(state: GameState, from: SquareName): SquareName[] {
   const bishop = state.pieces.find(piece => piece.zone === 'board' && piece.square === from);
-  if (!bishop || !hasRole(state, bishop, 'bishop')) return [];
+  if (!bishop || !hasRole(state, bishop, 'bishop') || !dungeonAllowsMove(state, bishop, state.turn.color, true)) return [];
 
   const source = parseSquare(from);
   const board = setupFor(state).board;
@@ -4070,6 +4070,7 @@ function playHeresy(state: GameState, target: unknown, cardInstanceId?: unknown)
     phaseMoves.forEach((move, index) => {
       resolved.pieces.find(piece => piece.id === bishops[index].id)!.square = move.to;
     });
+    expireFatalAttractions(phase, resolved);
     movedPieces.push(...bishops);
     bishops.forEach(bishop => movedIds.add(bishop.id));
     offset += phaseMoves.length;
@@ -6502,7 +6503,8 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
     && activeVendettas(state).length > 0
     && vendettaCaptureDests(state, true).size > 0;
   const result = playCardUnchecked(state, cardId, target, cardInstanceId);
-  if (result.ok && cardId !== 'man-of-straw' && cardId !== 'passing-in-the-night' && !Object.hasOwn(SWAP_CARDS, cardId)
+  // Heresy checks movement against each phase, after the opponent's magnets can expire.
+  if (result.ok && cardId !== 'man-of-straw' && cardId !== 'passing-in-the-night' && cardId !== 'heresy' && !Object.hasOwn(SWAP_CARDS, cardId)
     && state.pieces.some(piece => {
       const after = boardCarrier(result.state, piece.id);
       return piece.zone === 'board' && piece.square && after?.square && after.square !== piece.square
@@ -7041,6 +7043,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
         const bishop = afterOpponent.pieces.find(piece => piece.zone === 'board' && piece.square === move.from)!;
         bishop.square = move.to;
       }
+      expireFatalAttractions(state, afterOpponent);
       return phasePlans(afterOpponent, state.turn.color).map(ownMoves => [...opponentMoves, ...ownMoves]);
     });
   }
