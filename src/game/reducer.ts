@@ -6557,7 +6557,7 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
     const event = result.state.history.at(-1);
     const victim = event?.cardId === 'split-knight' || event?.cardId === 'evil-eye'
       ? state.pieces.find(piece => event.capturedIds?.includes(piece.id) && piece.owner === opposite(state.turn.color))
-      : (event?.cardId === 'dark-mirror' || event?.cardId === 'breakthrough' || event?.cardId === 'bombard') && event.capturedId
+      : (event?.cardId === 'dark-mirror' || event?.cardId === 'breakthrough' || event?.cardId === 'bombard' || event?.cardId === 'irresistible-force') && event.capturedId
       ? state.pieces.find(piece => piece.id === event.capturedId)
       : undefined;
     if (!victim || victim.owner !== opposite(state.turn.color)) {
