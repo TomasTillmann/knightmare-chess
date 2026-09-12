@@ -2541,7 +2541,7 @@ function playFanatic(state: GameState, target: unknown, cardInstanceId?: unknown
   completeReplacementMove(resolved, color, true, [], [pawn]);
 
   expireFatalAttractions(state, resolved);
-  if (isOrdinaryCheckmate(resolved, opposite(color))) {
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'fanatic', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (moveLeavesRoyalInCheck(resolved, color, [pawn])) {
@@ -2703,7 +2703,7 @@ function playForcedMarch(state: GameState, target: unknown, cardInstanceId?: unk
   completeReplacementMove(resolved, color, true, [], pawns);
 
   expireFatalAttractions(state, resolved);
-  if (isOrdinaryCheckmate(resolved, opposite(color))) {
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'forced-march', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (moveLeavesRoyalInCheck(resolved, color, pawns)) {
@@ -2917,7 +2917,7 @@ function playGuardian(state: GameState, target: unknown, cardInstanceId?: unknow
   completeReplacementMove(resolved, color, true, enPassant, movedPieces);
 
   expireFatalAttractions(state, resolved);
-  if (isOrdinaryCheckmate(resolved, opposite(color))) {
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'guardian', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (moveLeavesRoyalInCheck(resolved, color, movedPieces)) {
@@ -2982,7 +2982,7 @@ function playOnslaught(state: GameState, target: unknown, cardInstanceId?: unkno
   completeReplacementMove(resolved, color, true, [], pawns);
 
   expireFatalAttractions(state, resolved);
-  if (isOrdinaryCheckmate(resolved, opposite(color))) {
+  if (!isOrdinaryCheckmate(state, opposite(color)) && isOrdinaryCheckmate(resolved, opposite(color))) {
     return fizzleCard(state, 'onslaught', 'DIRECT_MATE', cardInstanceId, !wasInCheck);
   }
   if (moveLeavesRoyalInCheck(resolved, color, pawns)) {
