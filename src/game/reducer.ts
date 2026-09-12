@@ -1994,6 +1994,7 @@ function playToll(state: GameState, target: unknown, cardInstanceId?: unknown): 
     canceled.effects = canceled.effects.filter(effect =>
       !isPanicEffect(effect) || effect.player !== mover
     );
+    canceled.players[reactor].hand.find(card => card.id === selected.id)!.cardId = selected.cardId;
     spendCard(canceled, 'toll', selected.id, true, reactor);
     completeReplacementMove(canceled, mover, false);
     canceled.turn.cardPlays = { white: 1, black: 1 };
@@ -7734,7 +7735,12 @@ function rememberTurnStart(before: GameState, result: ApplyResult): ApplyResult 
     && !before.turnCheckpoint
     && before.turn.phase === 'beforeMove'
     && !before.turn.moveMade
-    && before.players[opposite(before.turn.color)].hand.some(card => card.cardId === 'toll')
+    && (before.players[opposite(before.turn.color)].hand.some(card => card.cardId === 'toll')
+      || (before.players[opposite(before.turn.color)].hand.some(card => card.cardId === 'haunting-memories')
+        && (() => {
+          const previous = [...before.history].reverse().find(event => event.type === 'cardPlayed' || event.type === 'cardFizzled');
+          return (previous?.copiedCardId ?? previous?.cardId) === 'toll';
+        })()))
   ) {
     const checkpoint = structuredClone(before);
     delete checkpoint.turnCheckpoint;
