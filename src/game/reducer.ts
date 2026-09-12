@@ -344,8 +344,10 @@ function springManTraps(before: GameState, next: GameState): void {
   expireFatalAttractions(before, next);
   const effects = next.effects;
   const moved = next.pieces.filter(piece => piece.zone === 'board' && piece.square
-    && before.pieces.some(previous => previous.id === piece.id && previous.zone === 'board'
-      && previous.square && previous.square !== piece.square));
+    && physicalPieces(next, piece).some(component => {
+      const previous = boardCarrier(before, component.id);
+      return previous?.square && previous.square !== piece.square;
+    }));
   const sprung = next.effects.flatMap((effect, index) => {
     if (!isRetainedContinuingEffect(effect) || effect.type !== 'man-trap'
       || effect.active === false || effect.suspended === true) return [];
