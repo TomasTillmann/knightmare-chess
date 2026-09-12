@@ -1037,7 +1037,7 @@ function rebirthDests(state: GameState, from: SquareName): SquareName[] {
   if (!piece || (!piece.neutral && piece.owner === state.turn.color)) return [];
 
   return [...new Set(physicalPieces(state, piece).flatMap(component => {
-    return startingSquares(state, component.owner, component.originalRole).flatMap(square => {
+    return startingSquares(state, component.owner, component.promoted ? component.role : component.originalRole).flatMap(square => {
       if (square === from) return [];
       const occupant = state.pieces.find(candidate => candidate.zone === 'board' && candidate.square === square);
       return !occupant || (
