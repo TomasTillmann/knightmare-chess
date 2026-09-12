@@ -1507,9 +1507,16 @@ function reactionEvent(state: GameState): GameState['history'][number] | undefin
   return undefined;
 }
 
-function hostageCaptureEvent(state: GameState): GameState['history'][number] | undefined {
-  const event = state.plotsExecution ? state.plotsExecution.window.capture : state.history.at(-1);
+function hostageCaptureEvent(state: GameState, includeIndirect = false): GameState['history'][number] | undefined {
+  let event = state.plotsExecution
+    ? state.plotsExecution.window.capture ?? (includeIndirect ? state.plotsExecution.window.reaction : undefined)
+    : state.history.at(-1);
   if (event?.type !== 'move' && event?.type !== 'cardPlayed') return undefined;
+  const capture = state.plotsExecution ? state.plotsExecution.window.legacyCapture : state.legacyCapture;
+  if (includeIndirect && event.type === 'move' && capture
+    && (state.plotsExecution || capture.historyLength === state.history.length)) {
+    event = { ...event, capturedIds: [...new Set([...(event.capturedIds ?? []), ...capture.pieceIds])] };
+  }
   if (!event.capturedId && !event.capturedIds?.length) return undefined;
   if (event.type === 'move' && (state.turn.phase !== 'afterMove' || !state.turn.moveMade)) return undefined;
   if (event.type === 'cardPlayed' && !state.plotsExecution
@@ -1630,9 +1637,10 @@ function playHostage(state: GameState, target: unknown, cardInstanceId?: unknown
   const reactor = returned.owner;
   const error = cardPlayError(state, 'hostage', cardInstanceId, reactor);
   if (error) return error;
-  const event = hostageCaptureEvent(state);
+  const event = hostageCaptureEvent(state, true);
   const response = state.plotsExecution ? state.plotsExecution.window.cardResponse : state.cardResponse;
-  const captor = event?.type === 'move' ? event.player ?? state.turn.color : event?.player ?? response?.player;
+  const captor = event?.type === 'move'
+    ? returned.capturedBy ?? event.player ?? state.turn.color : event?.player ?? response?.player;
   if (!event || captor !== opposite(reactor)
     || (event.capturedId !== returned.id && !event.capturedIds?.includes(returned.id))) {
     return reject(state, 'INVALID_TIMING', 'Hostage immediately follows an opponent capture of that piece.');
@@ -6192,7 +6200,7 @@ function cardPlayTargetsUnchecked(state: GameState, cardId: string): unknown[] {
       });
   }
   if (cardId === 'hostage') {
-    const event = hostageCaptureEvent(state);
+    const event = hostageCaptureEvent(state, true);
     if (!event) return [];
     return [...new Set([...(event.capturedIds ?? []), ...(event.capturedId ? [event.capturedId] : [])])]
       .flatMap(pieceId => state.pieces.flatMap(pawn => {
