@@ -270,14 +270,15 @@ function refreshNeutrality(state: GameState): void {
     piece.neutral = piece.neutralBeforeEffects;
     delete piece.neutralBeforeEffects;
   }
-  const mark = (piece: PieceState, eligible = true) => {
+  const mark = (piece: PieceState) => {
     piece.neutralBeforeEffects ??= piece.neutral;
-    piece.neutral = eligible && !physicalPieces(state, piece).some(component => component.royal);
+    piece.neutral = !physicalPieces(state, piece).some(component => component.royal || component.role === 'king'
+      || component.role === 'queen' || (!component.promoted && ['king', 'queen'].includes(component.originalRole)));
   };
   for (const effect of state.effects) {
     if (!isRetainedContinuingEffect(effect) || effect.type !== 'neutrality') continue;
     const piece = state.pieces.find(candidate => candidate.id === effect.pieceId);
-    if (piece) mark(piece, piece.role !== 'queen' && (piece.promoted || piece.originalRole !== 'queen'));
+    if (piece) mark(piece);
   }
   for (const effect of state.effects) {
     if (!isConfabulationEffect(effect)) continue;
