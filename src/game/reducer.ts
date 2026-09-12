@@ -7578,11 +7578,11 @@ function expirePieceEffects(result: ApplyResult): ApplyResult {
   return result;
 }
 
-function hasBoardOrCardEscape(state: GameState, allowCardContinuation = false): boolean {
+function hasBoardOrCardEscape(state: GameState, allowCardContinuation = false, spentCards = new Set<string>()): boolean {
   const color = state.turn.color;
   return legalDests(state, allowCardContinuation || isKingInCheck(state, color), true, true).size > 0
     || state.players[color].hand.some(card =>
-      cardPlayTargets(state, card.cardId).some(target => {
+      !spentCards.has(card.id) && cardPlayTargets(state, card.cardId).some(target => {
         const result = playCard(state, card.cardId, target, card.id);
         if (!result.ok) return false;
         if (allowCardContinuation) return true;
@@ -7590,7 +7590,10 @@ function hasBoardOrCardEscape(state: GameState, allowCardContinuation = false): 
         if (result.state.turn.moveMade) return !isKingInCheck(result.state, color)
           || Boolean(result.state.pendingDoomsayer) && hasDoomsayerEscape(result.state);
         if (result.state.history.at(-1)?.type !== 'cardPlayed') return false;
-        return legalDests(result.state, true, true, true).size > 0;
+        return legalDests(result.state, true, true, true).size > 0
+          || Boolean(result.state.plotsAllowances?.some(allowance =>
+            allowance.player === color && allowance.remaining > 0))
+            && hasTurnEscape(result.state, false, new Set([...spentCards, card.id]));
       }),
     );
 }
@@ -7649,9 +7652,10 @@ function canSkipRegularMove(state: GameState): boolean {
     entry.player === state.turn.color && entry.returned) && !hasLegalMove(state, state.turn.color));
 }
 
-function hasTurnEscape(state: GameState, allowCardContinuation = false): boolean {
+function hasTurnEscape(state: GameState, allowCardContinuation = false, spentCards = new Set<string>()): boolean {
+  if (state.plotsExecution) state = { ...state, plotsExecution: undefined };
   if (canSkipRegularMove(state) && !isKingInCheck(state, state.turn.color)) return true;
-  return hasBoardOrCardEscape(state, allowCardContinuation) || hasDoomsayerEscape(state);
+  return hasBoardOrCardEscape(state, allowCardContinuation, spentCards) || hasDoomsayerEscape(state);
 }
 
 function adjudicateTurn(state: GameState): GameState {
