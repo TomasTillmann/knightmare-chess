@@ -110,17 +110,28 @@ for (const cardId of ['figure-dance', 'earthquake'] as const) {
   });
 }
 
-test('Neutrality on a Knight component still controls its Queen composite after movement', () => {
+test('Neutrality on a Knight component is retained but suspended in a Queen composite', () => {
   let state = advance(createGameState({ fen: '6k1/8/8/8/4q3/2n5/8/5K2 w - - 0 1',
     hands: { white: ['neutrality'], black: ['confabulation'] } }),
   { type: 'move', from: 'f1', to: 'f2' }, { type: 'playCard', cardId: 'neutrality', target: 'c3' },
-  { type: 'endTurn' }, { type: 'playCard', cardId: 'confabulation', target: [{ from: 'c3', to: 'e4' }] });
-  assert.equal(state.history.at(-1)?.type, 'cardPlayed');
+  { type: 'endTurn' });
   const marker = structuredClone(state.effects[0]);
-  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.neutral, true);
-  state = advance(state, { type: 'endTurn' }, { type: 'move', from: 'e4', to: 'e5' });
-  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.neutral, true);
+  state = advance(state, { type: 'playCard', cardId: 'confabulation', target: [{ from: 'c3', to: 'e4' }] });
+  assert.equal(state.history.at(-1)?.type, 'cardPlayed');
+  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.neutral, false);
   assert.deepEqual(state.effects[0], marker);
+  assert.deepEqual(state.players.white.discard, [], 'suspension retains the physical card');
+  state = advance(state, { type: 'endTurn' });
+  assert.equal(legalDests(state).get('e4')?.includes('e5') ?? false, false);
+  const opposingMove = applyAction(state, { type: 'move', from: 'e4', to: 'e5' });
+  assert.equal(opposingMove.ok, false, 'the opposing player cannot control the Queen composite');
+  assert.deepEqual(opposingMove.state, state);
+  state = advance(state, { type: 'move', from: 'f2', to: 'f1' }, { type: 'endTurn' },
+    { type: 'move', from: 'e4', to: 'e5' });
+  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.square, 'e5', 'original owner retains control');
+  assert.equal(state.pieces.find(piece => piece.id === 'black-queen-e4')?.neutral, false);
+  assert.deepEqual(state.effects[0], marker);
+  assert.deepEqual(state.players.white.discard, []);
 });
 
 test('Peace Talks cancels the retained Neutrality card after Queen promotion', () => {
