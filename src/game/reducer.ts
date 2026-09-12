@@ -1152,6 +1152,7 @@ export function guardianDests(state: GameState, from: SquareName): SquareName[] 
 }
 
 function madmanJumpOptions(
+  state: GameState,
   occupied: ReadonlyMap<SquareName, PieceState>,
   from: SquareName,
   used: ReadonlySet<string>,
@@ -1170,6 +1171,7 @@ function madmanJumpOptions(
     const to = makeSquare(targetRank * 8 + targetFile);
     const jumped = occupied.get(middle);
     return jumped && !used.has(jumped.id) && !occupied.has(to)
+      && !forbiddenCityBlocksMove(state, from, to, true)
       ? [{ move: { from, to }, jumpedId: jumped.id }]
       : [];
   });
@@ -1188,7 +1190,7 @@ function madmanTargets(state: GameState): CardMove[][] {
     ));
     const routes: CardMove[][] = [];
     const visit = (from: SquareName, used: ReadonlySet<string>, path: CardMove[]): void => {
-      const options = madmanJumpOptions(occupied, from, used);
+      const options = madmanJumpOptions(state, occupied, from, used);
       if (!options.length) {
         if (path.length) routes.push(path);
         return;
@@ -2598,7 +2600,7 @@ function playMadman(state: GameState, target: unknown, cardInstanceId?: unknown)
   const used = new Set<string>();
   let current = pawn.square!;
   for (const move of moves) {
-    const option = madmanJumpOptions(occupied, current, used).find(candidate =>
+    const option = madmanJumpOptions(state, occupied, current, used).find(candidate =>
       candidate.move.from === move.from && candidate.move.to === move.to,
     );
     if (!option) return reject(state, 'ILLEGAL_MOVE', 'Each jump must cross a different piece and land on an empty square.');
@@ -2607,7 +2609,7 @@ function playMadman(state: GameState, target: unknown, cardInstanceId?: unknown)
     used.add(option.jumpedId);
     current = move.to;
   }
-  if (madmanJumpOptions(occupied, current, used).length) {
+  if (madmanJumpOptions(state, occupied, current, used).length) {
     return reject(state, 'ILLEGAL_MOVE', 'The Pawn must continue while another jump is available.');
   }
 
