@@ -2304,6 +2304,8 @@ function isRoyalEnPassantThreatened(
     boardCarrier(state, opportunity.pawnId)?.id === carrier.id
     && state.pieces.some(attacker => {
       if (attacker.zone !== 'board' || !attacker.square) return false;
+      if (!dungeonAllowsMove(state, attacker, controller)
+        || !challengeAllows(state, [attacker], controller)) return false;
       const capture = enPassantCapture(state, attacker.square, opportunity.target, controller);
       if (capture?.victim.id !== carrier.id) return false;
       const resolved = resolveEnPassant(state, attacker.id, carrier.id, opportunity.target);
