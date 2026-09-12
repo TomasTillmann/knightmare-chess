@@ -6532,6 +6532,14 @@ function playCardCore(state: GameState, cardId: string, target: unknown, cardIns
   if (result.ok && result.state.history.at(-1)?.type === 'cardPlayed'
     && cardId !== 'man-of-straw' && cardId !== 'passing-in-the-night' && !Object.hasOwn(SWAP_CARDS, cardId)) springManTraps(state, result.state);
   expirePieceEffects(result);
+  if (result.ok && !(cardId === 'coup' && result.state.outcome?.reason === 'surrender')
+    && (['white', 'black'] as const).some(owner =>
+      state.pieces.some(piece => piece.owner === owner && piece.royal
+        && (piece.zone === 'board' || piece.zone === 'away'))
+      && !result.state.pieces.some(piece => piece.owner === owner && piece.royal
+        && (piece.zone === 'board' || piece.zone === 'away')))) {
+    return reject(state, 'ILLEGAL_MOVE', 'A card cannot eliminate a player’s last King.');
+  }
   // A staged rescue is still unfinished; otherwise FAQ p.4 protects the mover too.
   const completedTurnReaction = (cardId === 'hostage' || cardId === 'revenge')
     && state.turn.moveMade && !state.pendingRescue;
