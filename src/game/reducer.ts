@@ -3996,7 +3996,7 @@ function playHeresy(state: GameState, target: unknown, cardInstanceId?: unknown)
       key !== 'length'
       && (typeof key !== 'string' || !/^\d+$/.test(key) || Number(key) >= target.length)
     )
-    || target.some(candidate =>
+    || Array.from(target).some(candidate =>
       !candidate
       || typeof candidate !== 'object'
       || Array.isArray(candidate)
