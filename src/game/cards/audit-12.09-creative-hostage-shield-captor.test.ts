@@ -21,7 +21,7 @@ function fixture(shieldPlayer: Color, shield = true, file: 'c' | 'f' = 'c') {
   const board = shieldPlayer === 'white' ? original : original.split('/').reverse().join('/').replace(/[a-zA-Z]/g,
     character => character === character.toUpperCase() ? character.toLowerCase() : character.toUpperCase());
   let state = createGameState({ fen: `${board} ${shieldPlayer === 'white' ? 'w' : 'b'} - - 0 1`,
-    hands: { [shieldPlayer]: ['neutrality', 'mystic-shield', 'revenge'], [reactor]: ['hostage'] } });
+    hands: { [shieldPlayer]: ['neutrality', 'mystic-shield', 'revenge', 'toll'], [reactor]: ['hostage'] } });
   state = act(state, { type: 'move', from: square('h1'), to: square('g1') });
   state = act(state, { type: 'playCard', cardId: 'neutrality', target: square(`${file}6`) });
   state = act(state, { type: 'endTurn' });
@@ -39,11 +39,11 @@ function fixture(shieldPlayer: Color, shield = true, file: 'c' | 'f' = 'c') {
   return { state, beforeRevenge, shieldPlayer, reactor, returnedId, substituteId, target };
 }
 
-// 12.09.2026: Hostage credits the original captor, not the player whose turn it is.
-// Mystic Shield therefore cannot block this Shield-player capture of a neutral pawn.
+// 12.09.2026: Hostage, Revenge, and Toll use the actual captor, not the current turn.
+// Mystic Shield therefore cannot block these Shield-player captures of a neutral pawn.
 for (const shieldPlayer of ['white', 'black'] as const) {
   for (const file of ['c', 'f'] as const) {
-    test(`${shieldPlayer} Hostage can exchange its protected neutral pawn on file ${file}`, () => {
+    test(`Shield by ${shieldPlayer}: opposing Hostage can exchange its protected neutral pawn on file ${file}`, () => {
       const f = fixture(shieldPlayer, true, file);
       const state = act(f.state, { type: 'playCard', cardId: 'hostage', target: f.target });
       assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.zone, 'captured');
@@ -52,7 +52,7 @@ for (const shieldPlayer of ['white', 'black'] as const) {
     });
   }
 
-  test(`${shieldPlayer} Hostage query includes the protected neutral substitute`, () => {
+  test(`Shield by ${shieldPlayer}: opposing Hostage query includes the protected neutral substitute`, () => {
     const f = fixture(shieldPlayer);
     assert.ok(cardPlayTargets(f.state, 'hostage').some(target =>
       typeof target === 'object' && target !== null &&
@@ -60,7 +60,7 @@ for (const shieldPlayer of ['white', 'black'] as const) {
       'pawn' in target && target.pawn === f.target.pawn));
   });
 
-  test(`${shieldPlayer} Hostage exchanges an unshielded neutral substitute`, () => {
+  test(`Shield by ${shieldPlayer}: opposing Hostage exchanges an unshielded neutral substitute`, () => {
     const f = fixture(shieldPlayer, false);
     const state = act(f.state, { type: 'playCard', cardId: 'hostage', target: f.target });
     assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.zone, 'captured');
@@ -79,6 +79,25 @@ for (const shieldPlayer of ['white', 'black'] as const) {
   test(`${shieldPlayer} Revenge captures an unshielded neutral pawn`, () => {
     const f = fixture(shieldPlayer, false);
     const state = act(f.beforeRevenge, { type: 'playCard', cardId: 'revenge', target: f.target.pawn });
+    assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.zone, 'captured');
+    assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.capturedBy, shieldPlayer);
+  });
+
+  test(`${shieldPlayer} Toll can capture its own Shield-protected neutral pawn`, () => {
+    const f = fixture(shieldPlayer);
+    const state = act(f.beforeRevenge, { type: 'playCard', cardId: 'toll', target: f.target.pawn });
+    assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.zone, 'captured');
+    assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.capturedBy, shieldPlayer);
+  });
+
+  test(`${shieldPlayer} Toll query includes its own Shield-protected neutral pawn`, () => {
+    const f = fixture(shieldPlayer);
+    assert.ok(cardPlayTargets(f.beforeRevenge, 'toll').includes(f.target.pawn));
+  });
+
+  test(`${shieldPlayer} Toll captures an unshielded neutral pawn`, () => {
+    const f = fixture(shieldPlayer, false);
+    const state = act(f.beforeRevenge, { type: 'playCard', cardId: 'toll', target: f.target.pawn });
     assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.zone, 'captured');
     assert.equal(state.pieces.find(piece => piece.id === f.substituteId)?.capturedBy, shieldPlayer);
   });
