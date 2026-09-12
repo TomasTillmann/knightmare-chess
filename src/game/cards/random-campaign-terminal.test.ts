@@ -15,7 +15,13 @@ function recorded(initial: CreateGameOptions, actions: GameAction[]): RandomTrac
     return { action, expected: digest(state) };
   });
   return { seed: 0, initial, steps, moves: actions.filter(action => action.type === 'move').length,
-    maxMoves: 50, digestVersion: 2, finalFen: state.fen, sampledCards: {} };
+    maxMoves: 50, digestVersion: 3, finalFen: state.fen, sampledCards: {} };
+}
+
+function historicalDigest(state: unknown, version: 1 | 2): string {
+  return createHash('sha256').update(JSON.stringify(state, (key, value) =>
+    key === 'doppelgangerPieceId' || key === 'doppelgangerMove' ||
+      (version === 1 && key === 'capturedBy') ? undefined : value)).digest('hex');
 }
 
 test('seed 860171 accepts an early terminal turn within the requested move bound', () => {
@@ -31,7 +37,7 @@ test('requested bounds are reproducible and finish pending turn closure', () => 
     assert.deepEqual(generateTrace(900582, maxMoves), generated);
     const { trace } = generated;
     assert.equal(trace.maxMoves, maxMoves);
-    assert.equal(trace.digestVersion, 2);
+    assert.equal(trace.digestVersion, 3);
     assert.equal(trace.failure, undefined);
     assert.ok(trace.moves <= maxMoves);
     const state = replayTrace(trace);
@@ -88,7 +94,35 @@ test('capture ownership changes the digest, including nested checkpoints', () =>
   assert.notEqual(digest({ ...state, turnCheckpoint: state }), digest({ ...state, turnCheckpoint: changed }));
 });
 
-test('legacy trace hashes stay readable, but version 2 requires complete state hashes', () => {
+test('default and version 3 digests include Doppelganger metadata at every depth', () => {
+  const state = createGameState();
+  const pieceId = state.pieces[0]!.id;
+  for (const metadata of [{ doppelgangerPieceId: pieceId },
+    { doppelgangerMove: { player: 'white' as const, pieceId, historyLength: 0 } }]) {
+    const changed = { ...state, ...metadata };
+    for (const [before, after] of [[state, changed],
+      [{ ...state, turnCheckpoint: state }, { ...state, turnCheckpoint: changed }]]) {
+      assert.notEqual(digest(before), digest(after));
+      assert.notEqual(digest(before, 3), digest(after, 3));
+      assert.equal(digest(after), digest(after, 3));
+    }
+  }
+});
+
+test('historical digests preserve pre-Doppelganger hashes including nested checkpoints', () => {
+  const state = createGameState();
+  const changed = { ...state, doppelgangerPieceId: state.pieces[0]!.id,
+    doppelgangerMove: { player: 'white' as const, pieceId: state.pieces[0]!.id, historyLength: 0 } };
+  for (const version of [1, 2] as const) {
+    for (const [before, after] of [[state, changed],
+      [{ ...state, turnCheckpoint: state }, { ...state, turnCheckpoint: changed }]]) {
+      assert.equal(digest(after, version), historicalDigest(before, version));
+      assert.equal(digest(before, version), digest(after, version));
+    }
+  }
+});
+
+test('legacy trace hashes stay readable, but version 3 requires complete state hashes', () => {
   const actions: GameAction[] = [{ type: 'move', from: 'e2', to: 'e4' }, { type: 'endTurn' },
     { type: 'move', from: 'd7', to: 'd5' }, { type: 'endTurn' },
     { type: 'move', from: 'e4', to: 'd5' }, { type: 'endTurn' }];
@@ -96,8 +130,7 @@ test('legacy trace hashes stay readable, but version 2 requires complete state h
   let state = createGameState();
   const steps = actions.map(action => {
     const result = applyAction(state, action); assert.ok(result.ok); state = result.state;
-    return { action, expected: createHash('sha256').update(JSON.stringify(state,
-      (key, value) => key === 'capturedBy' ? undefined : value)).digest('hex') };
+    return { action, expected: historicalDigest(state, 1) };
   });
   assert.doesNotThrow(() => replayTrace({ ...trace, digestVersion: undefined, steps }));
   assert.throws(() => replayTrace({ ...trace, steps }), /reviewed state changed/);
