@@ -89,10 +89,11 @@ export function createDebugGame(practice = '', variant = ''): GameState {
   const fen = (variant === 'confabulated-effects' ? '7k/7p/8/8/8/4N3/8/K1B5 w - - 0 1' : promotionPositions[variant]) ?? (capture
     ? `4k3/p7/8/3${practice === 'legacy' ? 'n' : 'p'}4/4P3/8/P7/4K3 w - - 0 1`
     : practicePositions[practice]);
-  let game = createGameState({ fen, hands, decks: {
+  let game = createGameState({ fen: variant === 'full-board' ? undefined : fen, hands, decks: {
     white: practiceCards.filter(id => !hands.white.includes(id)),
     black: practiceCards.filter(id => !hands.black.includes(id)),
   } });
+  if (variant === 'full-board') return game;
   const act = (action: GameAction) => {
     const result = applyAction(game, action);
     if (!result.ok) throw new Error(`Practice setup: ${result.error.message}`);

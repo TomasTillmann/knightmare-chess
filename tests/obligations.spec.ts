@@ -56,7 +56,10 @@ test('Panic forfeits an unanswered turn after fifteen seconds', async ({ page })
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
   await expect(page.getByRole('timer')).toContainText('Black to move');
   await expect(page.locator('[data-player="black"] .hand')).toHaveAttribute('data-active', 'true');
+  await page.locator('[data-player="black"]').getByRole('button', { name: 'Fog of War:', exact: false }).press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Fog of War', exact: true })).toBeVisible();
   await page.clock.fastForward(15000);
+  await page.getByRole('button', { name: 'Close card', exact: true }).click();
   await expect(page.locator('[data-player="white"] .hand')).toHaveAttribute('data-active', 'true');
   await expect(page.locator('#board-position')).toContainText('black pawn on e7');
   await expect(page.getByRole('timer')).toHaveCount(0);
@@ -101,7 +104,10 @@ test('Abduction captures the pawn when the recall deadline is missed', async ({ 
   await expect(page.locator('.board-concealment')).toBeVisible();
   await page.clock.fastForward(10000);
   await expect(page.getByRole('timer')).toContainText('Recall');
+  await page.locator('[data-player="white"]').getByRole('button', { name: 'Assassin:', exact: false }).press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Assassin', exact: true })).toBeVisible();
   await page.clock.fastForward(10000);
+  await page.getByRole('button', { name: 'Close card', exact: true }).click();
   await expect(page.locator('#board-position')).not.toContainText('black pawn on a7');
   await expect(page.locator('#off-board-position')).toContainText('black pawn captured');
   await expect(page.getByRole('timer')).toHaveCount(0);

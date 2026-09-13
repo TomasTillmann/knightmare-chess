@@ -1,0 +1,65 @@
+{
+  "status": "planned",
+  "scope": "Replay archived terminal games on the frozen current UI, then fill card/combo gaps; never count capped unfinished games.",
+  "source": "/tmp/knightmare-deep-repaired-9134000.json",
+  "rawTraceFormat": "Playwright results[].attachments[] entry named self-play: JSON.parse(Buffer.from(attachment.body, 'base64').toString('utf8')). The decoded record contains seed, practice, full ordered GameAction[] actions, outcome, turn and effects.",
+  "archivedEvidence": {
+    "uniqueTerminalGames": 16,
+    "terminalDesktopMobileRuns": 32,
+    "practiceCampaignTerminalGames": 0,
+    "fullTraceAttachmentCount": 80,
+    "independentRepetitions": 1
+  },
+  "completedSeeds": [
+    {"seed":9134031,"practice":"chaos","actions":59,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134007,"practice":"earthquake","actions":141,"outcome":"white checkmate","verifiedCurrentBuild":false},
+    {"seed":9134000,"practice":"confabulation","actions":184,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134013,"practice":"fatal-attraction","actions":206,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134018,"practice":"truce","actions":228,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134012,"practice":"neutrality","actions":247,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134005,"practice":"abduction","actions":256,"outcome":"stalemate","verifiedCurrentBuild":false},
+    {"seed":9134009,"practice":"peace-talks","actions":265,"outcome":"white checkmate","verifiedCurrentBuild":false},
+    {"seed":9134022,"practice":"crab","actions":292,"outcome":"white checkmate","verifiedCurrentBuild":false},
+    {"seed":9134027,"practice":"winged-victory","actions":300,"outcome":"stalemate","verifiedCurrentBuild":false},
+    {"seed":9134015,"practice":"fortification","actions":308,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134011,"practice":"curse","actions":331,"outcome":"white checkmate","verifiedCurrentBuild":false},
+    {"seed":9134038,"practice":"forced-march","actions":343,"outcome":"white checkmate","verifiedCurrentBuild":false},
+    {"seed":9134032,"practice":"think-again","actions":364,"outcome":"stalemate","verifiedCurrentBuild":false},
+    {"seed":9134019,"practice":"challenge","actions":367,"outcome":"black checkmate","verifiedCurrentBuild":false},
+    {"seed":9134016,"practice":"forbidden-city","actions":369,"outcome":"black checkmate","verifiedCurrentBuild":false}
+  ],
+  "recovery": [
+    "Prefer repaired raw report. The original /tmp/knightmare-deep-9134000.json contains only12 attachments, including3 terminal games; repaired report contains all80.",
+    "Deduplicate desktop/mobile by seed and serialized full actions before selection.",
+    "Reuse tests/complete-games.spec.ts replay shape: initialize(page, practice), execute(page, state, action), assertConsistent(page, state). Preserve exact archived actions, not newly generated seed paths.",
+    "First replay actions engine-only from createDebugGame(practice). Reject any non-ok action or final-state mismatch before browser replay. Confirm outcome and no further legal final-response card remains.",
+    "Persist recovered accepted traces under audit rather than relying on temporary attachments."
+  ],
+  "counting": {
+    "cardPlayed": "For each accepted action, inspect only new history entries of applyAction result for cardPlayed. Count once per distinct completed game; retain event count separately.",
+    "cardFizzled": "Record new cardFizzled history entries separately; a successful applyAction/playCard action alone is not proof that card took effect.",
+    "copies": "Record physical cardId and copiedCardId separately; copied effects exercise the copied rule but are not an independent physical-card play.",
+    "combinations": "Record successful cards in same completed game and active effects at each play. Three duplicate desktop/mobile replays or three seeds with identical action traces do not establish three distinct combinations.",
+    "currentVerifiedCounts": null,
+    "reason": "This bounded read-only planning task did not execute engine or UI replay. Archived cardsPlayed is a count of playCard actions and does not split success from fizzle."
+  },
+  "minimalCampaign": [
+    "Replay the shortest archived terminal trace9134031 first as current-build pipeline check.",
+    "Recover and engine-replay16 terminal traces, build success/fizzle coverage matrix, then choose a greedy smallest subset that fills the most below-three card/game gaps.",
+    "For missing or rare cards, derive deterministic candidate games from existing practice setup and actionFor planner outside the browser. Require a proven complete trace including final reactions before starting its browser game.",
+    "Prefer candidates that cover several currently missing cards with different active-effect combinations; there is no need for240 dedicated single-card games.",
+    "If random planning reaches its cap without terminal outcome, label it incomplete and continue planning that game; do not count it and do not present it as finished.",
+    "Run accepted complete traces through existing UI executor; finish each started browser replay. Add only regressions for confirmed stable bugs, keep broad campaign opt-in."
+  ],
+  "blockers": [
+    "Existing self-play test treats reaching UI_STEPS as passing even if outcome is null; cannot establish complete-game coverage.",
+    "practice9133000 has80 unique opening cases and zero completed games.",
+    "Archive aggregate cardsPlayed counts submitted playCard actions, including possible fizzles, and includes nonterminal runs.",
+    "Current planner and UI-driver hashes differ from archived hashes; rerunning a seed is weaker than replaying exact actions. Engine reducer hash still matches0511f1239432f2d236c5812e1de64731bac40f1111d47386bd3e530e0fe6f428.",
+    "Final outcome can still permit Fog of War; inspect and resolve final-response eligibility.",
+    "Ordinary random play can stall indefinitely after low material because engine exposes no broad ordinary-draw outcome. A finite action cap cannot honestly count as completed.",
+    "Practice presets may begin from sparse or already-played positions; disclose these as directed scenario games, not all games from normal opening."
+  ],
+  "nextSmallestRunnableStep": "Decode seed9134031 from repaired report, public-engine replay59actions from createDebugGame('chaos'), record actual cardPlayed/cardFizzled history deltas and confirm no post-outcome response. Then pass that exact trace through existing initialize/execute/assertConsistent UI loop on frozen build.",
+  "editedOnly": "audit/hour-selfplay-2026-09-13/card-coverage.json"
+}
