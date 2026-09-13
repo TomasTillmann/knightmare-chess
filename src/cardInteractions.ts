@@ -134,9 +134,12 @@ function inputs(state: GameState, cardId: string, target: unknown, multipleSourc
   }
   if (cardId === 'fog-of-war') {
     if (target === undefined) return { picks: [] };
-    let checkpoint = state.fogCheckpoint;
-    while (checkpoint && checkpoint.card.id !== target) checkpoint = checkpoint.plots?.previous;
-    return { picks: [choicePick(target as string, checkpoint ? CARD_CATALOG[checkpoint.card.cardId].name : 'Previous card',
+    const checkpoints: NonNullable<GameState['fogCheckpoint']>[] = [];
+    for (let entry = state.fogCheckpoint; entry; entry = entry.plots?.previous) checkpoints.push(entry);
+    const checkpoint = checkpoints.find(entry => entry.card.id === target);
+    const peers = checkpoints.filter(entry => entry.card.cardId === checkpoint?.card.cardId).reverse();
+    const name = checkpoint ? CARD_CATALOG[checkpoint.card.cardId].name : 'Previous card';
+    return { picks: [choicePick(target as string, name + (peers.length > 1 ? ` ${peers.indexOf(checkpoint!) + 1}` : ''),
       'Choose a card to cancel')] };
   }
   if (cardId === 'plots-within-plots') return { picks: [] };

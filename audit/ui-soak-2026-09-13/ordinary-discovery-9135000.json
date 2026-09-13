@@ -1,0 +1,373 @@
+{
+  "campaign": "ordinary-games-discovery-9135000",
+  "stats": {
+    "startTime": "2026-09-13T05:57:14.309Z",
+    "duration": 1274564.109,
+    "expected": 7,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "buildAsset": "index-BiQi2PBF.js",
+  "sourceHashes": {
+    "src/App.tsx": "b48a1b4654aabc058befdf3d76fa5f33e40e238b984e67d249e5468d2b0b16ea",
+    "src/ChessBoard.tsx": "ca446cd9cad1679137945889882b673b84fd405f479061631594163e5d8302e5",
+    "src/BoardEffects.tsx": "7a347815a53d4e510e63b50213e66196f66c70675cc2ce27ad563f4a88313eb9",
+    "src/cardInteractions.ts": "f486357472737d16805bf6dd55d573496fbad0ec91694bc167412c882c48ec50",
+    "src/gameInteractions.ts": "5147f04e07e778e9f20c812b28428a0fc398ff3c4e97ccc31470c558c68862d0",
+    "src/debugGame.ts": "c5c02767e0f343cba7587e1d787e1a9f1ebaee938e21e5206eab2f497fd2fbf4",
+    "src/styles.css": "20d21ace5bba8c794eebba11743a0d43cdbc4eb015537e5220d9f21b40d34db6",
+    "src/game/reducer.ts": "0511f1239432f2d236c5812e1de64731bac40f1111d47386bd3e530e0fe6f428",
+    "tests/self-play.spec.ts": "e739c8acfd0bae4e2ba3aa9408dd3750a7f5b4f5b7a087f4532b1362613ab48d",
+    "tests/support/selfPlay.ts": "95ea1d1b5e5cc3c424732cefffb1a13c8082cbe379fb765b5e6d4d717cae5978",
+    "playwright.config.ts": "0e29d8163657026425a7efc19d6d9fc7517f919c60ffca1e80053dc057d1482f"
+  },
+  "command": "UI_BASE_URL=http://127.0.0.1:5175 UI_STRESS=1 UI_RESIZE=1 UI_CAPTURE=1 UI_VERBOSE=1 UI_SEED=9135000 UI_GAMES=4 UI_STEPS=1500 UI_GAME_TIMEOUT=900000 UI_CARDS='' npx playwright test tests/self-play.spec.ts --workers=2",
+  "passedActions": 5864,
+  "failedAttemptActions": 105,
+  "finding": "Mobile seed9135000 action105: after390x844\u2192375x667 resize, Qd7-d1 landed on d2. Old Chessground container/piece dimensions temporarily overflowed horizontally; Chrome retained a scaled392x698 viewport. Exact replay reproduced it. A minimal default-position resize regression also failed; plain HTML control did not scale. CSS container bounds plus clipping piece overflow fixes the cause; final exact replay is recorded separately.",
+  "runs": [
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 1500,
+      "actionTypes": {
+        "move": 665,
+        "playCard": 121,
+        "declineDoomsayer": 1,
+        "endTurn": 703,
+        "namePiece": 4,
+        "returnKing": 2,
+        "revealAbduction": 2,
+        "answerAbduction": 1,
+        "abductionTimeout": 1
+      },
+      "lastAction": {
+        "type": "endTurn"
+      },
+      "seed": 9135000,
+      "practice": "",
+      "elapsedMs": 422644,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 305,
+      "actionTypes": {
+        "move": 104,
+        "endTurn": 128,
+        "playCard": 70,
+        "namePiece": 2,
+        "declineDoomsayer": 1
+      },
+      "lastAction": {
+        "type": "endTurn"
+      },
+      "seed": 9135001,
+      "practice": "",
+      "elapsedMs": 98866,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "forbidden-city",
+        "coup",
+        "confabulation",
+        "forbidden-city",
+        "curse",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 377,
+      "actionTypes": {
+        "move": 119,
+        "endTurn": 154,
+        "playCard": 97,
+        "declineDoomsayer": 1,
+        "namePiece": 3,
+        "returnKing": 1,
+        "revealAbduction": 1,
+        "answerAbduction": 1
+      },
+      "lastAction": {
+        "type": "endTurn"
+      },
+      "seed": 9135002,
+      "practice": "",
+      "elapsedMs": 129137,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "curse",
+        "coup",
+        "man-trap",
+        "fortification",
+        "fortification",
+        "coup",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 1500,
+      "actionTypes": {
+        "playCard": 138,
+        "endTurn": 697,
+        "move": 654,
+        "namePiece": 4,
+        "declineDoomsayer": 1,
+        "returnKing": 2,
+        "revealAbduction": 2,
+        "answerAbduction": 2
+      },
+      "lastAction": {
+        "type": "move",
+        "from": "d2",
+        "to": "f1"
+      },
+      "seed": 9135003,
+      "practice": "",
+      "elapsedMs": 452210,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "coup",
+        "man-trap",
+        "fortification",
+        "neutrality",
+        "neutrality"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "failed",
+      "actionCount": 105,
+      "actionTypes": {
+        "move": 29,
+        "playCard": 32,
+        "declineDoomsayer": 1,
+        "endTurn": 39,
+        "namePiece": 4
+      },
+      "lastAction": {
+        "type": "move",
+        "from": "d7",
+        "to": "d1"
+      },
+      "seed": 9135000,
+      "practice": "",
+      "elapsedMs": 41827,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 305,
+      "actionTypes": {
+        "move": 104,
+        "endTurn": 128,
+        "playCard": 70,
+        "namePiece": 2,
+        "declineDoomsayer": 1
+      },
+      "lastAction": {
+        "type": "endTurn"
+      },
+      "seed": 9135001,
+      "practice": "",
+      "elapsedMs": 98110,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "forbidden-city",
+        "coup",
+        "confabulation",
+        "forbidden-city",
+        "curse",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 377,
+      "actionTypes": {
+        "move": 119,
+        "endTurn": 154,
+        "playCard": 97,
+        "declineDoomsayer": 1,
+        "namePiece": 3,
+        "returnKing": 1,
+        "revealAbduction": 1,
+        "answerAbduction": 1
+      },
+      "lastAction": {
+        "type": "endTurn"
+      },
+      "seed": 9135002,
+      "practice": "",
+      "elapsedMs": 124811,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "curse",
+        "coup",
+        "man-trap",
+        "fortification",
+        "fortification",
+        "coup",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 1500,
+      "actionTypes": {
+        "playCard": 138,
+        "endTurn": 697,
+        "move": 654,
+        "namePiece": 4,
+        "declineDoomsayer": 1,
+        "returnKing": 2,
+        "revealAbduction": 2,
+        "answerAbduction": 2
+      },
+      "lastAction": {
+        "type": "move",
+        "from": "d2",
+        "to": "f1"
+      },
+      "seed": 9135003,
+      "practice": "",
+      "elapsedMs": 420960,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "coup",
+        "man-trap",
+        "fortification",
+        "neutrality",
+        "neutrality"
+      ]
+    }
+  ]
+}

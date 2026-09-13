@@ -1,0 +1,156 @@
+{
+  "campaign": "deep-discovery-9134000",
+  "stats": {
+    "startTime": "2026-09-13T04:29:03.290Z",
+    "duration": 503709.79000000004,
+    "expected": 9,
+    "skipped": 70,
+    "unexpected": 1,
+    "flaky": 0
+  },
+  "buildAsset": "index-BuF2LSlJ.js",
+  "stopReason": "Stopped after a real UI outcome-message failure; two in-flight games intentionally interrupted.",
+  "reproduction": {
+    "seed": 9134007,
+    "practice": "earthquake",
+    "actionLimit": 400,
+    "resize": true,
+    "forcedOpening": true,
+    "minimalFen": "7B/3B4/8/3P4/5kQ1/6R1/8/2K5 b - - 0 1",
+    "minimalActions": [
+      {
+        "type": "move",
+        "from": "f4",
+        "to": "e4"
+      },
+      {
+        "type": "playCard",
+        "cardId": "forbidden-city",
+        "target": "h1"
+      }
+    ],
+    "hands": {
+      "white": [],
+      "black": [
+        "forbidden-city"
+      ]
+    },
+    "decks": {
+      "white": [],
+      "black": []
+    }
+  },
+  "runs": [
+    {
+      "project": "desktop",
+      "title": "confabulation, seed 9134000",
+      "status": "passed",
+      "attemptedActions": 184,
+      "elapsedMs": 54314,
+      "oracleOutcomeAtAttachment": {
+        "winner": "black",
+        "reason": "checkmate"
+      }
+    },
+    {
+      "project": "desktop",
+      "title": "haunting-memories, seed 9134001",
+      "status": "passed",
+      "attemptedActions": 400,
+      "elapsedMs": 106189,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "vulture, seed 9134002",
+      "status": "passed",
+      "attemptedActions": 400,
+      "elapsedMs": 100653,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "coup, seed 9134003",
+      "status": "passed",
+      "attemptedActions": 400,
+      "elapsedMs": 117619,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "doomsayer, seed 9134004",
+      "status": "passed",
+      "attemptedActions": 400,
+      "elapsedMs": 108304,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "abduction, seed 9134005",
+      "status": "passed",
+      "attemptedActions": 256,
+      "elapsedMs": 69346,
+      "oracleOutcomeAtAttachment": {
+        "reason": "stalemate"
+      }
+    },
+    {
+      "project": "desktop",
+      "title": "panic, seed 9134006",
+      "status": "passed",
+      "attemptedActions": 400,
+      "elapsedMs": 108315,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "earthquake, seed 9134007",
+      "status": "failed",
+      "attemptedActions": 141,
+      "elapsedMs": 57136,
+      "lastAction": {
+        "type": "playCard",
+        "cardId": "forbidden-city",
+        "cardInstanceId": "black-deck-22-forbidden-city",
+        "target": "h1"
+      },
+      "error": "Expected White wins \u00b7 checkmate; received Card spent without effect.",
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "figure-dance, seed 9134008",
+      "status": "passed",
+      "attemptedActions": 400,
+      "elapsedMs": 119809,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "peace-talks, seed 9134009",
+      "status": "passed",
+      "attemptedActions": 265,
+      "elapsedMs": 67402,
+      "oracleOutcomeAtAttachment": {
+        "winner": "white",
+        "reason": "checkmate"
+      }
+    },
+    {
+      "project": "desktop",
+      "title": "plots-within-plots, seed 9134010",
+      "status": "interrupted",
+      "attemptedActions": 164,
+      "elapsedMs": 58653,
+      "oracleOutcomeAtAttachment": null
+    },
+    {
+      "project": "desktop",
+      "title": "curse, seed 9134011",
+      "status": "interrupted",
+      "attemptedActions": 66,
+      "elapsedMs": 16951,
+      "oracleOutcomeAtAttachment": null
+    }
+  ]
+}

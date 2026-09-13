@@ -1,0 +1,40 @@
+{
+  "note": "The 220-check extended gate preceded the final CSS resize fix; the 57-check default gate and 35-check scoped responsive/pointer/presentation rerun verified the final CSS. Long replay is separate.",
+  "gates": {
+    "default-final": {
+      "startTime": "2026-09-13T06:20:44.654Z",
+      "duration": 45831.942,
+      "expected": 57,
+      "skipped": 128,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "extended-before-resize-fix": {
+      "startTime": "2026-09-13T06:03:30.271Z",
+      "duration": 215732.942,
+      "expected": 220,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "resize-exact-final": {
+      "startTime": "2026-09-13T06:18:39.485Z",
+      "duration": 56367.687,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "scopedResponsiveFinal": {
+    "passed": 35,
+    "skipped": 5,
+    "durationMs": 46500,
+    "log": "/tmp/knightmare-resize-final-matrix.log"
+  },
+  "build": {
+    "js": "index-vMY-Cf2f.js",
+    "css": "index-DevZjOYb.css"
+  },
+  "typechecks": "production build and strict check of all Playwright sources passed"
+}

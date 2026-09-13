@@ -1,0 +1,16 @@
+{
+  "verificationStarted": "2026-09-13T01:36:01+00:00",
+  "verificationEnded": "2026-09-13T06:27:08.339715+00:00",
+  "excludedSystemSleepSeconds": 6484,
+  "activeVerificationSeconds": 10983.34,
+  "successfulProjectRuns": 248,
+  "uniqueSeeds": 124,
+  "verifiedActions": 51084,
+  "ordinaryRepairedPairActions": 7364,
+  "notes": [
+    "Counts combine passing runs across the documented campaign builds; failed discovery attempts are excluded.",
+    "124 unique seeded sequences were exercised on desktop and Chrome mobile emulation. They are bounded sequences, not necessarily terminal games.",
+    "The final mobile repair replay exactly matches all 1500 actions of the earlier passing desktop sequence.",
+    "No engine production source changed; separate engine audit retains three confirmed root defects."
+  ]
+}

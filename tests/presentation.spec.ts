@@ -6,6 +6,59 @@ async function select(page: Page, name: string) {
   await hand(page).getByRole('button', { name: new RegExp(`^${name}:`) }).click({ position: { x: 18, y: 50 } });
 }
 
+test('Shrinking a phone viewport preserves scale and square hit targets', async ({ page }, info) => {
+  test.skip(info.project.name !== 'mobile', 'Mobile viewport scaling');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await expect(page.locator('cg-board')).toBeVisible();
+  await page.setViewportSize({ width: 375, height: 667 });
+  await expect.poll(() => page.evaluate(() => [innerWidth, innerHeight, visualViewport?.scale])).toEqual([375, 667, 1]);
+  await page.locator('cg-board').scrollIntoViewIfNeeded();
+  const board = (await page.locator('cg-board').boundingBox())!;
+  for (const rank of [2, 4]) await page.touchscreen.tap(board.x + 7.5 * board.width / 8, board.y + (8.5 - rank) * board.height / 8);
+  await expect(page.locator('#board-position')).toContainText('white pawn on h4');
+});
+
+test('Short landscape keeps usable squares and evenly aligned exterior files', async ({ page }) => {
+  await page.setViewportSize({ width: 667, height: 375 });
+  await page.goto('/?practice=hidden-passage');
+  await expect(page.locator('cg-board')).toBeVisible();
+  const layout = await page.evaluate(() => {
+    const board = document.querySelector('cg-board')!.getBoundingClientRect();
+    return {
+      square: board.width / 8,
+      files: [...document.querySelectorAll('coords.files coord')].map(file => {
+        const box = file.getBoundingClientRect();
+        return { outside: box.top >= board.bottom, offset: Math.abs(box.x + box.width / 2
+          - (board.x + (file.textContent!.charCodeAt(0) - 96.5) * board.width / 8)) };
+      }),
+    };
+  });
+  expect(layout.square).toBeGreaterThanOrEqual(30);
+  expect(layout.files).toHaveLength(8);
+  for (const file of layout.files) {
+    expect(file.outside).toBe(true);
+    expect(file.offset).toBeLessThanOrEqual(1);
+  }
+});
+
+test('An active effect previews its card and leaves mobile card selection unobstructed', async ({ page }, info) => {
+  await page.goto('/?practice=curse');
+  await select(page, 'Curse');
+  await button(page, 'Choose d8').click();
+  await button(page, 'Play card').click();
+  const effect = page.locator('.effect-entry[data-effect="curse"]');
+  if (info.project.name === 'mobile') await effect.tap();
+  else await effect.focus();
+  const preview = page.locator('.card-preview');
+  await expect(preview.getByRole('img', { name: 'Curse', exact: true })).toBeVisible();
+  await hand(page, 'black').getByRole('button', { name: /^Fog of War:/ }).click({ position: { x: 18, y: 50 } });
+  await expect(button(page, 'Play card')).toBeEnabled();
+  if (info.project.name === 'mobile') await expect(preview).toBeHidden();
+  await button(page, 'Play card').click();
+  await expect(effect).toHaveCount(0);
+});
+
 test('The selected card can be read and closed on mobile', async ({ page }, info) => {
   test.skip(info.project.name !== 'mobile', 'Mobile reading control');
   await page.goto('/?practice=hidden-passage');
@@ -53,6 +106,8 @@ test('Desktop hover shows the artwork and leaving restores the card back', async
 
 test('Exchanging a card replaces it and finishes the turn', async ({ page }) => {
   await page.goto('/?practice=mystic-shield');
+  await expect(hand(page).locator('.hand')).toHaveCSS('opacity', '1');
+  await expect(hand(page, 'black').locator('.hand')).toHaveCSS('opacity', '0.5');
   await button(page, 'Exchange card').click();
   await button(page, 'Mystic Shield').click();
   await button(page, 'Exchange & end').click();
@@ -60,6 +115,8 @@ test('Exchanging a card replaces it and finishes the turn', async ({ page }) => 
   await expect(hand(page).getByRole('button', { name: /^Annexation:/ })).toHaveCount(1);
   await expect(hand(page).getByRole('button')).toHaveCount(5);
   await expect(hand(page, 'black').locator('.hand')).toHaveAttribute('data-active', 'true');
+  await expect(hand(page).locator('.hand')).toHaveCSS('opacity', '0.5');
+  await expect(hand(page, 'black').locator('.hand')).toHaveCSS('opacity', '1');
   await expect(page.locator('#board-position')).toContainText('white pawn on e4');
 });
 

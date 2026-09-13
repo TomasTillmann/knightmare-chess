@@ -70,7 +70,7 @@ export function requiredSelection(state: GameState): GameSelection | null {
       summary.push(square(at, ''));
       if (pending.requiresPieceId && picked.length === 3) {
         const pieces = pending.before.pieces.filter(piece => piece.owner === owner && piece.role === role);
-        return { choices: pieces.map(piece => choice(piece.id, 'Identify the physical piece', `${title(owner)} ${role} · ${piece.id.split('-').at(-1)}`)), summary };
+        if (pieces.length) return { choices: pieces.map(piece => choice(piece.id, 'Identify the physical piece', `${title(owner)} ${role} · ${piece.id.split('-').at(-1)}`)), summary };
       }
       if (picked[3]) summary.push(choice(picked[3], '', `Original ${picked[3].split('-').at(-1)}`));
       return { choices: [], summary, action: { type: 'answerAbduction', player: pending.player, role, owner, square: at,

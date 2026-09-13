@@ -38,6 +38,24 @@ const promotionPositions: Record<string, string> = {
 
 // Deterministic local deals and short, real-engine setups for quick UI iteration.
 export function createDebugGame(practice = '', variant = ''): GameState {
+  if (variant === 'fizzled-rescue') return createGameState({
+    fen: '7B/3B4/8/3P4/5kQ1/6R1/8/2K5 b - - 0 1',
+    hands: { white: [], black: ['forbidden-city'] }, decks: { white: [], black: [] },
+  });
+  if (variant === 'marked-abduction') {
+    let state = createGameState({ fen: '7k/8/8/8/3r4/8/P7/K7 w - - 0 1',
+      hands: { white: ['curse', 'abduction'], black: [] }, decks: { white: [], black: [] } });
+    const setup: GameAction[] = [
+      { type: 'move', from: 'a2', to: 'a3' }, { type: 'playCard', cardId: 'curse', target: 'd4' }, { type: 'endTurn' },
+      { type: 'move', from: 'h8', to: 'g8' }, { type: 'endTurn' }, { type: 'move', from: 'a3', to: 'a4' },
+    ];
+    for (const action of setup) {
+      const result = applyAction(state, action);
+      if (!result.ok) throw new Error(`Practice setup: ${result.error.message}`);
+      state = result.state;
+    }
+    return state;
+  }
   const deal = (first: string, offset: number) => {
     const pool = [...practiceCards.slice(offset), ...practiceCards.slice(0, offset)];
     return [first, ...pool.filter(id => id !== first)].slice(0, 5);
@@ -49,12 +67,26 @@ export function createDebugGame(practice = '', variant = ''): GameState {
   const blackFirst = practice === 'peace-talks' || reaction ? practice
     : practice === 'haunting-memories' ? 'disintegration' : 'fog-of-war';
   const hands = { white: deal(whiteFirst, 0), black: deal(blackFirst, 5) };
+  if (variant === 'plots-duplicates') {
+    hands.white = ['plots-within-plots', 'curse', 'curse'];
+    hands.black = ['fog-of-war'];
+  }
+  if (variant === 'vulture-curse') hands.black = ['vulture', 'peace-talks', ...deal('fog-of-war', 5)].slice(0, 5);
+  if (variant === 'haunting-curse') {
+    hands.white = ['haunting-memories', 'peace-talks', ...deal('assassin', 0)].slice(0, 5);
+    hands.black = deal('curse', 5);
+  }
+  if (variant === 'confabulated-effects') {
+    hands.white = deal('confabulation', 0);
+    hands.black = ['neutrality', 'curse', ...deal('fog-of-war', 5)].slice(0, 5);
+  }
+  if (variant === 'coup-surrender') hands.white = ['neutrality', 'coup', ...deal('assassin', 0)].slice(0, 5);
   if (variant === 'peace-talks-promotion') {
     hands.white = deal('peace-talks', 0);
     hands.white[1] = 'earthquake';
   }
   const capture = ['no-quarter', 'revenge', 'hostage', 'riposte', 'legacy'].includes(practice);
-  const fen = promotionPositions[variant] ?? (capture
+  const fen = (variant === 'confabulated-effects' ? '7k/7p/8/8/8/4N3/8/K1B5 w - - 0 1' : promotionPositions[variant]) ?? (capture
     ? `4k3/p7/8/3${practice === 'legacy' ? 'n' : 'p'}4/4P3/8/P7/4K3 w - - 0 1`
     : practicePositions[practice]);
   let game = createGameState({ fen, hands, decks: {
@@ -73,6 +105,19 @@ export function createDebugGame(practice = '', variant = ''): GameState {
   const card = (cardId: string, target: unknown) => act({ type: 'playCard', cardId,
     cardInstanceId: game.players[game.turn.color].hand.find(card => card.cardId === cardId)!.id, target });
 
+  if (variant === 'plots-duplicates') {
+    move('e2', 'e4', false); card('plots-within-plots', undefined); card('curse', 'd8'); card('curse', 'h8');
+    return game;
+  }
+  if (variant === 'confabulated-effects') return game;
+  if (variant === 'haunting-curse') {
+    move('e2', 'e4'); move('e7', 'e5', false); card('curse', 'd1'); act({ type: 'endTurn' }); move('g1', 'f3', false);
+    return game;
+  }
+  if (variant === 'coup-surrender') {
+    move('e2', 'e4', false); card('neutrality', 'b8'); act({ type: 'endTurn' }); move('a7', 'a6'); move('g1', 'f3', false);
+    return game;
+  }
   if (variant === 'promotion') return game;
   if (variant === 'crab-promotion') {
     move('e6', 'e7', false); card('crab', 'e7'); act({ type: 'endTurn' }); move('a8', 'b8');

@@ -104,16 +104,19 @@ export default function App() {
   const turnName = game.turn.color === 'white' ? 'White' : 'Black';
   const reactor = Object.entries(game.players).find(([color, player]) => color !== game.turn.color
     && player.hand.some(card => interactions.get(card.id)?.options.length));
+  const response = reactor ? `${reactor[0] === 'white' ? 'White' : 'Black'} can respond` : null;
+  const outcome = game.outcome
+    ? `${game.outcome.winner ? `${game.outcome.winner === 'white' ? 'White' : 'Black'} wins` : 'Draw'} · ${game.outcome.reason}` : null;
   const pendingAbduction = game.pendingAbduction;
   const panic = game.effects.find(effect => effect.type === 'panic' && effect.player === game.turn.color && !game.turn.moveMade);
-  const status = message ?? (selection
+  const prompt = message ?? (selection
     ? nextPicks.length ? nextPicks[0]?.prompt ?? selection.prompts[selection.picked.length] : `${selection.confirm ?? 'Play'} ${selection.title}`
     : pendingAbduction ? `${pendingAbduction.player === 'white' ? 'White' : 'Black'}, look away while the piece is removed`
       : game.pendingDoomsayer ? `${game.pendingDoomsayer.player === 'white' ? 'White' : 'Black'} may name a piece or decline`
       : game.pendingRescue ? `${turnName}: use a card to save your King`
-    : reactor ? `${reactor[0] === 'white' ? 'White' : 'Black'} can respond`
-      : game.outcome ? `${game.outcome.winner ? `${game.outcome.winner === 'white' ? 'White' : 'Black'} wins` : 'Draw'} · ${game.outcome.reason}`
+        : response ? response : outcome ? null
         : game.riposteSkipped ? `${turnName} · Move forfeited` : game.turn.moveMade ? `${turnName} · Move complete` : `${turnName} to move`);
+  const status = [outcome, prompt].filter(Boolean).join(' · ');
   const cancel = () => { setSelection(requiredSelection(game)); setPreview(null); setMessage(null); };
   const timer = pendingAbduction ? {
     key: `abduction-${game.history.length}-${pendingAbduction.phase}`, ms: pendingAbduction.durationMs,

@@ -40,6 +40,7 @@ function practiceCase(id: string) {
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 test.describe('Every Knightmare card', () => {
+  test.skip(!process.env.UI_STRESS, 'Set UI_STRESS=1 to run the exhaustive card matrix.');
   for (const id of practiceCards) {
     test(CARD_CATALOG[id].name, async ({ page }) => {
       const { player, picks, expected } = practiceCase(id);

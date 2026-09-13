@@ -9,7 +9,9 @@ colors:
 
 ## Layout
 
-Keep a fixed white-bottom board and two centered hands. Three symmetric rows keep the board in the middle of the viewport. Coordinates sit outside the squares. A large card preview sits to the right, slightly shorter than the board, showing a plain card back when idle and the hovered card face. No header, library, or other controls.
+Keep a fixed white-bottom board between two centered card fans, normally five cards each. Coordinates sit outside the squares. A large card preview sits to the right, slightly shorter than the board, showing a plain card back when idle and the hovered card face. Keep gameplay controls minimal: status, card selections, end turn, and practice selection sit beside the board on desktop and below it on mobile. Game outcomes remain visible alongside card and response messages. State lives in memory; refreshing resets the game.
+
+Active effects appear in a scrollable tray beside the board on desktop and above it on mobile. At widths up to 800px, a Read card dialog provides the full artwork and text; choosing card targets hides the floating preview. Short viewports give the board's height-derived size a 240px floor and let the page scroll vertically so the squares remain usable.
 
 ## Components
 

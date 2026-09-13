@@ -1,0 +1,2629 @@
+{
+  "campaign": "deep-games-9134000",
+  "stats": {
+    "startTime": "2026-09-13T04:43:28.846Z",
+    "duration": 4208890.841,
+    "expected": 80,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "buildAsset": "index-ANTQ6iUn.js",
+  "sourceHashes": {
+    "src/game/reducer.ts": "0511f1239432f2d236c5812e1de64731bac40f1111d47386bd3e530e0fe6f428",
+    "tests/self-play.spec.ts": "e739c8acfd0bae4e2ba3aa9408dd3750a7f5b4f5b7a087f4532b1362613ab48d",
+    "tests/support/selfPlay.ts": "95ea1d1b5e5cc3c424732cefffb1a13c8082cbe379fb765b5e6d4d717cae5978"
+  },
+  "notes": [
+    "Frozen build contains landscape/coordinate and outcome fixes; later marked-Abduction and duplicate-Fog-label fixes were tested separately and await the following build.",
+    "40 unique seeds repeated on desktop and Chrome mobile emulation; bounded to 400 actions, not necessarily terminal games.",
+    "Native touch for mobile board/card input; resize every 13 actions; Date deadlines advanced deliberately."
+  ],
+  "command": "UI_BASE_URL=http://127.0.0.1:5175 UI_STRESS=1 UI_OPENING=practice UI_RESIZE=1 UI_CAPTURE=1 UI_SEED=9134000 UI_GAMES=40 UI_STEPS=400 UI_CARDS=confabulation,haunting-memories,vulture,coup,doomsayer,abduction,panic,earthquake,figure-dance,peace-talks,plots-within-plots,curse,neutrality,fatal-attraction,mystic-shield,fortification,forbidden-city,pacifism,truce,challenge,dungeon,man-trap,crab,under-elf-hill,split-knight,rebirth,resurrection,winged-victory,betrayal,hostage,legacy,chaos,think-again,fog-of-war,knightmare,merciless,guardian,onslaught,forced-march,passing-in-the-night npx playwright test tests/self-play.spec.ts --workers=2",
+  "actionCount": 27720,
+  "uniqueSeeds": 40,
+  "identicalDesktopMobileSequences": 40,
+  "terminalRuns": 32,
+  "actionTypes": {
+    "playCard": 6052,
+    "endTurn": 11582,
+    "move": 9444,
+    "declineDoomsayer": 64,
+    "namePiece": 458,
+    "panicTimeout": 6,
+    "returnKing": 38,
+    "revealAbduction": 38,
+    "abductionTimeout": 12,
+    "answerAbduction": 26
+  },
+  "cardsPlayed": {
+    "abduction": 40,
+    "anathema": 76,
+    "annexation": 126,
+    "assassin": 126,
+    "betrayal": 72,
+    "blessing": 68,
+    "bog": 124,
+    "bombard": 26,
+    "breakthrough": 24,
+    "cathedral": 24,
+    "challenge": 108,
+    "chaos": 4,
+    "charge": 50,
+    "confabulation": 120,
+    "coup": 108,
+    "cowardice": 122,
+    "crab": 124,
+    "crusade": 4,
+    "curse": 102,
+    "dark-mirror": 30,
+    "disintegration": 152,
+    "doomsayer": 148,
+    "doppelganger": 148,
+    "dubbing": 152,
+    "dungeon": 88,
+    "earthquake": 150,
+    "evangelists": 36,
+    "evil-eye": 6,
+    "fanatic": 124,
+    "fatal-attraction": 34,
+    "figure-dance": 150,
+    "fireball": 2,
+    "fog-of-war": 60,
+    "forbidden-city": 154,
+    "forced-march": 144,
+    "fortification": 92,
+    "ghostwalk": 126,
+    "guardian": 136,
+    "haunting-memories": 102,
+    "heresy": 150,
+    "hidden-passage": 14,
+    "holy-quest": 26,
+    "holy-war": 122,
+    "hostage": 2,
+    "irresistible-force": 50,
+    "knightmare": 4,
+    "legacy": 2,
+    "long-jump": 58,
+    "lost-castle": 22,
+    "madman": 126,
+    "man-trap": 98,
+    "masquerade": 156,
+    "merciless": 2,
+    "mystic-shield": 4,
+    "neutrality": 4,
+    "no-quarter": 58,
+    "onslaught": 88,
+    "pacifism": 138,
+    "panic": 140,
+    "passing-in-the-night": 86,
+    "peace-talks": 142,
+    "plots-within-plots": 30,
+    "rebirth": 162,
+    "resurrection": 32,
+    "revenge": 26,
+    "sanctuary": 10,
+    "siege": 24,
+    "split-knight": 2,
+    "squaring-the-circle": 70,
+    "think-again": 2,
+    "toll": 124,
+    "tournament": 40,
+    "treason": 6,
+    "truce": 146,
+    "under-elf-hill": 40,
+    "vendetta": 154,
+    "vulture": 118,
+    "winged-victory": 92
+  },
+  "runs": [
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 184,
+      "seed": 9134000,
+      "practice": "confabulation",
+      "elapsedMs": 56374,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "crab",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "confabulation"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134001,
+      "practice": "haunting-memories",
+      "elapsedMs": 109146,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "man-trap",
+        "coup",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134002,
+      "practice": "vulture",
+      "elapsedMs": 102975,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "crab",
+        "confabulation",
+        "crab",
+        "coup",
+        "confabulation",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "man-trap",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134003,
+      "practice": "coup",
+      "elapsedMs": 120355,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "curse",
+        "man-trap",
+        "coup",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134004,
+      "practice": "doomsayer",
+      "elapsedMs": 112835,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "crab",
+        "forbidden-city",
+        "forbidden-city",
+        "confabulation",
+        "curse",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 256,
+      "seed": 9134005,
+      "practice": "abduction",
+      "elapsedMs": 71228,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "confabulation",
+        "coup",
+        "curse",
+        "curse",
+        "man-trap",
+        "man-trap",
+        "coup",
+        "dungeon"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134006,
+      "practice": "panic",
+      "elapsedMs": 112996,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "man-trap",
+        "fortification",
+        "curse",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 141,
+      "seed": 9134007,
+      "practice": "earthquake",
+      "elapsedMs": 54823,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "crab",
+        "crab"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134008,
+      "practice": "figure-dance",
+      "elapsedMs": 127094,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "coup",
+        "confabulation",
+        "curse",
+        "curse",
+        "man-trap",
+        "coup",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 265,
+      "seed": 9134009,
+      "practice": "peace-talks",
+      "elapsedMs": 70434,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "curse",
+        "curse",
+        "forbidden-city",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134010,
+      "practice": "plots-within-plots",
+      "elapsedMs": 160087,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "curse",
+        "fortification",
+        "fortification",
+        "neutrality",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 331,
+      "seed": 9134011,
+      "practice": "curse",
+      "elapsedMs": 88802,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 247,
+      "seed": 9134012,
+      "practice": "neutrality",
+      "elapsedMs": 68210,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "coup"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 206,
+      "seed": 9134013,
+      "practice": "fatal-attraction",
+      "elapsedMs": 63333,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "curse"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134014,
+      "practice": "mystic-shield",
+      "elapsedMs": 106227,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "forbidden-city",
+        "earthquake",
+        "curse",
+        "coup",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 308,
+      "seed": 9134015,
+      "practice": "fortification",
+      "elapsedMs": 101800,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "crab",
+        "coup",
+        "forbidden-city",
+        "confabulation",
+        "curse",
+        "coup",
+        "curse",
+        "man-trap",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 369,
+      "seed": 9134016,
+      "practice": "forbidden-city",
+      "elapsedMs": 126546,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "curse",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134017,
+      "practice": "pacifism",
+      "elapsedMs": 107397,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "crab",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "man-trap",
+        "curse",
+        "coup",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 228,
+      "seed": 9134018,
+      "practice": "truce",
+      "elapsedMs": 78128,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "crab",
+        "forbidden-city",
+        "coup",
+        "curse",
+        "curse",
+        "coup"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 367,
+      "seed": 9134019,
+      "practice": "challenge",
+      "elapsedMs": 137996,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "coup",
+        "curse",
+        "curse",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134020,
+      "practice": "dungeon",
+      "elapsedMs": 86225,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "doomsayer",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134021,
+      "practice": "man-trap",
+      "elapsedMs": 108673,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "curse",
+        "curse",
+        "coup",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 292,
+      "seed": 9134022,
+      "practice": "crab",
+      "elapsedMs": 107210,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "curse",
+        "man-trap",
+        "curse",
+        "coup",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134023,
+      "practice": "under-elf-hill",
+      "elapsedMs": 128953,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "forbidden-city",
+        "forbidden-city",
+        "earthquake",
+        "coup",
+        "curse",
+        "coup",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134024,
+      "practice": "split-knight",
+      "elapsedMs": 85610,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134025,
+      "practice": "rebirth",
+      "elapsedMs": 86318,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "truce",
+        "truce"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134026,
+      "practice": "resurrection",
+      "elapsedMs": 114403,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "crab",
+        "coup",
+        "man-trap",
+        "fortification",
+        "fatal-attraction",
+        "curse"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 300,
+      "seed": 9134027,
+      "practice": "winged-victory",
+      "elapsedMs": 95695,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "man-trap",
+        "coup",
+        "man-trap",
+        "fortification",
+        "dungeon"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134028,
+      "practice": "betrayal",
+      "elapsedMs": 118698,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "curse",
+        "man-trap",
+        "coup",
+        "curse",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134029,
+      "practice": "hostage",
+      "elapsedMs": 87844,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134030,
+      "practice": "legacy",
+      "elapsedMs": 85839,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "doomsayer",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "forbidden-city"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 59,
+      "seed": 9134031,
+      "practice": "chaos",
+      "elapsedMs": 16873,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 364,
+      "seed": 9134032,
+      "practice": "think-again",
+      "elapsedMs": 102573,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "crab",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "man-trap",
+        "curse",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134033,
+      "practice": "fog-of-war",
+      "elapsedMs": 148466,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "confabulation",
+        "coup",
+        "forbidden-city",
+        "fortification",
+        "coup",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134034,
+      "practice": "knightmare",
+      "elapsedMs": 108370,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134035,
+      "practice": "merciless",
+      "elapsedMs": 84930,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134036,
+      "practice": "guardian",
+      "elapsedMs": 121368,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "curse",
+        "coup",
+        "fortification"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134037,
+      "practice": "onslaught",
+      "elapsedMs": 119983,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "forbidden-city",
+        "curse",
+        "man-trap",
+        "fortification",
+        "coup",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 343,
+      "seed": 9134038,
+      "practice": "forced-march",
+      "elapsedMs": 110599,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "crab",
+        "coup",
+        "curse",
+        "man-trap",
+        "confabulation",
+        "curse",
+        "coup"
+      ]
+    },
+    {
+      "project": "desktop",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134039,
+      "practice": "passing-in-the-night",
+      "elapsedMs": 86194,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "truce",
+        "truce"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 184,
+      "seed": 9134000,
+      "practice": "confabulation",
+      "elapsedMs": 63549,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "crab",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "confabulation"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134001,
+      "practice": "haunting-memories",
+      "elapsedMs": 124641,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "man-trap",
+        "coup",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134002,
+      "practice": "vulture",
+      "elapsedMs": 115946,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "crab",
+        "confabulation",
+        "crab",
+        "coup",
+        "confabulation",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "man-trap",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134003,
+      "practice": "coup",
+      "elapsedMs": 144119,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "curse",
+        "man-trap",
+        "coup",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134004,
+      "practice": "doomsayer",
+      "elapsedMs": 131713,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "crab",
+        "forbidden-city",
+        "forbidden-city",
+        "confabulation",
+        "curse",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 256,
+      "seed": 9134005,
+      "practice": "abduction",
+      "elapsedMs": 80616,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "confabulation",
+        "coup",
+        "curse",
+        "curse",
+        "man-trap",
+        "man-trap",
+        "coup",
+        "dungeon"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134006,
+      "practice": "panic",
+      "elapsedMs": 126900,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "man-trap",
+        "fortification",
+        "curse",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 141,
+      "seed": 9134007,
+      "practice": "earthquake",
+      "elapsedMs": 61881,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "crab",
+        "crab"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134008,
+      "practice": "figure-dance",
+      "elapsedMs": 143323,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "coup",
+        "confabulation",
+        "curse",
+        "curse",
+        "man-trap",
+        "coup",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 265,
+      "seed": 9134009,
+      "practice": "peace-talks",
+      "elapsedMs": 79200,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "curse",
+        "curse",
+        "forbidden-city",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134010,
+      "practice": "plots-within-plots",
+      "elapsedMs": 166693,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "curse",
+        "fortification",
+        "fortification",
+        "neutrality",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 331,
+      "seed": 9134011,
+      "practice": "curse",
+      "elapsedMs": 94975,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 247,
+      "seed": 9134012,
+      "practice": "neutrality",
+      "elapsedMs": 73379,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "coup"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 206,
+      "seed": 9134013,
+      "practice": "fatal-attraction",
+      "elapsedMs": 63648,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "curse"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134014,
+      "practice": "mystic-shield",
+      "elapsedMs": 112192,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "forbidden-city",
+        "earthquake",
+        "curse",
+        "coup",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 308,
+      "seed": 9134015,
+      "practice": "fortification",
+      "elapsedMs": 109620,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "crab",
+        "coup",
+        "forbidden-city",
+        "confabulation",
+        "curse",
+        "coup",
+        "curse",
+        "man-trap",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 369,
+      "seed": 9134016,
+      "practice": "forbidden-city",
+      "elapsedMs": 133275,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "curse",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134017,
+      "practice": "pacifism",
+      "elapsedMs": 115210,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "crab",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "man-trap",
+        "curse",
+        "coup",
+        "coup",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 228,
+      "seed": 9134018,
+      "practice": "truce",
+      "elapsedMs": 80949,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "crab",
+        "forbidden-city",
+        "coup",
+        "curse",
+        "curse",
+        "coup"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 367,
+      "seed": 9134019,
+      "practice": "challenge",
+      "elapsedMs": 140645,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "coup",
+        "curse",
+        "curse",
+        "man-trap",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134020,
+      "practice": "dungeon",
+      "elapsedMs": 87907,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "doomsayer",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134021,
+      "practice": "man-trap",
+      "elapsedMs": 112577,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "curse",
+        "curse",
+        "coup",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 292,
+      "seed": 9134022,
+      "practice": "crab",
+      "elapsedMs": 111999,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "curse",
+        "man-trap",
+        "curse",
+        "coup",
+        "man-trap"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134023,
+      "practice": "under-elf-hill",
+      "elapsedMs": 134806,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "forbidden-city",
+        "forbidden-city",
+        "earthquake",
+        "coup",
+        "curse",
+        "coup",
+        "coup",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134024,
+      "practice": "split-knight",
+      "elapsedMs": 87956,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134025,
+      "practice": "rebirth",
+      "elapsedMs": 90774,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "truce",
+        "truce"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134026,
+      "practice": "resurrection",
+      "elapsedMs": 118955,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "crab",
+        "coup",
+        "man-trap",
+        "fortification",
+        "fatal-attraction",
+        "curse"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 300,
+      "seed": 9134027,
+      "practice": "winged-victory",
+      "elapsedMs": 99161,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "man-trap",
+        "coup",
+        "man-trap",
+        "fortification",
+        "dungeon"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134028,
+      "practice": "betrayal",
+      "elapsedMs": 122421,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "curse",
+        "man-trap",
+        "coup",
+        "curse",
+        "man-trap",
+        "man-trap",
+        "fortification",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134029,
+      "practice": "hostage",
+      "elapsedMs": 91257,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134030,
+      "practice": "legacy",
+      "elapsedMs": 90784,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "doomsayer",
+        "doomsayer",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "forbidden-city"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 59,
+      "seed": 9134031,
+      "practice": "chaos",
+      "elapsedMs": 18055,
+      "outcome": {
+        "winner": "black",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 364,
+      "seed": 9134032,
+      "practice": "think-again",
+      "elapsedMs": 111044,
+      "outcome": {
+        "reason": "stalemate"
+      },
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "crab",
+        "confabulation",
+        "forbidden-city",
+        "forbidden-city",
+        "coup",
+        "coup",
+        "man-trap",
+        "curse",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134033,
+      "practice": "fog-of-war",
+      "elapsedMs": 159687,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "crab",
+        "confabulation",
+        "coup",
+        "forbidden-city",
+        "fortification",
+        "coup",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134034,
+      "practice": "knightmare",
+      "elapsedMs": 118334,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134035,
+      "practice": "merciless",
+      "elapsedMs": 90609,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "truce"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134036,
+      "practice": "guardian",
+      "elapsedMs": 133862,
+      "outcome": null,
+      "turn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "forbidden-city",
+        "confabulation",
+        "coup",
+        "curse",
+        "coup",
+        "fortification"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134037,
+      "practice": "onslaught",
+      "elapsedMs": 129796,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "forbidden-city",
+        "confabulation",
+        "forbidden-city",
+        "coup",
+        "forbidden-city",
+        "curse",
+        "man-trap",
+        "fortification",
+        "coup",
+        "curse",
+        "man-trap",
+        "fortification",
+        "fatal-attraction"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 343,
+      "seed": 9134038,
+      "practice": "forced-march",
+      "elapsedMs": 119597,
+      "outcome": {
+        "winner": "white",
+        "reason": "checkmate"
+      },
+      "turn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "crab",
+        "coup",
+        "curse",
+        "man-trap",
+        "confabulation",
+        "curse",
+        "coup"
+      ]
+    },
+    {
+      "project": "mobile",
+      "status": "passed",
+      "actionCount": 400,
+      "seed": 9134039,
+      "practice": "passing-in-the-night",
+      "elapsedMs": 91903,
+      "outcome": null,
+      "turn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "effects": [
+        "pacifism",
+        "earthquake",
+        "earthquake",
+        "forbidden-city",
+        "truce",
+        "truce"
+      ]
+    }
+  ]
+}

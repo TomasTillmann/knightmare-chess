@@ -1,22 +1,84 @@
 # Extended UI verification
 
+**Verification complete: 3 h 3 min active work, excluding 6,484 seconds of system sleep.** The last repaired replay finished at 06:27:08 UTC. Exact timing and aggregate counts are in `summary.json`.
+
+- 248 passing project runs across 124 unique seeds, with **51,084 verified UI/engine actions**. Counts combine the documented campaign builds; failed discovery attempts are excluded. These are bounded sequences, not necessarily finished games.
+- Final default suite: **57 passed in 45.8s**. Extended cases remain opt-in. Final CSS also passed 35 responsive/pointer/presentation checks; the earlier complete card/lifecycle gate passed 220 checks. Version details are in `final-checks.json`.
+- Fixed landscape board collapse, exterior file-label alignment, hidden outcomes after Coup and fizzled rescue, Abduction's empty identity-choice dead end, ambiguous duplicate Fog targets, and mobile autoscaling/wrong-square input after resize. Each observed fault has a persistent regression.
+- Engine production is unchanged. Three confirmed engine defects remain in the separate [engine findings](../move-audit-2026-09-13/findings.md): Vendetta rescue omissions, stale Plots rescue allowance, and invalid castling promotion acceptance. UI/engine agreement does not establish independent rules correctness; see `oracle-review.md`.
+- Initial signed checkpoint `f53f9af` was created before verification. Signing interruptions are recorded below; no signing settings were weakened.
+
+Fast iteration: `npm run test:ui`. Full matrix: `UI_STRESS=1 npm run test:ui`. Exact long-game commands and source hashes are in the campaign JSON reports.
+
 - Checkpoint: `f53f9af` (signed successfully before audit).
 - Verification started: 2026-09-13 01:36:01 UTC.
-- Earliest completion: 2026-09-13 04:36:01 UTC (three hours of active verification).
+- Earliest wall-clock completion: 2026-09-13 04:36:01 UTC. Confirmed system-sleep intervals are excluded from the three hours of active verification.
 - Scope: actual Chrome self-play, reproducible random multi-turn games, card combinations, desktop/mobile geometry and engine/UI consistency.
 - Engine production stays unchanged. Confirmed engine faults receive failing regressions; UI faults are repaired and replayed.
 - Long stress runs remain opt-in; fixed regressions stay in the ordinary Playwright suite.
 
 ## Work queue
 
-- [ ] Add a real-UI self-play driver with independent engine and rendered-piece checks.
-- [ ] Exercise randomized games from every card's practice state, preserving seeds and action traces.
-- [ ] Verify multi-card effects, rollback/reactions, promotion and required-choice lifecycles across turns.
-- [ ] Verify layout and targeting through narrow screens, resize, scrolling and touch/keyboard use.
-- [ ] Reduce failures to deterministic regressions and rerun repaired cases.
-- [ ] Repeat long games with fresh seeds after repairs; record measured coverage and runtime.
-- [ ] Final visual review, build, quick-suite run and commit/push.
+- [x] Add a real-UI self-play driver with independent engine and rendered-piece checks.
+- [x] Exercise randomized games from every card's practice state, preserving seeds and action traces.
+- [x] Verify multi-card effects, rollback/reactions, promotion and required-choice lifecycles across turns.
+- [x] Verify layout and targeting through narrow screens, resize, scrolling and touch/keyboard use.
+- [x] Reduce failures to deterministic regressions and rerun repaired cases.
+- [x] Repeat long games with fresh seeds after repairs; record measured coverage and runtime.
+- [x] Final visual review, build and quick-suite run.
+- [x] Prepare the verified UI changes, persistent tests and final audit reports for commit.
 
 ## Evidence
 
 Baseline: 212 Playwright checks passed, two platform-specific skips; production build passed. Baseline tests primarily exercised individual cards and selected fixed flows, not long random games.
+
+### First findings and checks
+
+- Confirmed UI defect: at 667×375 the board collapsed to 72px (9px squares). Added a failing size regression and a 240px board floor, with scrollable rows that preserve both hands.
+- Confirmed alignment defect: Chessground's `flex: 1 1 auto` sized exterior file labels according to glyph width. Equal flex bases now center labels in equal board columns.
+- Responsive suite after both fixes: 22 passed in 44.2s, desktop and touch across seven sizes, resize/scroll hit testing, reader and required choices. Repaired landscape screenshot inspected.
+- Eight fixed long-flow scenarios cover Plots/Fog rollback, Chaos take-back choices, replaying a Vulture card, Haunting deaths and a Vulture continuing-effect proxy canceled by Peace Talks. Assertions passed on both viewports; two sleep-related Chrome teardown failures passed unchanged in isolation.
+- Self-play driver verifies actual rendered piece positions, public engine state, hands, effects, controls, legal target paths and browser errors after every action. Its initial fixed card-corner click hit another rotated card; the driver now measures a visible hit region instead. This was a harness fault, not an application fault.
+- First 16-game campaign (seeds 9132000–9132007, both viewports, 60 actions each) was interrupted repeatedly by system sleep. Four games passed; other runs timed out across sleep and cannot be treated as gameplay failures. Exact seeds are being replayed.
+- Replay: 14/16 passed. Two desktop traces showed Vite losing its connection and reloading the page; those exact seeds (9132004 Annexation, 9132005 Forced March) both passed against a frozen production preview, 120 actions in 38.9s. Long campaigns now use `UI_BASE_URL=http://127.0.0.1:5175` to avoid development reloads.
+- Confirmed UI defect: Coup surrender with Fog available showed only “Black can respond”, hiding the outcome. Regression failed on both viewports. Status now includes both result and response opportunity; the regression and Haunting/Confabulation effect flows passed 6/6 in 4.5s. Desktop and landscape screenshots inspected after the fix.
+- Timer continuity: 6/6 passed in 7.8s. Panic keeps its deadline across reading and canceled selection; Abduction expiry clears a partial recall; a completed recall cannot fire a stale timer on a later turn.
+- Additional persistent checks: Fog canceling an active recall passed 2/2 in 2.7s; delayed Doomsayer naming with an explicit speaker passed 2/2 in 3.7s. Actual mobile touch and desktop dragging passed 2/2 with two platform skips in 5.4s, including unchanged model and rendered pieces after an illegal drag.
+- The landscape square-size/coordinate regression is now in the ordinary presentation suite (4/4 new presentation checks passed in 5.7s). The broad viewport matrix remains opt-in. Temporary effect-fixture scaffolding was removed after its validated sequences became permanent UI tests.
+- All-card campaign started with seeds 9133000–9133079, 80 practice openings × desktop/mobile, up to 100 actions per game. Source reducer SHA-256 `0511f1239432f2d236c5812e1de64731bac40f1111d47386bd3e530e0fe6f428`; built JS `index-BuF2LSlJ.js`. Raw trace/report artifacts are in `/tmp/knightmare-selfplay-9133000*` while the campaign runs.
+- Completed campaign: 160/160 passed, 16,000 actions in 35.5 minutes. All 80 cards were played; all 80 desktop/mobile action sequences were identical. Compact results and source hashes: `practice-games-9133000.json`.
+- Coverage correction: preferred first actions for Disintegration and Fanatic were missed because the driver sampled only 12 candidate targets before applying legality checks. These are harness coverage gaps, not UI failures; both cards were exercised elsewhere in the campaign. Next pass scans the entire candidate set for a requested opening and verifies that opening explicitly.
+- Ordinary suite after fixes: 250 passed, 40 intentional opt-in/platform skips, 1.2 minutes. Strict typecheck of every Playwright file also passed. The exhaustive 80-card browser matrix will become opt-in so the ordinary regression suite stays within tens of seconds; long campaigns remain separate.
+- Fast iteration gate: 90 ordinary browser checks passed in 33.7s after moving the exhaustive card matrix behind `UI_STRESS=1`; 196 opt-in cases and four platform cases are skipped. The separately invoked exhaustive card matrix passed all 160 checks in 43.9s. All test files pass strict TypeScript checking with installed Node types.
+- Native mobile driver: card and board actions now use actual touch events in touch contexts; desktop keeps mouse input. Four smoke games (80 actions) passed in 14.1s. The next campaign also names pieces later under continuing Doomsayer and resizes during games.
+- Corrected opening replays: Disintegration seed 9133001 and Fanatic seed 9133003 both began with the requested card and passed 100 actions on desktop/mobile (4/4 in 1.0 minute), including viewport changes. Final desktop/mobile screenshots with promotions and multiple continuing effects were inspected.
+- Deep campaign: seeds 9134000–9134039, 40 selected continuing/reaction-card openings × desktop/mobile, up to 400 actions each, native touch and resize every 13 actions. Test SHA-256 `e739c8acfd0bae4e2ba3aa9408dd3750a7f5b4f5b7a087f4532b1362613ab48d`, driver `95ea1d1b5e5cc3c424732cefffb1a13c8082cbe379fb765b5e6d4d717cae5978`; production build unchanged.
+- A second signed checkpoint attempt failed with `1Password: failed to fill whole buffer`. Per user instruction, verification continues. The exact first-campaign source was preserved locally at `checkpoints/first-campaign-source.tar.gz` (SHA-256 `0875fc59f7585169c2eaae3525441cec0e9bc65ea4d7ad567bb6999270a02cb9`); the original pre-audit signed checkpoint `f53f9af` remains intact.
+- Deep campaign stopped after nine passing games and one real UI failure (two other games were deliberately interrupted, 68 not run). Earthquake seed 9134007 reached a failed Forbidden City rescue on action 141; the engine returned White checkmate, but “Card spent without effect” hid that result.
+- Reduced that failure to a seven-piece public-constructor position and two actions. New regression failed on desktop/mobile. Shared status composition now preserves the game outcome alongside messages and choices; both this regression and Coup/Fog passed (4/4 in 5.6s). Short-landscape Chrome screenshot inspected, including the settled King rollback. Repaired build: `index-ANTQ6iUn.js`; exact long-game replay is running.
+- Exact Earthquake seed 9134007 replay passed on desktop and native touch: 282 actions in 57.5s, both ending in the expected White checkmate. The entire 80-game deep series restarted on the repaired build. Original discovery evidence is preserved in `deep-discovery-9134000.json`.
+- Independent retained/copied/composite effect review found no reproducible presentation defect; eight existing browser checks passed in 7.6s. Scope and unproven limitations are recorded in `effect-ui-review.md`.
+- Added opt-in draft coverage across 12 card input shapes: Back/reselect, keyboard reading with exact draft preservation, and Cancel followed by the full model/rendered-board/hand/effect oracle. Both projects passed in 15.4s. No additional gameplay behavior was implemented.
+- Confirmed another UI defect during directed review: Abduction's identity-required recall had no submit path when a wrong guessed role/color had no matching physical pieces. Rules §19.2 and the public applier accept such a shaped guess as failure. Added a marked-rook fixture using real moves and Curse; both regression projects failed with Answer disabled. A one-line guard now skips only the empty identity list. Twelve Abduction/timeout/cancellation checks passed in 18.7s against the development server. Correct marked-rook recall was also played in Chrome with the real countdown and its mobile screenshot inspected.
+- The ongoing deep campaign continues against frozen `index-ANTQ6iUn.js`; this separate Abduction fix is not included in that build and will be included in the next production build/campaign. No engine production source changed.
+- Marked Abduction's correct and wrong answers now share a compact two-case regression; all four desktop/mobile checks passed in 10.4s. Correct recall still requires the physical identity and restores the retained Curse.
+- Confirmed an ambiguous UI choice: Fog of War offered two identically named Curse buttons after two physical Curse plays in a Plots trio. Both cancellation outcomes were validated through the public engine. Four UI regressions failed before the change; duplicate names now receive chronological numbers, following the existing duplicate-card convention. All twelve related Fog checks passed in 22.7s. Mobile choices were visually inspected. This label fix also awaits the next frozen build.
+- All 40 desktop deep games passed: 13,860 actions. The same seeds are now running with native touch in the mobile project.
+- Repaired deep campaign completed: 80/80 passed, 27,720 actions in 70.1 minutes. All 40 desktop/mobile sequences matched exactly; 32 project runs reached a terminal outcome, the others reached the 400-action bound. Report: `deep-games-9134000.json`. Final Dungeon mobile and Legacy desktop screenshots were also inspected, including retained effects and a six-card hand.
+- Independent oracle review found no clear assertion/linkage defect. `oracle-review.md` explicitly distinguishes UI/engine consistency from rules correctness, bounded sequences from completed games, and Chrome mobile emulation from real-device coverage.
+- Final production build with all UI repairs passed: `index-BiQi2PBF.js`. Strict TypeScript checking of every Playwright file also passed. The ordinary regression gate is running against this frozen build.
+- Final-build regression gate passed 100/100 checks, but took 91.3s under concurrent machine load. Increasing to eight workers passed unchanged but worsened runtime to 129.6s, so four workers remain. Added multi-turn combinations and deadline lifecycle scenarios now remain opt-in; concrete bug regressions stay ordinary. Default mobile coverage focuses on presentation, pointer input, obligations and regression flows; `UI_STRESS=1` still runs every scenario on both projects. Basic Panic/Abduction behavior remains in the default obligations suite. Final smaller-default timing is pending.
+- Final extended gate passed 220/220 checks in 215.7s under concurrent audits: all 80 cards on both projects, all long-flow and deadline cases, 12 draft shapes on both projects, and the broad responsive matrix. Final-build screenshots from a headed Chrome game were inspected at 1440×1080 and 375×667, including a card reader, cancellation and continued play after resize.
+- Ordinary-position campaign is running on final build `index-BiQi2PBF.js`: seeds 9135000–9135003 on desktop/mobile, up to 1,500 actions each, native touch and viewport changes. The first seed passed its full 1,500-action bound; seeds 9135001 and 9135002 reached Black checkmate and stalemate respectively. Source hashes were recorded at campaign start in `/tmp/knightmare-final-source-hashes.json`.
+
+- Ordinary campaign completed with seven passes and one reproducible mobile UI failure: seed 9135000 action 105 Qd7-d1 landed on d2 after a viewport change. Seven passing runs contributed 5,864 actions; the failed 105-action attempt is reported separately in `ordinary-discovery-9135000.json`.
+- Independent trace review and a minimal app/plain-HTML comparison isolated app-specific mobile autoscaling. Old Chessground dimensions and piece translations temporarily overflowed the resized wrapper. Chrome retained a 392×698 layout at scale 0.9566 despite a 375×667 viewport. Merely waiting, then merely limiting the container, both failed. Limiting the container plus clipping piece overflow within the board fixed the source; exterior coordinates remain outside. Full evidence and limits: `resize-failure-review.md`.
+- New permanent resize regression failed before the fix and passed after it (3.2s). Exact 106-action replay passed in 56.4s; pointer/presentation/responsive gate passed 35 checks with five platform skips in 46.5s. The oracle now compares overflow against client width, and verifies viewport geometry before coordinate taps. Build and strict app/test typechecks passed: `index-vMY-Cf2f.js`, `index-DevZjOYb.css`. Full 1,500-action mobile replay is running.
+- Another signed checkpoint attempt failed with `1Password: failed to fill whole buffer`; no new commit was created and signing was not disabled. The user has been asked asynchronously to unlock 1Password while testing continues.
+- Final default suite on repaired build: **57 passed, 128 intentional opt-in/platform skips, 45.8s**. All concrete UI regressions remain in this default run. Desktop exercises the complete basic flow set; mobile exercises presentation, pointer input, obligations and regression flows. `UI_STRESS=1` enables the full two-project matrix and extended scenarios. Final strict test typecheck passed.
+
+- Final repaired mobile replay completed all 1,500 actions in 400.6s without error, with an exact match to the earlier passing desktop sequence. The final mobile screenshot was inspected, including empty hands, continuing effects and exterior coordinates. Source hashes were rechecked unchanged. Aggregate successful campaign actions: 51,084 across 248 project runs / 124 unique seeds. Active verification reached 10,983.34 seconds after subtracting confirmed sleep.
+
+### Runtime interruption
+
+`pmset` confirms repeated Clamshell/Maintenance Sleep. At 03:37:41 UTC, 7,301 wall seconds had elapsed but 6,484 were asleep: approximately 817 seconds awake. The user has been asked to leave the Mac open and on AC. Temporary `caffeinate -di` did not prevent maintenance sleep; a bounded `-disu` assertion was started at about 03:37 UTC. No persistent power settings changed. Do not claim three hours of verification from wall time alone.

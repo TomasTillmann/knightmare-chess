@@ -1,0 +1,4278 @@
+{
+  "campaign": "all-card-practice-games-9133000",
+  "stats": {
+    "startTime": "2026-09-13T03:44:58.568Z",
+    "duration": 2128680.672,
+    "expected": 160,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "command": "UI_BASE_URL=http://127.0.0.1:5175 UI_STRESS=1 UI_OPENING=practice UI_SEED=9133000 UI_GAMES=80 UI_STEPS=100 npx playwright test tests/self-play.spec.ts --workers=2",
+  "sourceHashes": {
+    "src/App.tsx": "4cb489a73cb9f08c79774759b75a1640fdf746586361d214bfb1892b626eeb8f",
+    "src/ChessBoard.tsx": "ca446cd9cad1679137945889882b673b84fd405f479061631594163e5d8302e5",
+    "src/BoardEffects.tsx": "7a347815a53d4e510e63b50213e66196f66c70675cc2ce27ad563f4a88313eb9",
+    "src/cardInteractions.ts": "259d93dc704d5622ef3f71b7692be3ad394227a5f9f35153b696a629db8bcefb",
+    "src/gameInteractions.ts": "0da74b3417c620fa996346fddf2f11ae79af81b7eabfb9a3988f99aa3abeaae9",
+    "src/debugGame.ts": "806e56f4e210449151f703a0686dd1dee5b3715d932f8aa4eb455d9f2184839c",
+    "src/styles.css": "20d21ace5bba8c794eebba11743a0d43cdbc4eb015537e5220d9f21b40d34db6",
+    "src/game/reducer.ts": "0511f1239432f2d236c5812e1de64731bac40f1111d47386bd3e530e0fe6f428",
+    "tests/self-play.spec.ts": "611004f1b6823b793888c58d335cd95364d14b5985baad530555a41933ae031d",
+    "tests/support/selfPlay.ts": "b6cf42f5be0023db2ec5b87d4691d0d593c7396429d0ac47cdc51a615f7c9bc7"
+  },
+  "buildAsset": "index-BuF2LSlJ.js",
+  "actionCount": 16000,
+  "actionTypes": {
+    "playCard": 4298,
+    "move": 4874,
+    "endTurn": 6524,
+    "namePiece": 156,
+    "declineDoomsayer": 142,
+    "returnKing": 2,
+    "revealAbduction": 2,
+    "answerAbduction": 2
+  },
+  "cardsPlayed": {
+    "abduction": 2,
+    "anathema": 2,
+    "annexation": 228,
+    "assassin": 226,
+    "betrayal": 2,
+    "blessing": 2,
+    "bog": 158,
+    "bombard": 2,
+    "breakthrough": 2,
+    "cathedral": 2,
+    "challenge": 2,
+    "chaos": 2,
+    "charge": 2,
+    "confabulation": 2,
+    "coup": 2,
+    "cowardice": 186,
+    "crab": 2,
+    "crusade": 2,
+    "curse": 2,
+    "dark-mirror": 2,
+    "disintegration": 280,
+    "doomsayer": 300,
+    "doppelganger": 190,
+    "dubbing": 180,
+    "dungeon": 2,
+    "earthquake": 138,
+    "evangelists": 2,
+    "evil-eye": 2,
+    "fanatic": 202,
+    "fatal-attraction": 2,
+    "figure-dance": 114,
+    "fireball": 2,
+    "fog-of-war": 134,
+    "forbidden-city": 2,
+    "forced-march": 238,
+    "fortification": 2,
+    "ghostwalk": 2,
+    "guardian": 242,
+    "haunting-memories": 2,
+    "heresy": 282,
+    "hidden-passage": 22,
+    "holy-quest": 2,
+    "holy-war": 194,
+    "hostage": 2,
+    "irresistible-force": 2,
+    "knightmare": 2,
+    "legacy": 2,
+    "long-jump": 2,
+    "lost-castle": 2,
+    "madman": 212,
+    "man-of-straw": 2,
+    "man-trap": 2,
+    "masquerade": 2,
+    "merciless": 2,
+    "mystic-shield": 2,
+    "neutrality": 2,
+    "no-quarter": 32,
+    "onslaught": 2,
+    "pacifism": 246,
+    "panic": 2,
+    "passing-in-the-night": 2,
+    "peace-talks": 2,
+    "plots-within-plots": 2,
+    "rebirth": 50,
+    "resurrection": 2,
+    "revenge": 6,
+    "riposte": 2,
+    "sanctuary": 2,
+    "siege": 2,
+    "split-knight": 2,
+    "squaring-the-circle": 86,
+    "think-again": 2,
+    "toll": 6,
+    "tournament": 2,
+    "treason": 2,
+    "truce": 2,
+    "under-elf-hill": 2,
+    "vendetta": 236,
+    "vulture": 2,
+    "winged-victory": 2
+  },
+  "openingCardsCovered": 78,
+  "openingMismatches": [
+    9133001,
+    9133003,
+    9133001,
+    9133003
+  ],
+  "identicalDesktopMobileReplays": 80,
+  "runs": [
+    {
+      "project": "desktop",
+      "seed": 9133000,
+      "practice": "assassin",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "assassin",
+      "elapsedMs": 29537,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "b9d5b6ee4281b13357cd589d3e2f378115cf67c488ae58b39f0f779639d6e3f1"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133001,
+      "practice": "disintegration",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": null,
+      "elapsedMs": 30358,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "785fcbe65cd5b2d214e9469f851e7079d645cc13fd413692300fb6a3e0e22f42"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133002,
+      "practice": "doomsayer",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "doomsayer",
+      "elapsedMs": 31814,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "vendetta"
+      ],
+      "actionDigest": "066543e43bd0c077ded5d1566d88338f11f36a8661a36531972c63cfbb5b2665"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133003,
+      "practice": "fanatic",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "assassin",
+      "elapsedMs": 39410,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "01cf636ea3ffb5d9c6d9a9a7090092635696ff317c075924d03e7cce3d6b5bb8"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133004,
+      "practice": "annexation",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "annexation",
+      "elapsedMs": 27140,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "doomsayer",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "aef4f707ffe1de1f3956e84e4310ac435a2588220ce70626a8cc2fd3694ad37a"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133005,
+      "practice": "forced-march",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "forced-march",
+      "elapsedMs": 25049,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "87287ce315266a370cad2aeb1f7840632d3e41ddcb35cf9886abd3f00b1978d1"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133006,
+      "practice": "guardian",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "guardian",
+      "elapsedMs": 29387,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "vendetta",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "50e41e1d78fa632d794163126df9320f2e1f7c7877079ee26c73a169c493879a"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133007,
+      "practice": "heresy",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "heresy",
+      "elapsedMs": 29363,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "758cf56c5125bd662bc863eef4ff08398ab8190ee7e3de1e4a62c686594eb8eb"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133008,
+      "practice": "holy-war",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "holy-war",
+      "elapsedMs": 29687,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "doomsayer",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "0942f780dc8c417dc96227f62d3e76667f47e11a5e9d7d8713cdec1731682d03"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133009,
+      "practice": "madman",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "madman",
+      "elapsedMs": 19429,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "20c145a388a2c18e1a1e9f2b0f4d7d8779c8290bcfd390b86a2b20c4b8b8c337"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133010,
+      "practice": "pacifism",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "pacifism",
+      "elapsedMs": 27958,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "86b236bc9efa5bf2e6193f3a6390f060c039d71d77e8d55944eb9752e587e807"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133011,
+      "practice": "squaring-the-circle",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "squaring-the-circle",
+      "elapsedMs": 19512,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "3e98378785df1fced6a0089132a6e3294cc1d82195fb6bc6475c8cc5b8e295fc"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133012,
+      "practice": "vendetta",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "vendetta",
+      "elapsedMs": 27168,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "e4ddc5c869a6ddd2f73e704dba46d4db35cfe001dab7f69c364962935a267f3a"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133013,
+      "practice": "bog",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "bog",
+      "elapsedMs": 19541,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "vendetta"
+      ],
+      "actionDigest": "d2802658c80b4f91e87c5ac1d73763bb650e631853cf2d4d6c4ff7adf631cacc"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133014,
+      "practice": "cowardice",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "cowardice",
+      "elapsedMs": 19583,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer"
+      ],
+      "actionDigest": "7963d7be033ee993c4f282f02ac0204caf8dd7e6fd6bf1db29915b4cdfccf778"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133015,
+      "practice": "doppelganger",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "doppelganger",
+      "elapsedMs": 29894,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "29784c1d25552e07eee57d48a60f8b15478288447151dde4410bd6c05781dc1c"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133016,
+      "practice": "dubbing",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "dubbing",
+      "elapsedMs": 28632,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "46d041922674ce18b78f12bf7cdffd16f644fbeb751e3e86cc2267e2e171c435"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133017,
+      "practice": "earthquake",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "earthquake",
+      "elapsedMs": 28134,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "vendetta"
+      ],
+      "actionDigest": "efb3cd5dbc41fe0310de758162249acb967138c74cb64fb01894f670ebe147f1"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133018,
+      "practice": "figure-dance",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "figure-dance",
+      "elapsedMs": 34704,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "497403c6484c837af69a750efa5e2dde7208b6886bf6ecdc4de3fdc8c31e5547"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133019,
+      "practice": "no-quarter",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "no-quarter",
+      "elapsedMs": 19114,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "0ddebcf806a2de365215f499a0e41f313633d455617610ae5ac85ec8b5ddfccc"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133020,
+      "practice": "rebirth",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "rebirth",
+      "elapsedMs": 19400,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "bc3c147be9f5b43f191f2521fe9ee1e7ce55231ac2b0c5f49dc7ff76df79b5b0"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133021,
+      "practice": "revenge",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "revenge",
+      "elapsedMs": 19536,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "e6e888ff5f128e75caa81c59dcd9c5a41e53aa4f0ef13a10664532a6918661df"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133022,
+      "practice": "toll",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "toll",
+      "elapsedMs": 19489,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "0a028f245a0adb4111914eff99923e463c70d4e58d71a55aa759e197287e2fcb"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133023,
+      "practice": "anathema",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "anathema",
+      "elapsedMs": 28764,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "c34300883b3ebb5519abd6ccaab22470805c792adc4d25e53521077e47ec8a4b"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133024,
+      "practice": "crab",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "crab",
+      "elapsedMs": 28329,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "483c0052b02f1a787769ff711f4bb2d2d42a5b2310866d9b5692cfb5bfa6bd99"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133025,
+      "practice": "dark-mirror",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "dark-mirror",
+      "elapsedMs": 18929,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "d1f9c0f8fbdffbac8048b139657d5c56c64de0ddc6801e09c1a33c3cf0f9f3f6"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133026,
+      "practice": "forbidden-city",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "forbidden-city",
+      "elapsedMs": 29173,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "forbidden-city",
+        "doomsayer",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "pacifism",
+        "earthquake",
+        "vendetta"
+      ],
+      "actionDigest": "0a69dfbbf7c6e40dd160fe75447e3903b52d68e713bf1e8d0b344c8d176f0639"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133027,
+      "practice": "confabulation",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "confabulation",
+      "elapsedMs": 28639,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "c972a2f56d2e8c648da969f60016035a60622675ed1983154d03ac6f318e8890"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133028,
+      "practice": "ghostwalk",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "ghostwalk",
+      "elapsedMs": 28325,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "f256fa5baeac7158dfd8141c7f9da064bc8355c062e694451b3bf49bae245c8d"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133029,
+      "practice": "irresistible-force",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "irresistible-force",
+      "elapsedMs": 19709,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "aa3cb4d50dd94c36c8c782f9e4ffa1e0a7da6b0827d98d0d2e5435c731242ae7"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133030,
+      "practice": "masquerade",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "masquerade",
+      "elapsedMs": 19299,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "d40b734cc2ca97494418bdb894be2996eacc11b1a154c8337b32451d7f3e1e85"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133031,
+      "practice": "panic",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "panic",
+      "elapsedMs": 30130,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "630d42fa401f6180cfc718c3805af7cc6bcac2d0818b13a15e77c8e363678ca3"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133032,
+      "practice": "peace-talks",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "peace-talks",
+      "elapsedMs": 26994,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "a4c08ad5f6fb1918c9df237d1d1726c12ecc20f211c6cd56fd317237e86a3d6d"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133033,
+      "practice": "truce",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "truce",
+      "elapsedMs": 25821,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "85b5d188cb2a6bca8eaceec413bad58e26059ef70de19a146f2dd6b147f9c993"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133034,
+      "practice": "vulture",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "vulture",
+      "elapsedMs": 43053,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "5b91e42aa09db0cb35606424aa5bafb0b6fe3243690d40e27af0f08e744fdf11"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133035,
+      "practice": "blessing",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "blessing",
+      "elapsedMs": 30987,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "8ee9ae6dcea1eb31bce20fe6c670f9367b6fc35a2c136ea58c4cf2a4ade671ec"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133036,
+      "practice": "breakthrough",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "breakthrough",
+      "elapsedMs": 19400,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "4791d71b1b8dfdb86894b8e4cea8d08b897abc1f962178ea565ed9d33f652b8f"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133037,
+      "practice": "challenge",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "challenge",
+      "elapsedMs": 26967,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "4803baf7e54fb9c7a4bab61192707eb2312b22e07f8fb3f27e4bb0e1973cf47c"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133038,
+      "practice": "charge",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "charge",
+      "elapsedMs": 26419,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "81d9abff254762c6c8cd1ec8d49df89301d5dc4c53b3166f9539603ce7479811"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133039,
+      "practice": "coup",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "coup",
+      "elapsedMs": 28673,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "coup",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "76c0326dfc636daca76280c858767e2aee5c6d082e4528868a149d2be269614d"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133040,
+      "practice": "curse",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "curse",
+      "elapsedMs": 25321,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "162667308dcd5bcd11011fb960fafab8c86a40f8ab6635bd9b4451086a25a44f"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133041,
+      "practice": "evangelists",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "evangelists",
+      "elapsedMs": 25940,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "doomsayer"
+      ],
+      "actionDigest": "773b032748e0ec8429dfae3bba23cc749cd3e815abed91e6ea880333af5ea49d"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133042,
+      "practice": "haunting-memories",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "haunting-memories",
+      "elapsedMs": 31047,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "f06b2424e0a5e3b5ce6d97db72b336b4ec33826a7d889f46ba4208316f8670fc"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133043,
+      "practice": "man-trap",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "man-trap",
+      "elapsedMs": 28678,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "man-trap",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "5e45f32d229fb2f721ea7ab962f30676c2927b658241e89b20f1acd2c0250f37"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133044,
+      "practice": "onslaught",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "onslaught",
+      "elapsedMs": 25436,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "0d373e7e10815cdae1de5332dce15daafe41735dd530e879bdfbd3234ec6cddd"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133045,
+      "practice": "passing-in-the-night",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "passing-in-the-night",
+      "elapsedMs": 21669,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "9cf4c067358a952e295ce9b8babc5e06476474a1242a4898d9ffafd671e97fa0"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133046,
+      "practice": "tournament",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "tournament",
+      "elapsedMs": 26951,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "489cb8b1f21f0bc41d0364607d9fb81e9c6fa2276abfa62d95c2102a13128704"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133047,
+      "practice": "winged-victory",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "winged-victory",
+      "elapsedMs": 27785,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "aef620489442d56211181dac42f049dba5a72173c242732820eff70374b33bdf"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133048,
+      "practice": "betrayal",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "betrayal",
+      "elapsedMs": 28402,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "b513657a49e784a156d2ce5dd8d662ebba7b499625f359fa496822e7b4884b17"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133049,
+      "practice": "cathedral",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "cathedral",
+      "elapsedMs": 25867,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "500ae47446293ac65901b0ff07ea33e9be837dacb6bb7fd0fba943968417dbf8"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133050,
+      "practice": "dungeon",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "dungeon",
+      "elapsedMs": 19764,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "53a3b4fe2f8e989d3defd3bb4c9702bc03455d3a26b73ac1e2489165e6404ac8"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133051,
+      "practice": "fortification",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fortification",
+      "elapsedMs": 28704,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "fortification",
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "041669f4cd5c99bb3ef8c15969aabe7aed5a6e8d83cbc43099e57b8fc1c27bab"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133052,
+      "practice": "holy-quest",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "holy-quest",
+      "elapsedMs": 28805,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "ca6ec7af17889a415fea8ee532c53150153f343260b84747504e74f6e903f055"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133053,
+      "practice": "long-jump",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "long-jump",
+      "elapsedMs": 28740,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "f10a5a1295a11eebab228ee1b22c23bddc43879ee433d830eaaf6e9d6ffee297"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133054,
+      "practice": "lost-castle",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "lost-castle",
+      "elapsedMs": 28254,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "36b62bec508bd31b49edf8d6e85ae153df1917694ba9603799bfaf0c0abfefa4"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133055,
+      "practice": "sanctuary",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "sanctuary",
+      "elapsedMs": 19201,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "7a4155d1b1b9f4ee3b5909793688475a666d0aa07a46dc3acb8bbd4e6bf1c980"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133056,
+      "practice": "siege",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "siege",
+      "elapsedMs": 28470,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "4f7541d628583f0d9cdb3a445241e1dc25d55641e04986987cc3a68da6ef82bb"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133057,
+      "practice": "split-knight",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "split-knight",
+      "elapsedMs": 19170,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "4cfb51d8d00864efa8e7d5115cb74f32459e3c25bb89a0c23dc4d706f07da6b5"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133058,
+      "practice": "under-elf-hill",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "under-elf-hill",
+      "elapsedMs": 30985,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "doomsayer",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "96df654ef6cf20d36aadee65a9e34bf4cb3e8f1bc8dbcd8ea4ce800b25ccdf3b"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133059,
+      "practice": "abduction",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "abduction",
+      "elapsedMs": 27857,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "2beda051b1a46b01e5fc63f023b3842b00e6bc2c50ea056d0ff0ad325a8142b6"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133060,
+      "practice": "bombard",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "bombard",
+      "elapsedMs": 34249,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "cccd42a5256f1454102776422da1713fb8baee8d86e7cca90b198e00e520b2fa"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133061,
+      "practice": "fatal-attraction",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fatal-attraction",
+      "elapsedMs": 30463,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "d81aaa4fb4d86cb9828ba84630809726898530d28997a266d9827d8c73a384a7"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133062,
+      "practice": "plots-within-plots",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "plots-within-plots",
+      "elapsedMs": 27863,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "4ae5f0ff028cc328297c52a3ca590d21bcd991f1f549b2f59f5df48d0b7115d4"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133063,
+      "practice": "resurrection",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "resurrection",
+      "elapsedMs": 27800,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "c0a3b1da70d926e6d3f65f43ceedd41a9504cdc1ec30e4ab6bf2f57660d1159d"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133064,
+      "practice": "treason",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "treason",
+      "elapsedMs": 27682,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "doomsayer"
+      ],
+      "actionDigest": "37aff7f914bf2e76991b00271d74470e3a90f91688062241addbe6dc1d243fb6"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133065,
+      "practice": "crusade",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "crusade",
+      "elapsedMs": 19448,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "07275573c47002e81b199c6a58f1c68fc62be56138c8bfe66887b0c3e10baa7d"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133066,
+      "practice": "evil-eye",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "evil-eye",
+      "elapsedMs": 19645,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "5a14f6d6821ce4ecc59585f5d39b541cc46c72681dc8564bd8fa1a1205fcdd1a"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133067,
+      "practice": "hostage",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "hostage",
+      "elapsedMs": 19593,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "7c6d61ab1c9e0235ab1e0dd7937477ee6f08415bcca375c2adb8f65894261c51"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133068,
+      "practice": "man-of-straw",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "man-of-straw",
+      "elapsedMs": 19410,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "2a564374cdb52435fb701dc3139c2b8b1c33ea985a399028b7fe982090bdde19"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133069,
+      "practice": "merciless",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "merciless",
+      "elapsedMs": 19892,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer"
+      ],
+      "actionDigest": "ef29708426aa2df8e8eb1de66c52c608f7ac04c9cc719565f606dffea856b3e0"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133070,
+      "practice": "mystic-shield",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "mystic-shield",
+      "elapsedMs": 26670,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "20e11a97ccae13af3be7258e5207357b4fc6bc958731db16fcfa80253a28cd21"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133071,
+      "practice": "neutrality",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "neutrality",
+      "elapsedMs": 32267,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "3aec7886d9ea168fadc6de2384bc7e5763661b67aa0259b7da6bd4e8c4a0178a"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133072,
+      "practice": "chaos",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "chaos",
+      "elapsedMs": 26620,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "148d74e2e624297f3cc3b486ddd12d96b8f50d8bec97f1fbf1ff089b18b31281"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133073,
+      "practice": "fog-of-war",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fog-of-war",
+      "elapsedMs": 28061,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "e766d26871e22f31ab4c041d09fa6b00789a107b58e048bde1ffc290a2a1bb1a"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133074,
+      "practice": "hidden-passage",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "hidden-passage",
+      "elapsedMs": 26465,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "46af032f63e5dfc9fe96eed058384c5de9ca144b4b5189949244424808a5988e"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133075,
+      "practice": "fireball",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fireball",
+      "elapsedMs": 29949,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "2c41bdd40217c64898aaa3033d0be858e839931042e8caf2a2ad09d4f57f0d4f"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133076,
+      "practice": "knightmare",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "knightmare",
+      "elapsedMs": 28597,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "e0e0a9e4846eef2278b5f62c8019207f182d8bfe60221d689ee4515b229b958e"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133077,
+      "practice": "legacy",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "legacy",
+      "elapsedMs": 19018,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "e935d323217aa0a8da7d6e45aebe89e125754c6b81c045a209d6e47bd4a34c9c"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133078,
+      "practice": "riposte",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "riposte",
+      "elapsedMs": 18586,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "1a296f87877dbcc9c784ac3c56b056729e965e4c226e525d0021bb0057be64f6"
+    },
+    {
+      "project": "desktop",
+      "seed": 9133079,
+      "practice": "think-again",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "think-again",
+      "elapsedMs": 28045,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "ce6b0dd26641183af24da6060dc2cacaae8d2242179e9eb3f34ff70031bb01f0"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133000,
+      "practice": "assassin",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "assassin",
+      "elapsedMs": 28825,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "b9d5b6ee4281b13357cd589d3e2f378115cf67c488ae58b39f0f779639d6e3f1"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133001,
+      "practice": "disintegration",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": null,
+      "elapsedMs": 29457,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "785fcbe65cd5b2d214e9469f851e7079d645cc13fd413692300fb6a3e0e22f42"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133002,
+      "practice": "doomsayer",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "doomsayer",
+      "elapsedMs": 31057,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "vendetta"
+      ],
+      "actionDigest": "066543e43bd0c077ded5d1566d88338f11f36a8661a36531972c63cfbb5b2665"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133003,
+      "practice": "fanatic",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "assassin",
+      "elapsedMs": 38195,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "01cf636ea3ffb5d9c6d9a9a7090092635696ff317c075924d03e7cce3d6b5bb8"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133004,
+      "practice": "annexation",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "annexation",
+      "elapsedMs": 27613,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "doomsayer",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "aef4f707ffe1de1f3956e84e4310ac435a2588220ce70626a8cc2fd3694ad37a"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133005,
+      "practice": "forced-march",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "forced-march",
+      "elapsedMs": 24800,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "87287ce315266a370cad2aeb1f7840632d3e41ddcb35cf9886abd3f00b1978d1"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133006,
+      "practice": "guardian",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "guardian",
+      "elapsedMs": 29415,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "vendetta",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "50e41e1d78fa632d794163126df9320f2e1f7c7877079ee26c73a169c493879a"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133007,
+      "practice": "heresy",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "heresy",
+      "elapsedMs": 29605,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "758cf56c5125bd662bc863eef4ff08398ab8190ee7e3de1e4a62c686594eb8eb"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133008,
+      "practice": "holy-war",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "holy-war",
+      "elapsedMs": 29689,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "doomsayer",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "0942f780dc8c417dc96227f62d3e76667f47e11a5e9d7d8713cdec1731682d03"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133009,
+      "practice": "madman",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "madman",
+      "elapsedMs": 19324,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "20c145a388a2c18e1a1e9f2b0f4d7d8779c8290bcfd390b86a2b20c4b8b8c337"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133010,
+      "practice": "pacifism",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "pacifism",
+      "elapsedMs": 28340,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "86b236bc9efa5bf2e6193f3a6390f060c039d71d77e8d55944eb9752e587e807"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133011,
+      "practice": "squaring-the-circle",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "squaring-the-circle",
+      "elapsedMs": 19697,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "3e98378785df1fced6a0089132a6e3294cc1d82195fb6bc6475c8cc5b8e295fc"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133012,
+      "practice": "vendetta",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "vendetta",
+      "elapsedMs": 26760,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "e4ddc5c869a6ddd2f73e704dba46d4db35cfe001dab7f69c364962935a267f3a"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133013,
+      "practice": "bog",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "bog",
+      "elapsedMs": 19388,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "vendetta"
+      ],
+      "actionDigest": "d2802658c80b4f91e87c5ac1d73763bb650e631853cf2d4d6c4ff7adf631cacc"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133014,
+      "practice": "cowardice",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "cowardice",
+      "elapsedMs": 19237,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer"
+      ],
+      "actionDigest": "7963d7be033ee993c4f282f02ac0204caf8dd7e6fd6bf1db29915b4cdfccf778"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133015,
+      "practice": "doppelganger",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "doppelganger",
+      "elapsedMs": 29117,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "29784c1d25552e07eee57d48a60f8b15478288447151dde4410bd6c05781dc1c"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133016,
+      "practice": "dubbing",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "dubbing",
+      "elapsedMs": 27807,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "46d041922674ce18b78f12bf7cdffd16f644fbeb751e3e86cc2267e2e171c435"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133017,
+      "practice": "earthquake",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "earthquake",
+      "elapsedMs": 27227,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "vendetta"
+      ],
+      "actionDigest": "efb3cd5dbc41fe0310de758162249acb967138c74cb64fb01894f670ebe147f1"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133018,
+      "practice": "figure-dance",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "figure-dance",
+      "elapsedMs": 33929,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "497403c6484c837af69a750efa5e2dde7208b6886bf6ecdc4de3fdc8c31e5547"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133019,
+      "practice": "no-quarter",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "no-quarter",
+      "elapsedMs": 18952,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "0ddebcf806a2de365215f499a0e41f313633d455617610ae5ac85ec8b5ddfccc"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133020,
+      "practice": "rebirth",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "rebirth",
+      "elapsedMs": 19172,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "bc3c147be9f5b43f191f2521fe9ee1e7ce55231ac2b0c5f49dc7ff76df79b5b0"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133021,
+      "practice": "revenge",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "revenge",
+      "elapsedMs": 18951,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "e6e888ff5f128e75caa81c59dcd9c5a41e53aa4f0ef13a10664532a6918661df"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133022,
+      "practice": "toll",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "toll",
+      "elapsedMs": 19581,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "0a028f245a0adb4111914eff99923e463c70d4e58d71a55aa759e197287e2fcb"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133023,
+      "practice": "anathema",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "anathema",
+      "elapsedMs": 28470,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "c34300883b3ebb5519abd6ccaab22470805c792adc4d25e53521077e47ec8a4b"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133024,
+      "practice": "crab",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "crab",
+      "elapsedMs": 28514,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "483c0052b02f1a787769ff711f4bb2d2d42a5b2310866d9b5692cfb5bfa6bd99"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133025,
+      "practice": "dark-mirror",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "dark-mirror",
+      "elapsedMs": 18634,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "d1f9c0f8fbdffbac8048b139657d5c56c64de0ddc6801e09c1a33c3cf0f9f3f6"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133026,
+      "practice": "forbidden-city",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "forbidden-city",
+      "elapsedMs": 29039,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "forbidden-city",
+        "doomsayer",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "pacifism",
+        "earthquake",
+        "vendetta"
+      ],
+      "actionDigest": "0a69dfbbf7c6e40dd160fe75447e3903b52d68e713bf1e8d0b344c8d176f0639"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133027,
+      "practice": "confabulation",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "confabulation",
+      "elapsedMs": 27645,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "c972a2f56d2e8c648da969f60016035a60622675ed1983154d03ac6f318e8890"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133028,
+      "practice": "ghostwalk",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "ghostwalk",
+      "elapsedMs": 27745,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "f256fa5baeac7158dfd8141c7f9da064bc8355c062e694451b3bf49bae245c8d"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133029,
+      "practice": "irresistible-force",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "irresistible-force",
+      "elapsedMs": 19759,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "aa3cb4d50dd94c36c8c782f9e4ffa1e0a7da6b0827d98d0d2e5435c731242ae7"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133030,
+      "practice": "masquerade",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "masquerade",
+      "elapsedMs": 19130,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "d40b734cc2ca97494418bdb894be2996eacc11b1a154c8337b32451d7f3e1e85"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133031,
+      "practice": "panic",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "panic",
+      "elapsedMs": 29891,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "630d42fa401f6180cfc718c3805af7cc6bcac2d0818b13a15e77c8e363678ca3"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133032,
+      "practice": "peace-talks",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "peace-talks",
+      "elapsedMs": 26644,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "a4c08ad5f6fb1918c9df237d1d1726c12ecc20f211c6cd56fd317237e86a3d6d"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133033,
+      "practice": "truce",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "truce",
+      "elapsedMs": 25703,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "85b5d188cb2a6bca8eaceec413bad58e26059ef70de19a146f2dd6b147f9c993"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133034,
+      "practice": "vulture",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "vulture",
+      "elapsedMs": 41601,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "5b91e42aa09db0cb35606424aa5bafb0b6fe3243690d40e27af0f08e744fdf11"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133035,
+      "practice": "blessing",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "blessing",
+      "elapsedMs": 30594,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "8ee9ae6dcea1eb31bce20fe6c670f9367b6fc35a2c136ea58c4cf2a4ade671ec"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133036,
+      "practice": "breakthrough",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "breakthrough",
+      "elapsedMs": 19451,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "4791d71b1b8dfdb86894b8e4cea8d08b897abc1f962178ea565ed9d33f652b8f"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133037,
+      "practice": "challenge",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "challenge",
+      "elapsedMs": 26565,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "4803baf7e54fb9c7a4bab61192707eb2312b22e07f8fb3f27e4bb0e1973cf47c"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133038,
+      "practice": "charge",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "charge",
+      "elapsedMs": 26476,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "81d9abff254762c6c8cd1ec8d49df89301d5dc4c53b3166f9539603ce7479811"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133039,
+      "practice": "coup",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "coup",
+      "elapsedMs": 27958,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "coup",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "76c0326dfc636daca76280c858767e2aee5c6d082e4528868a149d2be269614d"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133040,
+      "practice": "curse",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "curse",
+      "elapsedMs": 25681,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "162667308dcd5bcd11011fb960fafab8c86a40f8ab6635bd9b4451086a25a44f"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133041,
+      "practice": "evangelists",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "evangelists",
+      "elapsedMs": 25942,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "doomsayer"
+      ],
+      "actionDigest": "773b032748e0ec8429dfae3bba23cc749cd3e815abed91e6ea880333af5ea49d"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133042,
+      "practice": "haunting-memories",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "haunting-memories",
+      "elapsedMs": 30109,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "f06b2424e0a5e3b5ce6d97db72b336b4ec33826a7d889f46ba4208316f8670fc"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133043,
+      "practice": "man-trap",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "man-trap",
+      "elapsedMs": 28963,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "man-trap",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "5e45f32d229fb2f721ea7ab962f30676c2927b658241e89b20f1acd2c0250f37"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133044,
+      "practice": "onslaught",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "onslaught",
+      "elapsedMs": 26213,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "0d373e7e10815cdae1de5332dce15daafe41735dd530e879bdfbd3234ec6cddd"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133045,
+      "practice": "passing-in-the-night",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "passing-in-the-night",
+      "elapsedMs": 21208,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "9cf4c067358a952e295ce9b8babc5e06476474a1242a4898d9ffafd671e97fa0"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133046,
+      "practice": "tournament",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "tournament",
+      "elapsedMs": 26193,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "489cb8b1f21f0bc41d0364607d9fb81e9c6fa2276abfa62d95c2102a13128704"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133047,
+      "practice": "winged-victory",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "winged-victory",
+      "elapsedMs": 27836,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "aef620489442d56211181dac42f049dba5a72173c242732820eff70374b33bdf"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133048,
+      "practice": "betrayal",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "betrayal",
+      "elapsedMs": 28509,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "b513657a49e784a156d2ce5dd8d662ebba7b499625f359fa496822e7b4884b17"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133049,
+      "practice": "cathedral",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "cathedral",
+      "elapsedMs": 25586,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "500ae47446293ac65901b0ff07ea33e9be837dacb6bb7fd0fba943968417dbf8"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133050,
+      "practice": "dungeon",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "dungeon",
+      "elapsedMs": 19545,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "53a3b4fe2f8e989d3defd3bb4c9702bc03455d3a26b73ac1e2489165e6404ac8"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133051,
+      "practice": "fortification",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fortification",
+      "elapsedMs": 28182,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "fortification",
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "041669f4cd5c99bb3ef8c15969aabe7aed5a6e8d83cbc43099e57b8fc1c27bab"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133052,
+      "practice": "holy-quest",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "holy-quest",
+      "elapsedMs": 28349,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "ca6ec7af17889a415fea8ee532c53150153f343260b84747504e74f6e903f055"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133053,
+      "practice": "long-jump",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "long-jump",
+      "elapsedMs": 27966,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "f10a5a1295a11eebab228ee1b22c23bddc43879ee433d830eaaf6e9d6ffee297"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133054,
+      "practice": "lost-castle",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "lost-castle",
+      "elapsedMs": 27875,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "36b62bec508bd31b49edf8d6e85ae153df1917694ba9603799bfaf0c0abfefa4"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133055,
+      "practice": "sanctuary",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "sanctuary",
+      "elapsedMs": 19055,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "7a4155d1b1b9f4ee3b5909793688475a666d0aa07a46dc3acb8bbd4e6bf1c980"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133056,
+      "practice": "siege",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "siege",
+      "elapsedMs": 28187,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism"
+      ],
+      "actionDigest": "4f7541d628583f0d9cdb3a445241e1dc25d55641e04986987cc3a68da6ef82bb"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133057,
+      "practice": "split-knight",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "split-knight",
+      "elapsedMs": 18996,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "4cfb51d8d00864efa8e7d5115cb74f32459e3c25bb89a0c23dc4d706f07da6b5"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133058,
+      "practice": "under-elf-hill",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "under-elf-hill",
+      "elapsedMs": 30594,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "doomsayer",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "96df654ef6cf20d36aadee65a9e34bf4cb3e8f1bc8dbcd8ea4ce800b25ccdf3b"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133059,
+      "practice": "abduction",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "abduction",
+      "elapsedMs": 26926,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "2beda051b1a46b01e5fc63f023b3842b00e6bc2c50ea056d0ff0ad325a8142b6"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133060,
+      "practice": "bombard",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "bombard",
+      "elapsedMs": 33645,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "cccd42a5256f1454102776422da1713fb8baee8d86e7cca90b198e00e520b2fa"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133061,
+      "practice": "fatal-attraction",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fatal-attraction",
+      "elapsedMs": 30498,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "d81aaa4fb4d86cb9828ba84630809726898530d28997a266d9827d8c73a384a7"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133062,
+      "practice": "plots-within-plots",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "plots-within-plots",
+      "elapsedMs": 27864,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "4ae5f0ff028cc328297c52a3ca590d21bcd991f1f549b2f59f5df48d0b7115d4"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133063,
+      "practice": "resurrection",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "resurrection",
+      "elapsedMs": 27621,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "c0a3b1da70d926e6d3f65f43ceedd41a9504cdc1ec30e4ab6bf2f57660d1159d"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133064,
+      "practice": "treason",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "treason",
+      "elapsedMs": 27982,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "doomsayer"
+      ],
+      "actionDigest": "37aff7f914bf2e76991b00271d74470e3a90f91688062241addbe6dc1d243fb6"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133065,
+      "practice": "crusade",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "crusade",
+      "elapsedMs": 19688,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "07275573c47002e81b199c6a58f1c68fc62be56138c8bfe66887b0c3e10baa7d"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133066,
+      "practice": "evil-eye",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "evil-eye",
+      "elapsedMs": 19611,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "earthquake"
+      ],
+      "actionDigest": "5a14f6d6821ce4ecc59585f5d39b541cc46c72681dc8564bd8fa1a1205fcdd1a"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133067,
+      "practice": "hostage",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "hostage",
+      "elapsedMs": 19731,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "7c6d61ab1c9e0235ab1e0dd7937477ee6f08415bcca375c2adb8f65894261c51"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133068,
+      "practice": "man-of-straw",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "man-of-straw",
+      "elapsedMs": 19307,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "2a564374cdb52435fb701dc3139c2b8b1c33ea985a399028b7fe982090bdde19"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133069,
+      "practice": "merciless",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "merciless",
+      "elapsedMs": 19657,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer"
+      ],
+      "actionDigest": "ef29708426aa2df8e8eb1de66c52c608f7ac04c9cc719565f606dffea856b3e0"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133070,
+      "practice": "mystic-shield",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "mystic-shield",
+      "elapsedMs": 26763,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "20e11a97ccae13af3be7258e5207357b4fc6bc958731db16fcfa80253a28cd21"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133071,
+      "practice": "neutrality",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "neutrality",
+      "elapsedMs": 32136,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake"
+      ],
+      "actionDigest": "3aec7886d9ea168fadc6de2384bc7e5763661b67aa0259b7da6bd4e8c4a0178a"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133072,
+      "practice": "chaos",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "chaos",
+      "elapsedMs": 27110,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer"
+      ],
+      "actionDigest": "148d74e2e624297f3cc3b486ddd12d96b8f50d8bec97f1fbf1ff089b18b31281"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133073,
+      "practice": "fog-of-war",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fog-of-war",
+      "elapsedMs": 28066,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "e766d26871e22f31ab4c041d09fa6b00789a107b58e048bde1ffc290a2a1bb1a"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133074,
+      "practice": "hidden-passage",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "hidden-passage",
+      "elapsedMs": 26825,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 1
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "46af032f63e5dfc9fe96eed058384c5de9ca144b4b5189949244424808a5988e"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133075,
+      "practice": "fireball",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "fireball",
+      "elapsedMs": 30570,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "doomsayer",
+        "vendetta",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "2c41bdd40217c64898aaa3033d0be858e839931042e8caf2a2ad09d4f57f0d4f"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133076,
+      "practice": "knightmare",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "knightmare",
+      "elapsedMs": 28682,
+      "outcome": null,
+      "finalTurn": {
+        "color": "white",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 1,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "earthquake",
+        "earthquake"
+      ],
+      "actionDigest": "e0e0a9e4846eef2278b5f62c8019207f182d8bfe60221d689ee4515b229b958e"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133077,
+      "practice": "legacy",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "legacy",
+      "elapsedMs": 19256,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "afterMove",
+        "moveMade": true,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer"
+      ],
+      "actionDigest": "e935d323217aa0a8da7d6e45aebe89e125754c6b81c045a209d6e47bd4a34c9c"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133078,
+      "practice": "riposte",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "riposte",
+      "elapsedMs": 18451,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "doomsayer",
+        "doomsayer",
+        "pacifism"
+      ],
+      "actionDigest": "1a296f87877dbcc9c784ac3c56b056729e965e4c226e525d0021bb0057be64f6"
+    },
+    {
+      "project": "mobile",
+      "seed": 9133079,
+      "practice": "think-again",
+      "status": "expected",
+      "actions": 100,
+      "openingCard": "think-again",
+      "elapsedMs": 28009,
+      "outcome": null,
+      "finalTurn": {
+        "color": "black",
+        "phase": "beforeMove",
+        "moveMade": false,
+        "cardPlays": {
+          "white": 0,
+          "black": 0
+        }
+      },
+      "finalEffects": [
+        "pacifism",
+        "pacifism",
+        "vendetta",
+        "earthquake"
+      ],
+      "actionDigest": "ce6b0dd26641183af24da6060dc2cacaae8d2242179e9eb3f34ff70031bb01f0"
+    }
+  ],
+  "cardsCovered": 80,
+  "coverageNote": "All 80 cards were played. Target sampling skipped the requested first play for Disintegration and Fanatic; those games still passed, but their opening preference was not enforced. A full scan for the preferred opening and targeted replays follow."
+}

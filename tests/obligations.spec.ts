@@ -108,3 +108,33 @@ test('Abduction captures the pawn when the recall deadline is missed', async ({ 
   await expect(page.getByRole('button', { name: 'Answer', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'End turn', exact: true })).toBeEnabled();
 });
+
+for (const correct of [false, true]) test(`Abduction resolves a ${correct ? 'correct' : 'wrong'} marked piece guess`, async ({ page }) => {
+  await page.clock.install();
+  await page.goto('/?practice=abduction&variant=marked-abduction');
+  await page.locator('[data-player="white"]').getByRole('button', { name: 'Abduction:', exact: false }).click({ position: { x: 18, y: 50 } });
+  await page.getByRole('button', { name: 'Choose d4', exact: true }).click();
+  await page.getByRole('button', { name: 'Play card', exact: true }).click();
+  await page.clock.fastForward(10000);
+  await expect(page.getByRole('timer')).toContainText('Recall');
+  await page.getByRole('button', { name: correct ? 'Rook' : 'Queen', exact: true }).click();
+  await page.getByRole('button', { name: 'Black', exact: true }).click();
+  await page.getByRole('button', { name: correct ? 'Choose d4' : 'Choose a7', exact: true }).click();
+  if (correct) {
+    await expect(page.getByRole('button', { name: 'Answer', exact: true })).toBeDisabled();
+    await page.getByRole('button', { name: 'Black rook · d4', exact: true }).click();
+  }
+  await expect(page.getByRole('button', { name: 'Answer', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Answer', exact: true }).click();
+  if (correct) {
+    await expect(page.locator('#board-position')).toContainText('black rook on d4');
+    await expect(page.locator('#off-board-position')).not.toContainText('black rook captured');
+    await expect(page.locator('.effect-entry[data-effect="curse"]')).toHaveCount(1);
+  } else {
+    await expect(page.locator('#board-position')).not.toContainText('black rook on d4');
+    await expect(page.locator('#off-board-position')).toContainText('black rook captured');
+  }
+  await expect(page.getByRole('timer')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Answer', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'End turn', exact: true })).toBeEnabled();
+});
