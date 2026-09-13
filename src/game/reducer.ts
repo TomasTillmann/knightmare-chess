@@ -668,8 +668,13 @@ export function legalDests(
 ): Map<SquareName, SquareName[]> {
   if (state.turn.moveMade || state.outcome || pendingElfReturn(state)) return new Map();
   if (enforceVendetta && activeVendettas(state).length) {
-    const captures = vendettaCaptureDests(state, stopAfterFirst);
-    if (captures.size) return captures;
+    const captures = vendettaCaptureDests(state, true);
+    if (captures.size) {
+      if (stopAfterFirst || !allowAfterMoveRescue) {
+        return stopAfterFirst ? captures : vendettaCaptureDests(state);
+      }
+      capturesOnly = true;
+    }
   }
   const position = positionFor(state);
   const dests = chessgroundDests(position);
