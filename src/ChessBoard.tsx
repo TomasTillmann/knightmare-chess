@@ -89,6 +89,9 @@ export function ChessBoard({ state, onMove }: Props) {
       className="cg-wrap"
       data-orientation="white"
       data-testid="chessboard"
+      role="img"
+      aria-label={`Chessboard with white at the bottom. ${state.outcome ? 'Game over.' : `${state.turn.color === 'white' ? 'White' : 'Black'} to move.`}`}
+      aria-describedby="board-position"
       ref={element}
     />
   );
