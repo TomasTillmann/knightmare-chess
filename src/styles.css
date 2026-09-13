@@ -46,7 +46,7 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
   transform: translateY(var(--fan-drop)) rotate(var(--fan-angle));
   transform-origin: 50% 90%;
 }
-.hand-card + .hand-card { margin-left: calc(var(--card-width) * -.58); }
+.hand-card + .hand-card { margin-left: calc(min(var(--card-width) * .42, (100vw - 64px - var(--card-width)) / max(1, var(--hand-count) - 1)) - var(--card-width)); }
 .hand-card:disabled { opacity: 1; cursor: default; }
 /* The artwork lifts; the hit area stays still, matching the Prsi hand. */
 .hand-card img {
@@ -156,7 +156,27 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
 }
 
 .board-effects { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
-.piece-effect { position: absolute; transform: translate(-50%, -50%); border-radius: 3px; padding: 1px 3px; background: #4b382c; color: #f6f3e9; font-size: 10px; font-weight: 600; line-height: 1.2; }
+.piece-effect { position: absolute; transform: translate(-50%, -50%); border-radius: 3px; padding: 1px 3px; background: #4b382c; color: #f6f3e9; font-size: 10px; font-weight: 600; line-height: 1.2; max-width: calc(12.5% - 4px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.piece-effect[data-suspended="true"], .effect-entry[data-suspended="true"] { opacity: .65; }
+.effect-orientation { margin: 0; font-size: 11px; color: #c1b69b; }
+.turn-timer { margin: 0 0 8px; font-size: 13px; font-variant-numeric: tabular-nums; color: #f0d9b5; }
+.board-concealment { position: absolute; inset: 0; height: round(down, var(--board-size), 8px); z-index: 25; display: grid; align-content: center; justify-items: center; gap: 12px; background: #292a2c; color: #f6f3e9; text-align: center; }
+.board-concealment small { color: #c1b69b; }
+.mobile-read-card { display: none; }
+.card-reader { width: min(440px, calc(100vw - 24px)); max-height: calc(100svh - 24px); padding: 16px; border: 1px solid #c1b69b70; border-radius: 8px; background: #292a2c; color: #f6f3e9; text-align: center; }
+.card-reader::backdrop { background: #000b; }
+.card-reader img { display: block; max-width: 100%; max-height: 60svh; margin: 0 auto; border-radius: 5%; }
+.card-reader p { text-align: left; font-size: 14px; line-height: 1.5; }
+@media (max-width: 800px) {
+  .mobile-read-card { display: inline-block; }
+  .turn-actions { flex-wrap: wrap; }
+  .turn-timer { margin: 0; }
+  .table { height: auto; min-height: 100svh; padding-block: 8px; grid-template-rows: minmax(calc(var(--card-width) * 1500 / 898 + 58px), 1fr) auto minmax(calc(var(--card-width) * 1500 / 898 + 58px), 1fr); }
+  .board-center:has(.effects-tray) { padding-top: 68px; }
+  .board-center:has(.effects-tray) :is(.board-effects, .board-targets, .board-concealment) { top: 68px; }
+  .board-center .effects-tray { top: 0; bottom: auto; }
+  .table:has(.effects-tray) .hand-area[data-player="black"] .hand { transform: translateY(-12px); }
+}
 .piece-effect[data-effect="mystic-shield"] { background: #f0d9b5; color: #292a2c; outline: 1px solid #4b382c; }
 .effect-wall { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .effect-wall line { stroke: #4b382c; stroke-width: 1; stroke-linecap: round; }
@@ -174,9 +194,5 @@ button { font: inherit; -webkit-tap-highlight-color: transparent; }
   .effect-entry { width: auto; padding: 2px; font-size: 10px; }
   .effect-entry img { display: none; }
   .effect-entry small { display: inline; margin-left: 4px; font-size: 9px; }
-  .table:has(.effects-tray) .hand-area[data-player="black"] .hand { transform: translateY(-44px); }
   .piece-effect { font-size: 8px; }
-}
-@media (max-width: 800px) and (max-height: 750px) {
-  .table:has(.effects-tray) .hand-area[data-player="black"] .hand { transform: translateY(-20px); }
 }
