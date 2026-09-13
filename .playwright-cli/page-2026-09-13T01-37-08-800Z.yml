@@ -1,0 +1,6 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - text: Audit text
+    - textbox "Audit text" [ref=e3]
+  - button "Apply" [ref=e4]
+  - status [ref=e5]: Waiting

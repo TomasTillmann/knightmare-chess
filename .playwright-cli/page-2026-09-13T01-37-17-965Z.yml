@@ -1,0 +1,6 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - text: Audit text
+    - textbox "Audit text" [ref=e3]: Audit ready
+  - button "Apply" [active] [ref=e4]
+  - status [ref=e5]: Audit ready

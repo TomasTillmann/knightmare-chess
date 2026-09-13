@@ -1,0 +1,9 @@
+# Protected engine files at audit start
+
+```text
+0511f1239432f2d236c5812e1de64731bac40f1111d47386bd3e530e0fe6f428  src/game/reducer.ts
+1451e3a43811efd3542b978c066e35151ee0d249b26072c7a57cb80b34c2eee1  src/game/state.ts
+38a4a3b745678ffeb7b457e182ff77a396c6db69bd3f6eacc970add8d2e986d3  src/game/types.ts
+a3d04ab5c741d8eff38795eb7741c4ab51f4a3d79dae2d84b360f8fa9f96180c  src/game/cards/catalog.ts
+f8eb616c2ac9b32202b58c522b7228b8a9e79197f206012df85cf46a6d3900b0  src/game/cards/random-campaign.ts
+```
