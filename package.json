@@ -10,6 +10,7 @@
     "build": "tsc --noEmit && vite build",
     "test": "tsx --test src/game/cards/*.test.ts",
     "test:watch": "tsx --test --watch src/game/cards/*.test.ts",
+    "test:ui": "playwright-cli --raw -s=knightmare-ui run-code --filename=checks/hidden-passage.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

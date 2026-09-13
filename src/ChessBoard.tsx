@@ -9,9 +9,10 @@ import type { GameState, SquareName } from './game/types.js';
 interface Props {
   state: GameState;
   onMove: (from: SquareName, to: SquareName) => boolean;
+  interactive?: boolean;
 }
 
-export function ChessBoard({ state, onMove }: Props) {
+export function ChessBoard({ state, onMove, interactive = true }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const api = useRef<Api>(null);
   const latest = state.history.at(-1);
@@ -56,12 +57,12 @@ export function ChessBoard({ state, onMove }: Props) {
       coordinates: true,
       highlight: { custom: checkedRoyals },
       animation: { enabled: true, duration: 180 },
-      draggable: { enabled: true },
-      selectable: { enabled: true },
+      draggable: { enabled: interactive },
+      selectable: { enabled: interactive },
       selected: undefined,
       movable: {
-        color: 'both',
-        dests: legalDests(state),
+        color: interactive ? 'both' : undefined,
+        dests: interactive ? legalDests(state) : new Map(),
         free: false,
         showDests: true,
         rookCastle: true,
@@ -81,8 +82,10 @@ export function ChessBoard({ state, onMove }: Props) {
       },
     });
     ground.set({ lastMove });
+    // Mobile controls can move the board without resizing it.
+    ground.state.dom.bounds.clear();
     if (!lastMove) ground.redrawAll();
-  }, [onMove, state]);
+  }, [onMove, state, interactive]);
 
   return (
     <div
