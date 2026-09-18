@@ -10,9 +10,10 @@ interface Props {
   state: GameState;
   onMove: (from: SquareName, to: SquareName) => boolean;
   interactive?: boolean;
+  descriptionId?: string;
 }
 
-export function ChessBoard({ state, onMove, interactive = true }: Props) {
+export function ChessBoard({ state, onMove, interactive = true, descriptionId = 'board-position' }: Props) {
   const element = useRef<HTMLDivElement>(null);
   const api = useRef<Api>(null);
   const latest = state.history.at(-1);
@@ -94,7 +95,7 @@ export function ChessBoard({ state, onMove, interactive = true }: Props) {
       data-testid="chessboard"
       role="img"
       aria-label={`Chessboard with white at the bottom. ${state.outcome ? 'Game over.' : `${state.turn.color === 'white' ? 'White' : 'Black'} to move.`}`}
-      aria-describedby="board-position"
+      aria-describedby={descriptionId}
       ref={element}
     />
   );

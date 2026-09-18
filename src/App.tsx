@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 
 import { ChessBoard } from './ChessBoard.js';
 import { BoardEffects } from './BoardEffects.js';
+import { BoardEditor } from './BoardEditor.js';
 import { cardInteractions, matchingCardOptions } from './cardInteractions.js';
 import { doomsayerSelection, moveChoices, requiredSelection, type GameSelection } from './gameInteractions.js';
 import { createDebugGame, practiceCards } from './debugGame.js';
@@ -16,6 +17,7 @@ export default function App() {
   const [game, setGame] = useState(() => createDebugGame(practice, variant));
   const [preview, setPreview] = useState<string | null>(null);
   const [reading, setReading] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const [selection, setSelection] = useState<GameSelection | null>(() => requiredSelection(game));
   const [message, setMessage] = useState<string | null>(null);
   const interactions = useMemo(() => new Map(Object.values(game.players).flatMap(player =>
@@ -160,7 +162,8 @@ export default function App() {
         </aside>
         <div className="turn-controls">
           <p className="turn-status" role="status">{status}</p>
-          {timer && <Countdown key={timer.key} ms={timer.ms} label={timer.label} onExpire={() => dispatch(timer.action)} />}
+          <button className="action-button edit-board-button" type="button" onClick={() => setEditing(true)}>Edit board</button>
+          {timer && <Countdown key={timer.key} ms={timer.ms} label={timer.label} paused={editing} onExpire={() => dispatch(timer.action)} />}
           {!selection && (game.plotsAllowances ?? []).filter(allowance => allowance.remaining > 0).map((allowance, index) =>
             <p className="selection-summary" key={index}>{allowance.player === 'white' ? 'White' : 'Black'} · {allowance.remaining} extra cards available</p>)}
           {selectedPicks.length > 0 && <p className="selection-summary">{selectedPicks.map(pick => pick.label).join(' → ')}</p>}
@@ -202,27 +205,36 @@ export default function App() {
       {hand('white')}
       <p className="sr-only" id="board-position">{game.pieces.filter(piece => piece.zone === 'board').map(piece => `${piece.owner} ${piece.role} on ${piece.square}`).join(', ')}.</p>
       <p className="sr-only" id="off-board-position">{game.pieces.filter(piece => piece.zone !== 'board').map(piece => `${piece.owner} ${piece.role} ${piece.zone}`).join(', ')}.</p>
-    </main>{reading && <CardReader cardId={reading} onClose={() => setReading(null)} />}</>
+    </main>{reading && <CardReader cardId={reading} onClose={() => setReading(null)} onEdit={() => { setReading(null); setEditing(true); }} />}
+      {editing && <BoardEditor state={game} onCancel={() => setEditing(false)} onApply={next => {
+        if (next !== game) {
+          setGame(next); setSelection(requiredSelection(next)); setPreview(null); setMessage(null);
+        }
+        setEditing(false);
+      }} />}</>
   );
 }
 
-function Countdown({ ms, label, onExpire }: { ms: number; label: string; onExpire: () => void }) {
+function Countdown({ ms, label, onExpire, paused = false }: { ms: number; label: string; onExpire: () => void; paused?: boolean }) {
   const [remaining, setRemaining] = useState(ms);
+  const timeLeft = useRef(ms);
   const callback = useRef(onExpire);
   callback.current = onExpire;
   useEffect(() => {
-    const deadline = Date.now() + ms;
+    if (paused) return;
+    const deadline = Date.now() + timeLeft.current;
     const interval = window.setInterval(() => {
       const left = Math.max(0, deadline - Date.now());
+      timeLeft.current = left;
       setRemaining(left);
       if (!left) { window.clearInterval(interval); callback.current(); }
     }, 100);
-    return () => window.clearInterval(interval);
-  }, [ms]);
+    return () => { timeLeft.current = Math.max(0, deadline - Date.now()); window.clearInterval(interval); };
+  }, [ms, paused]);
   return <p className="turn-timer" role="timer" aria-label={`${label}, ${Math.ceil(remaining / 1000)} seconds`}>{label} · {Math.ceil(remaining / 1000)}s</p>;
 }
 
-function CardReader({ cardId, onClose }: { cardId: string; onClose: () => void }) {
+function CardReader({ cardId, onClose, onEdit }: { cardId: string; onClose: () => void; onEdit: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const card = CARD_CATALOG[cardId];
   useEffect(() => { dialog.current?.showModal(); }, []);
@@ -230,5 +242,6 @@ function CardReader({ cardId, onClose }: { cardId: string; onClose: () => void }
     <img src={card.image} alt={card.name} />
     <p>{card.description}</p>
     <button className="action-button" type="button" autoFocus onClick={() => dialog.current?.close()}>Close card</button>
+    <button className="action-button" type="button" onClick={onEdit}>Edit board</button>
   </dialog>;
 }
